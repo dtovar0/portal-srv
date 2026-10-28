@@ -8,7 +8,7 @@
 | **Fase** | 7 (7B, marco de administración) |
 | **Módulo / Área** | pantallas |
 | **Prioridad** | Alta |
-| **Estatus** | En revisión |
+| **Estatus** | Hecha |
 | **Rama** | `dis/DIS-079-contenido-panel` |
 | **Creada** | 2026-10-28 |
 | **Aprobada** | 2026-10-28, por el dueño: «exacto, ese sí es un diseño correcto, impleméntalo» |
@@ -64,3 +64,5 @@
 - Decisión H6: `ResponsiveList` también pasa a `!p-0` (su cabecera `px-6` y sus filas `p-4 md:px-6` ya traen su propio relleno; con `p-6` de `Card` quedaba doble). Afecta a Aprobaciones, Mis solicitudes, Mis accesos, Inventario, Auditoría y Ejecuciones: validar visualmente.
 - Verificación tras las correcciones (en `frontend/`): typecheck 0, lint 0, vitest 0 (73 archivos, 2528 pruebas), build 0.
 
+
+- 2026-10-28: `auditor-accesibilidad` Aprobado tras corregir H1 (nota en el nombre del indicador), H2 («Ver en aprobaciones»), H3 (esqueleto con 5 filas de 64 px) y `role="list"`; contraste AA medido en claro y oscuro. Pendiente menor: salto residual de ~36 px entre el esqueleto (`p-5` + `space-y-3`) y la tabla cargada en el Panel. Hecha.

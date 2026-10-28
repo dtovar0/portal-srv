@@ -52,7 +52,7 @@ Plan: FNC-037. Requiere: fases 1 y 2, ADR-002 a ADR-006 y preguntas P1 a P14 (fi
 
 ## Fase 7 — Diseño visual
 
-**7B — Marco de administración aprobado (2026-10-28):** DIS-076 Paleta · DIS-077 Iconos · DIS-078 Marco (barra superior y lateral) · DIS-079 Panel, tablas e insignias con icono. Referencia: maqueta aprobada del panel.
+**7B — Marco de administración aprobado (2026-10-28) ✅ (DIS-076 a DIS-079 Hechas):** DIS-076 Paleta · DIS-077 Iconos · DIS-078 Marco (barra superior y lateral) · DIS-079 Panel, tablas e insignias con icono. Referencia: maqueta aprobada del panel.
  ✅ (cerrada 2026-10-28)
 Plan: [PLAN-FASE-7-diseno-visual.md](PLAN-FASE-7-diseno-visual.md). Requiere: ADR-007, contrato `preferencias.md` e insumos del dueño (plan §6). Secuencia: tokens → componentes → plantillas → pantallas.
 
