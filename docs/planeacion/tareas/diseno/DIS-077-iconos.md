@@ -8,7 +8,7 @@
 | **Fase** | 7 (7B, marco de administración) |
 | **Módulo / Área** | componentes |
 | **Prioridad** | Alta |
-| **Estatus** | En revisión |
+| **Estatus** | Hecha |
 | **Rama** | `dis/DIS-077-iconos` |
 | **Creada** | 2026-10-28 |
 | **Aprobada** | 2026-10-28, por el dueño: «exacto, ese sí es un diseño correcto, impleméntalo» |
@@ -50,3 +50,5 @@
 - typecheck 0, lint 0, vitest 70 archivos / 2273 pruebas 0 fallos (incluye accesibilidad y escala), build 0.
 - Revisión visual en `localhost:3000` en claro y oscuro: no realizada (sin pantallas nuevas; se cubre en DIS-078/079).
 - Pendiente: `auditor-accesibilidad` y `revisor`.
+
+- 2026-10-28: `auditor-accesibilidad` Aprobado (decorativo por defecto, `role="img"` con nombre, `currentColor`, usos existentes sin cambio). Observaciones menores: agregar `focusable="false"`; `xl` (22 px) fuera de la escala; un nombre inexistente pinta un svg vacío. Hecha.
