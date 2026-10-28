@@ -37,6 +37,13 @@ export function Marco({ session, children }: { session: Session; children: React
   return (
     // DIS-044: el marco ocupa la ventana; se desplazan el `<main>` y, si no cabe, la barra lateral.
     <div className="flex h-dvh">
+      {/* Primer elemento tabulable: oculto fuera de pantalla hasta recibir foco. */}
+      <a
+        href="#contenido"
+        className="fixed left-4 top-4 z-50 inline-flex min-h-11 -translate-y-20 items-center rounded-control bg-accion px-4 text-sm font-semibold text-texto-sobre-accion outline-none focus:translate-y-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        Saltar al contenido
+      </a>
       <BarraLateral colapsada={colapsada} onAlternar={alternar} contadores={contadores} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -56,6 +63,7 @@ export function Marco({ session, children }: { session: Session; children: React
         {/* Contenedor que se desplaza (`useScrollLock` lo bloquea) y destino alterno del foco
             al cerrar un diálogo cuyo disparador ya no existe (`tabIndex={-1}`, DIS-031). */}
         <main
+          id="contenido"
           tabIndex={-1}
           data-desplazable=""
           className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6 outline-none"

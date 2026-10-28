@@ -12,6 +12,11 @@ import { Icono } from '../icono';
 import { useSession } from '../session-provider';
 import { seccionesVisibles } from './nav-items';
 
+/** «1 pendiente» / «2 pendientes». */
+function textoPendientes(n: number): string {
+  return `${n} ${n === 1 ? 'pendiente' : 'pendientes'}`;
+}
+
 export interface NavPrincipalProps {
   onNavigate?: () => void;
   colapsada?: boolean;
@@ -38,13 +43,14 @@ export function NavPrincipal({ onNavigate, colapsada = false, contadores = {} }:
           {entradas.map((item) => {
             const activo = pathname === item.href;
             const contador = contadores[item.href] ?? 0;
+            const nombre = contador > 0 ? `${item.label}, ${textoPendientes(contador)}` : item.label;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={activo ? 'page' : undefined}
-                aria-label={colapsada ? item.label : undefined}
-                title={colapsada ? item.label : undefined}
+                aria-label={colapsada ? nombre : undefined}
+                title={colapsada ? nombre : undefined}
                 onClick={onNavigate}
                 className={`relative flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary ${
                   colapsada ? 'justify-center' : ''
@@ -63,7 +69,7 @@ export function NavPrincipal({ onNavigate, colapsada = false, contadores = {} }:
                     }`}
                   >
                     <span aria-hidden="true">{contador}</span>
-                    <span className="sr-only">{`, ${contador} pendientes`}</span>
+                    <span className="sr-only">{`, ${textoPendientes(contador)}`}</span>
                   </span>
                 ) : null}
               </Link>

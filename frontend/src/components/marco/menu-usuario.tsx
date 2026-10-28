@@ -31,6 +31,7 @@ export function MenuUsuario({
   const boton = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const idMenu = useId();
+  const alAbrir = useRef<'primero' | 'ultimo'>('primero');
 
   const items = () => Array.from(menu.current?.querySelectorAll<HTMLElement>(ITEMS) ?? []);
 
@@ -41,7 +42,10 @@ export function MenuUsuario({
 
   // Al abrir, el foco va al primer elemento.
   useEffect(() => {
-    if (abierto) items()[0]?.focus();
+    if (!abierto) return;
+    const lista = items();
+    (alAbrir.current === 'ultimo' ? lista[lista.length - 1] : lista[0])?.focus();
+    alAbrir.current = 'primero';
   }, [abierto]);
 
   // Clic fuera cierra sin robar el foco.
@@ -76,8 +80,9 @@ export function MenuUsuario({
   }
 
   function alTeclearBoton(evento: React.KeyboardEvent) {
-    if (evento.key === 'ArrowDown' && !abierto) {
+    if ((evento.key === 'ArrowDown' || evento.key === 'ArrowUp') && !abierto) {
       evento.preventDefault();
+      alAbrir.current = evento.key === 'ArrowUp' ? 'ultimo' : 'primero';
       setAbierto(true);
     }
   }

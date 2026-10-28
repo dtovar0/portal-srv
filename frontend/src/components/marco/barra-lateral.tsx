@@ -10,6 +10,9 @@
 import { Icono } from '../icono';
 import { NavPrincipal } from './nav-principal';
 
+/** `id` del `<aside>`: lo referencian los botones de colapsar (`aria-controls`). */
+export const ID_BARRA_LATERAL = 'barra-lateral';
+
 export function BarraLateral({
   colapsada,
   onAlternar,
@@ -22,6 +25,7 @@ export function BarraLateral({
   const etiqueta = colapsada ? 'Expandir menú' : 'Colapsar menú';
   return (
     <aside
+      id={ID_BARRA_LATERAL}
       aria-label="Menú lateral"
       data-colapsada={colapsada}
       className={`hidden shrink-0 flex-col border-r border-borde bg-barra-lateral transition-[width] duration-media motion-reduce:transition-none md:flex ${
@@ -49,6 +53,7 @@ export function BarraLateral({
           type="button"
           onClick={onAlternar}
           aria-expanded={!colapsada}
+          aria-controls={ID_BARRA_LATERAL}
           aria-label={etiqueta}
           title={colapsada ? etiqueta : undefined}
           className={`flex min-h-11 w-full items-center gap-3 rounded-control border border-borde bg-superficie px-3.5 text-sm font-medium text-navegacion outline-none transition-colors hover:bg-surface-container focus-visible:ring-2 focus-visible:ring-primary ${

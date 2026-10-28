@@ -8,7 +8,7 @@
 | **Fase** | 7 (7B, marco de administración) |
 | **Módulo / Área** | marco |
 | **Prioridad** | Alta |
-| **Estatus** | En revisión |
+| **Estatus** | Hecha |
 | **Rama** | `dis/DIS-078-marco-admin` |
 | **Creada** | 2026-10-28 |
 | **Aprobada** | 2026-10-28, por el dueño: «exacto, ese sí es un diseño correcto, impleméntalo» |
@@ -75,3 +75,6 @@
 ## Bitácora
 - 2026-10-28: implementación completa en la rama; En revisión. Genera FNC-133 (Propuesta).
 - 2026-10-28: alineado con la maqueta (marca, regla de Gestión con prueba, aspecto del buscador). typecheck, lint, vitest (72 archivos, 2439 pruebas) y build en 0.
+- 2026-10-28: auditoría de accesibilidad «Requiere cambios» (contraste sin fallas). Corregido con prueba primero: (1) contador anunciado también colapsado («Aprobaciones, 1 pendiente», `title` igual, plural correcto); (2) enlace «Saltar al contenido» como primer tabulable y `id="contenido"` en `<main>`; (3) `aria-controls` de los dos botones de colapsar al `<aside>`; (4) la paleta anuncia «N resultados» (región `aria-live`); (5) `aria-expanded` del combobox según haya resultados; (6) ArrowUp en el botón del menú de usuario abre y enfoca el último ítem. Solo en `components/marco/`. typecheck, lint, vitest (72 archivos, 2445 pruebas) y build en 0. Pendiente nueva pasada de `auditor-accesibilidad`.
+
+- 2026-10-28: `auditor-accesibilidad` Aprobado tras corregir 3 fallas (contador mudo con menú colapsado, «Saltar al contenido», `aria-controls`) y 3 mejoras (resultados anunciados en la paleta, `aria-expanded` dinámico, ArrowUp en menú de usuario) en `1260638`. Contraste AA medido en claro y oscuro en todo el marco. Hecha.
