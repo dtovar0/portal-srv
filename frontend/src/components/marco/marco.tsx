@@ -47,7 +47,6 @@ export function Marco({ session, children }: { session: Session; children: React
       </a>
       <BarraLateral
         colapsada={colapsada}
-        onAlternar={alternar}
         contadores={contadores}
         session={session}
         segunSistema={tema === 'sistema'}

@@ -121,18 +121,18 @@ describe('Barra lateral', () => {
     expect(actuales[0].className).toContain('text-activo-texto');
   });
 
-  it('colapsa y expande con el botón de abajo, sin perder el nombre accesible', async () => {
+  it('colapsa y expande con el ☰ de la barra superior, sin perder el nombre accesible', async () => {
     await montar('administrador');
     const aside = document.querySelector('aside')!;
     expect(aside.className).toContain('w-lateral');
     expect(aside.className).not.toContain('w-lateral-colapsada');
 
-    const boton = lateral().getByRole('button', { name: 'Colapsar menú' });
+    const boton = barra().getByRole('button', { name: 'Colapsar menú' });
     expect(boton.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(boton);
 
     expect(aside.className).toContain('w-lateral-colapsada');
-    const expandir = lateral().getByRole('button', { name: 'Expandir menú' });
+    const expandir = barra().getByRole('button', { name: 'Expandir menú' });
     expect(expandir.getAttribute('aria-expanded')).toBe('false');
     // Colapsada: solo iconos, con nombre accesible y title.
     const catalogo = lateral().getByRole('link', { name: 'Catálogo' });
@@ -163,7 +163,7 @@ describe('Barra lateral', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('bloqueado'); });
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('bloqueado'); });
     await montar('administrador');
-    fireEvent.click(lateral().getByRole('button', { name: 'Colapsar menú' }));
+    fireEvent.click(barra().getByRole('button', { name: 'Colapsar menú' }));
     expect(document.querySelector('aside')!.className).toContain('w-lateral-colapsada');
     vi.restoreAllMocks();
   });
@@ -413,21 +413,15 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
     expect(barra().getByRole('button', { name: /Ayuda/ })).toBeTruthy();
   });
 
-  it('expandida: tarjeta con avatar, nombre y rol, y el botón compacto de colapsar a su lado', async () => {
+  it('expandida: tarjeta con avatar, nombre y rol, a lo ancho del pie y sin botón de colapsar', async () => {
     await montar('admin_area');
     const tarjeta = lateral().getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
     expect(tarjeta.textContent).toContain('AP');
     expect(tarjeta.textContent).toContain('Ana Pérez');
     expect(tarjeta.textContent).toContain('Administrador de área');
     expect(tarjeta.getAttribute('aria-haspopup')).toBe('menu');
-    const colapsar = lateral().getByRole('button', { name: 'Colapsar menú' });
-    expect(colapsar.textContent).toBe('');
-    expect(colapsar.getAttribute('aria-expanded')).toBe('true');
-    expect(colapsar.getAttribute('aria-controls')).toBe(document.querySelector('aside')!.id);
-    expect(colapsar.className).toContain('min-w-11');
-    expect(colapsar.className).toContain('min-h-11');
-    // Misma fila del pie.
-    expect(colapsar.parentElement).toBe(tarjeta.parentElement!.parentElement);
+    expect(lateral().queryByRole('button', { name: /(Colapsar|Expandir) menú/ })).toBeNull();
+    expect(lateral().getAllByRole('button')).toEqual([tarjeta]);
   });
 
   it('el menú se abre hacia arriba de la tarjeta', async () => {
@@ -442,16 +436,16 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
     expect(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' })).toBeTruthy();
   });
 
-  it('colapsada: solo el avatar con nombre accesible y title, expandir debajo, menú arriba y a la derecha', async () => {
+  it('colapsada: solo el avatar con nombre accesible y title, sin botón de expandir, menú arriba y a la derecha', async () => {
     window.localStorage.setItem(CLAVE_MENU_COLAPSADO, '1');
     await montar('admin_area');
     const avatar = lateral().getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
     expect(avatar.getAttribute('title')).toBe('Menú de usuario: Ana Pérez');
     expect(avatar.textContent).toBe('AP');
     expect(avatar.className).toContain('min-w-11');
-    const expandir = lateral().getByRole('button', { name: 'Expandir menú' });
-    expect(expandir.getAttribute('aria-expanded')).toBe('false');
-    expect(avatar.compareDocumentPosition(expandir) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(lateral().queryByRole('button', { name: /(Colapsar|Expandir) menú/ })).toBeNull();
+    expect(lateral().getAllByRole('button')).toEqual([avatar]);
+    expect(barra().getByRole('button', { name: 'Expandir menú' }).getAttribute('aria-expanded')).toBe('false');
 
     fireEvent.click(avatar);
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
@@ -501,7 +495,7 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
       const expandido = await lateral().findByRole('link', { name: new RegExp(`Aprobaciones.*${esperado}$`) });
       expect(expandido.textContent).not.toMatch(new RegExp(`${n} ${n === 1 ? 'pendientes' : 'pendiente'}\\b`));
 
-      fireEvent.click(lateral().getByRole('button', { name: 'Colapsar menú' }));
+      fireEvent.click(barra().getByRole('button', { name: 'Colapsar menú' }));
       const colapsado = lateral().getByRole('link', { name: `Aprobaciones, ${esperado}` });
       expect(colapsado.getAttribute('title')).toBe(`Aprobaciones, ${esperado}`);
     },
@@ -519,12 +513,12 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
     expect(salto.className).toContain('focus:translate-y-0');
   });
 
-  it('los dos botones de colapsar controlan el aside', async () => {
+  it('el ☰ de la barra superior controla el aside y la barra lateral no tiene botón de colapsar', async () => {
     await montar('administrador');
     const id = document.querySelector('aside')!.id;
     expect(id).toBeTruthy();
-    expect(lateral().getByRole('button', { name: 'Colapsar menú' }).getAttribute('aria-controls')).toBe(id);
     expect(barra().getByRole('button', { name: 'Colapsar menú' }).getAttribute('aria-controls')).toBe(id);
+    expect(lateral().queryByRole('button', { name: /(Colapsar|Expandir) menú/ })).toBeNull();
   });
 
   it('la paleta anuncia el número de resultados y aria-expanded sigue a la lista', async () => {

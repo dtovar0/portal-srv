@@ -1,37 +1,34 @@
 'use client';
 
 /**
- * Barra lateral de escritorio (DIS-078): logo y nombre, navegación por secciones y tarjeta de
- * usuario con su menú y el botón de colapsar abajo (DIS-080). 264 px expandida y 76 px colapsada (tokens `--marco-lateral-*`);
+ * Barra lateral de escritorio (DIS-078): logo y nombre, navegación por secciones y, al pie, solo el
+ * menú de usuario (DIS-080); no tiene botón de colapsar (DIS-081): se colapsa con el ☰ de la barra
+ * superior. 264 px expandida y 76 px colapsada (tokens `--marco-lateral-*`);
  * el ancho solo depende del estado, así que nada salta al cargar. Bajo `md` no se muestra:
  * el cajón móvil la sustituye.
  */
 
 import { Icono } from '../icono';
 import type { Session } from '@/lib/types';
-import { BotonIcono } from './boton-icono';
 import { MenuUsuario } from './menu-usuario';
 import { NavPrincipal } from './nav-principal';
 
-/** `id` del `<aside>`: lo referencian los botones de colapsar (`aria-controls`). */
+/** `id` del `<aside>`: lo referencia el ☰ de la barra superior (`aria-controls`). */
 export const ID_BARRA_LATERAL = 'barra-lateral';
 
 export function BarraLateral({
   colapsada,
-  onAlternar,
   contadores,
   session,
   segunSistema,
   onSegunSistema,
 }: {
   colapsada: boolean;
-  onAlternar: () => void;
   contadores?: Readonly<Record<string, number>>;
   session: Session;
   segunSistema: boolean;
   onSegunSistema: () => void;
 }) {
-  const etiqueta = colapsada ? 'Expandir menú' : 'Colapsar menú';
   return (
     <aside
       id={ID_BARRA_LATERAL}
@@ -58,19 +55,9 @@ export function BarraLateral({
       </div>
 
       <div
-        className={`flex shrink-0 gap-2 border-t border-borde p-3 ${
-          colapsada ? 'flex-col items-center' : 'items-center'
-        }`}
+        className={`flex shrink-0 items-center border-t border-borde p-3 ${colapsada ? 'justify-center' : ''}`}
       >
         <MenuUsuario session={session} segunSistema={segunSistema} onSegunSistema={onSegunSistema} colapsada={colapsada} />
-        <BotonIcono
-          icono="colapsar"
-          etiqueta={etiqueta}
-          aria-expanded={!colapsada}
-          aria-controls={ID_BARRA_LATERAL}
-          onClick={onAlternar}
-          className={colapsada ? '[&_svg]:rotate-180' : ''}
-        />
       </div>
     </aside>
   );
