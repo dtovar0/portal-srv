@@ -401,3 +401,64 @@ describe('Buscador global', () => {
     expect(screen.getByRole('dialog', { name: 'Buscador global' })).toBeTruthy();
   });
 });
+
+describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
+  it.each([[1, 'pendiente'], [2, 'pendientes']])(
+    'el contador de aprobaciones (%i) se anuncia con menú expandido y colapsado, con plural correcto',
+    async (n, palabra) => {
+      resumen.mockResolvedValue({ scope: 'global', pending_approvals: n });
+      await montar('administrador');
+      const esperado = `${n} ${palabra}`;
+      const expandido = await lateral().findByRole('link', { name: new RegExp(`Aprobaciones.*${esperado}$`) });
+      expect(expandido.textContent).not.toMatch(new RegExp(`${n} ${n === 1 ? 'pendientes' : 'pendiente'}\\b`));
+
+      fireEvent.click(lateral().getByRole('button', { name: 'Colapsar menú' }));
+      const colapsado = lateral().getByRole('link', { name: `Aprobaciones, ${esperado}` });
+      expect(colapsado.getAttribute('title')).toBe(`Aprobaciones, ${esperado}`);
+    },
+  );
+
+  it('el primer elemento tabulable es «Saltar al contenido» y apunta al main', async () => {
+    await montar('usuario');
+    const salto = screen.getByRole('link', { name: 'Saltar al contenido' });
+    expect(salto.getAttribute('href')).toBe('#contenido');
+    expect(screen.getByRole('main').id).toBe('contenido');
+    const primero = Array.from(document.querySelectorAll<HTMLElement>('a[href], button')).find(
+      (el) => !el.closest('[hidden]'),
+    );
+    expect(primero).toBe(salto);
+    expect(salto.className).toContain('focus:translate-y-0');
+  });
+
+  it('los dos botones de colapsar controlan el aside', async () => {
+    await montar('administrador');
+    const id = document.querySelector('aside')!.id;
+    expect(id).toBeTruthy();
+    expect(lateral().getByRole('button', { name: 'Colapsar menú' }).getAttribute('aria-controls')).toBe(id);
+    expect(barra().getByRole('button', { name: 'Colapsar menú' }).getAttribute('aria-controls')).toBe(id);
+  });
+
+  it('la paleta anuncia el número de resultados y aria-expanded sigue a la lista', async () => {
+    await montar('usuario');
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+    const dialogo = screen.getByRole('dialog', { name: 'Buscador global' });
+    const campo = within(dialogo).getByRole('combobox');
+    const vivo = () => dialogo.querySelector('[aria-live="polite"]')!;
+    expect(vivo().textContent).toMatch(/^\d+ resultados$/);
+    expect(campo.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.change(campo, { target: { value: 'auditoria' } });
+    expect(vivo().textContent).toBe('1 resultado');
+    fireEvent.change(campo, { target: { value: 'zzzz' } });
+    expect(vivo().textContent).toBe('Sin resultados');
+    expect(campo.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('ArrowUp en el botón del menú de usuario lo abre y enfoca el último ítem', async () => {
+    await montar('usuario');
+    const boton = barra().getByRole('button', { name: /Menú de usuario/ });
+    boton.focus();
+    fireEvent.keyDown(boton, { key: 'ArrowUp' });
+    const menu = screen.getByRole('menu');
+    expect(document.activeElement).toBe(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' }));
+  });
+});

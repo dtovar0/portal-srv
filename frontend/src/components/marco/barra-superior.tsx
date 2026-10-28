@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Icono } from '../icono';
 import type { Session } from '@/lib/types';
 import { AyudaMarco } from './ayuda-marco';
+import { ID_BARRA_LATERAL } from './barra-lateral';
 import { BotonIcono, CLASE_BOTON_ICONO } from './boton-icono';
 import { BuscadorGlobal } from './buscador-global';
 import type { Comando } from './comandos';
@@ -51,6 +52,7 @@ export function BarraSuperior({
         icono="menu"
         etiqueta={etiquetaMenu}
         aria-expanded={!colapsada}
+        aria-controls={ID_BARRA_LATERAL}
         onClick={onAlternarMenu}
         className="hidden md:inline-flex"
       />

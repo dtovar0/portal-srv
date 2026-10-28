@@ -61,7 +61,7 @@ export function PaletaComandos({
       <TextInput
         type="text"
         role="combobox"
-        aria-expanded="true"
+        aria-expanded={resultados.length > 0}
         aria-controls={idLista}
         aria-autocomplete="list"
         aria-activedescendant={resultados.length > 0 ? idOpcion(actual) : undefined}
@@ -91,8 +91,14 @@ export function PaletaComandos({
           </li>
         ))}
       </ul>
+      {/* Anuncia el número de resultados a lectores de pantalla (región viva, oculta). */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {resultados.length === 0
+          ? 'Sin resultados'
+          : `${resultados.length} ${resultados.length === 1 ? 'resultado' : 'resultados'}`}
+      </p>
       {resultados.length === 0 ? (
-        <p role="status" className="text-sm text-texto-secundario">
+        <p aria-hidden="true" className="text-sm text-texto-secundario">
           Sin resultados para «{consulta.trim()}».
         </p>
       ) : null}
