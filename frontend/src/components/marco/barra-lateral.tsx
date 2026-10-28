@@ -1,13 +1,16 @@
 'use client';
 
 /**
- * Barra lateral de escritorio (DIS-078): logo y nombre, navegación por secciones y botón
- * «Colapsar menú» abajo. 264 px expandida y 76 px colapsada (tokens `--marco-lateral-*`);
+ * Barra lateral de escritorio (DIS-078): logo y nombre, navegación por secciones y tarjeta de
+ * usuario con su menú y el botón de colapsar abajo (DIS-080). 264 px expandida y 76 px colapsada (tokens `--marco-lateral-*`);
  * el ancho solo depende del estado, así que nada salta al cargar. Bajo `md` no se muestra:
  * el cajón móvil la sustituye.
  */
 
 import { Icono } from '../icono';
+import type { Session } from '@/lib/types';
+import { BotonIcono } from './boton-icono';
+import { MenuUsuario } from './menu-usuario';
 import { NavPrincipal } from './nav-principal';
 
 /** `id` del `<aside>`: lo referencian los botones de colapsar (`aria-controls`). */
@@ -17,10 +20,16 @@ export function BarraLateral({
   colapsada,
   onAlternar,
   contadores,
+  session,
+  segunSistema,
+  onSegunSistema,
 }: {
   colapsada: boolean;
   onAlternar: () => void;
   contadores?: Readonly<Record<string, number>>;
+  session: Session;
+  segunSistema: boolean;
+  onSegunSistema: () => void;
 }) {
   const etiqueta = colapsada ? 'Expandir menú' : 'Colapsar menú';
   return (
@@ -48,21 +57,20 @@ export function BarraLateral({
         <NavPrincipal colapsada={colapsada} contadores={contadores} />
       </div>
 
-      <div className="shrink-0 border-t border-borde p-3">
-        <button
-          type="button"
-          onClick={onAlternar}
+      <div
+        className={`flex shrink-0 gap-2 border-t border-borde p-3 ${
+          colapsada ? 'flex-col items-center' : 'items-center'
+        }`}
+      >
+        <MenuUsuario session={session} segunSistema={segunSistema} onSegunSistema={onSegunSistema} colapsada={colapsada} />
+        <BotonIcono
+          icono="colapsar"
+          etiqueta={etiqueta}
           aria-expanded={!colapsada}
           aria-controls={ID_BARRA_LATERAL}
-          aria-label={etiqueta}
-          title={colapsada ? etiqueta : undefined}
-          className={`flex min-h-11 w-full items-center gap-3 rounded-control border border-borde bg-superficie px-3.5 text-sm font-medium text-navegacion outline-none transition-colors hover:bg-surface-container focus-visible:ring-2 focus-visible:ring-primary ${
-            colapsada ? 'justify-center' : ''
-          }`}
-        >
-          <Icono nombre="colapsar" className={colapsada ? 'rotate-180' : ''} />
-          {colapsada ? null : <span>Colapsar menú</span>}
-        </button>
+          onClick={onAlternar}
+          className={colapsada ? '[&_svg]:rotate-180' : ''}
+        />
       </div>
     </aside>
   );

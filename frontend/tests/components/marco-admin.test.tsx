@@ -1,6 +1,6 @@
 /**
  * DIS-078: marco de administración. Barra lateral colapsable, barra superior (buscador global con
- * paleta de comandos, tema, notificaciones, ayuda, menú de usuario) y cajón móvil.
+ * paleta de comandos, tema, notificaciones, ayuda; menú de usuario en el pie de la barra lateral, DIS-080) y cajón móvil.
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -249,7 +249,7 @@ describe('Barra superior', () => {
 describe('Menú de usuario', () => {
   async function abrirMenu() {
     await montar('admin_area');
-    const boton = barra().getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
+    const boton = lateral().getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
     return boton;
   }
 
@@ -402,6 +402,95 @@ describe('Buscador global', () => {
   });
 });
 
+describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
+  it('ya no está en la barra superior, que conserva ☰, ruta, buscador, tema, notificaciones y ayuda', async () => {
+    await montar('administrador');
+    expect(barra().queryByRole('button', { name: /Menú de usuario/ })).toBeNull();
+    expect(barra().getByRole('button', { name: 'Colapsar menú' })).toBeTruthy();
+    expect(barra().getAllByRole('button', { name: /^Buscar( \(|$)/ }).length).toBeGreaterThan(0);
+    expect(barra().getByRole('button', { name: 'Cambiar a tema oscuro' })).toBeTruthy();
+    expect(barra().getByRole('link', { name: 'Notificaciones' })).toBeTruthy();
+    expect(barra().getByRole('button', { name: /Ayuda/ })).toBeTruthy();
+  });
+
+  it('expandida: tarjeta con avatar, nombre y rol, y el botón compacto de colapsar a su lado', async () => {
+    await montar('admin_area');
+    const tarjeta = lateral().getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
+    expect(tarjeta.textContent).toContain('AP');
+    expect(tarjeta.textContent).toContain('Ana Pérez');
+    expect(tarjeta.textContent).toContain('Administrador de área');
+    expect(tarjeta.getAttribute('aria-haspopup')).toBe('menu');
+    const colapsar = lateral().getByRole('button', { name: 'Colapsar menú' });
+    expect(colapsar.textContent).toBe('');
+    expect(colapsar.getAttribute('aria-expanded')).toBe('true');
+    expect(colapsar.getAttribute('aria-controls')).toBe(document.querySelector('aside')!.id);
+    expect(colapsar.className).toContain('min-w-11');
+    expect(colapsar.className).toContain('min-h-11');
+    // Misma fila del pie.
+    expect(colapsar.parentElement).toBe(tarjeta.parentElement!.parentElement);
+  });
+
+  it('el menú se abre hacia arriba de la tarjeta', async () => {
+    await montar('admin_area');
+    const tarjeta = lateral().getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
+    fireEvent.click(tarjeta);
+    const menu = screen.getByRole('menu', { name: 'Cuenta' });
+    expect(menu.className).toContain('bottom-full');
+    expect(menu.className).not.toContain('top-full');
+    expect(tarjeta.getAttribute('aria-controls')).toBe(menu.id);
+    expect(within(menu).getByRole('menuitemcheckbox', { name: 'Tema: según el sistema' })).toBeTruthy();
+    expect(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' })).toBeTruthy();
+  });
+
+  it('colapsada: solo el avatar con nombre accesible y title, expandir debajo, menú arriba y a la derecha', async () => {
+    window.localStorage.setItem(CLAVE_MENU_COLAPSADO, '1');
+    await montar('admin_area');
+    const avatar = lateral().getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
+    expect(avatar.getAttribute('title')).toBe('Menú de usuario: Ana Pérez');
+    expect(avatar.textContent).toBe('AP');
+    expect(avatar.className).toContain('min-w-11');
+    const expandir = lateral().getByRole('button', { name: 'Expandir menú' });
+    expect(expandir.getAttribute('aria-expanded')).toBe('false');
+    expect(avatar.compareDocumentPosition(expandir) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(avatar);
+    const menu = screen.getByRole('menu', { name: 'Cuenta' });
+    expect(menu.className).toContain('bottom-0');
+    expect(menu.className).toContain('left-full');
+    expect(menu.className).not.toContain('top-full');
+  });
+
+  it('teclado: ArrowDown/ArrowUp abren, Escape devuelve el foco y Tab cierra', async () => {
+    await montar('usuario');
+    const boton = lateral().getByRole('button', { name: /Menú de usuario/ });
+    boton.focus();
+    fireEvent.keyDown(boton, { key: 'ArrowDown' });
+    const menu = screen.getByRole('menu');
+    const tema = within(menu).getByRole('menuitemcheckbox');
+    expect(document.activeElement).toBe(tema);
+    fireEvent.keyDown(tema, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(boton);
+
+    fireEvent.keyDown(boton, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Cerrar sesión' }));
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('en el cajón móvil, la tarjeta de usuario va al pie', async () => {
+    await montar('usuario');
+    fireEvent.click(barra().getByRole('button', { name: 'Menú' }));
+    const cajon = screen.getByRole('dialog', { name: 'Menú' });
+    const tarjeta = within(cajon).getByRole('button', { name: 'Menú de usuario: Ana Pérez' });
+    const enlaces = within(cajon).getAllByRole('link');
+    expect(enlaces[enlaces.length - 1].compareDocumentPosition(tarjeta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(tarjeta);
+    expect(within(cajon).getByRole('menu', { name: 'Cuenta' }).className).toContain('bottom-full');
+  });
+});
+
 describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
   it.each([[1, 'pendiente'], [2, 'pendientes']])(
     'el contador de aprobaciones (%i) se anuncia con menú expandido y colapsado, con plural correcto',
@@ -455,7 +544,7 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
 
   it('ArrowUp en el botón del menú de usuario lo abre y enfoca el último ítem', async () => {
     await montar('usuario');
-    const boton = barra().getByRole('button', { name: /Menú de usuario/ });
+    const boton = lateral().getByRole('button', { name: /Menú de usuario/ });
     boton.focus();
     fireEvent.keyDown(boton, { key: 'ArrowUp' });
     const menu = screen.getByRole('menu');

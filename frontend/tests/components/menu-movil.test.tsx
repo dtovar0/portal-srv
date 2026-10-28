@@ -134,6 +134,8 @@ describe('Menú móvil', () => {
     const enfocables = [
       within(panel).getByRole('button', { name: 'Cerrar' }),
       ...within(panel).getAllByRole('link'),
+      // DIS-080: la tarjeta de usuario es el último elemento enfocable del cajón.
+      within(panel).getByRole('button', { name: /^Menú de usuario/ }),
     ];
     const primero = enfocables[0];
     const ultimo = enfocables[enfocables.length - 1];
