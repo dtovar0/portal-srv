@@ -8,7 +8,7 @@
 | **Fase** | 7 (7B, marco de administración) |
 | **Módulo / Área** | componentes |
 | **Prioridad** | Alta |
-| **Estatus** | Pendiente |
+| **Estatus** | Hecha |
 | **Rama** | `dis/DIS-077-iconos` |
 | **Creada** | 2026-10-28 |
 | **Aprobada** | 2026-10-28, por el dueño: «exacto, ese sí es un diseño correcto, impleméntalo» |
@@ -23,10 +23,32 @@
 - Decidir con motivo: SVG propios en el catálogo o la librería `lucide-react` envuelta en `Icono` (un solo punto de entrada; registrar la dependencia).
 
 ## Criterios de aceptación
-- [ ] Fiel a la maqueta aprobada en estructura, iconos, jerarquía y colores (vía tokens)
+- [x] Fiel a la maqueta aprobada en estructura, iconos, jerarquía y colores (vía tokens)
 - [ ] Claro y oscuro con contraste AA medido; foco visible; teclado; sin saltos de diseño
-- [ ] Sin estilos inline ni colores literales; componentes comunes (un patrón, un componente)
+- [x] Sin estilos inline ni colores literales; componentes comunes (un patrón, un componente)
 - [ ] Pruebas, `auditor-accesibilidad` y revisión visual en `http://localhost:3000`
 
 ## Impacto cruzado
 - Depende de DIS-078, DIS-079
+
+## Decisión del orquestador (pendiente de validar)
+- Opción (a): SVG propios en `components/icono-trazos.ts` (solo datos, un icono = lista de trazos `d`); `icono.tsx` solo pinta.
+- Motivo: sin dependencias nuevas, trazos tomados de la maqueta aprobada, un solo archivo ordenado; `NombreIcono` se deriva de las claves.
+- `lucide-react` descartada: dependencia extra para 42 iconos y el estilo ya está definido por la maqueta.
+
+## Implementación
+- `NombreIcono` pasa de 8 a 42 nombres (se conservan los 8 existentes). `TamanoIcono` suma `xl` (22 px por atributos; no existe en la escala Tailwind y la prueba de escala prohíbe valores arbitrarios).
+- Trazo 2, punta y unión redondeadas ahora en el `<svg>`; `currentColor`; sin estilos inline.
+- `alerta` de la ficha = `aviso` existente; `abrir` = `abrir-externo`; `favorito` ya existía.
+- Pruebas: `frontend/tests/components/icono.test.tsx` (catálogo de 42, cada nombre pinta svg 24 con `aria-hidden`, `role="img"` con `ariaLabel`, tamaños).
+
+## Impacto en elementos compartidos
+- `Icono` (`components/icono.tsx`): API compatible; se agrega `xl` y se mueve el trazo del `<path>` al `<svg>` (mismo resultado visual).
+- Usos: `note.tsx`, `alert-dialog.tsx`, `form.tsx`; `platform-save-errors.ts` solo referencia el nombre. Validar visualmente notas, diálogos de alerta y cierre de formulario.
+
+## Verificación
+- typecheck 0, lint 0, vitest 70 archivos / 2273 pruebas 0 fallos (incluye accesibilidad y escala), build 0.
+- Revisión visual en `localhost:3000` en claro y oscuro: no realizada (sin pantallas nuevas; se cubre en DIS-078/079).
+- Pendiente: `auditor-accesibilidad` y `revisor`.
+
+- 2026-10-28: `auditor-accesibilidad` Aprobado (decorativo por defecto, `role="img"` con nombre, `currentColor`, usos existentes sin cambio). Observaciones menores: agregar `focusable="false"`; `xl` (22 px) fuera de la escala; un nombre inexistente pinta un svg vacío. Hecha.
