@@ -51,6 +51,15 @@ const SEMANTICOS_ESPERADOS = [
   '--color-neutro-tenue',
   '--color-neutro-borde',
   '--color-neutro-texto',
+  '--color-barra-lateral',
+  '--color-entrada-fondo',
+  '--color-tabla-encabezado',
+  '--color-navegacion',
+  '--color-activo-fondo',
+  '--color-activo-texto',
+  '--color-exito-fondo',
+  '--color-aviso-fondo',
+  '--color-peligro-fondo',
 ];
 
 describe('DIS-055: Completitud de tokens semánticos', () => {

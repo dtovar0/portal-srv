@@ -1,6 +1,6 @@
 /*
  * ╔══════════════════════════════════════════════════════════════╗
- * ║         NEXUS DESIGN TOKENS — v3.0 (Fase 7: DIS-055)        ║
+ * ║         NEXUS DESIGN TOKENS — v3.1 (Fase 7B: DIS-076)        ║
  * ║                                                              ║
  * ║  Arquitectura por capas (ADR-007):                           ║
  * ║  1. Primitivos: paleta tonal neutra y de acentos (R G B).    ║
@@ -74,6 +74,47 @@
   --p-cian-500:    6 182 212;
   --p-cian-700:    14 116 144;
 
+  /* Paleta del diseño aprobado (DIS-076, 2026-10-28) */
+  /* Gris del tema claro */
+  --p-gris-50:  249 250 251;
+  --p-gris-100: 245 246 248;
+  --p-gris-200: 228 231 236;
+  --p-gris-300: 208 213 221;
+  --p-gris-400: 152 162 179;
+  --p-gris-500: 130 138 154;
+  --p-gris-600: 97 108 128;
+  --p-gris-700: 71 84 103;
+  --p-gris-800: 52 64 84;
+  --p-gris-900: 16 24 40;
+
+  /* Noche (neutros del tema oscuro) */
+  --p-noche-50:  245 245 246;
+  --p-noche-200: 206 207 210;
+  --p-noche-300: 148 150 156;
+  --p-noche-500: 107 114 128;
+  --p-noche-700: 38 43 54;
+  --p-noche-800: 28 34 46;
+  --p-noche-850: 22 27 38;
+  --p-noche-900: 17 22 33;
+  --p-noche-950: 12 17 29;
+
+  /* Activo (selección de navegación) y estados, claro y oscuro */
+  --p-activo-fondo-claro:  239 244 255;
+  --p-activo-fondo-oscuro: 26 37 71;
+  --p-activo-texto-oscuro: 164 194 255;
+  --p-ambar-fondo-claro:  255 250 235;
+  --p-ambar-texto-claro:  181 71 8;
+  --p-ambar-fondo-oscuro: 58 36 8;
+  --p-ambar-texto-oscuro: 254 200 75;
+  --p-verde-fondo-claro:  236 253 243;
+  --p-verde-texto-claro:  6 118 71;
+  --p-verde-fondo-oscuro: 6 48 28;
+  --p-verde-texto-oscuro: 117 224 167;
+  --p-rojo-fondo-claro:  254 243 242;
+  --p-rojo-texto-claro:  180 35 24;
+  --p-rojo-fondo-oscuro: 61 14 10;
+  --p-rojo-texto-oscuro: 253 162 155;
+
 
   /* ─────────────────────────────────────────────
      CAPA 2: SEMÁNTICOS (MODO CLARO)
@@ -81,49 +122,58 @@
   ───────────────────────────────────────────── */
 
   /* Superficie */
-  --color-fondo: 248 250 252;
-  --color-superficie: 255 255 255;
-  --color-superficie-elevada: 255 255 255;
-  --color-superficie-hundida: 241 245 249;
+  --color-fondo: var(--p-gris-100);
+  --color-superficie: var(--p-blanco);
+  --color-superficie-elevada: var(--p-blanco);
+  --color-superficie-hundida: var(--p-gris-50);
+  --color-barra-lateral: var(--p-blanco);
+  --color-entrada-fondo: var(--p-gris-50);
+  --color-tabla-encabezado: var(--p-gris-50);
   --color-velo: 0 0 0 / 0.6;
 
   /* Texto */
-  --color-texto: 15 23 42;
-  --color-texto-secundario: 51 65 85;
-  --color-texto-tenue: 97 112 135;
+  --color-texto: var(--p-gris-900);
+  --color-texto-secundario: var(--p-gris-700);
+  --color-texto-tenue: var(--p-gris-600);
   --color-texto-sobre-accion: 255 255 255;
   --color-texto-sobre-peligro: 255 255 255;
-  --color-texto-enlace: 29 78 216;
+  --color-texto-enlace: var(--p-marca-700);
+  --color-navegacion: var(--p-gris-800);
+  --color-activo-fondo: var(--p-activo-fondo-claro);
+  --color-activo-texto: var(--p-marca-700);
 
   /* Borde */
-  --color-borde: 131 145 165;
-  --color-borde-sutil: 226 232 240;
-  --color-borde-fuerte: 100 116 139;
+  --color-borde: var(--p-gris-500);
+  --color-borde-sutil: var(--p-gris-200);
+  --color-borde-fuerte: var(--p-gris-600);
 
   /* Acción / Primario */
-  --color-accion: 37 99 235;
-  --color-accion-hover: 29 78 216;
-  --color-accion-presionada: 30 64 175;
-  --color-accion-tenue: 37 99 235 / 0.1;
-  --color-accion-texto: 29 78 216;
+  --color-accion: var(--p-marca-700);
+  --color-accion-hover: var(--p-marca-800);
+  --color-accion-presionada: var(--p-marca-900);
+  --color-accion-tenue: 29 78 216 / 0.1;
+  --color-accion-texto: var(--p-marca-700);
 
   /* Estado: Éxito */
   --color-exito-relleno: 5 150 105;
   --color-exito-tenue: 5 150 105 / 0.1;
   --color-exito-borde: 5 150 105 / 0.25;
-  --color-exito-texto: 4 120 87;
+  --color-exito-texto: var(--p-verde-texto-claro);
+  --color-exito-fondo: var(--p-verde-fondo-claro);
 
   /* Estado: Aviso */
   --color-aviso-relleno: 245 158 11;
   --color-aviso-tenue: 217 119 6 / 0.1;
   --color-aviso-borde: 217 119 6 / 0.25;
-  --color-aviso-texto: 146 64 14;
+  --color-aviso-texto: var(--p-ambar-texto-claro);
+  --color-aviso-fondo: var(--p-ambar-fondo-claro);
 
   /* Estado: Peligro / Error */
   --color-peligro-relleno: 220 38 38;
   --color-peligro-tenue: 225 29 72 / 0.1;
   --color-peligro-borde: 220 38 38 / 0.25;
-  --color-peligro-texto: 185 28 28;
+  --color-peligro-texto: var(--p-rojo-texto-claro);
+  --color-peligro-fondo: var(--p-rojo-fondo-claro);
 
   /* Estado: Info */
   --color-info-relleno: 59 130 246;
@@ -171,19 +221,19 @@
   --color-error-solid: var(--color-peligro-relleno);
   --color-on-error: var(--color-texto-sobre-peligro);
 
-  --color-body-bg: #f8fafc;
-  --color-body-text: #0f172a;
+  --color-body-bg: #f5f6f8;
+  --color-body-text: #101828;
   --color-header-bg: #2563eb;
   --color-header-text: #ffffff;
 
   --badge-primary-bg: var(--color-accion-tenue);
   --badge-primary-text: var(--color-accion-texto);
-  --badge-success-bg: var(--color-exito-tenue);
+  --badge-success-bg: var(--color-exito-fondo);
   --badge-success-text: var(--color-exito-texto);
-  --badge-error-bg: 225 29 72 / 0.1;
-  --badge-error-text: 190 18 60;
-  --badge-warning-bg: 217 119 6 / 0.1;
-  --badge-warning-text: 180 83 9;
+  --badge-error-bg: var(--color-peligro-fondo);
+  --badge-error-text: var(--color-peligro-texto);
+  --badge-warning-bg: var(--color-aviso-fondo);
+  --badge-warning-text: var(--color-aviso-texto);
   --badge-violet-bg: 124 58 237 / 0.1;
   --badge-violet-text: 109 40 217;
   --badge-sky-bg: 14 165 233 / 0.1;
@@ -193,7 +243,7 @@
   --badge-cyan-bg: 8 145 178 / 0.1;
   --badge-cyan-text: 21 94 117;
 
-  --color-panel-header-bg: 226 232 240;
+  --color-panel-header-bg: var(--color-tabla-encabezado);
   --color-panel-header-text: 30 58 138;
   --color-panel-fill: var(--color-superficie);
   --color-overlay: var(--color-velo);
@@ -220,8 +270,8 @@
   --color-bi-text-muted: var(--color-texto-tenue);
   --color-kpi-highlight: var(--color-aviso-relleno);
 
-  --color-input-bg: var(--color-superficie);
-  --color-input-text: #0f172a;
+  --color-input-bg: var(--color-entrada-fondo);
+  --color-input-text: #101828;
   --color-input-border: var(--color-borde);
   --color-input-focus: var(--color-accion);
   --color-label-text: var(--color-texto-secundario);
@@ -233,18 +283,18 @@
   --radius-panel: 14px;
 
   /* Interacción y Estados (DIS-056) */
-  --foco-anillo: 37 99 235;
+  --foco-anillo: 29 78 216;
   --foco-ancho: 2px;
   --foco-separacion: 2px;
   --hover-capa: 0 0 0 / 0.05;
   --presionado-capa: 0 0 0 / 0.1;
-  --seleccionado-fondo: 37 99 235 / 0.12;
-  --seleccionado-borde: 37 99 235;
-  --deshabilitado-fondo: 226 232 240;
-  --deshabilitado-texto: 148 163 184;
-  --deshabilitado-borde: 203 213 225;
+  --seleccionado-fondo: 29 78 216 / 0.12;
+  --seleccionado-borde: 29 78 216;
+  --deshabilitado-fondo: var(--p-gris-100);
+  --deshabilitado-texto: var(--p-gris-400);
+  --deshabilitado-borde: var(--p-gris-300);
   --invalido-borde: 220 38 38;
-  --solo-lectura-fondo: 241 245 249;
+  --solo-lectura-fondo: var(--p-gris-50);
   --duracion-corta: 150ms;
   --duracion-media: 250ms;
   --curva: cubic-bezier(0.4, 0, 0.2, 1);
@@ -312,24 +362,30 @@
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
     /* Semánticos (Modo Oscuro) */
-    --color-fondo: 15 23 42;
-    --color-superficie: 15 23 42;
-    --color-superficie-elevada: 30 41 59;
-    --color-superficie-hundida: 30 41 59;
+    --color-fondo: var(--p-noche-950);
+    --color-superficie: var(--p-noche-850);
+    --color-superficie-elevada: var(--p-noche-800);
+    --color-superficie-hundida: var(--p-noche-900);
+    --color-barra-lateral: var(--p-noche-900);
+    --color-entrada-fondo: var(--p-noche-950);
+    --color-tabla-encabezado: var(--p-noche-900);
     --color-velo: 0 0 0 / 0.6;
 
-    --color-texto: 241 245 249;
-    --color-texto-secundario: 148 163 184;
-    --color-texto-tenue: 148 163 184;
+    --color-texto: var(--p-noche-50);
+    --color-texto-secundario: var(--p-noche-300);
+    --color-texto-tenue: var(--p-noche-300);
     --color-texto-sobre-accion: 255 255 255;
     --color-texto-sobre-peligro: 255 255 255;
     --color-texto-enlace: 96 165 250;
+    --color-navegacion: var(--p-noche-200);
+    --color-activo-fondo: var(--p-activo-fondo-oscuro);
+    --color-activo-texto: var(--p-activo-texto-oscuro);
 
-    --color-borde: 88 102 123;
-    --color-borde-sutil: 51 65 85;
-    --color-borde-fuerte: 148 163 184;
+    --color-borde: var(--p-noche-500);
+    --color-borde-sutil: var(--p-noche-700);
+    --color-borde-fuerte: var(--p-noche-300);
 
-    --color-accion: 37 99 235;
+    --color-accion: var(--p-marca-600);
     --color-accion-hover: 96 165 250;
     --color-accion-presionada: 29 78 216;
     --color-accion-tenue: 37 99 235 / 0.15;
@@ -338,17 +394,20 @@
     --color-exito-relleno: 16 185 129;
     --color-exito-tenue: 16 185 129 / 0.15;
     --color-exito-borde: 16 185 129 / 0.3;
-    --color-exito-texto: 110 231 183;
+    --color-exito-texto: var(--p-verde-texto-oscuro);
+    --color-exito-fondo: var(--p-verde-fondo-oscuro);
 
     --color-aviso-relleno: 245 158 11;
     --color-aviso-tenue: 245 158 11 / 0.15;
     --color-aviso-borde: 245 158 11 / 0.3;
-    --color-aviso-texto: 252 211 77;
+    --color-aviso-texto: var(--p-ambar-texto-oscuro);
+    --color-aviso-fondo: var(--p-ambar-fondo-oscuro);
 
     --color-peligro-relleno: 220 38 38;
     --color-peligro-tenue: 244 63 94 / 0.15;
     --color-peligro-borde: 220 38 38 / 0.3;
-    --color-peligro-texto: 252 165 165;
+    --color-peligro-texto: var(--p-rojo-texto-oscuro);
+    --color-peligro-fondo: var(--p-rojo-fondo-oscuro);
 
     --color-info-relleno: 59 130 246;
     --color-info-tenue: 59 130 246 / 0.15;
@@ -361,20 +420,20 @@
     --color-neutro-texto: 203 213 225;
 
     /* Alias heredados (Modo Oscuro) */
-    --color-body-bg: #0f172a;
-    --color-body-text: #f1f5f9;
+    --color-body-bg: #0c111d;
+    --color-body-text: #f5f5f6;
     --color-error-solid: var(--color-peligro-relleno);
     --color-on-error: var(--color-texto-sobre-peligro);
-    --color-secondary: 113 130 153;
+    --color-secondary: var(--p-noche-300);
 
     --badge-primary-bg: var(--color-accion-tenue);
     --badge-primary-text: var(--color-accion-texto);
-    --badge-success-bg: var(--color-exito-tenue);
+    --badge-success-bg: var(--color-exito-fondo);
     --badge-success-text: var(--color-exito-texto);
-    --badge-error-bg: 244 63 94 / 0.15;
-    --badge-error-text: 251 113 133;
-    --badge-warning-bg: 245 158 11 / 0.15;
-    --badge-warning-text: 251 191 36;
+    --badge-error-bg: var(--color-peligro-fondo);
+    --badge-error-text: var(--color-peligro-texto);
+    --badge-warning-bg: var(--color-aviso-fondo);
+    --badge-warning-text: var(--color-aviso-texto);
     --badge-violet-bg: 139 92 246 / 0.15;
     --badge-violet-text: 167 139 250;
     --badge-sky-bg: 56 189 248 / 0.15;
@@ -386,7 +445,7 @@
 
     --color-header-bg: #1e3a8a;
     --color-header-text: #e2e8f0;
-    --color-panel-header-bg: 37 99 235 / 0.15;
+    --color-panel-header-bg: var(--color-tabla-encabezado);
     --color-panel-header-text: 96 165 250;
 
     --color-primary-text: var(--color-accion-texto);
@@ -417,8 +476,8 @@
     --color-bi-text-main: 226 232 240;
     --color-bi-text-muted: var(--color-texto-tenue);
 
-    --color-input-bg: var(--color-superficie-hundida);
-    --color-input-text: #e2e8f0;
+    --color-input-bg: var(--color-entrada-fondo);
+    --color-input-text: #f5f5f6;
     --color-input-border: var(--color-borde);
     --color-label-text: var(--color-texto-secundario);
 
@@ -433,11 +492,11 @@
     --presionado-capa: 255 255 255 / 0.12;
     --seleccionado-fondo: 37 99 235 / 0.25;
     --seleccionado-borde: 96 165 250;
-    --deshabilitado-fondo: 30 41 59;
+    --deshabilitado-fondo: var(--p-noche-900);
     --deshabilitado-texto: 100 116 139;
-    --deshabilitado-borde: 51 65 85;
+    --deshabilitado-borde: var(--p-noche-700);
     --invalido-borde: 252 165 165;
-    --solo-lectura-fondo: 15 23 42;
+    --solo-lectura-fondo: var(--p-noche-950);
     --duracion-corta: 150ms;
     --duracion-media: 250ms;
     --curva: cubic-bezier(0.4, 0, 0.2, 1);
@@ -485,24 +544,30 @@
 ══════════════════════════════════════════════════════════════ */
 html.dark {
   /* Semánticos (Modo Oscuro) */
-  --color-fondo: 15 23 42;
-  --color-superficie: 15 23 42;
-  --color-superficie-elevada: 30 41 59;
-  --color-superficie-hundida: 30 41 59;
+  --color-fondo: var(--p-noche-950);
+  --color-superficie: var(--p-noche-850);
+  --color-superficie-elevada: var(--p-noche-800);
+  --color-superficie-hundida: var(--p-noche-900);
+  --color-barra-lateral: var(--p-noche-900);
+  --color-entrada-fondo: var(--p-noche-950);
+  --color-tabla-encabezado: var(--p-noche-900);
   --color-velo: 0 0 0 / 0.6;
 
-  --color-texto: 241 245 249;
-  --color-texto-secundario: 148 163 184;
-  --color-texto-tenue: 148 163 184;
+  --color-texto: var(--p-noche-50);
+  --color-texto-secundario: var(--p-noche-300);
+  --color-texto-tenue: var(--p-noche-300);
   --color-texto-sobre-accion: 255 255 255;
   --color-texto-sobre-peligro: 255 255 255;
   --color-texto-enlace: 96 165 250;
+  --color-navegacion: var(--p-noche-200);
+  --color-activo-fondo: var(--p-activo-fondo-oscuro);
+  --color-activo-texto: var(--p-activo-texto-oscuro);
 
-  --color-borde: 88 102 123;
-  --color-borde-sutil: 51 65 85;
-  --color-borde-fuerte: 148 163 184;
+  --color-borde: var(--p-noche-500);
+  --color-borde-sutil: var(--p-noche-700);
+  --color-borde-fuerte: var(--p-noche-300);
 
-  --color-accion: 37 99 235;
+  --color-accion: var(--p-marca-600);
   --color-accion-hover: 96 165 250;
   --color-accion-presionada: 29 78 216;
   --color-accion-tenue: 37 99 235 / 0.15;
@@ -511,17 +576,20 @@ html.dark {
   --color-exito-relleno: 16 185 129;
   --color-exito-tenue: 16 185 129 / 0.15;
   --color-exito-borde: 16 185 129 / 0.3;
-  --color-exito-texto: 110 231 183;
+  --color-exito-texto: var(--p-verde-texto-oscuro);
+  --color-exito-fondo: var(--p-verde-fondo-oscuro);
 
   --color-aviso-relleno: 245 158 11;
   --color-aviso-tenue: 245 158 11 / 0.15;
   --color-aviso-borde: 245 158 11 / 0.3;
-  --color-aviso-texto: 252 211 77;
+  --color-aviso-texto: var(--p-ambar-texto-oscuro);
+  --color-aviso-fondo: var(--p-ambar-fondo-oscuro);
 
   --color-peligro-relleno: 220 38 38;
   --color-peligro-tenue: 244 63 94 / 0.15;
   --color-peligro-borde: 220 38 38 / 0.3;
-  --color-peligro-texto: 252 165 165;
+  --color-peligro-texto: var(--p-rojo-texto-oscuro);
+  --color-peligro-fondo: var(--p-rojo-fondo-oscuro);
 
   --color-info-relleno: 59 130 246;
   --color-info-tenue: 59 130 246 / 0.15;
@@ -534,20 +602,20 @@ html.dark {
   --color-neutro-texto: 203 213 225;
 
   /* Alias heredados (Modo Oscuro) */
-  --color-body-bg: #0f172a;
-  --color-body-text: #f1f5f9;
+  --color-body-bg: #0c111d;
+  --color-body-text: #f5f5f6;
   --color-error-solid: var(--color-peligro-relleno);
   --color-on-error: var(--color-texto-sobre-peligro);
-  --color-secondary: 113 130 153;
+  --color-secondary: var(--p-noche-300);
 
   --badge-primary-bg: var(--color-accion-tenue);
   --badge-primary-text: var(--color-accion-texto);
-  --badge-success-bg: var(--color-exito-tenue);
+  --badge-success-bg: var(--color-exito-fondo);
   --badge-success-text: var(--color-exito-texto);
-  --badge-error-bg: 244 63 94 / 0.15;
-  --badge-error-text: 251 113 133;
-  --badge-warning-bg: 245 158 11 / 0.15;
-  --badge-warning-text: 251 191 36;
+  --badge-error-bg: var(--color-peligro-fondo);
+  --badge-error-text: var(--color-peligro-texto);
+  --badge-warning-bg: var(--color-aviso-fondo);
+  --badge-warning-text: var(--color-aviso-texto);
   --badge-violet-bg: 139 92 246 / 0.15;
   --badge-violet-text: 167 139 250;
   --badge-sky-bg: 56 189 248 / 0.15;
@@ -559,7 +627,7 @@ html.dark {
 
   --color-header-bg: #1e3a8a;
   --color-header-text: #e2e8f0;
-  --color-panel-header-bg: 37 99 235 / 0.15;
+  --color-panel-header-bg: var(--color-tabla-encabezado);
   --color-panel-header-text: 96 165 250;
 
   --color-primary-text: var(--color-accion-texto);
@@ -590,8 +658,8 @@ html.dark {
   --color-bi-text-main: 226 232 240;
   --color-bi-text-muted: var(--color-texto-tenue);
 
-  --color-input-bg: var(--color-superficie-hundida);
-  --color-input-text: #e2e8f0;
+  --color-input-bg: var(--color-entrada-fondo);
+  --color-input-text: #f5f5f6;
   --color-input-border: var(--color-borde);
   --color-label-text: var(--color-texto-secundario);
 
@@ -606,11 +674,11 @@ html.dark {
   --presionado-capa: 255 255 255 / 0.12;
   --seleccionado-fondo: 37 99 235 / 0.25;
   --seleccionado-borde: 96 165 250;
-  --deshabilitado-fondo: 30 41 59;
+  --deshabilitado-fondo: var(--p-noche-900);
   --deshabilitado-texto: 100 116 139;
-  --deshabilitado-borde: 51 65 85;
+  --deshabilitado-borde: var(--p-noche-700);
   --invalido-borde: 252 165 165;
-  --solo-lectura-fondo: 15 23 42;
+  --solo-lectura-fondo: var(--p-noche-950);
   --duracion-corta: 150ms;
   --duracion-media: 250ms;
   --curva: cubic-bezier(0.4, 0, 0.2, 1);
