@@ -91,6 +91,20 @@ describe('Barra lateral', () => {
     }
   });
 
+  it('la marca dice «Portal de accesos» y «Vivaro»', async () => {
+    await montar('usuario');
+    const aside = within(document.querySelector('aside')!);
+    expect(aside.getByText('Portal de accesos')).toBeTruthy();
+    expect(aside.getByText('Vivaro')).toBeTruthy();
+    expect(aside.queryByText('Nexus')).toBeNull();
+  });
+
+  it('al usuario común no se le muestra «Gestión» con una sola entrada: Auditoría va en General', async () => {
+    await montar('usuario');
+    expect(lateral().queryByText('Gestión')).toBeNull();
+    expect(lateral().getByRole('link', { name: 'Auditoría' })).toBeTruthy();
+  });
+
   it('el usuario no ve la sección Gestión con entradas de administración', async () => {
     await montar('usuario');
     expect(lateral().queryByRole('link', { name: 'Aprobaciones' })).toBeNull();
@@ -218,10 +232,14 @@ describe('Barra superior', () => {
 
   it('en móvil el buscador es un icono y el menú abre el cajón', async () => {
     await montar('usuario');
-    const iconos = barra().getAllByRole('button', { name: 'Buscar pantallas y acciones' });
+    const iconos = barra().getAllByRole('button', { name: /^Buscar( \(|$)/ });
     // Campo de escritorio y icono móvil, ambos con nombre accesible.
     expect(iconos).toHaveLength(2);
     expect(iconos[1].className).toContain('md:hidden');
+    // El de escritorio parece un campo: lupa, texto de la maqueta y atajo.
+    expect(iconos[0].textContent).toContain('Buscar usuarios, plataformas, solicitudes…');
+    expect(iconos[0].textContent).toMatch(/Ctrl K|⌘K/);
+    expect(iconos[0].getAttribute('aria-label')).toMatch(/^Buscar \(/);
     const menu = barra().getByRole('button', { name: 'Menú' });
     fireEvent.click(menu);
     expect(screen.getByRole('dialog', { name: 'Menú' })).toBeTruthy();
@@ -296,7 +314,7 @@ describe('Menú de usuario', () => {
 describe('Buscador global', () => {
   async function abrirPaleta() {
     await montar('admin_area');
-    const origen = barra().getAllByRole('button', { name: 'Buscar pantallas y acciones' })[0];
+    const origen = barra().getAllByRole('button', { name: /^Buscar( \(|$)/ })[0];
     origen.focus();
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
     return { origen, dialogo: screen.getByRole('dialog', { name: 'Buscador global' }) };
@@ -379,7 +397,7 @@ describe('Buscador global', () => {
 
   it('el campo de la barra abre la paleta con clic', async () => {
     await montar('usuario');
-    fireEvent.click(barra().getAllByRole('button', { name: 'Buscar pantallas y acciones' })[0]);
+    fireEvent.click(barra().getAllByRole('button', { name: /^Buscar( \(|$)/ })[0]);
     expect(screen.getByRole('dialog', { name: 'Buscador global' })).toBeTruthy();
   });
 });

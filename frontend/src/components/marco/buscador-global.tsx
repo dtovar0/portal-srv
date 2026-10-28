@@ -32,16 +32,16 @@ export function BuscadorGlobal({ comandos }: { comandos: readonly Comando[] }) {
         onClick={() => setAbierta(true)}
         aria-haspopup="dialog"
         aria-keyshortcuts="Control+K Meta+K"
-        aria-label="Buscar pantallas y acciones"
-        className="mx-auto hidden min-h-11 min-w-0 max-w-buscador flex-1 items-center gap-2.5 rounded-base border border-borde bg-entrada-fondo px-3 text-sm text-texto-secundario outline-none transition-colors hover:border-borde-fuerte focus-visible:ring-2 focus-visible:ring-primary md:flex"
+        aria-label={`Buscar (${textoAtajo()})`}
+        className="mx-auto hidden min-h-11 min-w-0 max-w-buscador w-full flex-1 items-center gap-2.5 rounded-base border border-borde bg-entrada-fondo px-3 text-sm text-texto-secundario outline-none transition-colors hover:border-borde-fuerte focus-visible:ring-2 focus-visible:ring-primary md:flex"
       >
         <Icono nombre="buscar" tamano="sm" />
-        <span className="min-w-0 flex-1 truncate text-left">Buscar pantallas y acciones…</span>
+        <span className="min-w-0 flex-1 truncate text-left">Buscar usuarios, plataformas, solicitudes…</span>
         <kbd className="rounded-control border border-borde px-1.5 py-0.5 text-xs">{textoAtajo()}</kbd>
       </button>
       <BotonIcono
         icono="buscar"
-        etiqueta="Buscar pantallas y acciones"
+        etiqueta="Buscar"
         aria-haspopup="dialog"
         onClick={() => setAbierta(true)}
         className="md:hidden"

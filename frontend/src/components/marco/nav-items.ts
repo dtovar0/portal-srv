@@ -18,6 +18,9 @@ export interface NavItem {
   requires?: RoleRequirement;
 }
 
+/** Entradas mínimas para mostrar la sección «Gestión» (con menos, van en «General»). */
+const MIN_ENTRADAS_GESTION = 2;
+
 export const SECCIONES: readonly SeccionNav[] = ['General', 'Gestión', 'Sistema'];
 
 /** Entradas por rol según la tabla de pantallas (REQUERIMIENTOS §4, FNC-070). */
@@ -48,8 +51,16 @@ export function seccionesVisibles(
   permissions: Session['permissions'],
 ): { seccion: SeccionNav; entradas: NavItem[] }[] {
   const visibles = entradasVisibles(permissions);
+  // «Gestión» solo se muestra con al menos 2 entradas; si no, sus entradas pasan a «General».
+  const gestion = visibles.filter((e) => e.seccion === 'Gestión');
+  const sueltas = gestion.length < MIN_ENTRADAS_GESTION ? gestion : [];
   return SECCIONES
-    .map((seccion) => ({ seccion, entradas: visibles.filter((e) => e.seccion === seccion) }))
+    .map((seccion) => ({
+      seccion,
+      entradas: seccion === 'Gestión'
+        ? (sueltas.length > 0 ? [] : gestion)
+        : [...visibles.filter((e) => e.seccion === seccion), ...(seccion === 'General' ? sueltas : [])],
+    }))
     .filter((grupo) => grupo.entradas.length > 0);
 }
 

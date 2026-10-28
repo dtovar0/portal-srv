@@ -8,8 +8,17 @@ const permisos = (admin: boolean, area: boolean) => ({
 });
 
 describe('menú por rol', () => {
-  it('el usuario solo ve General y lo común; el admin ve las tres secciones', () => {
-    expect(seccionesVisibles(permisos(false, false)).map((s) => s.seccion)).toEqual(['General', 'Gestión', 'Sistema']);
+  it('Gestión solo aparece con 2 o más entradas; con una (Auditoría) pasa a General', () => {
+    const usuario = seccionesVisibles(permisos(false, false));
+    expect(usuario.map((s) => s.seccion)).toEqual(['General', 'Sistema']);
+    expect(usuario[0].entradas.map((e) => e.label)).toContain('Auditoría');
+    const admin = seccionesVisibles(permisos(false, true));
+    expect(admin.map((s) => s.seccion)).toEqual(['General', 'Gestión', 'Sistema']);
+    expect(admin[0].entradas.map((e) => e.label)).not.toContain('Auditoría');
+    expect(admin[1].entradas.map((e) => e.label)).toContain('Auditoría');
+  });
+
+  it('el usuario solo ve lo común; el admin ve más', () => {
     const usuario = entradasVisibles(permisos(false, false)).map((e) => e.label);
     expect(usuario).toContain('Mis solicitudes');
     expect(usuario).not.toContain('Aprobaciones');

@@ -65,7 +65,7 @@ export function MobileMenu({
         onClose={close}
         devolverA={button}
         focoInicial={(contenedor) => enfocables(contenedor).filter((el) => el.matches('a[href]'))}
-        title="Nexus"
+        title="Portal de accesos"
         ariaLabel="Menú"
         className="md:hidden"
       >

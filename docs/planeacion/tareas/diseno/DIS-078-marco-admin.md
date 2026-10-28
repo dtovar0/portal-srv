@@ -36,7 +36,7 @@
 ## Implementación
 - `AppShell` queda solo con la sesión; el marco vive en `components/marco/`, una responsabilidad por archivo: `nav-items.ts` (NAV con icono y sección, reglas), `nav-principal.tsx`, `barra-lateral.tsx`, `barra-superior.tsx`, `boton-icono.tsx`, `buscador-global.tsx`, `paleta-comandos.tsx`, `comandos.ts`, `menu-usuario.tsx`, `ayuda-marco.tsx`, `ruta-navegacion.tsx`, `use-indicadores.ts`, `marco.tsx`.
 - Nuevos: `lib/use-menu-colapsado.ts` (estado recordado, `try/catch`) y `components/use-tema.ts` (lógica de `ThemeSelector` extraída).
-- Menú: General, Gestión y Sistema; cada rol ve las mismas entradas que antes (misma lista, `RequireRole` sin cambios). Auditoría va en Gestión como en la maqueta, aunque la ve todo rol. «Conectores» (sin equivalente en la maqueta) va en Gestión con el icono `marca`.
+- Menú: General, Gestión y Sistema; cada rol ve las mismas entradas que antes (misma lista, `RequireRole` sin cambios). «Gestión» solo se muestra con 2 o más entradas para el rol; si no (usuario común: solo Auditoría), esas entradas pasan a General. «Conectores» (sin equivalente en la maqueta) va en Gestión con el icono `marca`.
 - Barra lateral 264/76 px y barra superior 64 px por tokens `--marco-*` (utilidades `w-lateral`, `w-lateral-colapsada`, `h-barra-superior`, `max-w-buscador`); colores por `bg-barra-lateral`, `text-navegacion`, `bg-activo-fondo`, `text-activo-texto`, `bg-entrada-fondo`. `--color-header-bg/-text` apuntan a superficie y texto (ya no azul).
 - Colapsada: solo iconos con `aria-label` y `title`; la etiqueta queda `sr-only`. Sin salto: el ancho solo depende del estado, que se lee al crearlo (el marco solo se pinta en el cliente, tras la sesión).
 - Buscador global: campo (escritorio) o icono (móvil) + `Ctrl K` / `⌘K`. Paleta sobre `Modal` (foco atrapado y devuelto, Escape) con `combobox` + `listbox` (flechas, Inicio/Fin, Enter). Busca las pantallas del rol y 3 acciones (tema, colapsar menú, cerrar sesión), sin acentos.
@@ -46,10 +46,10 @@
 - Áreas táctiles de 44 px (`min-h-11 min-w-11`); la maqueta fija 40 px en los botones de la barra y 44 en las opciones.
 
 ## Decisiones y desvíos
-- Nombre en la barra lateral: «Nexus / Portal de accesos» (la maqueta dice «Portal de accesos / Vivaro»; Nexus es el nombre del proyecto).
+- Marca de la barra lateral y del cajón móvil: «Portal de accesos» con «Vivaro» debajo, como la maqueta (el coordinador pidió quitar «Nexus»).
 - Las pruebas `menu-movil` y `tema-diseno` se ajustaron: 48 → 44 px (misma exigencia que `area-tactil.test.ts`) y el bloque derecho de la cabecera se mide ahora en `barra-superior.tsx`. Las demás siguen igual.
 - El botón «Menú» móvil pasó de texto a icono con `aria-label="Menú"`; sigue con `aria-expanded` y `aria-controls`.
-- El buscador de escritorio es un botón que abre la paleta (no un `<input>` en la barra): un solo patrón de combobox.
+- El buscador de escritorio es un botón con aspecto de campo (lupa, «Buscar usuarios, plataformas, solicitudes…», atajo a la derecha, hasta 520 px) y nombre accesible «Buscar (Ctrl K)»; abre la paleta, que por ahora solo encuentra pantallas y acciones (FNC-133 añadirá datos).
 - La ruta de navegación sale de la ruta actual (`entradaDeRuta`), visible desde `lg`.
 
 ## Impacto en elementos compartidos
@@ -74,3 +74,4 @@
 
 ## Bitácora
 - 2026-10-28: implementación completa en la rama; En revisión. Genera FNC-133 (Propuesta).
+- 2026-10-28: alineado con la maqueta (marca, regla de Gestión con prueba, aspecto del buscador). typecheck, lint, vitest (72 archivos, 2439 pruebas) y build en 0.
