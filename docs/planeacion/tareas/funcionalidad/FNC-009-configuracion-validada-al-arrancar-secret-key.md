@@ -47,6 +47,7 @@ _Se completa al aprobar la tarea._
 
 ## Impacto cruzado
 - Depende de → —
+- Parte cubierta por **FNC-134** (2026-10-28): solo `DB_ENGINE` obligatorio `mysql` fuera de desarrollo (app, Alembic, `preflight.sh`, `install.sh`) y la prueba `test_sin_db_engine_no_arranca`. **Sigue pendiente aquí:** `SECRET_KEY`, `debug`/`0.0.0.0`, `BASE_URL`, un `DB_ENGINE` desconocido en desarrollo (prueba `test_db_engine_invalido_no_arranca`, aún `xfail`).
 
 ## Bitácora
 | Fecha | Nota |
@@ -54,6 +55,7 @@ _Se completa al aprobar la tarea._
 | 2026-10-13 | Creada como Propuesta desde el diagnóstico inicial |
 | 2026-10-15 | Deuda registrada por FNC-042: `BASE_URL` sin valor deja relativo el enlace del correo de bienvenida (`auth/services.py`); validarla al arrancar en producción |
 | 2026-10-27 | Recomendación anotada desde FNC-119: exigir `BASE_URL` |
+| 2026-10-28 | FNC-134 cubre la parte de `DB_ENGINE` fuera de desarrollo |
 
 ## Nota (2026-10-13)
 - `load_dotenv()` busca `.env` subiendo carpetas: si el proyecto no tiene uno, carga el de la carpeta superior (es de otro proyecto). Cargar solo el `.env` de la raíz del proyecto.

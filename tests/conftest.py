@@ -26,6 +26,8 @@ VARIABLES_EXTERNAS = ('TRUSTED_PROXIES', 'FRONTEND_URL', 'BASE_URL',
 VARIABLES_PRUEBA = {
     'SECRET_KEY': 'clave-ficticia-solo-para-pruebas',
     'DB_ENGINE': 'sqlite',
+    # SQLite solo se admite con APP_ENV=development (FNC-134).
+    'APP_ENV': 'development',
     'AUTHELIA_ENABLED': 'false',
     'ENABLE_NOTIFICATIONS': 'false',
     'NOTIFY_USER_CREATED': 'false',

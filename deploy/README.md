@@ -334,6 +334,11 @@ distinto del previsto.
 - Las variables las pone una persona en `<carpeta>/.env` (640, `root:<grupo de servicio>`). Procedimiento completo, alta de ítems y rotación: [`docs/operacion/SECRETOS.md`](../docs/operacion/SECRETOS.md).
 - Prueba: `pytest tests/deploy/test_secretos_sh.py` (`.env` sintéticos).
 
+## Base de datos (FNC-134)
+
+- Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) el `.env` debe tener `DB_ENGINE=mysql`; SQLite solo existe con `APP_ENV=development`.
+- La app y Alembic no arrancan sin él; `preflight.sh` marca `FALTA` e `install.sh` se detiene (`deploy/motor_bd.sh`, solo lee `APP_ENV` y `DB_ENGINE`).
+
 ## Seguridad
 
 > El portal **no se expone** en un entorno accesible antes de cerrar la fase 5

@@ -44,6 +44,9 @@ warnings=0
 # Revisión de VAULTWARDEN_* y del bind LDAP (FNC-068).
 # shellcheck source=deploy/secretos.sh
 . "$(dirname "${BASH_SOURCE[0]}")/secretos.sh"
+# Motor de BD: fuera de desarrollo debe ser MySQL (FNC-134).
+# shellcheck source=deploy/motor_bd.sh
+. "$(dirname "${BASH_SOURCE[0]}")/motor_bd.sh"
 # Servicio systemd de la BD local (FNC-125).
 # shellcheck source=deploy/servicio_bd.sh
 . "$(dirname "${BASH_SOURCE[0]}")/servicio_bd.sh"
@@ -303,6 +306,13 @@ if [[ -f .env ]]; then
             *) bad "$texto" ;;
         esac
     done < <(revisar_vaultwarden .env)
+    # DB_ENGINE=mysql fuera de desarrollo (FNC-134); solo se lee esa clave.
+    while read -r nivel texto; do
+        case "$nivel" in
+            OK) ok "$texto" ;;
+            *) bad "$texto" ;;
+        esac
+    done < <(revisar_motor_bd .env)
 else
     bad ".env ausente — copiar de .env.example y rellenar credenciales"
 fi

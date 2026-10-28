@@ -44,6 +44,9 @@ def test_registro_de_tipos(app):
 
 def test_noop_solo_se_registra_en_dev_o_pruebas(monkeypatch, tmp_path):
     uri = f"sqlite:///{tmp_path / 'x.db'}"
+    # Fuera de dev la app exige DB_ENGINE=mysql (FNC-134); la BD real la
+    # reemplaza la URI de prueba.
+    monkeypatch.setenv('DB_ENGINE', 'mysql')
     monkeypatch.delenv('APP_ENV', raising=False)
     create_app({'SQLALCHEMY_DATABASE_URI': uri})
     assert registry.obtener_tipo(TIPO_NOOP) is None

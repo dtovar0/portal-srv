@@ -11,7 +11,7 @@
 | Variable | Propósito | Tipo / valores | Por defecto en código | Ejemplo (sin secretos) | Obligatoria | Sensible | En `.env.example` | Dónde se usa | Alta | Estado |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `SECRET_KEY` | Firma de la cookie de sesión y CSRF | texto aleatorio largo | `nexus-premium-secret-key` (inseguro) | — | Sí | **Sí** | Sí (marcador) | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
-| `DB_ENGINE` | Motor de BD. `mysql` usa PyMySQL; cualquier otro valor cae a SQLite `nexus.db` | `mysql` / otro | `sqlite` | `mysql` | Sí (prod) | No | Sí | `app/utils/uri_bd.py` (app y Alembic, FNC-039) | FNC-001, 2026-10-13 | Vigente |
+| `DB_ENGINE` | Motor de BD. `mysql` usa PyMySQL. **Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) debe ser `mysql`: sin él la app y Alembic no arrancan y `preflight.sh`/`install.sh` dan `FALTA`.** SQLite `nexus.db` solo con `APP_ENV=development` | `mysql` (obligatorio fuera de dev) / `sqlite` (solo dev) | `sqlite` (solo dev) | `mysql` | Sí (fuera de dev) | No | Sí | `app/utils/uri_bd.py` (app y Alembic, FNC-039), `deploy/motor_bd.sh` | FNC-001, 2026-10-13; FNC-134, 2026-10-28 | Vigente |
 | `DB_HOST` | Host de la BD | nombre de host | — (sin valor: URI inválida) | `localhost` | Sí con mysql | No | Sí | `app/utils/uri_bd.py` (app y Alembic, FNC-039), `deploy/preflight.sh` | FNC-001, 2026-10-13 | Vigente |
 | `DB_PORT` | Puerto de la BD | entero | — en código; `3306` en preflight | `3306` | Sí con mysql | No | Sí | `app/utils/uri_bd.py` (app y Alembic, FNC-039), `deploy/preflight.sh` | FNC-001, 2026-10-13 | Vigente |
 | `DB_NAME` | Nombre de la BD | texto | — | `pokemon_dev` | Sí con mysql | No | Sí (`admin_test`) | `app/utils/uri_bd.py` (app y Alembic, FNC-039), `deploy/preflight.sh` | FNC-001, 2026-10-13 | Vigente |
@@ -156,7 +156,7 @@ La versión inicial de este registro (estructura genérica) listaba `APP_ENV`, `
 | `engines.node` | Rango de Node del frontend; los tres valores de arriba deben dar el mismo | `^22.13.0 \|\| >=24.0.0` | rango semver | `frontend/package.json` (y su lock) | FNC-073, 2026-10-27 | Vigente |
 | `WTF_CSRF_TIME_LIMIT` | Caducidad del token CSRF | sin límite | — | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
 | `pool_recycle` | Reciclado de conexiones de BD | 3600 | s | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
-| `SQLITE_URI_POR_DEFECTO` | BD SQLite cuando `DB_ENGINE` no es `mysql` (en `instance/`) | `sqlite:///nexus.db` | — | `app/utils/uri_bd.py` | FNC-001, 2026-10-13; constante con nombre FNC-039 | Vigente |
+| `SQLITE_URI_POR_DEFECTO` | BD SQLite en desarrollo cuando `DB_ENGINE` no es `mysql` (en `instance/`); fuera de dev no se usa (FNC-134) | `sqlite:///nexus.db` | — | `app/utils/uri_bd.py` | FNC-001, 2026-10-13; constante con nombre FNC-039 | Vigente |
 | `CARPETA_INSTANCIA` | Dónde resuelve Alembic la ruta SQLite relativa (igual que Flask) | `instance/` de la raíz | — | `migrations/env.py` | FNC-039, 2026-10-14 | Vigente |
 | `PORTAL_NAME_POR_DEFECTO` | Nombre del portal sin configuración guardada | `Nexus Core AI` | — | `app/modules/settings/valores_por_defecto.py` | FNC-121, 2026-10-27 (el valor ya existía en el modelo; sin cambio) | Vigente |
 | `PORTAL_IDENTITY_TYPE_POR_DEFECTO` | Tipo de identidad del portal sin configuración guardada | `icon` | — | `app/modules/settings/valores_por_defecto.py` | FNC-121, 2026-10-27 (sin cambio de valor) | Vigente |
