@@ -1,45 +1,17 @@
 'use client';
 
 /**
- * Selector de tema (FNC-032, FNC-123): aplica la clase en `<html>`, la guarda en el
- * navegador (respaldo y sin destello) y la guarda en la cuenta del usuario. Al
- * iniciar sesión manda el tema de la cuenta. Si el guardado en la cuenta falla,
- * se avisa y la vista no se revierte.
+ * Selector de tema de 3 opciones (FNC-032, FNC-123). La lógica vive en `useTema`
+ * (DIS-078); el marco de administración ya no lo usa: su botón de tema y el menú de
+ * usuario lo reemplazan.
  */
 
-import { useEffect, useState } from 'react';
 import { Select } from './form';
-import { useSession } from './session-provider';
-import { useToast } from './toast';
-import { api } from '@/lib/api';
-import {
-  TEMAS, TEMA_POR_DEFECTO, aplicarTemaDeCuenta, elegirTema, restaurarTema,
-} from '@/lib/tema';
+import { useTema } from './use-tema';
+import { TEMAS } from '@/lib/tema';
 
 export function ThemeSelector() {
-  const [tema, setTema] = useState(TEMA_POR_DEFECTO);
-  const { session } = useSession();
-  const { avisar } = useToast();
-  const temaDeCuenta = session?.preferences?.theme;
-
-  // El script de `<head>` ya puso la clase; aquí se sincroniza el control.
-  useEffect(() => { setTema(restaurarTema()); }, []);
-
-  // El tema de la cuenta manda sobre el del navegador.
-  useEffect(() => {
-    const aplicado = aplicarTemaDeCuenta(temaDeCuenta);
-    if (aplicado) setTema(aplicado);
-  }, [temaDeCuenta]);
-
-  async function elegir(id: string) {
-    setTema(id);
-    elegirTema(id);
-    try {
-      await api.savePreferences({ theme: id });
-    } catch {
-      avisar('error', 'No se pudo guardar el tema en tu cuenta. Puede volver al anterior al cambiar de pantalla.');
-    }
-  }
+  const { tema, elegir } = useTema();
 
   return (
     <div className="w-28 min-w-0 sm:w-40">

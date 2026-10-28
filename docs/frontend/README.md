@@ -54,7 +54,7 @@ frontend/src/
 
 ## 3. Menú por rol
 
-Definido en `components/app-shell.tsx` (`NAV`, FNC-070). La misma lista (`Nav`) se muestra en la barra lateral desde `md` y en el menú móvil bajo `md` (DIS-025). Cada entrada puede exigir un `RoleRequirement` de `components/require-role.tsx`; los permisos salen de `GET /api/v1/me` (`permissions.is_admin`, `permissions.is_area_admin`).
+Definido en `components/marco/nav-items.ts` (`NAV`, FNC-070; sección, icono y permiso por entrada, DIS-078). La misma lista (`NavPrincipal`) se muestra en la barra lateral desde `md` y en el cajón móvil bajo `md` (DIS-025). Cada entrada puede exigir un `RoleRequirement` de `components/require-role.tsx`; los permisos salen de `GET /api/v1/me` (`permissions.is_admin`, `permissions.is_area_admin`).
 
 - `any_admin`: superadmin o admin de área; `admin`: solo superadmin; `requester`: usuario y admin de área (el superadmin no solicita)
 
@@ -75,8 +75,8 @@ Definido en `components/app-shell.tsx` (`NAV`, FNC-070). La misma lista (`Nav`) 
 
 | Componente | Archivo | Rol |
 |---|---|---|
-| `AppShell` | `app-shell.tsx` | Marco: barra lateral (`md` y mayores), cabecera con menú móvil, nombre, rol y "Salir"; estados de carga y error de sesión. |
-| `MobileMenu` | `mobile-menu.tsx` | Bajo `md`: botón "Menú" (`aria-expanded`, `aria-controls`) y panel `role="dialog"` con la misma `Nav` por rol; cierra con Escape, al elegir opción y con clic fuera; foco al primer enlace, de vuelta al botón y atrapado con Tab (`useFocusTrap`, DIS-031); panel en portal, velo `bg-overlay` y bloqueo del fondo (DIS-038); áreas de 48 px (DIS-025). |
+| `AppShell`, `Marco` | `app-shell.tsx`, `marco/marco.tsx` | Estados de carga y error de sesión; `Marco` (DIS-078) compone la barra lateral colapsable (264/76 px, recordada en `localStorage`), la barra superior de 64 px (menú, ruta, buscador `Ctrl K`, tema, notificaciones, ayuda, menú de usuario) y el `<main>`. Piezas en `components/marco/`. |
+| `MobileMenu` | `mobile-menu.tsx` | Bajo `md`: botón de icono «Menú» (`aria-expanded`, `aria-controls`) y panel `role="dialog"` con la misma `NavPrincipal` por rol; cierra con Escape, al elegir opción y con clic fuera; foco al primer enlace, de vuelta al botón y atrapado con Tab (`useFocusTrap`, DIS-031); panel en portal, velo `bg-overlay` y bloqueo del fondo (DIS-038); áreas de 44 px (DIS-025, DIS-078). |
 | `SessionProvider` / `useSession` | `session-provider.tsx` | Pide `/me` una vez; sin sesión redirige a `/login`. |
 | `RequireRole` / `meetsRequirement` | `require-role.tsx` | Guarda de ruta y regla de visibilidad por rol (FNC-070). |
 | `RoleSummary`, `gruposDelResumen`, `RUTAS_INICIO` | `home/role-summary.tsx` | Resumen de inicio por rol: grupos de contadores según los campos del contrato `inicio.md`; cada contador es `StatTile` dentro de `Link` con nombre accesible "Etiqueta: n. Ir a Pantalla"; carga, vacío (usuario: enlace al catálogo) y error con Reintentar (DIS-024). Cada enlace lleva el filtro del contador en la URL (DIS-036). |
@@ -98,7 +98,7 @@ Definido en `components/app-shell.tsx` (`NAV`, FNC-070). La misma lista (`Nav`) 
 | `AreaForm`, `AreaAdminsPanel`, `mensajeDeError` | `areas/` | Alta/edición de área con errores por campo; administradores del área (superadmin); mensajes del contrato `areas-y-roles.md` (DIS-016). |
 | `variablesCss`, `.nx-chip-solid`, `.nx-chip-tint` | `lib/variables-css.ts`, `styles/components.css` | Color de los datos (plataforma, área) como variables `--chip-*`, sin `style` visual en línea (DIS-012). | `PlatformCard`, `PlatformAdmin`, `AreasList`. DIS-048: texto del chip de área con `--color-body-text`; texto del ícono de plataforma elegido por luminancia (`lib/color-legible.ts` + `data-texto`, tokens `--color-texto-sobre-fondo-*`, >= 4,5:1). |
 | `useTokenColors` | `lib/use-token-colors.ts` | Lee tokens `--color-*` con `getComputedStyle` para librerías SVG sin `var()`; se actualiza al cambiar el tema (DIS-003). |
-| `ThemeSelector`, `lib/tema.ts` | `components/theme-selector.tsx`, `lib/tema.ts` | Selector de tema en la cabecera de `AppShell` (FNC-032): pone la clase (`light`, `dark`, `theme-*`; sin clase = sistema) en `<html>` y la guarda en `localStorage` (`nexus-tema`). `SCRIPT_RESTAURAR_TEMA`, en `<head>` de `layout.tsx`, la restaura antes de pintar. Además se guarda en la cuenta (`PUT /me/preferences`, FNC-123): al iniciar sesión manda el tema de la cuenta (`aplicarTemaDeCuenta`; inválido → sistema); si falla el guardado, toast sin revertir. |
+| `useTema`, `ThemeSelector`, `lib/tema.ts` | `components/use-tema.ts`, `theme-selector.tsx`, `lib/tema.ts` | Desde DIS-078 el tema se cambia con el botón de la barra superior (claro/oscuro) y «Tema: según el sistema» del menú de usuario (`useTema`); `ThemeSelector` ya no está en el marco (FNC-032): pone la clase (`light`, `dark`, `theme-*`; sin clase = sistema) en `<html>` y la guarda en `localStorage` (`nexus-tema`). `SCRIPT_RESTAURAR_TEMA`, en `<head>` de `layout.tsx`, la restaura antes de pintar. Además se guarda en la cuenta (`PUT /me/preferences`, FNC-123): al iniciar sesión manda el tema de la cuenta (`aplicarTemaDeCuenta`; inválido → sistema); si falla el guardado, toast sin revertir. |
 | Pantallas | `dashboard.tsx`, `platforms-view.tsx`, `favorites-list.tsx`, `notifications-list.tsx`, `platform-admin.tsx`, `areas-list.tsx`, `users-list.tsx`, `audit-log.tsx`, `settings-panel.tsx`, `login-form.tsx`, `logout-view.tsx` | Una por ruta. `settings-panel.tsx` (634 líneas desde DIS-023; su división es DIS-011) y `users-list.tsx` (695) concentran varias responsabilidades. |
 
 ## 5. Cliente de la API (`src/lib/api.ts`)

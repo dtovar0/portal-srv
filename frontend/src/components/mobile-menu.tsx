@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Menú de navegación para pantallas menores a `md` (DIS-025): botón en la
- * cabecera y panel lateral Drawer con el contenido que pasa `AppShell` (DIS-061).
+ * Menú de navegación para pantallas menores a `md` (DIS-025): botón de icono en la
+ * barra superior (DIS-078) y panel lateral Drawer con el contenido que pasa `AppShell` (DIS-061).
  *
  * - Se cierra con Escape, al elegir una opción (`close` que recibe el
  *   contenido) y al hacer clic fuera del panel.
@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { enfocables } from '@/lib/use-focus-trap';
-import { Button } from './form';
+import { BotonIcono } from './marco/boton-icono';
 import { Drawer } from './drawer';
 
 /** Desde `md` (768 px, breakpoint de Tailwind) el menú móvil no se muestra: se cierra. */
@@ -49,16 +49,15 @@ export function MobileMenu({
 
   return (
     <>
-      <Button
+      <BotonIcono
         ref={button}
-        variant="secondary"
+        icono="menu"
+        etiqueta="Menú"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
-        className="min-h-12 min-w-12 shrink-0 md:hidden focus-visible:ring-2 focus-visible:ring-primary"
-      >
-        Menú
-      </Button>
+        className="md:hidden"
+      />
 
       <Drawer
         id={panelId}
@@ -66,7 +65,7 @@ export function MobileMenu({
         onClose={close}
         devolverA={button}
         focoInicial={(contenedor) => enfocables(contenedor).filter((el) => el.matches('a[href]'))}
-        title="Nexus"
+        title="Portal de accesos"
         ariaLabel="Menú"
         className="md:hidden"
       >
