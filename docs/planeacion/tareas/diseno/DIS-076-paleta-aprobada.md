@@ -8,7 +8,7 @@
 | **Fase** | 7 (7B, marco de administración) |
 | **Módulo / Área** | tokens |
 | **Prioridad** | Alta |
-| **Estatus** | En revisión |
+| **Estatus** | Hecha |
 | **Rama** | `dis/DIS-076-paleta-aprobada` |
 | **Creada** | 2026-10-28 |
 | **Aprobada** | 2026-10-28, por el dueño: «exacto, ese sí es un diseño correcto, impleméntalo» |
@@ -62,3 +62,5 @@
 | Fecha | Nota |
 |---|---|
 | 2026-10-28 | Aprobada y trabajada (disenador-web). Tokens y pruebas de contraste actualizados; en revisión. |
+
+- 2026-10-28: `auditor-accesibilidad` Aprobado: 24 pares AA medidos en claro y oscuro; fiel a la maqueta en los 41 valores; `--color-borde` ≥ 3:1 para controles y `--color-borde-sutil` solo decorativo; oscuro del sistema idéntico a `html.dark`. Pendientes para DIS-078: `--color-header-bg/-text` (barra superior aún azul) y la errata `--borde-sutil` en `components.css:80`. Hecha.
