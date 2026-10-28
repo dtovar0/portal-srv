@@ -8,7 +8,7 @@
 | **Fase** | 7 (7B, marco de administración) |
 | **Módulo / Área** | componentes |
 | **Prioridad** | Alta |
-| **Estatus** | En revisión |
+| **Estatus** | Hecha |
 | **Rama** | `dis/DIS-081-sin-colapsar-en-pie` |
 | **Creada** | 2026-10-28 |
 | **Aprobada** | 2026-10-28, por el dueño al revisar DIS-080: «¿por qué sigue estando el botón de colapsar menú ahí, al lado del menú del usuario?» |
@@ -35,3 +35,5 @@
 
 ## Bitácora
 - 2026-10-28: implementada; En revisión.
+
+- 2026-10-28: `auditor-accesibilidad` Aprobado (☰ con `aria-expanded`/`aria-controls` y nombre que cambia; pie sin controles huérfanos; orden de tabulación coherente). Hecha.
