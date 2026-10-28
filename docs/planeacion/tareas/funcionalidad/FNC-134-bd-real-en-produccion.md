@@ -8,7 +8,7 @@
 | **Fase** | 6 |
 | **Módulo / Área** | config |
 | **Prioridad** | Alta |
-| **Estatus** | En revisión |
+| **Estatus** | Hecha |
 | **Creada** | 2026-10-28 |
 | **Inicio** | 2026-10-28 |
 | **Rama** | `fnc/FNC-134-bd-real-en-produccion` |
@@ -51,3 +51,5 @@
 | Fecha | Nota |
 |---|---|
 | 2026-10-28 | Creada y aprobada (decisión del dueño); implementada; `xfail` de `test_sin_db_engine_no_arranca` retirado (ahora con `APP_ENV=production`); `test_db_engine_invalido_no_arranca` sigue `xfail` (desconocido en dev, FNC-009) |
+
+- 2026-10-28: `auditor-seguridad` Aprobado: fuera de desarrollo no hay vía a SQLite (`construir_uri_bd` lo usan app y Alembic), mensaje sin valores, `motor_bd.sh` sin `source` ni inyección, `conftest` sin esconder pruebas de seguridad. Bajas: el preflight normaliza distinto que la app en casos raros (la app sigue bloqueando). Hecha.
