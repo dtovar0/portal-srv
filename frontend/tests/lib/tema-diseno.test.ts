@@ -41,8 +41,9 @@ describe('cabecera a 320 px', () => {
   });
 
   it('el bloque derecho de la cabecera puede encogerse (sin shrink-0)', () => {
-    const shell = leer('components/app-shell.tsx');
-    expect(shell).toContain('flex min-w-0 items-center gap-2 sm:gap-3');
-    expect(shell).not.toContain('flex shrink-0 items-center gap-3');
+    // DIS-078: el selector se reemplazó por el botón de tema y el menú de usuario en la barra superior.
+    const barra = leer('components/marco/barra-superior.tsx');
+    expect(barra).toContain('flex min-w-0 items-center gap-2');
+    expect(barra).not.toContain('flex shrink-0 items-center gap-3');
   });
 });

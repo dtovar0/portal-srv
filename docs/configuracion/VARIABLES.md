@@ -273,7 +273,7 @@ Definidos en `frontend/src/styles/tokens.css` (tema claro en `:root, html.light`
 | `--color-texto-sobre-fondo-oscuro` / `--color-texto-sobre-fondo-claro` | Texto del ícono de plataforma (`.nx-chip-solid[data-texto]`) sobre un fondo libre elegido por el usuario | `255 255 255` / `0 0 0` (todos) | ídem (los 7 temas) | `tokens.css` | DIS-048, 2026-10-27 | Vigente |
 | `--color-panel-header-text` | Título de modales y cabeceras de tabla | `30 58 138` | `96 165 250` (SO, `html.dark`); obsidian `212 212 216`; violet `167 139 250` | `tokens.css` | FNC-001 (heredado); por tema DIS-001 | Vigente |
 | `--badge-<tono>-bg` / `-text` (8 tonos) | Insignias `.nx-badge-*` | tinte 0.1 + tono 700 | tinte 0.15 + tono 300-400 (ahora también SO oscuro, obsidian, violet; mismos valores repetidos en 4 bloques: observación, sin tarea) | `tokens.css` | FNC-001 (heredado); por tema DIS-001 | Vigente |
-| `--color-header-bg` | Fondo del header | `#2563eb`; emerald `#047857`; rose `#e11d48` | `#1e3a8a`; obsidian `#18181b`; violet `#2e1065` | `tokens.css` | FNC-001; valores emerald/rose DIS-001 | Vigente |
+| `--color-header-bg` / `--color-header-text` | Fondo y texto de la barra superior del marco (utilidades `header` / `header-text`) | `var(--color-barra-lateral)` (`255 255 255`) / `var(--color-texto)` (`16 24 40`) | `var(--color-barra-lateral)` (`17 22 33`) / `var(--color-texto)` (`245 245 246`); mismos valores en SO oscuro | `tokens.css` | FNC-001; paleta DIS-001; reapuntados a la paleta aprobada en DIS-078 | Vigente |
 | `--color-tab-active-bg` / `-text` | Pestaña activa | `var(--color-primary-solid)` / `var(--color-on-primary)` | ídem | `tokens.css` | FNC-001 (heredado); DIS-001 | Vigente |
 | `--color-button-bg` / `-text` | Botón genérico (utilidades `button-bg`/`button-text`, sin consumidores) | `var(--color-primary-solid)` / `var(--color-on-primary)` | ídem | `tokens.css` | FNC-001 (heredado); por referencia DIS-004, 2026-10-26 | Vigente (sin consumidor aún) |
 | `--color-error-solid` | Relleno del botón `danger` | `220 38 38` (claro, SO oscuro, `html.dark`, emerald, rose, violet) | obsidian `var(--color-error)` | `tokens.css` | DIS-004, 2026-10-26 | Vigente |
@@ -315,6 +315,9 @@ Definidos en `frontend/src/styles/tokens.css` bajo la arquitectura de 3 capas (A
 | `--invalido-borde` | Borde de error de campo | `220 38 38` | `239 68 68` | `tokens.css` | DIS-056 | Vigente |
 | `--duracion-corta`, `--duracion-media` | Duraciones de transición | `150ms`, `250ms` | `150ms`, `250ms` (0ms con reduced-motion) | `tokens.css` | DIS-056 | Vigente |
 | `--control-alto` | Altura táctil mínima accesible | `48px` | `48px` | `tokens.css` | DIS-072 | Vigente |
+| `--marco-lateral-ancho`, `--marco-lateral-colapsada` | Ancho de la barra lateral expandida y colapsada (utilidades `w-lateral`, `w-lateral-colapsada`) | `264px`, `76px` | ídem | `tokens.css` | DIS-078 | Vigente |
+| `--marco-superior-alto` | Alto de la barra superior y del logo de la barra lateral (utilidad `h-barra-superior`) | `64px` | ídem | `tokens.css` | DIS-078 | Vigente |
+| `--marco-buscador-max` | Ancho máximo del campo del buscador global (utilidad `max-w-buscador`; la paleta usa `Modal`, que fija su propio ancho) | `520px` | ídem | `tokens.css` | DIS-078 | Vigente |
 | `--contenido-max`, `--formulario-max`, `--dialogo-max` | Anchos máximos semánticos | `1280px`, `640px`, `560px` | `1280px`, `640px`, `560px` | `tokens.css` | DIS-072 | Vigente |
 | `--espacio-1` a `--espacio-12` | Escala única de espaciado 8pt | `4px`, `8px`, `12px`, `16px`, `24px`, `32px`, `48px` | ídem | `tokens.css` | DIS-072 | Vigente |
 | `--icono-sm`, `--icono-md`, `--icono-lg` | Tamaños normalizados de ícono | `16px`, `20px`, `24px` | ídem | `tokens.css` | DIS-072 | Vigente |

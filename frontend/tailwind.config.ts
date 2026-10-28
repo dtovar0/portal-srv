@@ -95,8 +95,14 @@ export default {
         // Surfaces & Backgrounds
         'body-bg': 'var(--color-body-bg)',
         'body-text': 'var(--color-body-text)',
-        header: 'var(--color-header-bg)',
-        'header-text': 'var(--color-header-text)',
+        header: 'rgb(var(--color-header-bg) / <alpha-value>)',
+        'header-text': 'rgb(var(--color-header-text) / <alpha-value>)',
+        // DIS-078: marco de administración (paleta del diseño aprobado, DIS-076)
+        'barra-lateral': 'rgb(var(--color-barra-lateral) / <alpha-value>)',
+        navegacion: 'rgb(var(--color-navegacion) / <alpha-value>)',
+        'activo-fondo': 'rgb(var(--color-activo-fondo) / <alpha-value>)',
+        'activo-texto': 'rgb(var(--color-activo-texto) / <alpha-value>)',
+        'entrada-fondo': 'rgb(var(--color-entrada-fondo) / <alpha-value>)',
         'panel-fill': 'rgb(var(--color-panel-fill) / <alpha-value>)',
         'panel-border': 'rgb(var(--color-panel-border) / <alpha-value>)',
         'panel-header': 'rgb(var(--color-panel-header-bg) / <alpha-value>)',
@@ -194,9 +200,15 @@ export default {
         contenido: 'var(--contenido-max)',
         formulario: 'var(--formulario-max)',
         dialogo: 'var(--dialogo-max)',
+        buscador: 'var(--marco-buscador-max)',
+      },
+      width: {
+        lateral: 'var(--marco-lateral-ancho)',
+        'lateral-colapsada': 'var(--marco-lateral-colapsada)',
       },
       height: {
         control: 'var(--control-alto)',
+        'barra-superior': 'var(--marco-superior-alto)',
       },
       minHeight: {
         control: 'var(--control-alto)',

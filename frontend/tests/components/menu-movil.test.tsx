@@ -181,16 +181,19 @@ describe('Menú móvil', () => {
     expect(actuales.map((a) => a.textContent)).toEqual(['Favoritos']);
   });
 
-  // DIS-008: la barra lateral también se usa con el dedo (tabletas desde `md`): 48 px en ambas.
-  it('los enlaces del menú móvil y de la barra lateral tienen área táctil de 48 px', async () => {
+  // DIS-008: la barra lateral también se usa con el dedo (tabletas desde `md`). DIS-078: la maqueta
+  // aprobada fija 44 px (mínimo de WCAG 2.5.5) para las opciones y los botones de la barra superior.
+  it('los enlaces del menú móvil y de la barra lateral tienen área táctil de 44 px', async () => {
     const panel = abrir(await montar());
     for (const enlace of within(panel).getAllByRole('link')) {
-      expect(enlace.className).toContain('min-h-12');
+      expect(enlace.className).toContain('min-h-11');
     }
     for (const enlace of within(document.querySelector('aside')!).getAllByRole('link')) {
-      expect(enlace.className).toContain('min-h-12');
+      expect(enlace.className).toContain('min-h-11');
     }
-    expect(screen.getByRole('button', { name: 'Menú' }).className).toContain('min-h-12');
+    const menu = screen.getByRole('button', { name: 'Menú' });
+    expect(menu.className).toContain('min-h-11');
+    expect(menu.className).toContain('min-w-11');
     expect(within(panel).getByRole('button', { name: 'Cerrar' }).className).toContain('min-h-12');
   });
 
