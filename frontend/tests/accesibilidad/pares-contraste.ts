@@ -193,4 +193,20 @@ export const PARES: ParContraste[] = [
   { id: 'foco-anillo/superficie-hundida', texto: '--foco-anillo', fondo: '--color-superficie-hundida', minimo: MIN_NO_TEXTO },
   { id: 'invalido-borde/superficie', texto: '--invalido-borde', fondo: '--color-superficie', minimo: MIN_NO_TEXTO },
   { id: 'invalido-borde/superficie-hundida', texto: '--invalido-borde', fondo: '--color-superficie-hundida', minimo: MIN_NO_TEXTO },
+  // DIS-076: paleta del diseño aprobado. Navegación y texto sobre la barra lateral, texto secundario y
+  // tenue sobre el fondo de página, texto sobre entrada y encabezado de tabla, activo y estados con su fondo.
+  texto('nav/barra-lateral', '--color-navegacion', '--color-barra-lateral'),
+  texto('texto/barra-lateral', '--color-texto', '--color-barra-lateral'),
+  texto('texto-secundario/barra-lateral', '--color-texto-secundario', '--color-barra-lateral'),
+  texto('texto-secundario/fondo', '--color-texto-secundario', '--color-fondo'),
+  texto('texto-tenue/fondo', '--color-texto-tenue', '--color-fondo'),
+  texto('texto/entrada', '--color-texto', '--color-entrada-fondo'),
+  texto('texto-secundario/tabla-encabezado', '--color-texto-secundario', '--color-tabla-encabezado'),
+  texto('activo-texto/activo-fondo', '--color-activo-texto', '--color-activo-fondo'),
+  texto('exito-texto/exito-fondo', '--color-exito-texto', '--color-exito-fondo'),
+  texto('aviso-texto/aviso-fondo', '--color-aviso-texto', '--color-aviso-fondo'),
+  texto('peligro-texto/peligro-fondo', '--color-peligro-texto', '--color-peligro-fondo'),
+  { id: 'borde/fondo', texto: '--color-borde', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
+  { id: 'borde/barra-lateral', texto: '--color-borde', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
+  { id: 'accion/fondo', texto: '--color-accion', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
 ];
