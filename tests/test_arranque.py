@@ -106,9 +106,9 @@ def test_db_engine_invalido_no_arranca(instancia, monkeypatch, motor):
         instancia()
 
 
-@pytest.mark.xfail(strict=True, reason='FNC-009: sin DB_ENGINE cae en '
-                   'silencio a SQLite; debe declararse explícito')
 def test_sin_db_engine_no_arranca(instancia, monkeypatch):
+    # FNC-134: fuera de desarrollo, sin DB_ENGINE=mysql no arranca.
+    monkeypatch.setenv('APP_ENV', 'production')
     monkeypatch.delenv('DB_ENGINE')
 
     with pytest.raises(Exception):

@@ -409,6 +409,14 @@ if ! salida_vw="$(revisar_vaultwarden "$PREFIX/.env")"; then
     die "Corregir las variables de Vaultwarden del .env (ver deploy/README.md)."
 fi
 printf '%s\n' "$salida_vw" | sed 's/^/    /'
+# Fuera de desarrollo la BD debe ser MySQL (FNC-134); mismo criterio que preflight.
+# shellcheck source=deploy/motor_bd.sh
+. "$PREFIX/deploy/motor_bd.sh"
+if ! salida_motor="$(revisar_motor_bd "$PREFIX/.env")"; then
+    printf '%s\n' "$salida_motor" | sed 's/^/    /'
+    die "DB_ENGINE debe ser mysql fuera de desarrollo (ver deploy/README.md)."
+fi
+printf '%s\n' "$salida_motor" | sed 's/^/    /'
 # El código sigue de root (SEG-1): la cuenta solo recibe sus datos y registros.
 entregar_datos_a_servicio "$PREFIX" "$LOGDIR" "$SVC_USER" "$SVC_GROUP" "${DATOS_SERVICIO[@]}" \
     || die "no se pudieron entregar los datos a $SVC_USER; ver el mensaje anterior."

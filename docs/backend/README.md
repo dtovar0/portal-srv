@@ -449,7 +449,7 @@ venv/bin/alembic upgrade head # crea o actualiza el esquema (§7), antes de arra
 venv/bin/python run.py        # API en el puerto 5001
 ```
 
-- Con `DB_ENGINE=mysql` usa MySQL/MariaDB vía PyMySQL; con cualquier otro valor (o sin definir) usa **SQLite** en `nexus.db`.
+- Con `DB_ENGINE=mysql` usa MySQL/MariaDB vía PyMySQL. **Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) `DB_ENGINE` debe ser `mysql`: si no, `construir_uri_bd()` lanza `ErrorConfiguracionBD` y ni la app ni Alembic arrancan (FNC-134).** Solo con `APP_ENV=development`, cualquier otro valor (o sin definir) usa **SQLite** en `nexus.db`.
 - Redis es opcional para la API: si no responde, la app arranca igual y los trabajos de aprovisionamiento esperan al worker.
 - **Worker de aprovisionamiento** (FNC-049), en otra terminal, con Redis local con contraseña:
   ```bash
@@ -467,7 +467,7 @@ venv/bin/python run.py        # API en el puerto 5001
   venv/bin/pytest                    # solo recoge tests/ (pytest.ini)
   venv/bin/pytest --cov=app          # con cobertura
   ```
-  - `tests/conftest.py`: no carga `.env`, usa valores ficticios, BD SQLite temporal por prueba, Redis sin conectar, SMTP y LDAP bloqueados.
+  - `tests/conftest.py`: no carga `.env`, usa valores ficticios (`APP_ENV=development`), BD SQLite temporal por prueba, Redis sin conectar, SMTP y LDAP bloqueados.
   - Fixtures: `app`, `client`, `crear_area`, `crear_plataforma`, `crear_usuario`, `cliente_como(usuario)`, `cliente_de_rol(rol)`, `cliente_admin`, `cliente_admin_area`, `cliente_usuario`.
   - `tests/fabricas.py`: fábricas de áreas, plataformas y usuarios por rol.
   - `tests/matriz_proteccion.py` (FNC-020): código esperado por rol de cada ruta `/api/v1`. **Todo endpoint nuevo agrega aquí su caso**; si no, falla `tests/test_guardia_rutas.py`.
@@ -560,7 +560,7 @@ La línea base `0001` ya contiene su efecto (verificado con `tests/test_linea_ba
 | 7 | ~~LDAP con TLS sin validar certificado (`CERT_NONE`)~~ Resuelta: login (FNC-042), prueba y búsqueda (FNC-043) usan el cliente validado. | — |
 | 8 | ~~Borrado automático de la cuenta local si no aparece en el directorio~~ Resuelta en FNC-042. | `auth/services.py` |
 | 9 | `run.py` usa `debug=True` y escucha en todas las interfaces; `PORT_APP` no se lee. | `run.py` |
-| 10 | `DB_ENGINE` distinto de `mysql` cae a SQLite (no hay rama PostgreSQL aunque `psycopg2-binary` está en dependencias). | `app/__init__.py` |
+| 10 | En desarrollo, `DB_ENGINE` desconocido (p. ej. `postgresql`) cae a SQLite (no hay rama PostgreSQL aunque `psycopg2-binary` está en dependencias). Fuera de dev ya no: exige `mysql` (FNC-134). | `app/utils/uri_bd.py` |
 | 11 | Dependencias sin versión fijada (`cryptography`, `ldap3`, `Flask-Mail`, `pandas`, `redis`, `gunicorn`, etc.); algunas sin uso aparente (`Flask-Mail`, `pexpect`, `openpyxl`, `xlrd`, `pandas`, `psycopg2-binary`). | `requirements.txt` |
 | 12 | Redis conectado pero sin uso. | `app/utils/redis_client.py` |
 | 13 | ~~`user_platforms` se edita sin efecto~~ Resuelta en FNC-065: endpoints en `410` y tabla obsoleta (P4: sus filas se descartan, sin migrar); borrado de la tabla en FNC-107. | `users/api.py`, `platforms/api.py` |
