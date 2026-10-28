@@ -15,6 +15,7 @@ import type { Session } from '@/lib/types';
 import { BarraLateral } from './barra-lateral';
 import { BarraSuperior } from './barra-superior';
 import { comandosDePantallas, type Comando } from './comandos';
+import { MenuUsuario } from './menu-usuario';
 import { entradasVisibles } from './nav-items';
 import { NavPrincipal } from './nav-principal';
 import { useIndicadores } from './use-indicadores';
@@ -44,19 +45,35 @@ export function Marco({ session, children }: { session: Session; children: React
       >
         Saltar al contenido
       </a>
-      <BarraLateral colapsada={colapsada} onAlternar={alternar} contadores={contadores} />
+      <BarraLateral
+        colapsada={colapsada}
+        onAlternar={alternar}
+        contadores={contadores}
+        session={session}
+        segunSistema={tema === 'sistema'}
+        onSegunSistema={() => { void elegir('sistema'); }}
+      />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <BarraSuperior
-          session={session}
-          menuMovil={<MobileMenu>{(close) => <NavPrincipal onNavigate={close} contadores={contadores} />}</MobileMenu>}
+          menuMovil={
+            <MobileMenu>
+              {(close) => (
+                <>
+                  <NavPrincipal onNavigate={close} contadores={contadores} />
+                  {/* Pie del cajón: la tarjeta de usuario queda a la vista aunque la lista se desplace. */}
+                  <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex border-t border-borde bg-panel-fill p-3">
+                    <MenuUsuario session={session} segunSistema={tema === 'sistema'} onSegunSistema={() => { void elegir('sistema'); }} />
+                  </div>
+                </>
+              )}
+            </MobileMenu>
+          }
           colapsada={colapsada}
           onAlternarMenu={alternar}
           comandos={comandos}
           oscuro={oscuro}
-          segunSistema={tema === 'sistema'}
           onAlternarTema={() => { void alternarTema(); }}
-          onTemaSistema={() => { void elegir('sistema'); }}
           noLeidas={noLeidas}
         />
 

@@ -2,43 +2,36 @@
 
 /**
  * Barra superior del marco (DIS-078), 64 px: botón de menú, ruta de navegación, buscador global,
- * tema claro/oscuro, notificaciones con indicador, ayuda y menú de usuario. Bajo `md` el botón
+ * tema claro/oscuro, notificaciones con indicador y ayuda (el menú de usuario va en el pie de la
+ * barra lateral, DIS-080). Bajo `md` el botón
  * de menú abre el cajón (`MobileMenu`) y el buscador se reduce a un icono.
  */
 
 import Link from 'next/link';
 import { Icono } from '../icono';
-import type { Session } from '@/lib/types';
 import { AyudaMarco } from './ayuda-marco';
 import { ID_BARRA_LATERAL } from './barra-lateral';
 import { BotonIcono, CLASE_BOTON_ICONO } from './boton-icono';
 import { BuscadorGlobal } from './buscador-global';
 import type { Comando } from './comandos';
-import { MenuUsuario } from './menu-usuario';
 import { RutaNavegacion } from './ruta-navegacion';
 
 export function BarraSuperior({
-  session,
   menuMovil,
   colapsada,
   onAlternarMenu,
   comandos,
   oscuro,
-  segunSistema,
   onAlternarTema,
-  onTemaSistema,
   noLeidas,
 }: {
-  session: Session;
   /** Botón del cajón móvil (`MobileMenu`). */
   menuMovil: React.ReactNode;
   colapsada: boolean;
   onAlternarMenu: () => void;
   comandos: readonly Comando[];
   oscuro: boolean;
-  segunSistema: boolean;
   onAlternarTema: () => void;
-  onTemaSistema: () => void;
   noLeidas: number;
 }) {
   const etiquetaMenu = colapsada ? 'Expandir menú' : 'Colapsar menú';
@@ -67,8 +60,6 @@ export function BarraSuperior({
           ) : null}
         </Link>
         <AyudaMarco />
-        <span aria-hidden="true" className="mx-1 hidden h-7 w-px bg-borde sm:block" />
-        <MenuUsuario session={session} segunSistema={segunSistema} onSegunSistema={onTemaSistema} />
       </div>
     </header>
   );

@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * Menú de usuario (DIS-078): avatar con iniciales, nombre y rol. Botón con `aria-haspopup="menu"`;
- * el menú se maneja con flechas, Inicio/Fin y Escape, y se cierra con Tab o un clic fuera.
+ * Menú de usuario (DIS-078, movido al pie de la barra lateral en DIS-080): tarjeta con avatar con
+ * iniciales, nombre y rol; con la barra colapsada, solo el avatar. Botón con `aria-haspopup="menu"`;
+ * el menú se abre hacia arriba (hacia arriba y a la derecha si está colapsada), se maneja con
+ * flechas, Inicio/Fin y Escape, y se cierra con Tab o un clic fuera.
  * Contiene «Tema: según el sistema» (reemplaza al selector de 3 opciones) y «Cerrar sesión».
  */
 
@@ -20,11 +22,14 @@ export function MenuUsuario({
   session,
   segunSistema,
   onSegunSistema,
+  colapsada = false,
 }: {
   session: Session;
   /** El tema actual es «según el sistema». */
   segunSistema: boolean;
   onSegunSistema: () => void;
+  /** Barra lateral colapsada: solo el avatar y el menú a la derecha. */
+  colapsada?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
@@ -88,7 +93,7 @@ export function MenuUsuario({
   }
 
   return (
-    <div ref={raiz} className="relative">
+    <div ref={raiz} className={`relative ${colapsada ? '' : 'min-w-0 flex-1'}`}>
       <button
         ref={boton}
         type="button"
@@ -98,16 +103,23 @@ export function MenuUsuario({
         aria-label={`Menú de usuario: ${session.name}`}
         onClick={() => setAbierto((v) => !v)}
         onKeyDown={alTeclearBoton}
-        className="flex min-h-11 min-w-11 items-center gap-2.5 rounded-base py-0 pl-1 pr-2 text-body-text outline-none transition-colors hover:bg-surface-container focus-visible:ring-2 focus-visible:ring-primary"
+        title={colapsada ? `Menú de usuario: ${session.name}` : undefined}
+        className={`flex min-h-11 items-center rounded-control text-body-text outline-none transition-colors hover:bg-surface-container focus-visible:ring-2 focus-visible:ring-primary ${
+          colapsada ? 'min-w-11 justify-center' : 'w-full gap-2.5 border border-borde bg-superficie py-1 pl-1.5 pr-2.5'
+        }`}
       >
         <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-pastilla bg-accion text-sm font-bold text-texto-sobre-accion">
           {iniciales(session.name)}
         </span>
-        <span className="hidden min-w-0 flex-col items-start leading-tight lg:flex">
-          <span className="max-w-40 truncate text-sm font-semibold">{session.name}</span>
-          <span className="max-w-40 truncate text-xs text-texto-secundario">{etiquetaRol(session.role)}</span>
-        </span>
-        <Icono nombre="chevron-abajo" tamano="sm" className="hidden text-texto-secundario lg:inline-block" />
+        {colapsada ? null : (
+          <>
+            <span className="flex min-w-0 flex-1 flex-col items-start leading-tight">
+              <span className="w-full truncate text-left text-sm font-semibold">{session.name}</span>
+              <span className="w-full truncate text-left text-xs text-texto-secundario">{etiquetaRol(session.role)}</span>
+            </span>
+            <Icono nombre="chevron-abajo" tamano="sm" className="rotate-180 text-texto-secundario" />
+          </>
+        )}
       </button>
 
       {abierto ? (
@@ -117,7 +129,9 @@ export function MenuUsuario({
           role="menu"
           aria-label="Cuenta"
           onKeyDown={alTeclearMenu}
-          className="absolute right-0 top-full z-50 mt-2 w-64 rounded-tarjeta border border-borde bg-superficie-elevada p-2 shadow-2"
+          className={`absolute z-50 w-60 rounded-tarjeta border border-borde bg-superficie-elevada p-2 shadow-2 ${
+            colapsada ? 'bottom-0 left-full ml-2' : 'bottom-full left-0 mb-2'
+          }`}
         >
           <div role="presentation" className="border-b border-borde-sutil px-3 pb-3 pt-2">
             <p className="truncate text-sm font-semibold text-body-text">{session.name}</p>
