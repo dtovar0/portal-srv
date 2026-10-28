@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'fila' | 'fila-peligro';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'fila' | 'fila-peligro' | 'fila-primario';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +15,7 @@ export const CLASES_VARIANTE_BOTON: Record<ButtonVariant, string> = {
   danger: 'nexus-btn-danger',
   fila: 'nexus-btn-fila min-h-12 min-w-12 text-primary-text focus-visible:ring-primary',
   'fila-peligro': 'nexus-btn-fila-peligro min-h-12 min-w-12 text-error-text focus-visible:ring-primary',
+  'fila-primario': 'nexus-btn-fila-primario min-h-12 min-w-12 focus-visible:ring-primary',
 };
 
 /**

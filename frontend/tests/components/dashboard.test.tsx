@@ -23,6 +23,12 @@ vi.mock('@/lib/access/home', () => ({
     ? Promise.reject(new Error('falla'))
     : Promise.resolve({ scope: 'global', pending_approvals: 0, failed_access: 0, totals: { areas: 1, platforms: 2, active_access: 0 } }))) },
 }));
+vi.mock('@/lib/access/requests', () => ({
+  requestsApi: { inbox: vi.fn(() => Promise.resolve({ items: [], page: 1, per_page: 5, total: 0 })) },
+}));
+vi.mock('@/lib/access/audit', () => ({
+  auditApi: { list: vi.fn(() => Promise.resolve({ items: [], page: 1, per_page: 5, total: 0 })) },
+}));
 vi.mock('@/components/session-provider', () => ({
   useSession: () => ({
     loading: estado.cargando, error: null,
@@ -50,6 +56,22 @@ const contadores = (etiqueta: string) =>
   screen.queryAllByText(etiqueta).filter((el) => el.tagName === 'P');
 
 describe('Dashboard', () => {
+  it('DIS-079: el admin ve las acciones del encabezado, solicitudes pendientes y actividad reciente', async () => {
+    render(<Dashboard />);
+    expect(await screen.findByRole('link', { name: 'Revisar aprobaciones' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Exportar/ })).toBeNull();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Solicitudes pendientes' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'Actividad reciente' })).toBeTruthy();
+  });
+
+  it('DIS-079: quien no administra no ve esas secciones', async () => {
+    permisos.is_admin = false;
+    render(<Dashboard />);
+    await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+    expect(screen.queryByRole('link', { name: 'Revisar aprobaciones' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Solicitudes pendientes' })).toBeNull();
+  });
+
   it('secciones de /stats como h3 bajo el h2 "Actividad del portal"', async () => {
     render(<Dashboard />);
     expect(await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' })).toBeTruthy();

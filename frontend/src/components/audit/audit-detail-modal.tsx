@@ -34,7 +34,7 @@ export function AuditDetailModal({ entry, onClose }: { entry: AuditEntryV1; onCl
     <Modal title={TITULO_DETALLE} onClose={onClose}>
       <dl className="grid gap-3 sm:grid-cols-2">
         <Dato etiqueta="Fecha" valor={formatearFecha(entry.time)} />
-        <Dato etiqueta="Resultado" valor={<Badge tone={tono.tono}>{tono.texto}</Badge>} />
+        <Dato etiqueta="Resultado" valor={<Badge tone={tono.tono} icon={tono.icono}>{tono.texto}</Badge>} />
         <Dato etiqueta="Evento" valor={etiquetaAccion(entry.action)} />
         <Dato etiqueta="Quién" valor={quienActuo(entry)} />
         <Dato etiqueta="Sobre" valor={entry.target_user?.email ?? entry.target ?? '—'} />

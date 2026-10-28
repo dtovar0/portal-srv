@@ -7,6 +7,9 @@
  */
 
 import type { AuditResult } from '@/lib/access/types';
+import type { NombreIcono } from '../icono';
+
+type ResultadoVista = { texto: string; tono: 'success' | 'error' | 'warning' | 'slate'; icono: NombreIcono };
 
 export const ACCIONES: Record<string, string> = {
   area_creada: 'Área creada',
@@ -39,18 +42,18 @@ export function etiquetaAccion(action: string): string {
   return Object.hasOwn(ACCIONES, action) ? ACCIONES[action] : action;
 }
 
-export const RESULTADOS: Record<AuditResult, { texto: string; tono: 'success' | 'error' | 'warning' | 'slate' }> = {
-  success: { texto: 'Éxito', tono: 'success' },
-  error: { texto: 'Error', tono: 'error' },
-  warning: { texto: 'Advertencia', tono: 'warning' },
-  info: { texto: 'Información', tono: 'slate' },
+export const RESULTADOS: Record<AuditResult, ResultadoVista> = {
+  success: { texto: 'Éxito', tono: 'success', icono: 'aprobar' },
+  error: { texto: 'Error', tono: 'error', icono: 'rechazar' },
+  warning: { texto: 'Advertencia', tono: 'warning', icono: 'aviso' },
+  info: { texto: 'Información', tono: 'slate', icono: 'info' },
 };
 
 /** Resultado (`status`) para la insignia; un valor desconocido, tal cual y en gris. */
-export function resultado(status: string): { texto: string; tono: 'success' | 'error' | 'warning' | 'slate' } {
+export function resultado(status: string): ResultadoVista {
   return Object.hasOwn(RESULTADOS, status)
     ? RESULTADOS[status as AuditResult]
-    : { texto: status, tono: 'slate' };
+    : { texto: status, tono: 'slate', icono: 'info' };
 }
 
 /** Quién actuó: el correo del actor o "Sistema" (`actor` null). */

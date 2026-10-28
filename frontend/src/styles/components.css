@@ -27,6 +27,17 @@
 .nx-badge-slate   { background: rgb(var(--badge-slate-bg)) !important;   color: rgb(var(--badge-slate-text)) !important;   border-color: rgb(var(--badge-slate-text) / 0.2) !important;   }
 .nx-badge-cyan    { background: rgb(var(--badge-cyan-bg)) !important;    color: rgb(var(--badge-cyan-text)) !important;    border-color: rgb(var(--badge-cyan-text) / 0.2) !important;    }
 
+/* DIS-079: tonos de estado para cajas de icono, avatares y círculos de actividad (fondo + texto de la paleta DIS-076). */
+.nx-tono-activo  { background: rgb(var(--color-activo-fondo)); color: rgb(var(--color-activo-texto)); }
+.nx-tono-success { background: rgb(var(--badge-success-bg)); color: rgb(var(--badge-success-text)); }
+.nx-tono-error   { background: rgb(var(--badge-error-bg));   color: rgb(var(--badge-error-text)); }
+.nx-tono-warning { background: rgb(var(--badge-warning-bg)); color: rgb(var(--badge-warning-text)); }
+.nx-tono-neutro  { background: rgb(var(--badge-slate-bg));   color: rgb(var(--badge-slate-text)); }
+
+/* DIS-079: nota de un indicador con el color del texto de su estado. */
+.nx-texto-warning { color: rgb(var(--badge-warning-text)); }
+.nx-texto-error   { color: rgb(var(--badge-error-text)); }
+
 thead tr {
     height: var(--control-alto, 48px); /* DIS-072: unificado a altura de control / 48px */
 }
@@ -292,6 +303,23 @@ thead tr {
 
 .nexus-btn-fila-peligro:hover:not([aria-disabled="true"]):not(:disabled) {
     background: rgb(var(--color-error) / 0.1) !important;
+    transform: none !important;
+}
+
+/* DIS-079: acción de fila de solo icono con relleno de acento (aprobar). */
+.nexus-btn-fila-primario {
+    min-width: 3rem !important;
+    height: 3rem !important;
+    padding: 0 0.75rem !important;
+    border-radius: var(--radio-control, 0.5rem) !important;
+    background: rgb(var(--color-primary-solid)) !important;
+    color: rgb(var(--color-on-primary)) !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+}
+
+.nexus-btn-fila-primario:hover:not([aria-disabled="true"]):not(:disabled) {
+    filter: brightness(1.1);
     transform: none !important;
 }
 

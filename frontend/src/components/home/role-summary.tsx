@@ -21,8 +21,9 @@ import { formatearFecha } from '../access/fecha';
 import { rutaConFiltro } from '../access/filtro-url';
 import { listLoadError } from '../access/request-errors';
 import { Button, ButtonLink } from '../form';
+import type { NombreIcono } from '../icono';
 import { useSession } from '../session-provider';
-import { EmptyNote, ErrorNote, Skeleton, StatTile } from '../ui';
+import { EmptyNote, ErrorNote, Skeleton, StatTile, type TonoCaja } from '../ui';
 
 /** Pantallas a las que lleva cada contador. */
 export const RUTAS_INICIO = {
@@ -55,6 +56,12 @@ export interface Contador {
   ruta: string;
   /** Nombre de la pantalla destino, para el nombre accesible del enlace. */
   destino: string;
+  /** Icono y color del estado del indicador (DIS-079). */
+  icono: NombreIcono;
+  tono: TonoCaja;
+  /** Nota bajo el número, solo con datos reales de la API. */
+  nota?: string;
+  notaTono?: 'warning' | 'error';
 }
 
 export interface GrupoResumen {
@@ -71,8 +78,8 @@ export function gruposDelResumen(resumen: HomeSummary): GrupoResumen[] {
       id: 'pendientes',
       titulo: 'Pendientes',
       contadores: [
-        { etiqueta: 'Por aprobar', valor: resumen.pending_approvals ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.aprobaciones, { status: 'pendiente' }), destino: 'Aprobaciones' },
-        { etiqueta: 'Accesos con falla', valor: resumen.failed_access ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.inventario, { status: 'fallido' }), destino: 'Inventario' },
+        { etiqueta: 'Por aprobar', valor: resumen.pending_approvals ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.aprobaciones, { status: 'pendiente' }), destino: 'Aprobaciones', icono: 'reloj', tono: 'warning', ...(resumen.oldest_pending_at && (resumen.pending_approvals ?? 0) > 0 ? { nota: `La más antigua: ${formatearFecha(resumen.oldest_pending_at)}`, notaTono: 'warning' as const } : {}) },
+        { etiqueta: 'Accesos con falla', valor: resumen.failed_access ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.inventario, { status: 'fallido' }), destino: 'Inventario', icono: 'aviso', tono: (resumen.failed_access ?? 0) > 0 ? 'error' : 'neutro', ...((resumen.failed_access ?? 0) > 0 ? { nota: 'Requieren atención', notaTono: 'error' as const } : {}) },
       ],
     });
   }
@@ -81,9 +88,9 @@ export function gruposDelResumen(resumen: HomeSummary): GrupoResumen[] {
       id: 'totales',
       titulo: resumen.scope === 'global' ? 'Todo el sistema' : 'Tus áreas',
       contadores: [
-        { etiqueta: 'Áreas', valor: resumen.totals.areas, ruta: RUTAS_INICIO.areas, destino: 'Áreas' },
-        { etiqueta: 'Plataformas', valor: resumen.totals.platforms, ruta: RUTAS_INICIO.plataformas, destino: 'Administrar plataformas' },
-        { etiqueta: 'Accesos activos', valor: resumen.totals.active_access, ruta: rutaConFiltro(RUTAS_INICIO.inventario, { status: 'activo' }), destino: 'Inventario' },
+        { etiqueta: 'Áreas', valor: resumen.totals.areas, ruta: RUTAS_INICIO.areas, destino: 'Áreas', icono: 'areas', tono: 'activo' },
+        { etiqueta: 'Plataformas', valor: resumen.totals.platforms, ruta: RUTAS_INICIO.plataformas, destino: 'Administrar plataformas', icono: 'plataformas', tono: 'activo' },
+        { etiqueta: 'Accesos activos', valor: resumen.totals.active_access, ruta: rutaConFiltro(RUTAS_INICIO.inventario, { status: 'activo' }), destino: 'Inventario', icono: 'escudo-ok', tono: 'success' },
       ],
     });
   }
@@ -92,9 +99,9 @@ export function gruposDelResumen(resumen: HomeSummary): GrupoResumen[] {
       id: 'mis-solicitudes',
       titulo: 'Mis solicitudes',
       contadores: [
-        { etiqueta: 'Pendientes', valor: resumen.my_requests.pendiente, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'pendiente' }), destino: 'Mis solicitudes' },
-        { etiqueta: 'Aprobadas', valor: resumen.my_requests.aprobada, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'aprobada' }), destino: 'Mis solicitudes' },
-        { etiqueta: 'Rechazadas', valor: resumen.my_requests.rechazada, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'rechazada' }), destino: 'Mis solicitudes' },
+        { etiqueta: 'Pendientes', valor: resumen.my_requests.pendiente, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'pendiente' }), destino: 'Mis solicitudes', icono: 'reloj', tono: 'warning' },
+        { etiqueta: 'Aprobadas', valor: resumen.my_requests.aprobada, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'aprobada' }), destino: 'Mis solicitudes', icono: 'aprobar', tono: 'success' },
+        { etiqueta: 'Rechazadas', valor: resumen.my_requests.rechazada, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'rechazada' }), destino: 'Mis solicitudes', icono: 'rechazar', tono: 'error' },
       ],
     });
   }
@@ -103,9 +110,9 @@ export function gruposDelResumen(resumen: HomeSummary): GrupoResumen[] {
       id: 'mis-accesos',
       titulo: 'Mis accesos',
       contadores: [
-        { etiqueta: 'Con acceso', valor: resumen.my_access.activo, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'activo' }), destino: 'Mis accesos' },
-        { etiqueta: 'En proceso', valor: resumen.my_access.en_proceso, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'en_proceso' }), destino: 'Mis accesos' },
-        { etiqueta: 'Fallidos', valor: resumen.my_access.fallido, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'fallido' }), destino: 'Mis accesos' },
+        { etiqueta: 'Con acceso', valor: resumen.my_access.activo, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'activo' }), destino: 'Mis accesos', icono: 'escudo-ok', tono: 'success' },
+        { etiqueta: 'En proceso', valor: resumen.my_access.en_proceso, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'en_proceso' }), destino: 'Mis accesos', icono: 'reloj', tono: 'warning' },
+        { etiqueta: 'Fallidos', valor: resumen.my_access.fallido, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'fallido' }), destino: 'Mis accesos', icono: 'aviso', tono: 'error' },
       ],
     });
   }
@@ -124,7 +131,14 @@ function ContadorEnlace({ contador }: { contador: Contador }) {
       aria-label={`${contador.etiqueta}: ${contador.valor}. Ir a ${contador.destino}`}
       className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary [&:hover>div]:border-primary"
     >
-      <StatTile label={contador.etiqueta} value={contador.valor} />
+      <StatTile
+        label={contador.etiqueta}
+        value={contador.valor}
+        icon={contador.icono}
+        tone={contador.tono}
+        hint={contador.nota}
+        hintTone={contador.notaTono}
+      />
     </Link>
   );
 }

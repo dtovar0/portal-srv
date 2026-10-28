@@ -76,7 +76,7 @@ function Fila({
       </div>
       <div>
         <dt className={ETIQUETA_CELDA}>Resultado</dt>
-        <dd><Badge tone={estado.tono}>{estado.texto}</Badge></dd>
+        <dd><Badge tone={estado.tono} icon={estado.icono}>{estado.texto}</Badge></dd>
       </div>
       <div>
         <dt className="sr-only">Detalle</dt>

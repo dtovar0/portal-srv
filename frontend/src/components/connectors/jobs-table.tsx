@@ -55,7 +55,7 @@ function Fila({
       </div>
       <div>
         <dt className={ETIQUETA_CELDA}>Estado</dt>
-        <dd><Badge tone={estado.tono}>{estado.texto}</Badge></dd>
+        <dd><Badge tone={estado.tono} icon={estado.icono}>{estado.texto}</Badge></dd>
         <dd className="mt-1 text-sm text-label">Intentos: {job.attempts_count} de {job.max_attempts}</dd>
         {job.next_attempt_at ? (
           <dd className="text-sm text-label">Próximo: {formatearFecha(job.next_attempt_at)}</dd>
