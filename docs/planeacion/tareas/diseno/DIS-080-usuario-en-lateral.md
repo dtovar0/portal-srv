@@ -8,7 +8,7 @@
 | **Fase** | 7 (7B, marco de administración) |
 | **Módulo / Área** | componentes |
 | **Prioridad** | Alta |
-| **Estatus** | En revisión |
+| **Estatus** | Hecha |
 | **Rama** | `dis/DIS-080-usuario-en-lateral` |
 | **Creada** | 2026-10-28 |
 | **Aprobada** | 2026-10-28, por el dueño al revisar DIS-078: «el menú del usuario va a la izquierda abajo, donde pusiste el botón de colapsar menú» |
@@ -43,3 +43,5 @@
 
 ## Bitácora
 - 2026-10-28: implementada; En revisión.
+
+- 2026-10-28: `auditor-accesibilidad` Aprobado (patrón de menú íntegro, sin recorte, 44 px, contraste ≥ 5.4:1 en los 2 temas, orden de tabulación coherente). Observaciones a revisar en dispositivo: menú `w-60` en un cajón estrecho y pie colapsado en pantallas bajas. Hecha.
