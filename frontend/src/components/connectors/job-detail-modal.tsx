@@ -46,7 +46,7 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   return (
     <Modal title={`Ejecución n.º ${job.id}`} onClose={onClose}>
       <dl className="grid gap-3 sm:grid-cols-2">
-        <Dato etiqueta="Estado" valor={<Badge tone={estado.tono}>{estado.texto}</Badge>} />
+        <Dato etiqueta="Estado" valor={<Badge tone={estado.tono} icon={estado.icono}>{estado.texto}</Badge>} />
         <Dato etiqueta="Operación" valor={`${OPERACIONES[actual.operation]} · ${PROVEEDORES[actual.provider]}`} />
         <Dato etiqueta="Usuario" valor={actual.user.name} />
         <Dato etiqueta="Plataforma" valor={`${actual.platform.name} · ${actual.area.name}`} />

@@ -15,7 +15,11 @@ import { api } from '@/lib/api';
 import type { Stats } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { useTokenColors } from '@/lib/use-token-colors';
+import { ActividadReciente } from './home/actividad-reciente';
 import { RoleSummary } from './home/role-summary';
+import { SolicitudesPendientes } from './home/solicitudes-pendientes';
+import { ButtonLink } from './form';
+import { Icono } from './icono';
 import { useSession } from './session-provider';
 import { Card, ErrorNote, RegionDeAviso, Skeleton, StatTile } from './ui';
 import { DataTable } from './data-table';
@@ -25,6 +29,7 @@ export function Dashboard() {
   const { session } = useSession();
   const { data: stats, loading, error } = useAsync(() => api.stats(), []);
   const [resumenFallo, setResumenFallo] = useState(false);
+  const administra = Boolean(session?.permissions.is_admin || session?.permissions.is_area_admin);
 
   return (
     <div className="space-y-6">
@@ -35,9 +40,22 @@ export function Dashboard() {
             ? 'Vista global del sistema.'
             : 'Datos de las áreas a las que tienes acceso.'
         }
+        actions={administra ? (
+          <ButtonLink href="/approvals" variant="primary">
+            <Icono nombre="exito" tamano="sm" className="mr-2" />
+            Revisar aprobaciones
+          </ButtonLink>
+        ) : undefined}
       />
 
       <RoleSummary onFallo={setResumenFallo} />
+
+      {administra ? (
+        <div className="grid gap-4 xl:grid-cols-3">
+          <SolicitudesPendientes />
+          <ActividadReciente />
+        </div>
+      ) : null}
 
       <RegionDeAviso minHeight="min-h-6">
         {error ? <ErrorNote message={error} /> : null}

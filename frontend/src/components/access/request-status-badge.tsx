@@ -4,15 +4,16 @@
  */
 
 import type { AccessRequest, RequestStatus } from '@/lib/access/types';
+import type { NombreIcono } from '../icono';
 import { Badge } from '../ui';
 import { hayAccesosTransitorios } from './access-status-badge';
 
 type Tono = React.ComponentProps<typeof Badge>['tone'];
 
-export const ESTADOS_SOLICITUD: Record<RequestStatus, { texto: string; tono: Tono }> = {
-  pendiente: { texto: 'Pendiente', tono: 'warning' },
-  aprobada: { texto: 'Aprobada', tono: 'success' },
-  rechazada: { texto: 'Rechazada', tono: 'error' },
+export const ESTADOS_SOLICITUD: Record<RequestStatus, { texto: string; tono: Tono; icono: NombreIcono }> = {
+  pendiente: { texto: 'Pendiente', tono: 'warning', icono: 'reloj' },
+  aprobada: { texto: 'Aprobada', tono: 'success', icono: 'aprobar' },
+  rechazada: { texto: 'Rechazada', tono: 'error', icono: 'rechazar' },
 };
 
 /**
@@ -25,6 +26,6 @@ export function hayTransitoriosEnSolicitudes(solicitudes: AccessRequest[]): bool
 }
 
 export function RequestStatusBadge({ status }: { status: RequestStatus }) {
-  const { texto, tono } = ESTADOS_SOLICITUD[status];
-  return <Badge tone={tono}>{texto}</Badge>;
+  const { texto, tono, icono } = ESTADOS_SOLICITUD[status];
+  return <Badge tone={tono} icon={icono}>{texto}</Badge>;
 }

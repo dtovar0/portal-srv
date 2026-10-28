@@ -5,17 +5,18 @@
  */
 
 import type { Job, JobAttempt, JobOperation, JobStatus } from '@/lib/access/types';
+import type { NombreIcono } from '../icono';
 import type { Badge } from '../ui';
 
 type Tono = React.ComponentProps<typeof Badge>['tone'];
 
-export const ESTADOS_EJECUCION: Record<JobStatus, { texto: string; tono: Tono }> = {
-  pendiente: { texto: 'Pendiente', tono: 'primary' },
-  en_ejecucion: { texto: 'En ejecución', tono: 'sky' },
-  reintentando: { texto: 'Reintentando', tono: 'warning' },
-  exitoso: { texto: 'Exitosa', tono: 'success' },
-  fallido: { texto: 'Fallida', tono: 'error' },
-  cancelado: { texto: 'Cancelada', tono: 'slate' },
+export const ESTADOS_EJECUCION: Record<JobStatus, { texto: string; tono: Tono; icono: NombreIcono }> = {
+  pendiente: { texto: 'Pendiente', tono: 'primary', icono: 'reloj' },
+  en_ejecucion: { texto: 'En ejecución', tono: 'sky', icono: 'ejecuciones' },
+  reintentando: { texto: 'Reintentando', tono: 'warning', icono: 'reloj' },
+  exitoso: { texto: 'Exitosa', tono: 'success', icono: 'aprobar' },
+  fallido: { texto: 'Fallida', tono: 'error', icono: 'rechazar' },
+  cancelado: { texto: 'Cancelada', tono: 'slate', icono: 'cerrar' },
 };
 
 export const OPERACIONES: Record<JobOperation, string> = {

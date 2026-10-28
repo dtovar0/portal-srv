@@ -4,6 +4,7 @@
  */
 
 import type { AccessLevel, AccessStatus } from '@/lib/access/types';
+import type { NombreIcono } from '../icono';
 import { Badge } from '../ui';
 
 type Tono = React.ComponentProps<typeof Badge>['tone'];
@@ -13,13 +14,13 @@ export const NIVELES: Record<AccessLevel, string> = {
   admin: 'Admin',
 };
 
-export const ESTADOS: Record<AccessStatus, { texto: string; tono: Tono }> = {
-  activo: { texto: 'Con acceso', tono: 'success' },
-  en_proceso: { texto: 'Acceso en proceso', tono: 'sky' },
-  fallido: { texto: 'Acceso fallido', tono: 'error' },
-  revocando: { texto: 'Revocando acceso', tono: 'warning' },
-  revocado: { texto: 'Sin acceso', tono: 'slate' },
-  fallo_revocacion: { texto: 'Fallo al revocar', tono: 'error' },
+export const ESTADOS: Record<AccessStatus, { texto: string; tono: Tono; icono: NombreIcono }> = {
+  activo: { texto: 'Con acceso', tono: 'success', icono: 'aprobar' },
+  en_proceso: { texto: 'Acceso en proceso', tono: 'sky', icono: 'reloj' },
+  fallido: { texto: 'Acceso fallido', tono: 'error', icono: 'rechazar' },
+  revocando: { texto: 'Revocando acceso', tono: 'warning', icono: 'reloj' },
+  revocado: { texto: 'Sin acceso', tono: 'slate', icono: 'escudo' },
+  fallo_revocacion: { texto: 'Fallo al revocar', tono: 'error', icono: 'rechazar' },
 };
 
 /** Estados que todavía cambian: con ellos se refresca (contrato `accesos.md`, "Refresco"). */
@@ -37,7 +38,7 @@ export function AccessStatusBadge({
   status: AccessStatus | null;
   level?: AccessLevel | null;
 }) {
-  if (!status || status === 'revocado') return <Badge tone="slate">Sin acceso</Badge>;
-  const { texto, tono } = ESTADOS[status];
-  return <Badge tone={tono}>{level ? `${texto} · ${NIVELES[level]}` : texto}</Badge>;
+  if (!status || status === 'revocado') return <Badge tone="slate" icon="escudo">Sin acceso</Badge>;
+  const { texto, tono, icono } = ESTADOS[status];
+  return <Badge tone={tono} icon={icono}>{level ? `${texto} · ${NIVELES[level]}` : texto}</Badge>;
 }

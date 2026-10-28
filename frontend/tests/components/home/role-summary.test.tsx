@@ -103,8 +103,8 @@ describe('RoleSummary', () => {
     vi.mocked(homeApi.summary).mockResolvedValue(ADMIN);
     render(<RoleSummary />);
     expect(await screen.findByRole('heading', { name: TITULOS.areas })).toBeTruthy();
-    expect(enlace('Por aprobar: 4. Ir a Aprobaciones').getAttribute('href')).toBe('/approvals?status=pendiente');
-    expect(enlace('Accesos con falla: 1. Ir a Inventario').getAttribute('href')).toBe('/inventory?status=fallido');
+    expect(screen.getByRole('link', { name: /^Por aprobar: 4\. La más antigua: .+\. Ir a Aprobaciones$/ }).getAttribute('href')).toBe('/approvals?status=pendiente');
+    expect(enlace('Accesos con falla: 1. Requieren atención. Ir a Inventario').getAttribute('href')).toBe('/inventory?status=fallido');
     expect(enlace('Áreas: 2. Ir a Áreas').getAttribute('href')).toBe(RUTAS_INICIO.areas);
     expect(enlace('Plataformas: 7. Ir a Administrar plataformas').getAttribute('href')).toBe(RUTAS_INICIO.plataformas);
     expect(enlace('Accesos activos: 35. Ir a Inventario').getAttribute('href')).toBe('/inventory?status=activo');

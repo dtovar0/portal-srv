@@ -206,6 +206,16 @@ export const PARES: ParContraste[] = [
   texto('exito-texto/exito-fondo', '--color-exito-texto', '--color-exito-fondo'),
   texto('aviso-texto/aviso-fondo', '--color-aviso-texto', '--color-aviso-fondo'),
   texto('peligro-texto/peligro-fondo', '--color-peligro-texto', '--color-peligro-fondo'),
+  // DIS-079: cajas de icono, avatares y círculos de actividad (`.nx-tono-*`, texto de las iniciales), notas
+  // de los indicadores (`.nx-texto-*`, sobre la tarjeta) y acción de fila de relleno (`.nexus-btn-fila-primario`).
+  texto('nx-tono-activo', '--color-activo-texto', '--color-activo-fondo'),
+  texto('nx-tono-success', '--badge-success-text', '--badge-success-bg'),
+  texto('nx-tono-error', '--badge-error-text', '--badge-error-bg'),
+  texto('nx-tono-warning', '--badge-warning-text', '--badge-warning-bg'),
+  texto('nx-tono-neutro', '--badge-slate-text', '--badge-slate-bg'),
+  texto('nx-texto-warning/tarjeta', '--badge-warning-text', '--color-panel-fill'),
+  texto('nx-texto-error/tarjeta', '--badge-error-text', '--color-panel-fill'),
+  texto('nexus-btn-fila-primario', '--color-on-primary', '--color-primary-solid'),
   { id: 'borde/fondo', texto: '--color-borde', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
   { id: 'borde/barra-lateral', texto: '--color-borde', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
   { id: 'accion/fondo', texto: '--color-accion', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },

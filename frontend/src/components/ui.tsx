@@ -7,6 +7,8 @@
  * No se define aquí ningún estilo propio.
  */
 
+import { Icono, type NombreIcono } from './icono';
+
 export type CardVariant = 'default' | 'link' | 'selectable';
 
 export interface CardProps extends React.HTMLAttributes<HTMLElement> {
@@ -58,22 +60,62 @@ export function PanelHeader({
   );
 }
 
+/** Tonos de las cajas de icono, avatares y círculos de actividad (`.nx-tono-*`, DIS-079). */
+export type TonoCaja = 'activo' | 'success' | 'error' | 'warning' | 'neutro';
+
+/** Clase de cada tono (literales, para que el CSS sin uso las encuentre). */
+export const CLASE_TONO: Record<TonoCaja, string> = {
+  activo: 'nx-tono-activo',
+  success: 'nx-tono-success',
+  error: 'nx-tono-error',
+  warning: 'nx-tono-warning',
+  neutro: 'nx-tono-neutro',
+};
+
+const CLASE_NOTA = { warning: 'nx-texto-warning', error: 'nx-texto-error' } as const;
+
+/**
+ * Indicador. Con `icon`, lo muestra decorativo en una caja del color del estado (`tone`) y
+ * pone número y nota a su lado (DIS-079); sin `icon` conserva la tarjeta simple.
+ */
 export function StatTile({
   label,
   value,
   hint,
+  icon,
+  tone = 'activo',
+  hintTone,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  icon?: NombreIcono;
+  tone?: TonoCaja;
+  /** Colorea la nota con el texto del estado (`warning` o `error`). */
+  hintTone?: 'warning' | 'error';
 }) {
-  return (
-    <Card>
+  const claseNota = hintTone ? CLASE_NOTA[hintTone] : 'text-bi-muted';
+  const cuerpo = (
+    <div className="min-w-0">
       <p className="text-xs font-black uppercase tracking-[0.15em] text-label">
         {label}
       </p>
       <p className="mt-2 text-3xl font-black tabular-nums text-bi-main">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-bi-muted">{hint}</p> : null}
+      {hint ? <p className={`mt-1 text-xs ${claseNota}`}>{hint}</p> : null}
+    </div>
+  );
+  if (!icon) return <Card>{cuerpo}</Card>;
+  return (
+    <Card>
+      <div className="flex items-start gap-4">
+        <span
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${CLASE_TONO[tone]}`}
+          aria-hidden="true"
+        >
+          <Icono nombre={icon} tamano="xl" />
+        </span>
+        {cuerpo}
+      </div>
     </Card>
   );
 }
@@ -114,15 +156,22 @@ export function SuccessNote({ children }: { children: React.ReactNode }) {
  */
 export type Tone = 'primary' | 'success' | 'error' | 'warning' | 'violet' | 'sky' | 'slate' | 'cyan';
 
-/** Insignia. Usa las clases .nx-badge del portal. */
+/** Insignia con texto; `icon` añade un icono decorativo (el texto nunca se pierde, DIS-079). */
 export function Badge({
   children,
   tone = 'slate',
+  icon,
 }: {
   children: React.ReactNode;
   tone?: Tone;
+  icon?: NombreIcono;
 }) {
-  return <span className={`nx-badge nx-badge-${tone}`}>{children}</span>;
+  return (
+    <span className={`nx-badge nx-badge-${tone}`}>
+      {icon ? <Icono nombre={icon} tamano="sm" /> : null}
+      {children}
+    </span>
+  );
 }
 
 /**
