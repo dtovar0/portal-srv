@@ -34,10 +34,11 @@ const RUTA_APROBACIONES = '/approvals';
 type Decision = { tipo: 'aprobar' | 'rechazar'; request: AccessRequest };
 
 /** Nombre accesible de una acción: dice qué hace y sobre qué solicitud. */
-export function nombreAccion(accion: 'Ver detalle de' | 'Rechazar' | 'Aprobar', request: AccessRequest): string {
+export function nombreAccion(accion: 'Ver' | 'Rechazar' | 'Aprobar', request: AccessRequest): string {
   const quien = request.requester.name;
-  return accion === 'Ver detalle de'
-    ? `Ver detalle de la solicitud de ${quien}`
+  // No existe pantalla de detalle de una solicitud: «Ver» lleva a la lista de Aprobaciones.
+  return accion === 'Ver'
+    ? `Ver en aprobaciones: solicitud de ${quien}`
     : `${accion} la solicitud de ${quien}`;
 }
 
@@ -93,7 +94,7 @@ export function SolicitudesPendientes() {
       key: 'usuario',
       header: 'Usuario',
       cell: (r) => <CeldaUsuario nombre={r.requester.name} correo={r.requester.email} />,
-      cellClassName: 'px-3 py-3',
+      cellClassName: 'px-3 py-2',
     },
     {
       key: 'plataforma',
@@ -104,13 +105,13 @@ export function SolicitudesPendientes() {
           <span className="whitespace-nowrap">{r.platform.name} · {NIVELES[r.level]}</span>
         </div>
       ),
-      cellClassName: 'px-3 py-3',
+      cellClassName: 'px-3 py-2',
     },
     {
       key: 'estado',
       header: 'Estado',
       cell: (r) => <RequestStatusBadge status={r.status} />,
-      cellClassName: 'px-3 py-3',
+      cellClassName: 'px-3 py-2',
     },
     {
       key: 'acciones',
@@ -120,8 +121,8 @@ export function SolicitudesPendientes() {
           <ButtonLink
             href={rutaConFiltro(RUTA_APROBACIONES, { status: 'pendiente' })}
             variant="fila"
-            aria-label={nombreAccion('Ver detalle de', r)}
-            title="Ver detalle"
+            aria-label={nombreAccion('Ver', r)}
+            title="Ver en aprobaciones"
           >
             <Icono nombre="ver" />
           </ButtonLink>
@@ -147,7 +148,7 @@ export function SolicitudesPendientes() {
           )}
         </div>
       ),
-      cellClassName: 'px-3 py-3 text-right',
+      cellClassName: 'px-3 py-2 text-right',
     },
   ];
 
@@ -162,6 +163,8 @@ export function SolicitudesPendientes() {
         rowKey={(r) => r.id}
         loading={lista.loading && !lista.data}
         error={lista.error}
+        filasEsperadas={FILAS}
+        claseFilaEsqueleto="min-h-16"
         emptyMessage="No hay solicitudes pendientes."
       />
       {lista.error ? <Button variant="secondary" onClick={refrescar}>Reintentar</Button> : null}

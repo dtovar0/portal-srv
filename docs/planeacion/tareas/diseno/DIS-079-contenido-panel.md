@@ -60,3 +60,7 @@
 
 ## Bitácora
 - 2026-10-28: implementada; En revisión.
+- 2026-10-28: correcciones de `auditor-accesibilidad` («Requiere cambios», sin hallazgos de contraste), con prueba que primero falló: H1 la nota del indicador entra en el nombre accesible (`Por aprobar: 3. La más antigua: …. Ir a Aprobaciones`); H2 «Ver» se llama «Ver en aprobaciones: solicitud de X» (no existe detalle de solicitud); H3 `DataTable` con `filasEsperadas` y `claseFilaEsqueleto` (5 filas de `min-h-16`; celdas `py-2` para que la fila mida 64 px); `role="list"` en la actividad; pares de contraste de `.nx-tono-*`, `.nx-texto-*` y `.nexus-btn-fila-primario` en `pares-contraste.ts`.
+- Decisión H6: `ResponsiveList` también pasa a `!p-0` (su cabecera `px-6` y sus filas `p-4 md:px-6` ya traen su propio relleno; con `p-6` de `Card` quedaba doble). Afecta a Aprobaciones, Mis solicitudes, Mis accesos, Inventario, Auditoría y Ejecuciones: validar visualmente.
+- Verificación tras las correcciones (en `frontend/`): typecheck 0, lint 0, vitest 0 (73 archivos, 2528 pruebas), build 0.
+

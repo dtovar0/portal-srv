@@ -30,6 +30,7 @@ import { SolicitudesPendientes } from '@/components/home/solicitudes-pendientes'
 import { AccessStatusBadge } from '@/components/access/access-status-badge';
 import { RequestStatusBadge } from '@/components/access/request-status-badge';
 import { Badge, StatTile } from '@/components/ui';
+import { DataTable, ResponsiveList } from '@/components/data-table';
 
 const SOLICITUD: AccessRequest = {
   id: 7, status: 'pendiente', level: 'usuario', justification: null,
@@ -60,6 +61,8 @@ describe('Indicadores del Panel', () => {
     const { container } = render(<RoleSummary />);
     const porAprobar = await screen.findByRole('link', { name: /Por aprobar: 3/ });
     expect(porAprobar.textContent).toContain('La más antigua:');
+    // H1: la nota forma parte del nombre accesible.
+    expect(porAprobar.getAttribute('aria-label')).toMatch(/Por aprobar: 3\. La más antigua: .+\. Ir a Aprobaciones/);
     expect(porAprobar.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
     expect(screen.getByRole('link', { name: /Accesos con falla: 2/ }).textContent).toContain('Requieren atención');
     expect(screen.getByRole('link', { name: /Accesos activos: 4/ })).toBeTruthy();
@@ -144,7 +147,7 @@ describe('Solicitudes pendientes', () => {
     expect(fila.textContent).toContain('US');
     expect(fila.textContent).toContain('Demo Wiki · Usuario');
     expect(within(fila).getByText('Pendiente')).toBeTruthy();
-    expect(within(fila).getByRole('link', { name: 'Ver detalle de la solicitud de usuario1' })).toBeTruthy();
+    expect(within(fila).getByRole('link', { name: 'Ver en aprobaciones: solicitud de usuario1' })).toBeTruthy();
     for (const nombre of ['Rechazar la solicitud de usuario1', 'Aprobar la solicitud de usuario1']) {
       const boton = within(fila).getByRole('button', { name: nombre });
       expect(boton.textContent).toBe('');
@@ -160,7 +163,7 @@ describe('Solicitudes pendientes', () => {
     render(<SolicitudesPendientes />);
     await screen.findByRole('table');
     expect(screen.queryByRole('button', { name: /Aprobar la solicitud/ })).toBeNull();
-    expect(screen.getByRole('link', { name: /Ver detalle/ })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Ver en aprobaciones/ })).toBeTruthy();
   });
 
   it('aprobar abre la confirmación', async () => {
@@ -187,11 +190,37 @@ describe('Solicitudes pendientes', () => {
   });
 });
 
+describe('DataTable con encabezado (H3, H6)', () => {
+  const cols = [{ key: 'a', header: 'A', cell: (r: { id: number }) => r.id }];
+
+  it('el esqueleto reserva las filas y la altura esperadas', () => {
+    const { container } = render(
+      <DataTable label="Tabla" encabezado={<h2>T</h2>} columns={cols} rows={[]} rowKey={(r) => r.id}
+        loading emptyMessage="vacío" filasEsperadas={5} claseFilaEsqueleto="min-h-16" />,
+    );
+    const filas = container.querySelectorAll('[role="status"] div[aria-hidden="true"]');
+    expect(filas).toHaveLength(5);
+    expect(filas[0].className).toContain('min-h-16');
+  });
+
+  it('la tarjeta de DataTable y de ResponsiveList no llevan el relleno de Card', () => {
+    const { container } = render(<>
+      <DataTable label="T" columns={cols} rows={[{ id: 1 }]} rowKey={(r) => r.id} emptyMessage="v" />
+      <ResponsiveList columns="md:grid-cols-1" headers={['A']} label="L"><li>x</li></ResponsiveList>
+    </>);
+    const tarjetas = container.querySelectorAll('.bg-panel-fill');
+    expect(tarjetas).toHaveLength(2);
+    tarjetas.forEach((t) => expect(t.className).toContain('!p-0'));
+  });
+});
+
 describe('Actividad reciente', () => {
   it('lista los eventos reales con icono decorativo según el resultado', async () => {
     vi.mocked(auditApi.list).mockResolvedValue(pagina([EVENTO]));
     const { container } = render(<ActividadReciente />);
     expect(await screen.findByText('Solicitud rechazada')).toBeTruthy();
+    expect(screen.getByRole('list', { name: 'Actividad reciente' }).getAttribute('role')).toBe('list');
+    expect(container.querySelector('ul[role="list"]')).toBeTruthy();
     expect(container.querySelector('span[aria-hidden="true"].nx-tono-error svg')).toBeTruthy();
     expect(vistaEvento({ ...EVENTO, action: 'solicitud_creada' }).icono).toBe('reloj');
     expect(vistaEvento({ ...EVENTO, status: 'success' }).tono).toBe('success');

@@ -87,7 +87,7 @@ export function ActividadReciente() {
         {lista.error ? <ErrorNote message={lista.error} /> : null}
         {lista.data && items.length === 0 ? <EmptyNote message="Todavía no hay actividad." /> : null}
         {items.length > 0 ? (
-          <ul className="space-y-4" aria-label="Actividad reciente">
+          <ul role="list" className="space-y-4" aria-label="Actividad reciente">
             {items.map((entry) => <Evento key={entry.id} entry={entry} />)}
           </ul>
         ) : null}

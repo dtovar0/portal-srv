@@ -56,6 +56,10 @@ export interface DataTableProps<T> {
    * se muestran dentro de la misma tarjeta y la carga conserva el tamaño de las filas.
    */
   encabezado?: React.ReactNode;
+  /** Filas del esqueleto de carga con `encabezado` (por defecto 3); igualarlas a las que se cargarán. */
+  filasEsperadas?: number;
+  /** Clase de alto de cada fila del esqueleto (por defecto `min-h-12`). */
+  claseFilaEsqueleto?: string;
 }
 
 export function DataTable<T>({
@@ -71,13 +75,15 @@ export function DataTable<T>({
   selectedKey,
   onRowClick,
   encabezado,
+  filasEsperadas = 3,
+  claseFilaEsqueleto,
 }: DataTableProps<T>) {
   if (encabezado && !srOnly && (loading || error || rows.length === 0)) {
     return (
       <Card className="!p-0">
         <div className="border-b border-panel-border px-5 py-4">{encabezado}</div>
         <div className="space-y-3 p-5">
-          {loading ? <Skeleton variant="fila" count={3} ariaLabel={`Cargando ${label.toLowerCase()}…`} /> : null}
+          {loading ? <Skeleton variant="fila" count={Math.max(filasEsperadas, 2)} className={claseFilaEsqueleto} ariaLabel={`Cargando ${label.toLowerCase()}…`} /> : null}
           {!loading && error ? <ErrorNote message={error} /> : null}
           {!loading && !error ? <EmptyNote message={emptyMessage} /> : null}
         </div>
@@ -197,7 +203,7 @@ export function ResponsiveList({
   className?: string;
 }) {
   return (
-    <Card className={`p-0 ${className}`}>
+    <Card className={`!p-0 ${className}`}>
       <div
         aria-hidden="true"
         className={`hidden border-b border-panel-border px-6 py-3 text-xs font-medium uppercase tracking-wide text-label md:grid md:gap-4 ${columns}`}

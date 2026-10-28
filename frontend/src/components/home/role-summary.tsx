@@ -128,7 +128,7 @@ function ContadorEnlace({ contador }: { contador: Contador }) {
   return (
     <Link
       href={contador.ruta}
-      aria-label={`${contador.etiqueta}: ${contador.valor}. Ir a ${contador.destino}`}
+      aria-label={`${contador.etiqueta}: ${contador.valor}. ${contador.nota ? `${contador.nota}. ` : ''}Ir a ${contador.destino}`}
       className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary [&:hover>div]:border-primary"
     >
       <StatTile
