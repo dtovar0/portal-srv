@@ -18,7 +18,17 @@ export const CORREO_MAX = 120;
 const CORREO_PATRON = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const NOMBRE_MAX = 100;
 
-export type CampoAlta = 'uid' | 'email' | 'given_name' | 'surname' | 'area_ids';
+export const PASSWORD_MIN = 8;
+
+export type CampoAlta =
+  | 'uid'
+  | 'email'
+  | 'given_name'
+  | 'surname'
+  | 'fullName'
+  | 'password'
+  | 'confirmPassword'
+  | 'area_ids';
 
 export interface FormularioAlta {
   uid: string;
@@ -26,6 +36,9 @@ export interface FormularioAlta {
   given_name: string;
   surname: string;
   area_ids: number[];
+  fullName?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 const OBLIGATORIO = 'Es obligatorio.';
@@ -36,6 +49,9 @@ export const MENSAJES_CAMPO: Record<CampoAlta, string> = {
   email: `Escribe un correo válido, sin acentos, de hasta ${CORREO_MAX} caracteres.`,
   given_name: `De 1 a ${NOMBRE_MAX} caracteres.`,
   surname: `De 1 a ${NOMBRE_MAX} caracteres.`,
+  fullName: `De 1 a ${NOMBRE_MAX} caracteres.`,
+  password: `Mínimo ${PASSWORD_MIN} caracteres.`,
+  confirmPassword: 'Las contraseñas no coinciden.',
   area_ids: 'Elige al menos un área de tu alcance.',
 };
 
@@ -56,6 +72,47 @@ const MENSAJES_POR_ESTADO: Record<number, string> = {
 };
 
 const MENSAJE_GENERICO = 'No se pudo crear la cuenta. Inténtalo de nuevo.';
+
+/**
+ * Validación exclusiva del Paso 1: Datos del usuario (nombre completo, correo, contraseña y confirmación).
+ */
+export function validarStep1(form: {
+  fullName?: string;
+  email: string;
+  password?: string;
+  confirmPassword?: string;
+}): Partial<Record<CampoAlta, string>> {
+  const errores: Partial<Record<CampoAlta, string>> = {};
+  const nombre = (form.fullName || '').trim();
+  if (!nombre) {
+    errores.fullName = OBLIGATORIO;
+  } else if (nombre.length > NOMBRE_MAX) {
+    errores.fullName = MENSAJES_CAMPO.fullName;
+  }
+
+  const correo = form.email.trim();
+  if (!correo) {
+    errores.email = OBLIGATORIO;
+  } else if (correo.length > CORREO_MAX || !CORREO_PATRON.test(correo)) {
+    errores.email = MENSAJES_CAMPO.email;
+  }
+
+  const pass = form.password || '';
+  if (!pass) {
+    errores.password = OBLIGATORIO;
+  } else if (pass.length < PASSWORD_MIN) {
+    errores.password = MENSAJES_CAMPO.password;
+  }
+
+  const conf = form.confirmPassword || '';
+  if (!conf) {
+    errores.confirmPassword = OBLIGATORIO;
+  } else if (pass !== conf) {
+    errores.confirmPassword = MENSAJES_CAMPO.confirmPassword;
+  }
+
+  return errores;
+}
 
 /**
  * Errores por campo antes de enviar. `areasObligatorias`: el admin de área
@@ -87,8 +144,9 @@ export function validarAlta(
 
 /** Cuerpo del contrato: textos recortados y sin campos extra (lista blanca). */
 export function cuerpoAlta(form: FormularioAlta): DirectoryAccountInput {
+  const uidDerivado = form.uid.trim() || form.email.split('@')[0].trim().toLowerCase();
   return {
-    uid: form.uid.trim(),
+    uid: uidDerivado,
     email: form.email.trim(),
     given_name: form.given_name.trim(),
     surname: form.surname.trim(),

@@ -74,7 +74,7 @@ export function DirectoryTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full w-full flex-1 min-h-0 flex-col space-y-4">
       <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 text-sm text-body-text">
         {AVISO_FUENTE}
       </div>
@@ -117,7 +117,7 @@ export function DirectoryTab() {
           {estado === 'sin_configurar' ? <EmptyNote message={MENSAJE_SIN_CONFIGURAR} /> : null}
           {estado === 'invalido' ? <ErrorNote message={MENSAJE_INVALIDA} /> : null}
 
-          <Card className="space-y-5">
+          <Card className="flex-1 space-y-5">
             <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Dato
                 etiqueta="Estado"

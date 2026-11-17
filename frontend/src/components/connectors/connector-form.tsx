@@ -18,7 +18,8 @@
 import { useState } from 'react';
 import { connectorsApi } from '@/lib/access/connectors';
 import type { Connector } from '@/lib/access/types';
-import { Button, Checkbox, Field, Select, TextInput } from '../form';
+import { Button, Checkbox, Field, Option, Select, TextInput } from '../form';
+import { Icono } from '../icono';
 import { FieldErrorNote, FieldHint, describedBy, focusFirstError } from '../platforms/field-notes';
 import { ErrorNote } from '../ui';
 import {
@@ -177,11 +178,11 @@ export function ConnectorForm({
               {...describedBy([tipoError, fields.type], [tipoPista, true])}
             >
               {(Object.keys(TIPOS_CONECTOR) as (keyof typeof TIPOS_CONECTOR)[]).map((tipo) => (
-                <option key={tipo} value={tipo}>{TIPOS_CONECTOR[tipo]}</option>
+                <Option key={tipo} value={tipo}>{TIPOS_CONECTOR[tipo]}</Option>
               ))}
               {/* Un tipo guardado sin editor aquí (p. ej. `noop` en dev) se conserva. */}
               {guardado && !esTipoConocido(guardado.type)
-                ? <option value={guardado.type}>{guardado.type}</option> : null}
+                ? <Option value={guardado.type}>{guardado.type}</Option> : null}
             </Select>
           </Field>
           <FieldHint id={tipoPista}>
@@ -246,6 +247,7 @@ export function ConnectorForm({
           aria-disabled={sending || undefined}
           className="aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary"
         >
+          <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           {sending ? 'Guardando…' : 'Guardar conector'}
         </Button>
       </div>

@@ -57,7 +57,7 @@ export function PaletaComandos({
   }
 
   return (
-    <Modal title="Buscador global" onClose={onCerrar}>
+    <Modal title="Buscador global" icon="buscar" onClose={onCerrar}>
       <TextInput
         type="text"
         role="combobox"

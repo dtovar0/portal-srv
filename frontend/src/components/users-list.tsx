@@ -2,24 +2,40 @@
 
 /** Usuarios: alta, edición, baja y asignación de áreas y plataformas. */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAsync } from '@/lib/use-async';
 import type { DirectoryUser, ManagedUser } from '@/lib/types';
+import { DataTable, type DataColumn } from './data-table';
 import { Button, ConfirmDialog } from './form';
+import { Icono } from './icono';
+import type { NombreIcono } from './icono-trazos';
 import { PageHeader } from './page-header';
 import { useSession } from './session-provider';
-import { Card, EmptyNote, ErrorNote, RegionDeAviso, Skeleton, SuccessNote } from './ui';
+import { Badge, Card, ErrorNote, RegionDeAviso, SuccessNote } from './ui';
 import { AdminAreasDialog, RemoveAdminDialog } from './users/admin-role-dialog';
 import { DirectoryAccountForm } from './users/directory-account-form';
 import { DirectoryPicker } from './users/directory-picker';
 import { PurgePanel } from './users/purge-panel';
-import { UserAccessPanel } from './users/user-access-panel';
-import { UserCard } from './users/user-card';
+import { useToast } from './toast';
+import { MENSAJE_SUPERADMIN, UserAccessPanel } from './users/user-access-panel';
 import { UserForm } from './users/user-form';
+
+const ROLE_LABELS: Record<string, string> = {
+  administrador: 'Super admin',
+  admin_area: 'Admin',
+  usuario: 'Usuario',
+};
+
+const ROLE_TONES: Record<string, 'primary' | 'sky' | 'slate'> = {
+  administrador: 'primary',
+  admin_area: 'sky',
+  usuario: 'slate',
+};
 
 export function UsersList() {
   const { session } = useSession();
+  const { avisar } = useToast();
   const users = useAsync(() => api.users(), []);
   const areas = useAsync(() => api.areas(), []);
   const platforms = useAsync(() => api.platforms(), []);
@@ -60,10 +76,14 @@ export function UsersList() {
   }, []);
   const cerrarAlta = useCallback(() => setCreatingAccount(false), []);
 
-  function anunciar(mensaje: string) {
+  function anunciar(mensaje: string, titulo = 'Usuario') {
     setCreatingAccount(false);
     setRoleOf(null);
     setAviso(mensaje);
+    const textoToast = mensaje.startsWith('Se creó la cuenta de ')
+      ? `${mensaje.replace('Se creó la cuenta de ', '').replace(/\.$/, '')} se agregó al directorio.`
+      : mensaje;
+    avisar('success', textoToast, titulo);
     users.reload();
     // Tras desmontar el diálogo, el foco va al aviso.
     setTimeout(() => avisoRef.current?.focus(), 0);
@@ -71,57 +91,286 @@ export function UsersList() {
 
   async function remove() {
     if (!removing) return;
+    const correo = removing.email;
     setBusy(true);
     setProblem(null);
     try {
       await api.deleteUser(removing.id);
+      avisar('success', `Cuenta de ${correo} retirada.`, 'Usuario eliminado');
       setRemoving(null);
       users.reload();
     } catch (err) {
-      setProblem(err instanceof Error ? err.message : 'No se pudo eliminar');
+      const msg = err instanceof Error ? err.message : 'No se pudo eliminar la cuenta.';
+      setProblem(msg);
+      avisar('error', msg, 'Error');
     } finally {
       setBusy(false);
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Usuarios"
-        description={
-          session?.permissions.is_admin
-            ? 'Todos los usuarios del sistema.'
-            : 'Usuarios de las áreas que administras.'
-        }
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {isAdmin ? (
-              <>
-                <Button variant="secondary" onClick={() => setDirectory(true)}>
-                  Buscar en directorio
-                </Button>
-                <Button variant="secondary" onClick={() => setShowPurge((v) => !v)}>
-                  {showPurge ? 'Ocultar purga' : 'Purgar inactivas'}
-                </Button>
-              </>
-            ) : null}
-            <Button onClick={() => setCreatingAccount(true)}>Nuevo usuario</Button>
-          </div>
-        }
-      />
+  const [busqueda, setBusqueda] = useState('');
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8;
 
-      <div role="status" ref={avisoRef} tabIndex={-1} className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        {aviso ? (
+  const filteredUsers = useMemo(() => {
+    if (!users.data) return [];
+    if (!busqueda.trim()) return users.data;
+    const q = busqueda.toLowerCase().trim();
+    return users.data.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.role?.toLowerCase().includes(q) ||
+        u.areas?.some((a) => a.name.toLowerCase().includes(q)),
+    );
+  }, [users.data, busqueda]);
+
+  const activeSelectedIds = selectedUserIds;
+
+  const effectiveSelectedUser = useMemo(() => {
+    if (!users.data || users.data.length === 0) return null;
+    if (activeSelectedIds.size === 0) return null;
+    if (lastSelectedId && activeSelectedIds.has(lastSelectedId)) {
+      return users.data.find((u) => u.id === lastSelectedId) ?? null;
+    }
+    const primerId = Array.from(activeSelectedIds)[0];
+    return users.data.find((u) => u.id === primerId) ?? null;
+  }, [users.data, activeSelectedIds, lastSelectedId]);
+
+  const isSingleSelected = activeSelectedIds.size === 1;
+
+  const totalUsers = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
+  const displayUsers = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredUsers.slice(start, start + PAGE_SIZE);
+  }, [filteredUsers, page]);
+
+  const allDisplayIds = useMemo(() => displayUsers.map((u) => u.id), [displayUsers]);
+  const allSelected = allDisplayIds.length > 0 && allDisplayIds.every((id) => activeSelectedIds.has(id));
+  const someSelected = allDisplayIds.some((id) => activeSelectedIds.has(id)) && !allSelected;
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedUserIds(new Set());
+      setLastSelectedId(null);
+    } else {
+      setSelectedUserIds(new Set(allDisplayIds));
+      if (!lastSelectedId && allDisplayIds.length > 0) {
+        setLastSelectedId(allDisplayIds[0]);
+      }
+    }
+  }
+
+  function toggleUser(id: number) {
+    const next = new Set(selectedUserIds);
+    if (next.has(id)) {
+      next.delete(id);
+      if (lastSelectedId === id) {
+        setLastSelectedId(next.size > 0 ? Array.from(next)[0] : null);
+      }
+    } else {
+      next.add(id);
+      setLastSelectedId(id);
+    }
+    setSelectedUserIds(next);
+  }
+
+  const areasMap = useMemo(() => {
+    const map = new Map<number, { icon: string; color: string; name: string }>();
+    if (areas.data) {
+      for (const a of areas.data) {
+        map.set(a.id, { icon: a.icon || 'areas', color: a.color, name: a.name });
+      }
+    }
+    return map;
+  }, [areas.data]);
+
+  const columnas = useMemo<DataColumn<ManagedUser>[]>(
+    () => [
+      {
+        key: 'seleccion',
+        header: (
+          <div className="flex items-center justify-center">
+            <input
+              type="checkbox"
+              aria-label="Seleccionar todos los usuarios"
+              checked={allSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someSelected;
+              }}
+              onChange={toggleAll}
+              className="nexus-checkbox cursor-pointer"
+            />
+          </div>
+        ),
+        headerClassName: 'w-16 px-4 py-2 text-center font-black tracking-wider text-primary-text select-none',
+        cellClassName: 'w-16 px-4 py-1.5 text-center',
+        cell: (user) => {
+          const estaSeleccionado = activeSelectedIds.has(user.id);
+          return (
+            <div className="flex items-center justify-center">
+              <input
+                type="checkbox"
+                aria-label={`Seleccionar a ${user.name}`}
+                checked={estaSeleccionado}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => toggleUser(user.id)}
+                className="nexus-checkbox cursor-pointer"
+              />
+            </div>
+          );
+        },
+      },
+      {
+        key: 'nombre',
+        header: 'Nombre',
+        headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none',
+        cellClassName: 'px-6 py-1.5',
+        cell: (user) => (
+          <div className="flex items-center gap-3">
+            <div
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-gradient-to-br from-primary/10 via-brand/10 to-accent/10 font-bold text-xs text-primary-text shadow-xs"
+              aria-hidden="true"
+            >
+              {user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+            </div>
+            <span className="truncate font-bold text-xs text-body-text leading-tight">{user.name}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'correo',
+        header: 'Correo',
+        headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none',
+        cellClassName: 'px-6 py-1.5',
+        cell: (user) => (
+          <span className="truncate text-xs text-body-text leading-tight">{user.email}</span>
+        ),
+      },
+      {
+        key: 'rol',
+        header: 'Rol',
+        headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none',
+        cellClassName: 'px-6 py-1.5',
+        cell: (user) => {
+          const config = {
+            administrador: {
+              tone: 'violet' as const,
+              label: 'Super admin',
+            },
+            admin_area: {
+              tone: 'sky' as const,
+              label: 'Admin',
+            },
+            usuario: {
+              tone: 'slate' as const,
+              label: 'Usuario',
+            },
+          }[user.role] ?? {
+            tone: 'slate' as const,
+            label: user.role,
+          };
+
+          return (
+            <div className="flex items-center gap-1.5">
+              <Badge
+                tone={config.tone}
+                className="!h-8 !px-3 inline-flex items-center text-xs font-semibold rounded-lg"
+              >
+                {config.label}
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'estado',
+        header: 'Estado',
+        headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none',
+        cellClassName: 'px-6 py-1.5',
+        cell: (user) => {
+          const activeLabel = user.is_active ? 'Activo' : 'Inactivo';
+          const authLabel = user.auth_source === 'ldap'
+            ? 'Directorio OpenLDAP'
+            : user.auth_source === 'local'
+            ? 'Cuenta local'
+            : user.auth_source;
+
+          return (
+            <div className="flex items-center gap-1.5">
+              {/* Estatus de actividad */}
+              <Badge
+                tone={user.is_active ? 'success' : 'warning'}
+                icon={user.is_active ? 'exito' : 'aviso'}
+                title={activeLabel}
+                className="!size-8 !p-0 justify-center rounded-lg"
+              >
+                <span className="sr-only">{activeLabel}</span>
+              </Badge>
+
+              {/* Origen de cuenta */}
+              <Badge
+                tone={user.auth_source === 'ldap' ? 'primary' : 'slate'}
+                icon={user.auth_source === 'ldap' ? 'plataformas' : 'documento'}
+                title={authLabel}
+                className="!size-8 !p-0 justify-center rounded-lg"
+              >
+                <span className="sr-only">{authLabel}</span>
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'areas',
+        header: 'Áreas asignadas',
+        headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none',
+        cellClassName: 'px-6 py-1.5',
+        cell: (user) => (
+          <div className="flex max-w-xs flex-wrap items-center gap-1.5">
+            {user.areas.length === 0 ? (
+              <span className="text-xs text-label italic">Sin áreas asignadas</span>
+            ) : (
+              user.areas.map((area) => {
+                const icono = (area.icon || areasMap.get(area.id)?.icon || 'areas') as NombreIcono;
+                return (
+                  <span
+                    key={area.id}
+                    title={area.name}
+                    aria-label={area.name}
+                    className="inline-flex size-8 items-center justify-center rounded-lg border border-panel-border/80 bg-surface-container text-primary-text shadow-xs transition-transform hover:scale-110"
+                  >
+                    <Icono nombre={icono} tamano="sm" ariaHidden={true} />
+                  </span>
+                );
+              })
+            )}
+          </div>
+        ),
+      },
+    ],
+    [activeSelectedIds, allSelected, someSelected, allDisplayIds, areasMap],
+  );
+
+  return (
+    <div className="flex h-full w-full flex-col gap-4 min-h-0">
+      <PageHeader title="Usuarios" className="sr-only" />
+
+      {aviso ? (
+        <div role="status" ref={avisoRef} tabIndex={-1} className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0">
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <SuccessNote>{aviso}</SuccessNote>
               <Button variant="secondary" onClick={() => setAviso(null)}>Cerrar aviso</Button>
             </div>
           </Card>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
-      {showPurge ? <PurgePanel onDone={users.reload} /> : null}
+      {showPurge ? <div className="shrink-0"><PurgePanel onDone={users.reload} /></div> : null}
 
       {accessOf ? (
         <UserAccessPanel
@@ -134,34 +383,164 @@ export function UsersList() {
         />
       ) : null}
 
-      <RegionDeAviso minHeight="min-h-6">
-        {problem ? <ErrorNote message={problem} /> : users.error ? <ErrorNote message={users.error} /> : null}
-      </RegionDeAviso>
-
-      {users.loading ? (
-        <Skeleton variant="tarjeta" count={3} ariaLabel="Cargando usuarios…" />
-      ) : !users.error ? (
-        (users.data ?? []).length === 0 ? (
-          <EmptyNote message="No hay usuarios dentro de tu alcance." />
-        ) : (
-          <div className="space-y-3">
-            {(users.data ?? []).map((user) => (
-              <UserCard
-                key={user.id}
-                user={user}
-                isAdmin={isAdmin}
-                onEdit={setEditing}
-                onAccess={(trigger, target) => {
-                  accessTrigger.current = trigger;
-                  setAccessOf(target);
-                }}
-                onRemove={setRemoving}
-                onRole={abrirRol}
-              />
-            ))}
-          </div>
-        )
+      {problem || users.error ? (
+        <RegionDeAviso minHeight="min-h-0" className="shrink-0">
+          {problem ? <ErrorNote message={problem} /> : <ErrorNote message={users.error!} />}
+        </RegionDeAviso>
       ) : null}
+
+      {/* Grid de 1 columna y 2 filas (10/90): Fila 1 contenedor con botones, Fila 2 tabla al 100% */}
+      <div className="grid w-full flex-1 min-h-0 grid-cols-1 grid-rows-[auto_1fr] gap-4">
+        {/* Fila 1 (N columnas, 1 fila): Buscador a la izquierda, botones estandarizados a la derecha */}
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
+          {/* A LA IZQUIERDA: Buscador y estado de selección */}
+          <div className="flex items-center gap-3 flex-1 min-w-0 max-w-2xl">
+            <div className="relative w-full max-w-md">
+              <label htmlFor="buscar-usuarios" className="sr-only">Buscar usuarios</label>
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-label">
+                <Icono nombre="buscar" tamano="md" ariaHidden={true} />
+              </div>
+              <input
+                id="buscar-usuarios"
+                type="search"
+                placeholder="Buscar usuarios…"
+                value={busqueda}
+                onChange={(e) => {
+                  setBusqueda(e.target.value);
+                  setPage(1);
+                }}
+                aria-label="Buscar usuarios"
+                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-label/60 shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              {busqueda ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusqueda('');
+                    setPage(1);
+                  }}
+                  className="absolute inset-y-0 right-0 flex items-center justify-center min-h-12 min-w-12 pr-3 text-label hover:text-body-text transition-colors"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
+                </button>
+              ) : null}
+            </div>
+            {activeSelectedIds.size > 1 ? (
+              <span className="text-xs font-bold text-body-text whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60">
+                {activeSelectedIds.size} usuarios seleccionados
+              </span>
+            ) : activeSelectedIds.size === 0 ? (
+              <span className="sr-only">Acciones de usuarios</span>
+            ) : null}
+          </div>
+
+          {/* A LA DERECHA: Botones solicitados: accesos, editar, eliminar y nuevo */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Botón Accesos: activo solo si se selecciona exactamente 1 fila */}
+            <Button
+              variant="fila"
+              disabled={!isSingleSelected}
+              onClick={(event) => {
+                if (!effectiveSelectedUser) return;
+                accessTrigger.current = event.currentTarget;
+                if (effectiveSelectedUser.role === 'administrador') {
+                  avisar('info', 'Acceso total sin restricciones.', 'Superadmin');
+                  return;
+                }
+                setAccessOf(effectiveSelectedUser);
+              }}
+              aria-label={effectiveSelectedUser ? `Accesos de ${effectiveSelectedUser.name}` : 'Accesos'}
+              title={
+                isSingleSelected
+                  ? `Accesos de ${effectiveSelectedUser?.name}`
+                  : activeSelectedIds.size > 1
+                  ? 'Solo se puede ver accesos de 1 usuario a la vez'
+                  : 'Selecciona 1 usuario para ver accesos'
+              }
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="solicitudes" tamano="sm" ariaHidden={true} />
+              <span>Accesos</span>
+            </Button>
+
+            {/* Botón Editar: activo solo si se selecciona exactamente 1 fila */}
+            <Button
+              variant="fila"
+              disabled={!isSingleSelected}
+              onClick={() => effectiveSelectedUser && setEditing(effectiveSelectedUser)}
+              aria-label={effectiveSelectedUser ? `Editar ${effectiveSelectedUser.name}` : 'Editar'}
+              title={
+                isSingleSelected
+                  ? `Editar ${effectiveSelectedUser?.name}`
+                  : activeSelectedIds.size > 1
+                  ? 'Solo se puede editar 1 usuario a la vez'
+                  : 'Selecciona 1 usuario para editar'
+              }
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="editar" tamano="sm" ariaHidden={true} />
+              <span>Editar</span>
+            </Button>
+
+            {/* Botón Eliminar: activo solo si se selecciona exactamente 1 fila */}
+            <Button
+              variant="fila-peligro"
+              disabled={!isSingleSelected}
+              onClick={() => effectiveSelectedUser && setRemoving(effectiveSelectedUser)}
+              aria-label={effectiveSelectedUser ? `Eliminar ${effectiveSelectedUser.name}` : 'Eliminar'}
+              title={
+                isSingleSelected
+                  ? `Eliminar ${effectiveSelectedUser?.name}`
+                  : activeSelectedIds.size > 1
+                  ? 'Solo se puede eliminar 1 usuario a la vez'
+                  : 'Selecciona 1 usuario para eliminar'
+              }
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="eliminar" tamano="sm" ariaHidden={true} />
+              <span>Eliminar</span>
+            </Button>
+
+            {/* Línea de separación vertical a la izquierda del botón Nuevo */}
+            <div className="h-6 w-px bg-panel-border/80 self-center mx-1 shrink-0" aria-hidden="true" />
+
+            {/* Botón Nuevo: pegado a la derecha */}
+            <Button
+              variant="fila-primario"
+              onClick={() => setCreatingAccount(true)}
+              aria-label="Nuevo usuario"
+              title="Nuevo usuario"
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="mas" tamano="sm" ariaHidden={true} />
+              <span className="sr-only">Nuevo usuario</span>
+              <span aria-hidden="true">Nuevo</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Fila 2: Tabla al 100% responsiva */}
+        <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-hidden">
+          <DataTable
+            label="Usuarios"
+            columns={columnas}
+            rows={displayUsers}
+            rowKey={(u) => u.id}
+            loading={users.loading && !users.data}
+            error={users.error}
+            emptyMessage="No hay usuarios dentro de tu alcance."
+            selectedKeys={activeSelectedIds}
+            onRowClick={(u) => toggleUser(u.id)}
+            page={page}
+            totalPages={totalPages}
+            totalRecords={totalUsers}
+            onPageChange={setPage}
+            targetRows={8}
+            ghostRows={true}
+          />
+        </div>
+      </div>
 
       {directory ? (
         <DirectoryPicker
@@ -182,7 +561,7 @@ export function UsersList() {
           areasError={isAdmin && areas.error ? 'No se pudieron cargar las áreas.' : null}
           areasRequired={!isAdmin}
           onClose={cerrarAlta}
-          onCreated={(created) => anunciar(`Se creó la cuenta de ${created.name || created.email}.`)}
+          onCreated={(created) => anunciar(`Se creó la cuenta de ${created.name || created.email}.`, 'Cuenta creada')}
         />
       ) : null}
 

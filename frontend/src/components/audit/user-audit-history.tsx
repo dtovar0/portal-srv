@@ -9,6 +9,7 @@
  */
 
 import { ButtonLink } from '../form';
+import { Icono } from '../icono';
 import { PageHeader } from '../page-header';
 import { useCallback, useState } from 'react';
 import { auditApi } from '@/lib/access/audit';
@@ -53,8 +54,10 @@ export function UserAuditHistory({ userId }: { userId: number }) {
         title={propio ? 'Mi historial' : 'Historial del usuario'}
         description={(propio ? session.email : correo) ?? 'Eventos donde actuó o que lo afectaron.'}
         actions={
-          <ButtonLink href={RUTA_AUDITORIA} variant="secondary">
-            Toda la auditoría
+          <ButtonLink href={RUTA_AUDITORIA} variant="fila" className="nx-btn-toolbar !px-2.5">
+            <Icono nombre="auditoria" tamano="sm" ariaHidden={true} />
+            <span className="sr-only">Toda la auditoría</span>
+            <span aria-hidden="true">Auditoría</span>
           </ButtonLink>
         }
       />

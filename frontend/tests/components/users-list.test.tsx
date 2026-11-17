@@ -67,20 +67,23 @@ function dialogo() {
 }
 
 describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () => {
-  it('"Nuevo usuario" abre el alta en el directorio, sin contraseña ni rol, y no crea cuentas locales', async () => {
+  it('"Nuevo usuario" abre el alta en el directorio en 2 pasos con datos de usuario y accesos', async () => {
     render(<UsersList />);
-    fireEvent.click(await screen.findByText('Nuevo usuario'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Nuevo usuario' }));
 
     const modal = dialogo();
-    expect(modal.getByText('Nueva cuenta en el directorio')).toBeTruthy();
-    expect(modal.getByLabelText('Identificador')).toBeTruthy();
-    expect(modal.queryByLabelText(/Contraseña/)).toBeNull();
+    expect(modal.getByText('Nueva cuenta')).toBeTruthy();
+    expect(modal.getByLabelText('Nombre completo')).toBeTruthy();
+    expect(modal.getByLabelText('Correo')).toBeTruthy();
+    expect(modal.getByLabelText('Contraseña')).toBeTruthy();
+    expect(modal.getByLabelText('Confirmar contraseña')).toBeTruthy();
     expect(modal.queryByLabelText('Rol')).toBeNull();
     expect(api.createUser).not.toHaveBeenCalled();
   });
 
   it('edición: sin rol, áreas administradas ni contraseña; no envía role ni managed_area_ids', async () => {
     render(<UsersList />);
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar a Luis Paz' }));
     fireEvent.click(await screen.findByText('Editar'));
     const modal = dialogo();
     expect(modal.queryByLabelText('Rol')).toBeNull();
@@ -99,14 +102,15 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
   it('DIS-008: acciones de fila y chips de áreas de 48 px con foco visible', async () => {
     render(<UsersList />);
     await screen.findByText('Luis Paz');
-    const acciones = ['Editar Luis Paz', 'Accesos de Luis Paz', 'Eliminar Luis Paz', 'Áreas admin de Luis Paz', 'Quitar admin de área a Luis Paz']
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Luis Paz' }));
+    const acciones = ['Accesos de Luis Paz', 'Editar Luis Paz', 'Eliminar Luis Paz']
       .map((nombre) => screen.getByRole('button', { name: nombre }));
     for (const accion of acciones) {
       expect(accion.className).toContain('min-h-12');
       expect(accion.className).toContain('min-w-12');
       expect(accion.className).toContain('focus-visible:ring-primary');
     }
-    fireEvent.click(acciones[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Luis Paz' }));
     const chip = await dialogo().findByRole('button', { name: 'Finanzas' });
     expect(chip.getAttribute('aria-pressed')).toBe('false');
     expect(chip.className).toContain('min-h-12');
@@ -115,6 +119,7 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
 
   it('DIS-045: los chips van en grupos con leyenda; el primer chip conserva su nombre y la leyenda no lo activa', async () => {
     render(<UsersList />);
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar a Luis Paz' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Editar Luis Paz' }));
     const modal = dialogo();
     const grupo = await modal.findByRole('group', { name: 'Áreas a las que pertenece' });
@@ -125,31 +130,75 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
     expect(modal.getByRole('group', { name: 'Plataformas asignadas' }).getAttribute('aria-describedby')).toBeTruthy();
   });
 
-  it('DIS-046: Editar y Eliminar nombran al usuario y "Áreas admin" empieza con su texto visible', async () => {
+  it('DIS-046: Editar, Accesos y Eliminar nombran al usuario con su texto visible', async () => {
     render(<UsersList />);
+    const checkbox = await screen.findByRole('checkbox', { name: 'Seleccionar a Luis Paz' });
+    fireEvent.click(checkbox);
     expect(await screen.findByRole('button', { name: 'Editar Luis Paz' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Eliminar Luis Paz' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Áreas admin de Luis Paz' }).textContent).toBe('Áreas admin');
+    expect(screen.getByRole('button', { name: 'Accesos de Luis Paz' }).textContent).toBe('Accesos');
   });
 
   it('edición de la cuenta de emergencia (superadmin local): ofrece la contraseña', async () => {
     vi.mocked(api.users).mockResolvedValue([EMERGENCIA]);
     render(<UsersList />);
+    const checkbox = await screen.findByRole('checkbox', { name: 'Seleccionar a Emergencia' });
+    fireEvent.click(checkbox);
     fireEvent.click(await screen.findByText('Editar'));
     expect(dialogo().getByLabelText(/^Contraseña/)).toBeTruthy();
   });
 
-  it('alta desde el directorio: no crea una cuenta local y lo explica', async () => {
+  it('la barra de herramientas solo expone Accesos, Editar, Eliminar y Nuevo', async () => {
     render(<UsersList />);
-    fireEvent.click(await screen.findByText('Buscar en directorio'));
-    fireEvent.change(dialogo().getByPlaceholderText('Nombre, cuenta o correo'),
-      { target: { value: 'eva' } });
-    fireEvent.click(dialogo().getByText('Buscar'));
-    fireEvent.click(await screen.findByText('Dar de alta'));
-    fireEvent.click(dialogo().getByText('Guardar'));
+    expect(await screen.findByRole('button', { name: 'Nuevo usuario' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Buscar en directorio' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Purgar cuentas inactivas' })).toBeNull();
+    expect(screen.queryByText('Hacer admin')).toBeNull();
+    expect(screen.queryByText('Áreas admin')).toBeNull();
+    expect(screen.queryByText('Quitar admin')).toBeNull();
+  });
 
-    expect(await screen.findByText(
-      'El alta de cuentas del directorio aún no está disponible en el portal.')).toBeTruthy();
-    expect(api.createUser).not.toHaveBeenCalled();
+  it('casilla de selección en encabezado selecciona y deselecciona todos los usuarios', async () => {
+    vi.mocked(api.users).mockResolvedValue([ADMIN_AREA, EMERGENCIA]);
+    render(<UsersList />);
+    await screen.findByText('Luis Paz');
+
+    const selectAllCheckbox = screen.getByLabelText('Seleccionar todos los usuarios') as HTMLInputElement;
+    expect(selectAllCheckbox).toBeTruthy();
+
+    // Al presionar el checkbox de encabezado, selecciona todos
+    fireEvent.click(selectAllCheckbox);
+    expect(screen.getByText('2 usuarios seleccionados')).toBeTruthy();
+
+    // Al presionar de nuevo, deselecciona todos
+    fireEvent.click(selectAllCheckbox);
+    expect(screen.getByText('Acciones de usuarios')).toBeTruthy();
+  });
+
+  it('renderiza exactamente las columnas: Nombre, Correo, Rol, Estado, Áreas asignadas', async () => {
+    const usuarioConArea: ManagedUser = {
+      ...ADMIN_AREA,
+      id: 10,
+      name: 'Carla Ramos',
+      email: 'carla@ejemplo.local',
+      areas: [{ id: 3, name: 'Finanzas', icon: 'areas' }],
+    };
+    vi.mocked(api.users).mockResolvedValue([usuarioConArea]);
+    render(<UsersList />);
+    await screen.findByText('Carla Ramos');
+
+    expect(screen.getByRole('columnheader', { name: 'Nombre' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Correo' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Rol' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Estado' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Áreas asignadas' })).toBeTruthy();
+
+    expect(screen.getByText('Carla Ramos')).toBeTruthy();
+    expect(screen.getByText('carla@ejemplo.local')).toBeTruthy();
+
+    // En Áreas asignadas se muestra únicamente el icono con accesibilidad (title / aria-label)
+    const badgeIcono = screen.getByTitle('Finanzas');
+    expect(badgeIcono).toBeTruthy();
+    expect(badgeIcono.getAttribute('aria-label')).toBe('Finanzas');
   });
 });

@@ -103,7 +103,7 @@ describe('Menú móvil', () => {
   it('elegir una opción cierra el menú', async () => {
     const boton = await montar();
     const panel = abrir(boton);
-    fireEvent.click(within(panel).getByRole('link', { name: 'Catálogo' }));
+    fireEvent.click(within(panel).getByRole('link', { name: 'Ajustes' }));
     expect(boton.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(boton);
   });
@@ -111,7 +111,7 @@ describe('Menú móvil', () => {
   it('el clic fuera cierra; el clic dentro no', async () => {
     const boton = await montar();
     const panel = abrir(boton);
-    fireEvent.pointerDown(within(panel).getByRole('link', { name: 'Panel' }));
+    fireEvent.pointerDown(within(panel).getByRole('link', { name: 'Dashboard' }));
     expect(boton.getAttribute('aria-expanded')).toBe('true');
     fireEvent.pointerDown(screen.getByText('contenido'));
     expect(boton.getAttribute('aria-expanded')).toBe('false');
@@ -154,9 +154,9 @@ describe('Menú móvil', () => {
   });
 
   it.each<[Rol, number]>([
-    ['usuario', 7],
-    ['admin_area', 13],
-    ['administrador', 13],
+    ['usuario', 4],
+    ['admin_area', 9],
+    ['administrador', 9],
   ])('%s ve en el menú móvil las mismas entradas que en la barra lateral (%i)', async (rol, n) => {
     const boton = await montar(rol);
     const panel = abrir(boton);
@@ -175,12 +175,12 @@ describe('Menú móvil', () => {
   });
 
   it('marca la página actual con aria-current="page"', async () => {
-    ruta.actual = '/favorites';
+    ruta.actual = '/settings';
     const panel = abrir(await montar());
     const actuales = within(panel)
       .getAllByRole('link')
       .filter((a) => a.getAttribute('aria-current') === 'page');
-    expect(actuales.map((a) => a.textContent)).toEqual(['Favoritos']);
+    expect(actuales.map((a) => a.textContent)).toEqual(['Ajustes']);
   });
 
   // DIS-008: la barra lateral también se usa con el dedo (tabletas desde `md`). DIS-078: la maqueta

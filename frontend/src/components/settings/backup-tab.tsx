@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Button, FileInput } from '../form';
+import { Icono } from '../icono';
 import { Card, ErrorNote, SuccessNote } from '../ui';
 
 export function BackupTab() {
@@ -22,7 +23,7 @@ export function BackupTab() {
       const link = document.createElement('a');
       link.href = url;
       const stamp = new Date().toISOString().slice(0, 10);
-      link.download = `nexus_backup_${stamp}.zip`;
+      link.download = `portal_backup_${stamp}.zip`;
       link.click();
       URL.revokeObjectURL(url);
       setDone('Respaldo descargado.');
@@ -48,7 +49,7 @@ export function BackupTab() {
   }
 
   return (
-    <Card className="space-y-5">
+    <Card className="flex h-full w-full flex-1 min-h-0 flex-col space-y-5">
       {error ? <ErrorNote message={error} /> : null}
       {done ? <SuccessNote>{done}</SuccessNote> : null}
 
@@ -59,6 +60,7 @@ export function BackupTab() {
           plantillas y las cuentas locales.
         </p>
         <Button onClick={download} disabled={busy} className="mt-3">
+          <Icono nombre="exportar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           {busy ? 'Preparando…' : 'Descargar ZIP'}
         </Button>
       </div>

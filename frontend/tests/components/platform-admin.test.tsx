@@ -2,18 +2,25 @@
  * DIS-017: formulario de plataforma con tipo de integración y grupos por nivel
  * (contrato `plataformas-integracion.md`), por rol, con errores y avisos.
  */
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '@/components/toast';
 import { ApiError } from '@/lib/api';
 import type { Area, Platform } from '@/lib/types';
+
+function render(ui: React.ReactElement, options?: Parameters<typeof rtlRender>[1]) {
+  return rtlRender(<ToastProvider>{ui}</ToastProvider>, options);
+}
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const real = await importOriginal<typeof import('@/lib/api')>();
   return {
     ApiError: real.ApiError,
     api: {
-      areas: vi.fn(), platforms: vi.fn(),
+      areas: vi.fn(), platforms: vi.fn(), users: vi.fn(),
       createPlatform: vi.fn(), updatePlatform: vi.fn(), deletePlatform: vi.fn(),
+      createArea: vi.fn(), updateArea: vi.fn(), deleteArea: vi.fn(),
+      platformAccess: vi.fn(), grantPlatformAccess: vi.fn(), revokeAccess: vi.fn(),
     },
   };
 });
@@ -50,10 +57,16 @@ function respuesta(warnings: { code: string; message: string }[] = []) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  if (typeof window !== 'undefined') {
+    window.history.replaceState({}, '', '/');
+    window.localStorage.clear();
+  }
   permisos.is_admin = false;
   permisos.is_area_admin = true;
   vi.mocked(api.areas).mockResolvedValue(AREAS);
   vi.mocked(api.platforms).mockResolvedValue([PLATAFORMA]);
+  vi.mocked(api.users).mockResolvedValue([]);
+  vi.mocked(api.platformAccess).mockResolvedValue({ items: [], total: 0 });
   vi.mocked(api.createPlatform).mockResolvedValue(respuesta());
   vi.mocked(api.updatePlatform).mockResolvedValue(respuesta());
 });
@@ -66,29 +79,58 @@ function dialogo() {
 
 async function abrirAlta() {
   render(<PlatformAdmin />);
+  fireEvent.click(await screen.findByText('Finanzas'));
   await screen.findByText('Contabilidad');
-  fireEvent.click(screen.getByText('Nueva plataforma'));
+  fireEvent.click(screen.getByRole('button', { name: /nuevo/i }));
   const modal = dialogo();
   fireEvent.change(modal.getByLabelText(/^Nombre/), { target: { value: 'Nueva' } });
   fireEvent.change(modal.getByLabelText(/^Descripción/), { target: { value: 'Descripción' } });
   return modal;
 }
 
-describe('PlatformAdmin: alta por rol', () => {
-  it('admin de área: exige el tipo, no ve ni envía DN', async () => {
-    const modal = await abrirAlta();
-    fireEvent.click(modal.getByText('Guardar'));
-    expect(await modal.findByText('Selecciona el tipo de integración.')).toBeTruthy();
-    expect(api.createPlatform).not.toHaveBeenCalled();
+function avanzarYGuardar(modal: ReturnType<typeof dialogo>) {
+  fireEvent.click(modal.getByText('Siguiente'));
+  fireEvent.click(modal.getByText('Guardar'));
+}
 
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'ldap' } });
-    expect(modal.queryByLabelText(/^Grupo de acceso/)).toBeNull();
-    expect(modal.getByText(/Solo el superadmin\s+puede definirlos/)).toBeTruthy();
-    fireEvent.click(modal.getByText('Guardar'));
+describe('PlatformAdmin: alta por rol', () => {
+  it('asistente de 2 pasos: Paso 1 (Descripción sin área ni conector) y Paso 2 (Estilo con vista previa)', async () => {
+    const modal = await abrirAlta();
+    // Paso 1: muestra controles de descripción y no los de estilo, sin área ni conector
+    expect(modal.getByLabelText(/^Nombre/)).toBeTruthy();
+    expect(modal.getByLabelText(/^Descripción/)).toBeTruthy();
+    expect(modal.getByLabelText(/^Enlace/)).toBeTruthy();
+    expect(modal.queryByRole('combobox', { name: /^Área/ })).toBeNull();
+    expect(modal.queryByLabelText(/^Tipo de integración/)).toBeNull();
+    expect(modal.queryByLabelText('Color de fondo')).toBeNull();
+
+    // Avanzar a Paso 2
+    fireEvent.click(modal.getByText('Siguiente'));
+
+    // Paso 2: Estilo
+    expect(await modal.findByLabelText('Color de fondo')).toBeTruthy();
+    expect(modal.getByLabelText('Color de texto')).toBeTruthy();
+    expect(modal.getByText('Vista previa')).toBeTruthy();
+    expect(modal.getByLabelText('Activa')).toBeTruthy();
+
+    // Retroceder a Paso 1
+    fireEvent.click(modal.getByText('Atrás'));
+    expect(modal.getByLabelText(/^Nombre/)).toBeTruthy();
+    expect((modal.getByLabelText(/^Nombre/) as HTMLInputElement).value).toBe('Nueva');
+  });
+
+  it('alta simplificada: crea la plataforma en el área seleccionada con conector por omisión', async () => {
+    const modal = await abrirAlta();
+    avanzarYGuardar(modal);
 
     await waitFor(() => expect(api.createPlatform).toHaveBeenCalledTimes(1));
     const enviado = vi.mocked(api.createPlatform).mock.calls[0][0];
-    expect(enviado).toMatchObject({ name: 'Nueva', description: 'Descripción', area_id: 3, integration_type: 'ldap' });
+    expect(enviado).toMatchObject({
+      name: 'Nueva',
+      description: 'Descripción',
+      area_id: 3,
+      integration_type: 'conector',
+    });
     expect(enviado).not.toHaveProperty('ldap_group_user_dn');
     expect(enviado).not.toHaveProperty('ldap_group_admin_dn');
     // Sin color elegido no se envía: el servidor aplica el suyo por omisión.
@@ -96,65 +138,34 @@ describe('PlatformAdmin: alta por rol', () => {
     expect(enviado).not.toHaveProperty('text_color');
   });
 
-  it('superadmin: ve los grupos por nivel y los envía', async () => {
-    comoSuperadmin();
-    const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'ldap' } });
-    fireEvent.change(modal.getByLabelText(/^Grupo de acceso: nivel usuario/), { target: { value: DN_USUARIO } });
-    fireEvent.change(modal.getByLabelText(/^Grupo de acceso: nivel admin/), { target: { value: DN_ADMIN } });
-    fireEvent.click(modal.getByText('Guardar'));
-
-    await waitFor(() => expect(api.createPlatform).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(api.createPlatform).mock.calls[0][0]).toMatchObject({
-      integration_type: 'ldap', ldap_group_user_dn: DN_USUARIO, ldap_group_admin_dn: DN_ADMIN,
-    });
-  });
-
-  it('superadmin: DN vacíos no se envían (el backend los deriva)', async () => {
-    comoSuperadmin();
-    const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'ldap' } });
-    fireEvent.click(modal.getByText('Guardar'));
-    await waitFor(() => expect(api.createPlatform).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(api.createPlatform).mock.calls[0][0]).not.toHaveProperty('ldap_group_user_dn');
-  });
-
-  it('superadmin con conector: sin DN y con enlace a conectores', async () => {
-    comoSuperadmin();
-    const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'conector' } });
-    expect(modal.queryByLabelText(/^Grupo de acceso/)).toBeNull();
-    expect(modal.getByText('Configurar conectores').getAttribute('href')).toBe('/admin/connectors');
-  });
-
-  it('grupos iguales se rechazan antes de enviar', async () => {
-    comoSuperadmin();
-    const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'ldap' } });
-    fireEvent.change(modal.getByLabelText(/^Grupo de acceso: nivel usuario/), { target: { value: DN_USUARIO } });
-    fireEvent.change(modal.getByLabelText(/^Grupo de acceso: nivel admin/), { target: { value: DN_USUARIO.toUpperCase() } });
-    fireEvent.click(modal.getByText('Guardar'));
-    expect(await modal.findByText('Los grupos de usuario y admin deben ser distintos.')).toBeTruthy();
-    expect(api.createPlatform).not.toHaveBeenCalled();
-  });
-
   it('enlace que no es https: error en el campo, sin enviar', async () => {
     const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'conector' } });
     fireEvent.change(modal.getByLabelText(/^Enlace/), { target: { value: 'javascript:alert(1)' } });
-    fireEvent.click(modal.getByText('Guardar'));
+    fireEvent.click(modal.getByText('Siguiente'));
     expect(await modal.findByText('Usa una dirección https://.')).toBeTruthy();
     expect(api.createPlatform).not.toHaveBeenCalled();
+  });
+
+  it('enlace sin https: antepone https:// automáticamente y permite guardar sin error', async () => {
+    const modal = await abrirAlta();
+    fireEvent.change(modal.getByLabelText(/^Enlace/), { target: { value: 'sistema.empresa.local' } });
+    avanzarYGuardar(modal);
+    await waitFor(() => expect(api.createPlatform).toHaveBeenCalledTimes(1));
+    const [enviado] = vi.mocked(api.createPlatform).mock.calls[0];
+    expect(enviado.direct_link).toBe('https://sistema.empresa.local');
   });
 });
 
 describe('PlatformAdmin: edición por rol', () => {
-  it('admin de área: no envía el tipo ni DN', async () => {
+  it('admin de área: no envía el tipo ni DN y no expone área ni integración', async () => {
     render(<PlatformAdmin />);
-    fireEvent.click(await screen.findByText('Editar'));
+    fireEvent.click(await screen.findByText('Finanzas'));
+    fireEvent.click(await screen.findByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: /Editar Contabilidad/i }));
     const modal = dialogo();
-    expect(modal.getByText(/Solo el superadmin cambia el tipo/)).toBeTruthy();
-    fireEvent.click(modal.getByText('Guardar'));
+    expect(modal.queryByRole('combobox', { name: /^Área/ })).toBeNull();
+    expect(modal.queryByLabelText(/^Tipo de integración/)).toBeNull();
+    avanzarYGuardar(modal);
     await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledTimes(1));
     const [, enviado] = vi.mocked(api.updatePlatform).mock.calls[0];
     expect(enviado).not.toHaveProperty('integration_type');
@@ -164,22 +175,24 @@ describe('PlatformAdmin: edición por rol', () => {
   it('superadmin: "Sin cambiar" no envía el tipo', async () => {
     comoSuperadmin();
     render(<PlatformAdmin />);
-    fireEvent.click(await screen.findByText('Editar'));
-    fireEvent.click(dialogo().getByText('Guardar'));
+    fireEvent.click(await screen.findByText('Finanzas'));
+    fireEvent.click(await screen.findByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: /Editar Contabilidad/i }));
+    avanzarYGuardar(dialogo());
     await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledTimes(1));
     expect(vi.mocked(api.updatePlatform).mock.calls[0][1]).not.toHaveProperty('integration_type');
   });
 
-  it('con accesos vigentes: tipo, grupos y área deshabilitados', async () => {
+  it('con accesos vigentes: el formulario simplificado omite área e integración', async () => {
     comoSuperadmin();
     vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, integration_type: 'ldap', active_grants: 4 }]);
-    render(<PlatformAdmin />);
-    fireEvent.click(await screen.findByText('Editar'));
+    render(<PlatformAdmin initialAreaId={3} />);
+    fireEvent.click(await screen.findByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: /Editar Contabilidad/i }));
     const modal = dialogo();
-    expect(modal.getByText(/accesos vigentes: no se\s+puede cambiar/)).toBeTruthy();
-    expect((modal.getByLabelText(/^Tipo de integración/) as HTMLSelectElement).disabled).toBe(true);
-    expect((modal.getByLabelText(/^Área/) as HTMLSelectElement).disabled).toBe(true);
-    expect((modal.getByLabelText(/^Grupo de acceso: nivel usuario/) as HTMLInputElement).disabled).toBe(true);
+    expect(modal.queryByRole('combobox', { name: /^Área/ })).toBeNull();
+    expect(modal.queryByLabelText(/^Tipo de integración/)).toBeNull();
+    expect(modal.getByLabelText(/^Nombre/)).toBeTruthy();
   });
 });
 
@@ -188,17 +201,16 @@ describe('PlatformAdmin: errores del backend', () => {
     comoSuperadmin();
     vi.mocked(api.createPlatform).mockRejectedValue(error);
     const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'ldap' } });
-    fireEvent.click(modal.getByText('Guardar'));
+    avanzarYGuardar(modal);
     return modal;
   }
 
   it('422: errores por campo y mensaje general', async () => {
     const modal = await guardarConError(new ApiError(422, 'Datos no válidos.', {
       code: 'validacion',
-      fields: { ldap_group_user_dn: 'El grupo debe estar en la OU de plataformas.', icon: 'Debe ser texto.' },
+      fields: { direct_link: 'Usa una dirección https://.', icon: 'Debe ser texto.' },
     }));
-    expect(await modal.findByText('El grupo debe estar en la OU de plataformas.')).toBeTruthy();
+    expect(await modal.findByText('Usa una dirección https://.')).toBeTruthy();
     expect(modal.getByText('Revisa los campos marcados. Icono: Debe ser texto.')).toBeTruthy();
   });
 
@@ -211,10 +223,16 @@ describe('PlatformAdmin: errores del backend', () => {
     expect(await modal.findByText(mensaje)).toBeTruthy();
   });
 
-  it('409 grupos_iguales: mensaje y marca el grupo admin', async () => {
-    const modal = await guardarConError(new ApiError(409, 'x', { code: 'grupos_iguales' }));
-    expect((await modal.findAllByText('Los grupos de usuario y admin deben ser distintos.')).length).toBe(2);
-    expect(modal.getByLabelText(/^Grupo de acceso: nivel admin/).getAttribute('aria-invalid')).toBe('true');
+  it('409 grupos_iguales en edición: mensaje general del contrato', async () => {
+    comoSuperadmin();
+    vi.mocked(api.updatePlatform).mockRejectedValue(new ApiError(409, 'x', { code: 'grupos_iguales' }));
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByText('Finanzas'));
+    fireEvent.click(await screen.findByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: /Editar Contabilidad/i }));
+    const modal = dialogo();
+    avanzarYGuardar(modal);
+    expect(await modal.findByText('Los grupos de usuario y admin deben ser distintos.')).toBeTruthy();
   });
 
   it('404: área o plataforma fuera de alcance', async () => {
@@ -229,37 +247,35 @@ describe('PlatformAdmin: avisos y estados', () => {
       { code: 'grupo_no_existe', message: 'El grupo de nivel usuario no existe en el directorio.' },
     ]));
     const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'ldap' } });
-    fireEvent.click(modal.getByText('Guardar'));
+    avanzarYGuardar(modal);
     expect(await screen.findByText('Guardada con avisos')).toBeTruthy();
-    expect(screen.getByText('El grupo de nivel usuario no existe en el directorio.')).toBeTruthy();
+    expect(screen.getByText(/El grupo de nivel usuario no existe en el directorio\./)).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    fireEvent.click(screen.getByText('Cerrar aviso'));
+    fireEvent.click(screen.getByLabelText('Cerrar aviso'));
     expect(screen.queryByText('Guardada con avisos')).toBeNull();
   });
 
   it('sin avisos: confirma el guardado', async () => {
     const modal = await abrirAlta();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'conector' } });
-    fireEvent.click(modal.getByText('Guardar'));
+    avanzarYGuardar(modal);
     expect(await screen.findByText('Guardada')).toBeTruthy();
   });
 
   it('enlace no https en la tabla: se muestra "Sin enlace"', async () => {
     vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, direct_link: 'javascript:alert(1)' }]);
-    render(<PlatformAdmin />);
+    render(<PlatformAdmin initialAreaId={3} />);
     expect(await screen.findByText('Sin enlace')).toBeTruthy();
     expect(screen.queryByText('javascript:alert(1)')).toBeNull();
   });
 
   it('vacío y error de carga', async () => {
     vi.mocked(api.platforms).mockResolvedValue([]);
-    render(<PlatformAdmin />);
-    expect(await screen.findByText('No hay plataformas en tu alcance.')).toBeTruthy();
+    render(<PlatformAdmin initialAreaId={3} />);
+    expect(await screen.findByText('Sin plataformas en Finanzas')).toBeTruthy();
     cleanup();
     vi.mocked(api.platforms).mockRejectedValue(new Error('Falla de red'));
-    render(<PlatformAdmin />);
+    render(<PlatformAdmin initialAreaId={3} />);
     expect(await screen.findByText('Falla de red')).toBeTruthy();
   });
 
@@ -268,6 +284,151 @@ describe('PlatformAdmin: avisos y estados', () => {
     render(<PlatformAdmin />);
     expect(screen.getByText('No tienes permiso para ver esta sección.')).toBeTruthy();
     expect(api.platforms).not.toHaveBeenCalled();
+  });
+});
+
+describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () => {
+  it('renderiza la barra de herramientas y las cards de áreas con badges de conteo y ghost cards para simetría 4x2', async () => {
+    const { container } = render(<PlatformAdmin />);
+    expect(await screen.findByLabelText('Buscar áreas')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Filtrar por estado/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Configurar cuadrícula/i })).toBeTruthy();
+    expect(screen.getByText('Finanzas')).toBeTruthy();
+    expect(screen.getByText('1 plataforma')).toBeTruthy();
+    // 7 ghost cards para completar la cuadrícula 4x2 (8 cards en total)
+    const ghostCards = container.querySelectorAll('.border-dashed[aria-hidden="true"]');
+    expect(ghostCards).toHaveLength(7);
+  });
+
+  it('el botón de filtrar por estado permite alternar entre Todos, Activas e Inactivas', async () => {
+    vi.mocked(api.areas).mockResolvedValueOnce([
+      { id: 1, name: 'Finanzas Activa', status: 'Activo' } as Area,
+      { id: 2, name: 'Legales Inactiva', status: 'Inactivo' } as Area,
+    ]);
+    render(<PlatformAdmin />);
+    expect(await screen.findByText('Finanzas Activa')).toBeTruthy();
+    expect(screen.getByText('Legales Inactiva')).toBeTruthy();
+
+    // Abrir menú de estado
+    fireEvent.click(screen.getByRole('button', { name: /Filtrar por estado/i }));
+    // Filtrar por Activas (exacto)
+    fireEvent.click(screen.getByRole('option', { name: /^Activas$/i }));
+    expect(screen.getByText('Finanzas Activa')).toBeTruthy();
+    expect(screen.queryByText('Legales Inactiva')).toBeNull();
+
+    // Abrir menú y filtrar por Inactivas (exacto)
+    fireEvent.click(screen.getByRole('button', { name: /Filtrar por estado/i }));
+    fireEvent.click(screen.getByRole('option', { name: /^Inactivas$/i }));
+    expect(screen.queryByText('Finanzas Activa')).toBeNull();
+    expect(screen.getByText('Legales Inactiva')).toBeTruthy();
+  });
+
+  it('el botón de configurar cuadrícula permite cambiar dimensiones de 2x2 hasta 4x4 dinámicamente', async () => {
+    const { container } = render(<PlatformAdmin />);
+    await screen.findByText('Finanzas');
+
+    // Inicialmente 2x4 (8 slots: 1 real + 7 ghost)
+    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(7);
+
+    // Abrir configuración de cuadrícula y cambiar a 2 columnas (2x2: 4 slots -> 1 real + 3 ghost)
+    fireEvent.click(screen.getByRole('button', { name: /Configurar cuadrícula/i }));
+    fireEvent.click(screen.getByRole('button', { name: '2 columnas' }));
+    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(3);
+
+    // Cambiar a 3x3 (9 slots: 1 real + 8 ghost) y verificar persistencia en localStorage
+    fireEvent.click(screen.getByRole('button', { name: '3×3' }));
+    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(8);
+    expect(window.localStorage.getItem('portal_grid_filas')).toBe('3');
+    expect(window.localStorage.getItem('portal_grid_columnas')).toBe('3');
+
+    // Desmontar y volver a montar: debe recordar la cuadrícula 3x3
+    cleanup();
+    const segundo = render(<PlatformAdmin />);
+    await segundo.findByText('Finanzas');
+    expect(segundo.container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(8);
+  });
+
+  it('el buscador de áreas filtra la cuadrícula', async () => {
+    render(<PlatformAdmin />);
+    await screen.findByText('Finanzas');
+    const buscador = screen.getByLabelText('Buscar áreas');
+    fireEvent.change(buscador, { target: { value: 'Inexistente' } });
+    expect(screen.queryByText('Finanzas')).toBeNull();
+    expect(screen.getByText(/No hay áreas que coincidan/)).toBeTruthy();
+  });
+
+  it('hacer click en una card de área abre la sección 2 con toolbar y tabla, y volver regresa a áreas', async () => {
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByText('Finanzas'));
+    expect(await screen.findByText('Contabilidad')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Volver a áreas' })).toBeTruthy();
+    expect(screen.getByLabelText('Buscar plataformas en Finanzas')).toBeTruthy();
+
+    // Volver a áreas
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a áreas' }));
+    expect(await screen.findByText('Finanzas')).toBeTruthy();
+    expect(screen.queryByText('Contabilidad')).toBeNull();
+  });
+
+  it('en la sección 2 muestra el texto del área después del buscador y los botones de accesos, editar y eliminar con las reglas de selección', async () => {
+    comoSuperadmin();
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByText('Finanzas'));
+    expect(await screen.findByText('Contabilidad')).toBeTruthy();
+
+    // Texto del área después del buscador
+    expect(screen.getByTitle('Área activa: Finanzas')).toBeTruthy();
+
+    // Sin selección: botones de toolbar deshabilitados con nombres genéricos
+    const btnAccesos = screen.getByRole('button', { name: 'Accesos' });
+    const btnEditar = screen.getByRole('button', { name: 'Editar' });
+    const btnEliminar = screen.getByRole('button', { name: 'Eliminar' });
+    const btnNuevo = screen.getByRole('button', { name: 'Nuevo' });
+
+    expect((btnAccesos as HTMLButtonElement).disabled).toBe(true);
+    expect((btnEditar as HTMLButtonElement).disabled).toBe(true);
+    expect((btnEliminar as HTMLButtonElement).disabled).toBe(true);
+    expect((btnNuevo as HTMLButtonElement).disabled).toBe(false);
+
+    // Al seleccionar 1 plataforma (Contabilidad) se habilitan con el contexto correspondiente
+    fireEvent.click(screen.getByLabelText('Seleccionar Contabilidad'));
+
+    const btnAccesosActivo = screen.getByRole('button', { name: 'Accesos de Contabilidad' });
+    const btnEditarActivo = screen.getByRole('button', { name: 'Editar Contabilidad' });
+    const btnEliminarActivo = screen.getByRole('button', { name: 'Eliminar Contabilidad' });
+
+    expect((btnAccesosActivo as HTMLButtonElement).disabled).toBe(false);
+    expect((btnEditarActivo as HTMLButtonElement).disabled).toBe(false);
+    expect((btnEliminarActivo as HTMLButtonElement).disabled).toBe(false);
+
+    // Abrir modal de Accesos de la plataforma
+    fireEvent.click(btnAccesosActivo);
+    const dialogAccesos = await screen.findByRole('dialog', { name: /Accesos — Contabilidad/i });
+    expect(dialogAccesos).toBeTruthy();
+    fireEvent.click(within(dialogAccesos).getAllByRole('button', { name: 'Cerrar' })[0]);
+
+    // Abrir modal de Editar plataforma
+    fireEvent.click(btnEditarActivo);
+    const dialogEditar = await screen.findByRole('dialog', { name: 'Editar plataforma' });
+    expect(dialogEditar).toBeTruthy();
+    fireEvent.click(within(dialogEditar).getByText('Cancelar'));
+
+    // Abrir diálogo de Eliminar plataforma
+    fireEvent.click(btnEliminarActivo);
+    const dialogEliminar = await screen.findByRole('alertdialog', { name: 'Eliminar plataforma' });
+    expect(dialogEliminar).toBeTruthy();
+    fireEvent.click(within(dialogEliminar).getByRole('button', { name: 'Cancelar' }));
+  });
+
+  it('indica con badge "Inactiva" y tratamiento visual cuando el área tiene status Inactivo', async () => {
+    vi.mocked(api.areas).mockResolvedValueOnce([
+      { id: 4, name: 'Operaciones', status: 'Inactivo' } as Area,
+    ]);
+    render(<PlatformAdmin />);
+    expect(await screen.findByText('Operaciones')).toBeTruthy();
+    expect(screen.getByText('Inactiva')).toBeTruthy();
+    expect(screen.getByLabelText(/Área Operaciones \(Inactiva\)/)).toBeTruthy();
+    expect(screen.getByText('Ver plataformas (Inactiva)')).toBeTruthy();
   });
 });
 
@@ -281,72 +442,78 @@ describe('PlatformAdmin: accesibilidad (revisión de DIS-017)', () => {
     comoSuperadmin();
     const modal = await abrirAlta();
     fireEvent.change(modal.getByLabelText(/^Nombre/), { target: { value: '' } });
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'ldap' } });
     fireEvent.change(modal.getByLabelText(/^Enlace/), { target: { value: 'http://x.ejemplo.local' } });
-    fireEvent.click(modal.getByText('Guardar'));
+    fireEvent.click(modal.getByText('Siguiente'));
     const nombre = await modal.findByLabelText(/^Nombre/);
     expect(descripcionDe(nombre)).toContain('El nombre debe tener entre 2 y 100 caracteres.');
     const enlace = modal.getByLabelText(/^Enlace/);
     expect(descripcionDe(enlace)).toContain('Usa una dirección https://.');
     expect(descripcionDe(enlace)).toContain('Dirección https://');
-    expect(descripcionDe(modal.getByLabelText(/^Tipo de integración/))).toContain('Cómo se da el acceso');
-    expect(descripcionDe(modal.getByLabelText(/^Grupo de acceso: nivel usuario/))).toContain('nivel usuario');
   });
 
-  it('nota de campos deshabilitados por aria-describedby', async () => {
+  it('edición simplificada no expone controles de área ni integración bloqueados', async () => {
     comoSuperadmin();
     vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, integration_type: 'ldap', active_grants: 2 }]);
-    render(<PlatformAdmin />);
-    fireEvent.click(await screen.findByText('Editar'));
+    render(<PlatformAdmin initialAreaId={3} />);
+    fireEvent.click(await screen.findByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: /Editar Contabilidad/i }));
     const modal = dialogo();
-    expect(descripcionDe(modal.getByLabelText(/^Tipo de integración/))).toMatch(/accesos vigentes/);
-    expect(descripcionDe(modal.getByLabelText(/^Área/))).toMatch(/accesos vigentes/);
+    expect(modal.queryByLabelText(/^Tipo de integración/)).toBeNull();
+    expect(modal.queryByRole('combobox', { name: /^Área/ })).toBeNull();
   });
 
   it('la región de estado está montada antes de guardar', async () => {
-    render(<PlatformAdmin />);
+    render(<PlatformAdmin initialAreaId={3} />);
     await screen.findByText('Contabilidad');
     const region = screen.getByRole('status');
     expect(region.textContent).toBe('');
-    fireEvent.click(screen.getByText('Nueva plataforma'));
+    fireEvent.click(screen.getByRole('button', { name: /nuevo/i }));
     const modal = dialogo();
     fireEvent.change(modal.getByLabelText(/^Nombre/), { target: { value: 'Nueva' } });
     fireEvent.change(modal.getByLabelText(/^Descripción/), { target: { value: 'D' } });
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'conector' } });
-    fireEvent.click(modal.getByText('Guardar'));
+    avanzarYGuardar(modal);
     await waitFor(() => expect(region.textContent).toContain('Se guardó'));
   });
 
-  it('foco: al primer campo con error, al disparador al cancelar y al aviso al guardar', async () => {
-    render(<PlatformAdmin />);
+  it('foco: al primer campo con error, al disparador al cancelar y aviso tras guardar', async () => {
+    render(<PlatformAdmin initialAreaId={3} />);
     await screen.findByText('Contabilidad');
-    const nueva = screen.getByText('Nueva plataforma');
+    const nueva = screen.getByRole('button', { name: /nuevo/i });
     nueva.focus();
     fireEvent.click(nueva);
-    fireEvent.click(dialogo().getByText('Guardar'));
+    fireEvent.click(dialogo().getByText('Siguiente'));
     await waitFor(() => expect(document.activeElement).toBe(dialogo().getByLabelText(/^Nombre/)));
     fireEvent.click(dialogo().getByText('Cancelar'));
     await waitFor(() => expect(document.activeElement).toBe(nueva));
 
     const modal = await abrirAltaSinRender();
-    fireEvent.change(modal.getByLabelText(/^Tipo de integración/), { target: { value: 'conector' } });
-    fireEvent.click(modal.getByText('Guardar'));
-    const aviso = await screen.findByText(/Se guardó/);
-    await waitFor(() => expect(aviso.closest('[tabindex="-1"]')).toBe(document.activeElement));
+    avanzarYGuardar(modal);
+    expect(await screen.findByText(/Se guardó/)).toBeTruthy();
   });
 
-  it('Editar y Eliminar con el nombre de la plataforma', async () => {
-    render(<PlatformAdmin />);
-    expect(await screen.findByRole('button', { name: 'Editar Contabilidad' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Eliminar Contabilidad' })).toBeTruthy();
+  it('Editar y Eliminar con el nombre de la plataforma al seleccionarla', async () => {
+    render(<PlatformAdmin initialAreaId={3} />);
+    await screen.findByText('Contabilidad');
+    // Sin selección: botones deshabilitados con nombre genérico
+    const btnEditar = screen.getByRole('button', { name: 'Editar' });
+    const btnEliminar = screen.getByRole('button', { name: 'Eliminar' });
+    expect((btnEditar as HTMLButtonElement).disabled).toBe(true);
+    expect((btnEliminar as HTMLButtonElement).disabled).toBe(true);
+
+    // Con 1 plataforma seleccionada: botones habilitados con el nombre de la plataforma
+    fireEvent.click(screen.getByLabelText('Seleccionar Contabilidad'));
+    const btnEditarPlat = screen.getByRole('button', { name: 'Editar Contabilidad' });
+    const btnEliminarPlat = screen.getByRole('button', { name: 'Eliminar Contabilidad' });
+    expect((btnEditarPlat as HTMLButtonElement).disabled).toBe(false);
+    expect((btnEliminarPlat as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('DIS-035: enlace al historial de la plataforma y acciones de fila de 48 px con foco visible', async () => {
-    render(<PlatformAdmin />);
-    const historial = await screen.findByRole('link', { name: 'Historial de Contabilidad en Auditoría' });
-    expect(historial.getAttribute('href')).toBe('/audit/platforms/12');
+  it('DIS-035: acciones en la barra de herramientas al seleccionar plataforma', async () => {
+    render(<PlatformAdmin initialAreaId={3} />);
+    await screen.findByText('Contabilidad');
+    const checkbox = await screen.findByLabelText('Seleccionar Contabilidad');
+    fireEvent.click(checkbox);
     const acciones = [
-      historial,
       screen.getByRole('button', { name: 'Editar Contabilidad' }),
       screen.getByRole('button', { name: 'Eliminar Contabilidad' }),
     ];
@@ -355,16 +522,15 @@ describe('PlatformAdmin: accesibilidad (revisión de DIS-017)', () => {
       expect(accion.className).toContain('min-w-12');
       expect(accion.className).toContain('focus-visible:ring-primary');
     }
-    expect(acciones[2].className).toContain('text-error-text');
   });
 
-  it('DIS-008: la tabla desplazable es una región con nombre, enfocable y con foco visible; la cabecera de acciones tiene texto', async () => {
-    render(<PlatformAdmin />);
-    const region = await screen.findByRole('region', { name: 'Plataformas' });
+  it('DIS-008: la tabla desplazable es una región con nombre, enfocable y con foco visible; la cabecera de selección tiene checkbox', async () => {
+    render(<PlatformAdmin initialAreaId={3} />);
+    const region = await screen.findByRole('region', { name: 'Plataformas de Finanzas' });
     expect(region.getAttribute('tabindex')).toBe('0');
     expect(region.className).toContain('overflow-x-auto');
     expect(region.className).toContain('focus-visible:ring-primary');
-    expect(screen.getByRole('columnheader', { name: 'Acciones' })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'Seleccionar todas las plataformas' })).toBeTruthy();
   });
 
   it.each([
@@ -372,15 +538,17 @@ describe('PlatformAdmin: accesibilidad (revisión de DIS-017)', () => {
     [409, 'No se puede eliminar una plataforma con accesos vigentes.'],
   ])('error %s al eliminar: mensaje fijo', async (status, mensaje) => {
     vi.mocked(api.deletePlatform).mockRejectedValue(new ApiError(status, 'detalle interno', { code: 'x' }));
-    render(<PlatformAdmin />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Eliminar Contabilidad' }));
+    render(<PlatformAdmin initialAreaId={3} />);
+    await screen.findByText('Contabilidad');
+    fireEvent.click(screen.getByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar Contabilidad' }));
     fireEvent.click(within(screen.queryByRole('alertdialog') ?? screen.getByRole('dialog')).getByText('Eliminar'));
     expect(await screen.findByText(mensaje)).toBeTruthy();
   });
 });
 
 async function abrirAltaSinRender() {
-  fireEvent.click(screen.getByText('Nueva plataforma'));
+  fireEvent.click(screen.getByRole('button', { name: /nuevo/i }));
   const modal = within(screen.queryByRole('alertdialog') ?? screen.getByRole('dialog'));
   fireEvent.change(modal.getByLabelText(/^Nombre/), { target: { value: 'Nueva' } });
   fireEvent.change(modal.getByLabelText(/^Descripción/), { target: { value: 'Descripción' } });

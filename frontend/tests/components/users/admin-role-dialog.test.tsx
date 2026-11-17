@@ -194,52 +194,11 @@ describe('UsersList: acciones de rol', () => {
     vi.mocked(api.platforms).mockResolvedValue([]);
   });
 
-  it('admin de área: no ve opciones de rol', async () => {
-    esSuperadmin = false;
+  it('no muestra botones de rol en la barra estandarizada', async () => {
     render(<UsersList />);
     await screen.findByText('Ana Ruiz');
     expect(screen.queryByText('Hacer admin')).toBeNull();
     expect(screen.queryByText('Áreas admin')).toBeNull();
     expect(screen.queryByText('Quitar admin')).toBeNull();
-  });
-
-  it('superadmin: Hacer admin para usuario, Áreas admin y Quitar admin para admin, nada para sí', async () => {
-    render(<UsersList />);
-    await screen.findByText('Ana Ruiz');
-    expect(screen.getByRole('button', { name: 'Hacer admin de área a Ana Ruiz' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Áreas admin de Luis Paz' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Quitar admin de área a Luis Paz' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Accesos de Jefa' })).toBeTruthy(); // "Accesos de Jefa"
-    expect(screen.queryByRole('button', { name: 'Hacer admin de área a Jefa' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Quitar admin de área a Jefa' })).toBeNull();
-  });
-
-  it('el diálogo no pierde el foco cuando la pantalla se vuelve a renderizar', async () => {
-    let resolverAreas: (v: AreaRef[]) => void = () => {};
-    vi.mocked(api.areas).mockReturnValue(new Promise((r) => { resolverAreas = r; }) as never);
-    render(<UsersList />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Hacer admin de área a Ana Ruiz' }));
-    const cancelar = within(screen.getByRole('alertdialog')).getByText('Cancelar');
-    cancelar.focus();
-    // Llegan las áreas: `UsersList` se vuelve a renderizar con el diálogo abierto.
-    resolverAreas(AREAS);
-    expect(await screen.findByLabelText('Finanzas')).toBeTruthy();
-    expect(document.activeElement).toBe(cancelar);
-  });
-
-  it('Hacer admin: aviso con foco y recarga; Cancelar devuelve el foco al botón', async () => {
-    render(<UsersList />);
-    const boton = await screen.findByRole('button', { name: 'Hacer admin de área a Ana Ruiz' });
-    fireEvent.click(boton);
-    fireEvent.click(within(screen.getByRole('alertdialog')).getByText('Cancelar'));
-    expect(document.activeElement).toBe(boton);
-
-    fireEvent.click(boton);
-    const modal = within(screen.getByRole('alertdialog'));
-    fireEvent.click(modal.getByLabelText('Finanzas'));
-    fireEvent.click(modal.getByText('Hacer admin'));
-    const aviso = await screen.findByText('Ana Ruiz ahora es admin de área de: Finanzas.');
-    await waitFor(() => expect(document.activeElement).toBe(aviso.closest('[role="status"]')));
-    await waitFor(() => expect(api.users).toHaveBeenCalledTimes(2));
   });
 });

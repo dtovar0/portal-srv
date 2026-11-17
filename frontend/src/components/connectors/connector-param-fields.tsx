@@ -8,7 +8,7 @@
  * Ningún campo pide secretos: la credencial es la referencia del gestor.
  */
 
-import { Field, Select, TextArea, TextInput } from '../form';
+import { Field, Option, Select, TextArea, TextInput } from '../form';
 import { Card } from '../ui';
 import { FieldErrorNote, describedBy } from '../platforms/field-notes';
 import { type CampoParametro, GRUPOS, type GrupoId, camposVisibles } from './connector-params';
@@ -48,8 +48,8 @@ function ParamField({
   if (campo.tipo === 'select') {
     control = (
       <Select {...comunes} onChange={(e) => onChange(e.target.value)}>
-        <option value="">{campo.obligatorio ? 'Elige una opción' : 'Por defecto'}</option>
-        {(campo.opciones ?? []).map((o) => <option key={o.valor} value={o.valor}>{o.texto}</option>)}
+        <Option value="">{campo.obligatorio ? 'Elige una opción' : 'Por defecto'}</Option>
+        {(campo.opciones ?? []).map((o) => <Option key={o.valor} value={o.valor}>{o.texto}</Option>)}
       </Select>
     );
   } else if (campo.tipo === 'area' || campo.tipo === 'json' || (campo.tipo === 'lista' && campo.unir === '\n')) {

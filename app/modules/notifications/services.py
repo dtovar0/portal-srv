@@ -69,7 +69,7 @@ def smtp_settings_from_env():
         auth_enabled=_env_flag('SMTP_AUTH', bool(username and password)),
         username=username,
         password=password,
-        sender_name=(os.getenv('SMTP_SENDER_NAME') or 'Nexus').strip(),
+        sender_name=(os.getenv('SMTP_SENDER_NAME') or 'Portal').strip(),
         sender_email=(os.getenv('SMTP_SENDER_EMAIL') or '').strip() or None,
         source='env',
     )
@@ -156,12 +156,12 @@ def send_test_email(server, port, encryption, username, password, sender_name, t
         msg = MIMEMultipart()
         msg['From'] = f"{sender_name} <{username}>"
         msg['To'] = target_email
-        msg['Subject'] = "⚡ Nexus Premium - SMTP Verification"
+        msg['Subject'] = "⚡ Portal - Verificación SMTP"
 
         body = f"""
         <html>
             <body style="font-family: sans-serif; color: #1a1a1a;">
-                <h2 style="color: #6366f1;">⚡ Nexus System Verification</h2>
+                <h2 style="color: #6366f1;">⚡ Verificación del sistema - Portal</h2>
                 <p>Usted está recibiendo este mensaje porque se ha solicitado una prueba de conectividad desde el panel de administración.</p>
                 <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
                     <p><b>Status:</b> Conexión Exitosa</p>

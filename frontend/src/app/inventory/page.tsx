@@ -15,8 +15,7 @@ export default function Page() {
       <RequireRole requires="any_admin">
         <div className="space-y-6">
           <PageHeader
-            title="Inventario"
-            description="Quién tiene qué plataforma, con qué nivel, desde cuándo y quién lo aprobó, en tus áreas (todas, si eres superadmin)."
+            title="Auditoría usuarios"
           />
           <Suspense fallback={<Skeleton variant="fila" count={5} ariaLabel="Cargando inventario…" />}>
             <Inventory />

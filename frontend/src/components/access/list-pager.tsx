@@ -5,6 +5,7 @@
  */
 
 import { Button } from '../form';
+import { Icono } from '../icono';
 
 export function totalPaginas(total: number, perPage: number): number {
   return perPage > 0 ? Math.max(1, Math.ceil(total / perPage)) : 1;
@@ -28,26 +29,32 @@ export function ListPager({
   if (paginas <= 1) return null;
 
   return (
-    <nav aria-label={label} className="flex flex-wrap items-center justify-between gap-3">
+    <nav
+      aria-label={label}
+      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-panel-border bg-panel-fill p-3 shadow-xs"
+    >
       <Button
         variant="secondary"
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
-        className="min-h-12 min-w-12 px-4"
+        className="min-h-12 min-w-12 gap-1.5 px-4 shadow-xs"
       >
-        Anterior
+        <Icono nombre="chevron-izq" tamano="sm" ariaHidden={true} />
+        <span>Anterior</span>
       </Button>
-      <p className="text-sm text-label">Página {page} de {paginas} · {total} en total</p>
+      <p className="text-sm font-semibold text-label">Página {page} de {paginas} · {total} en total</p>
       {/* Solo la página: un refresco que cambie el total no se anuncia. */}
       <span className="sr-only" aria-live="polite">Página {page}</span>
       <Button
         variant="secondary"
         disabled={page >= paginas}
         onClick={() => onChange(page + 1)}
-        className="min-h-12 min-w-12 px-4"
+        className="min-h-12 min-w-12 gap-1.5 px-4 shadow-xs"
       >
-        Siguiente
+        <span>Siguiente</span>
+        <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} />
       </Button>
     </nav>
   );
 }
+

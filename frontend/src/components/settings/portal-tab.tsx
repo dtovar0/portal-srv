@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useAsync } from '@/lib/use-async';
 import { Button, Field, FileInput, TextInput } from '../form';
+import { Icono } from '../icono';
 import { Card, ErrorNote, Spinner, SuccessNote } from '../ui';
 
 export function PortalTab() {
@@ -60,7 +61,7 @@ export function PortalTab() {
   }
 
   return (
-    <Card className="space-y-4">
+    <Card className="flex h-full w-full flex-1 min-h-0 flex-col space-y-4">
       {state.error ? <ErrorNote message={state.error} /> : null}
 
       <Field label="Nombre del portal">
@@ -115,6 +116,7 @@ export function PortalTab() {
                 setForm({ ...value, portal_identity_type: 'icon', portal_icon: '' })
               }
             >
+              <Icono nombre="eliminar" tamano="sm" ariaHidden={true} className="mr-1.5" />
               Quitar
             </Button>
           ) : null}
@@ -123,6 +125,7 @@ export function PortalTab() {
 
       <div className="flex items-center gap-3">
         <Button onClick={save} disabled={state.saving}>
+          <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           {state.saving ? 'Guardando…' : 'Guardar'}
         </Button>
         {state.saved ? <SuccessNote>Guardado.</SuccessNote> : null}

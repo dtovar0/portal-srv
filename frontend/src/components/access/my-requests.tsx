@@ -16,7 +16,7 @@ import { requestsApi } from '@/lib/access/requests';
 import type { AccessRequest, RequestStatus } from '@/lib/access/types';
 import { useCambiosDeEstado } from '@/lib/use-cambios-de-estado';
 import { usePolling } from '@/lib/use-polling';
-import { Button, Select } from '../form';
+import { Button, Option, Select } from '../form';
 import { RegionDeAnuncios } from '../region-de-anuncios';
 import { useSession } from '../session-provider';
 import { EmptyNote, ErrorNote, Skeleton } from '../ui';
@@ -134,9 +134,9 @@ export function MyRequests({ estadoInicial }: { estadoInicial?: RequestStatus })
         aria-label="Filtrar mis solicitudes por estado"
         className="sm:w-64"
       >
-        <option value="">Todas las solicitudes</option>
+        <Option value="">Todas las solicitudes</Option>
         {ESTADOS.map((estado) => (
-          <option key={estado} value={estado}>{ESTADOS_SOLICITUD[estado].texto}</option>
+          <Option key={estado} value={estado}>{ESTADOS_SOLICITUD[estado].texto}</Option>
         ))}
       </Select>
 

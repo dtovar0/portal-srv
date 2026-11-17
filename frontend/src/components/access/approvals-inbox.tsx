@@ -22,7 +22,7 @@ import type { AccessRequest, RequestStatus } from '@/lib/access/types';
 import type { AreaRef } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { usePolling } from '@/lib/use-polling';
-import { Button, Select } from '../form';
+import { Button, Option, Select } from '../form';
 import { useSession } from '../session-provider';
 import { Card, EmptyNote, ErrorNote, Skeleton, SuccessNote } from '../ui';
 import { AccessStatusBadge, NIVELES } from './access-status-badge';
@@ -251,9 +251,9 @@ export function ApprovalsInbox() {
           aria-label="Filtrar la bandeja por estado"
         >
           {ESTADOS.map((estado) => (
-            <option key={estado} value={estado}>
+            <Option key={estado} value={estado}>
               {ESTADO_PLURAL[estado].charAt(0).toUpperCase() + ESTADO_PLURAL[estado].slice(1)}
-            </option>
+            </Option>
           ))}
         </Select>
         <Select
@@ -264,9 +264,9 @@ export function ApprovalsInbox() {
           }}
           aria-label="Filtrar la bandeja por área"
         >
-          <option value="">{esSuperadmin ? 'Todas las áreas' : 'Todas mis áreas'}</option>
+          <Option value="">{esSuperadmin ? 'Todas las áreas' : 'Todas mis áreas'}</Option>
           {areas.map((area) => (
-            <option key={area.id} value={area.id}>{area.name}</option>
+            <Option key={area.id} value={area.id}>{area.name}</Option>
           ))}
         </Select>
       </div>

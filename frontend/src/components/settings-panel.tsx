@@ -35,15 +35,8 @@ export function SettingsPanel() {
   ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Ajustes"
-        description={
-          isAdmin
-            ? 'Configuración del sistema y preferencias personales.'
-            : 'Tus preferencias personales.'
-        }
-      />
+    <div className="flex h-full w-full flex-1 flex-col gap-4 min-h-0">
+      <PageHeader title="Ajustes" />
 
       <Tabs
         tabs={tabs}
@@ -54,7 +47,7 @@ export function SettingsPanel() {
         getPanelId={panelId}
       />
 
-      <TabPanel id={panelId(tab)} tabId={tabId(tab)}>
+      <TabPanel id={panelId(tab)} tabId={tabId(tab)} className="!mt-0 flex h-full w-full flex-1 min-h-0 flex-col">
         {tab === 'portal' ? <PortalTab /> : null}
         {tab === 'smtp' ? <SmtpTab /> : null}
         {tab === 'templates' ? <TemplatesTab /> : null}

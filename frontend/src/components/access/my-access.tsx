@@ -17,7 +17,7 @@ import { grantsApi } from '@/lib/access/grants';
 import type { Access, AccessListParams, AccessOrigin, AccessStatus } from '@/lib/access/types';
 import { useCambiosDeEstado } from '@/lib/use-cambios-de-estado';
 import { usePolling } from '@/lib/use-polling';
-import { Button, Select } from '../form';
+import { Button, Option, Select } from '../form';
 import { RegionDeAnuncios } from '../region-de-anuncios';
 import { useSession } from '../session-provider';
 import { EmptyNote, ErrorNote, Skeleton } from '../ui';
@@ -134,7 +134,7 @@ export function MyAccess({ estadoInicial }: { estadoInicial?: Filtro }) {
         className="sm:w-64"
       >
         {FILTROS.map((filtro) => (
-          <option key={filtro.valor} value={filtro.valor}>{filtro.texto}</option>
+          <Option key={filtro.valor} value={filtro.valor}>{filtro.texto}</Option>
         ))}
       </Select>
 

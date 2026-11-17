@@ -29,7 +29,7 @@ export function BarraSuperior({
   menuMovil: React.ReactNode;
   colapsada: boolean;
   onAlternarMenu: () => void;
-  comandos: readonly Comando[];
+  comandos?: readonly Comando[];
   oscuro: boolean;
   onAlternarTema: () => void;
   noLeidas: number;
@@ -50,8 +50,8 @@ export function BarraSuperior({
         className="hidden md:inline-flex"
       />
       <RutaNavegacion />
-      <BuscadorGlobal comandos={comandos} />
-      <div className="ml-auto flex min-w-0 items-center gap-2 md:ml-0">
+      <BuscadorGlobal comandos={comandos ?? []} />
+      <div className="ml-auto flex min-w-0 items-center gap-2">
         <BotonIcono icono={oscuro ? 'sol' : 'luna'} etiqueta={etiquetaTema} onClick={onAlternarTema} />
         <Link href="/notifications" aria-label={etiquetaNotificaciones} title="Notificaciones" className={CLASE_BOTON_ICONO}>
           <Icono nombre="campana" />

@@ -8,10 +8,10 @@ export default function Page() {
   return (
     <AppShell>
       <RequireRole requires="admin">
-        <div className="space-y-6">
+        <div className="flex h-full w-full flex-col gap-4 min-h-0">
           <PageHeader
             title="Conectores"
-            description="Configuración de conectores y bitácora de ejecuciones."
+            className="shrink-0"
           />
           <ConnectorsAdmin />
         </div>

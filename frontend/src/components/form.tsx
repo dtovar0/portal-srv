@@ -12,7 +12,7 @@ import React, { useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CAMPOS, esVisible, useFocusTrap } from '@/lib/use-focus-trap';
 import { useScrollLock } from '@/lib/use-scroll-lock';
-import { Icono } from './icono';
+import { Icono, type NombreIcono } from './icono';
 import { AlertDialog, type AlertDialogProps, type AlertDialogType } from './alert-dialog';
 export { Drawer, type DrawerProps } from './drawer';
 export { AlertDialog, type AlertDialogProps, type AlertDialogType };
@@ -31,16 +31,16 @@ export function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.1em] text-label">
+    <label className="block space-y-1.5">
+      <span className="block text-xs font-bold uppercase tracking-wider text-label">
         {label}
       </span>
       {children}
       {hint ? (
-        <span className="mt-1.5 block text-xs text-label/85">{hint}</span>
+        <span className="block text-xs font-normal text-label/85">{hint}</span>
       ) : null}
       {error ? (
-        <span id={errorId} className="mt-1.5 block min-h-5 text-xs font-bold text-error-text">
+        <span id={errorId} className="block min-h-5 text-xs font-bold text-error-text">
           {error}
         </span>
       ) : null}
@@ -50,10 +50,10 @@ export function Field({
 
 // users.html: el input estándar del portal con estados completos (DIS-059).
 const FIELD_BASE =
-  'w-full bg-surface-container/30 border border-panel-border rounded-xl px-4 ' +
-  'text-sm font-bold text-body-text placeholder:text-label/85 ' +
-  'focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all ' +
-  'aria-invalid:border-error-text ' +
+  'w-full bg-superficie border border-panel-border rounded-xl px-4 ' +
+  'text-sm font-semibold text-body-text placeholder:text-label/70 shadow-xs ' +
+  'hover:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all ' +
+  'aria-invalid:border-error-text aria-invalid:focus:ring-error/20 ' +
   'disabled:cursor-not-allowed disabled:bg-surface-container/20 disabled:text-label/50 ' +
   'read-only:cursor-default read-only:bg-surface-container/10 read-only:border-panel-border/50';
 
@@ -83,6 +83,9 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
   },
 );
 
+export { SelectPremium } from './select-premium';
+export type { SelectPremiumOption, SelectPremiumProps } from './select-premium';
+
 export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
   function Select({ className = '', ...props }, ref) {
     const isInvalid = props['aria-invalid'] === true || props['aria-invalid'] === 'true';
@@ -90,7 +93,19 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
       <select
         ref={ref}
         {...props}
-        className={`nexus-select h-12 ${FIELD_BASE} appearance-none pr-10 ${isInvalid ? 'border-error-text' : ''} ${className}`}
+        className={`nexus-select nx-select-premium h-12 ${FIELD_BASE} pr-10 ${isInvalid ? 'border-error-text' : ''} ${className}`}
+      />
+    );
+  },
+);
+
+export const Option = React.forwardRef<HTMLOptionElement, React.OptionHTMLAttributes<HTMLOptionElement>>(
+  function Option({ className = '', ...props }, ref) {
+    return (
+      <option
+        ref={ref}
+        {...props}
+        className={`nexus-option bg-input-bg text-input-text font-semibold ${className}`}
       />
     );
   },
@@ -159,18 +174,30 @@ export { ButtonLink, type ButtonLinkProps } from './button-link';
  *   `aria-labelledby` al título (H6). Solo se monta tras una acción del
  *   usuario: en el servidor no se pinta.
  */
+const ANCHOS_MODAL = {
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+} as const;
+
 export function Modal({
   title,
   onClose,
   children,
   footer,
   describedBy,
+  icon,
+  size = 'xl',
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
   describedBy?: string;
+  icon?: NombreIcono;
+  size?: keyof typeof ANCHOS_MODAL;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
@@ -200,25 +227,39 @@ export function Modal({
         aria-labelledby={tituloId}
         aria-describedby={describedBy}
         tabIndex={-1}
-        className="nx-modal-glass w-full max-w-lg rounded-2xl shadow-2xl outline-none"
+        className={`nx-modal-glass flex w-full ${ANCHOS_MODAL[size] ?? 'max-w-xl'} flex-col overflow-hidden rounded-xl border border-panel-border/90 bg-gradient-to-b from-superficie via-superficie to-superficie-hundida shadow-2xl outline-none`}
       >
-        <div className="flex items-center justify-between border-b border-panel-border px-6 py-4">
-          <h2 id={tituloId} className="text-sm font-black uppercase tracking-[0.15em] text-panel-header-text">
-            {title}
-          </h2>
+        {/* HEADER: Opción 1 - Electric Cobalt & Violet */}
+        <div className="flex h-18 shrink-0 items-center justify-between border-b border-superficie/10 bg-gradient-to-r from-primary via-brand to-accent px-6 py-4">
+          <div className="flex items-center gap-3 min-w-0">
+            {icon ? (
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-superficie/25 bg-superficie/15 text-texto-sobre-accion shadow-sm backdrop-blur-xs" aria-hidden="true">
+                <Icono nombre={icon} tamano="md" ariaHidden={true} />
+              </span>
+            ) : null}
+            <h2 id={tituloId} className="text-base font-bold tracking-tight text-texto-sobre-accion truncate">
+              {title}
+            </h2>
+          </div>
           {/* DIS-031, DIS-061: área táctil de 48 px con Icono accesible. */}
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="min-w-12 min-h-12 flex items-center justify-center rounded-base text-label hover:bg-surface-container transition-colors"
+            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl text-texto-sobre-accion/80 transition-colors hover:bg-superficie/15 hover:text-texto-sobre-accion focus-visible:ring-2 focus-visible:ring-superficie shrink-0"
           >
             <Icono nombre="cerrar" tamano="md" ariaHidden={true} />
           </button>
         </div>
-        <div ref={cuerpo} className="space-y-5 px-6 py-5">{children}</div>
+
+        {/* BODY */}
+        <div ref={cuerpo} className="flex-1 min-h-0 space-y-5 overflow-y-auto bg-panel-fill px-6 py-6 text-body-text">
+          {children}
+        </div>
+
+        {/* FOOTER */}
         {footer ? (
-          <div className="flex flex-wrap justify-end gap-3 border-t border-panel-border px-6 py-4">
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-panel-border/80 bg-superficie-hundida/90 px-6 py-4 shadow-xs [&>*:only-child]:ml-auto">
             {footer}
           </div>
         ) : null}
@@ -267,3 +308,4 @@ export function ConfirmDialog({
     />
   );
 }
+

@@ -4,7 +4,9 @@ import { AreasList } from '@/components/areas-list';
 export default function Page() {
   return (
     <AppShell>
-      <AreasList />
+      <div className="flex h-full w-full flex-col min-h-0">
+        <AreasList />
+      </div>
     </AppShell>
   );
 }

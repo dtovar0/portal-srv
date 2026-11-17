@@ -75,7 +75,7 @@ describe('pantalla Ejecuciones por rol', () => {
     expect(within(ul).getByText('Fallida')).toBeTruthy();
     expect(within(ul).getByRole('button', { name: /Ver el detalle/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Reintentar la ejecución/ })).toBeNull();
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ejecuciones');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Log conectores');
   });
 
   it('superadmin: ve la bitácora con Reintentar en la fallida', async () => {
@@ -104,5 +104,20 @@ describe('estados', () => {
     render(<Page />);
     const alerta = await screen.findByRole('alert');
     expect(alerta.textContent).not.toContain('detalle interno');
+  });
+
+  it('renderiza correctamente cuando platform, user o area son null (entidades eliminadas)', async () => {
+    const jobHuerfano: Job = {
+      ...FALLIDA,
+      id: 302,
+      platform: null,
+      user: null,
+      area: null,
+    };
+    jobs.mockResolvedValue(pagina([jobHuerfano]));
+    render(<Page />);
+    const ul = await screen.findByRole('list', { name: 'Bitácora de ejecuciones' });
+    expect(within(ul).getByText('Usuario eliminado')).toBeTruthy();
+    expect(within(ul).getByText('Plataforma eliminada · Área eliminada')).toBeTruthy();
   });
 });

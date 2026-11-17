@@ -41,17 +41,17 @@ function sesion(rol: Rol): Session {
   };
 }
 
-const COMUNES = ['Panel', 'Catálogo', 'Favoritos', 'Notificaciones', 'Auditoría', 'Ajustes'];
+const COMUNES = ['Dashboard', 'Ajustes', 'Auditoría'];
 
 const ESPERADO: Record<Rol, string[]> = {
   usuario: [...COMUNES, 'Mis solicitudes'],
   admin_area: [
-    ...COMUNES, 'Mis solicitudes', 'Aprobaciones', 'Administrar plataformas', 'Áreas', 'Usuarios',
-    'Inventario', 'Ejecuciones',
+    ...COMUNES, 'Plataformas', 'Mis solicitudes', 'Áreas', 'Usuarios',
+    'Auditoría usuarios', 'Log conectores',
   ],
   administrador: [
-    ...COMUNES, 'Aprobaciones', 'Administrar plataformas', 'Áreas', 'Usuarios', 'Conectores',
-    'Inventario', 'Ejecuciones',
+    ...COMUNES, 'Plataformas', 'Conectores', 'Áreas', 'Usuarios',
+    'Auditoría usuarios', 'Log conectores',
   ],
 };
 

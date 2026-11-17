@@ -7,7 +7,7 @@
  * No se define aquí ningún estilo propio.
  */
 
-import { Icono, type NombreIcono } from './icono';
+import { Icono, type NombreIcono, type TamanoIcono } from './icono';
 
 export type CardVariant = 'default' | 'link' | 'selectable';
 
@@ -20,7 +20,7 @@ export interface CardProps extends React.HTMLAttributes<HTMLElement> {
 
 const CARD_VARIANTS: Record<CardVariant, string> = {
   default: '',
-  link: 'transition-colors hover:border-primary/60',
+  link: 'transition-colors transition-all hover:border-primary/60 hover:shadow-2',
   selectable: 'cursor-pointer has-[:checked]:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary',
 };
 
@@ -31,31 +31,71 @@ export function Card({
   as: Component = 'div',
   ...props
 }: CardProps) {
-  // index.html: bg-panel-fill border border-panel-border rounded-xl p-6 shadow-sm
+  // index.html: bg-panel-fill border border-panel-border rounded-xl p-6 shadow-1
   return (
     <Component
       {...props}
-      className={`bg-panel-fill border border-panel-border rounded-xl p-6 shadow-sm ${CARD_VARIANTS[variant]} ${className}`}
+      className={`bg-panel-fill border border-panel-border rounded-xl p-6 shadow-1 ${CARD_VARIANTS[variant]} ${className}`}
     >
       {children}
     </Component>
   );
 }
 
-/** Cabecera de panel, como la de los paneles de index.html. */
+export interface PanelHeaderProps {
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  icon?: NombreIcono;
+  titleId?: string;
+  titleTag?: 'h2' | 'h3' | 'h4';
+  actions?: React.ReactNode;
+  children?: React.ReactNode;
+  className?: string;
+}
+
+/** Cabecera unificada de panel / contenedor / tarjeta (UI_GUIDE §Encabezados de Contenedores y Tarjetas). */
 export function PanelHeader({
   title,
+  subtitle,
+  icon,
+  titleId,
+  titleTag = 'h2',
+  actions,
   children,
-}: {
-  title: React.ReactNode;
-  children?: React.ReactNode;
-}) {
+  className = '',
+}: PanelHeaderProps) {
+  const TitleTag = titleTag;
+
   return (
-    <div className="shrink-0 p-6 border-b border-panel-border bg-surface-container/20 flex items-center justify-between">
-      <h2 className="text-xs font-black uppercase tracking-[0.15em] text-label">
-        {title}
-      </h2>
-      {children}
+    <div
+      className={`flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-primary/20 bg-gradient-to-r from-primary/10 via-brand/10 to-accent/10 px-4 py-2 ${className}`}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        {icon ? (
+          <span
+            className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-superficie text-primary-text shadow-xs"
+            aria-hidden="true"
+          >
+            <Icono nombre={icon} tamano="md" ariaHidden={true} />
+          </span>
+        ) : null}
+        <div className="min-w-0">
+          <TitleTag
+            id={titleId}
+            className="text-sm font-bold tracking-tight text-body-text truncate"
+          >
+            {title}
+          </TitleTag>
+          {subtitle ? (
+            <p className="text-xs text-label truncate">{subtitle}</p>
+          ) : null}
+        </div>
+      </div>
+      {actions || children ? (
+        <div className="flex shrink-0 items-center gap-2">
+          {actions ?? children}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -100,16 +140,16 @@ export function StatTile({
       <p className="text-xs font-black uppercase tracking-[0.15em] text-label">
         {label}
       </p>
-      <p className="mt-2 text-3xl font-black tabular-nums text-bi-main">{value}</p>
+      <p className="mt-2 text-3xl font-black tabular-nums tracking-tight text-bi-main">{value}</p>
       {hint ? <p className={`mt-1 text-xs ${claseNota}`}>{hint}</p> : null}
     </div>
   );
-  if (!icon) return <Card>{cuerpo}</Card>;
+  if (!icon) return <Card className="transition-colors hover:border-primary/40 shadow-xs">{cuerpo}</Card>;
   return (
-    <Card>
+    <Card className="transition-colors hover:border-primary/40 shadow-xs">
       <div className="flex items-start gap-4">
         <span
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${CLASE_TONO[tone]}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-superficie/20 shadow-xs ${CLASE_TONO[tone]}`}
           aria-hidden="true"
         >
           <Icono nombre={icon} tamano="xl" />
@@ -144,6 +184,7 @@ export function Spinner({
 
 export { Note, ErrorNote, EmptyNote } from './note';
 export type { NoteProps, NoteTone } from './note';
+export { PremiumEmptyState, type PremiumEmptyStateProps } from './premium-message';
 
 /** Mensaje de éxito en línea (texto `success-text`, AA en los dos temas; DIS-002, DIS-010). */
 export function SuccessNote({ children }: { children: React.ReactNode }) {
@@ -156,19 +197,36 @@ export function SuccessNote({ children }: { children: React.ReactNode }) {
  */
 export type Tone = 'primary' | 'success' | 'error' | 'warning' | 'violet' | 'sky' | 'slate' | 'cyan';
 
-/** Insignia con texto; `icon` añade un icono decorativo (el texto nunca se pierde, DIS-079). */
+/** Insignia con texto o icono semántico (DIS-079). */
 export function Badge({
   children,
   tone = 'slate',
   icon,
+  dot = false,
+  className = '',
+  title,
+  iconTamano = 'sm',
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   tone?: Tone;
   icon?: NombreIcono;
+  dot?: boolean;
+  className?: string;
+  title?: string;
+  iconTamano?: TamanoIcono;
 }) {
   return (
-    <span className={`nx-badge nx-badge-${tone}`}>
-      {icon ? <Icono nombre={icon} tamano="sm" /> : null}
+    <span
+      className={`nx-badge nx-badge-${tone} shadow-xs ${className}`}
+      title={title}
+    >
+      {dot ? (
+        <span
+          className="size-1.5 shrink-0 rounded-full bg-current opacity-80"
+          aria-hidden="true"
+        />
+      ) : null}
+      {icon ? <Icono nombre={icon} tamano={iconTamano} ariaHidden={true} /> : null}
       {children}
     </span>
   );

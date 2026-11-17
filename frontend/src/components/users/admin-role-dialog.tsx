@@ -107,7 +107,7 @@ export function AdminAreasDialog({
   return (
     <AlertDialog
       open={true}
-      title={elevar ? `Hacer admin a ${quien}` : `Áreas que administra ${quien}`}
+      title={elevar ? 'Asignar admin' : 'Áreas administradas'}
       onClose={onClose}
       onConfirm={guardar}
       type="pregunta"

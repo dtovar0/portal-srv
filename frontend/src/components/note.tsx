@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from './ui';
 import { Icono, NombreIcono } from './icono';
+import { PremiumEmptyState } from './premium-message';
 
 export type NoteTone = 'error' | 'success' | 'warning' | 'info';
 
@@ -65,7 +66,7 @@ export function Note({
     <div
       id={id}
       role={effectiveRole}
-      className={`rounded-xl border p-4 text-sm font-bold ${styles.container} ${className}`}
+      className={`rounded-xl border p-4 text-sm font-bold shadow-xs ${styles.container} ${className}`}
     >
       <div className="flex items-start gap-3">
         <Icono
@@ -109,20 +110,33 @@ export function ErrorNote({
   );
 }
 
-/** Estado vacío con soporte para acción opcional (DIS-062). */
+/** Estado vacío estandarizado de nivel Premium que se adapta al contenedor (DIS-062). Reutiliza PremiumEmptyState. */
 export function EmptyNote({
   message,
+  title,
   action,
+  icono,
+  badge,
+  variant,
   className = '',
 }: {
   message: string;
+  title?: string;
   action?: React.ReactNode;
+  icono?: NombreIcono;
+  badge?: string;
+  variant?: 'card' | 'seamless';
   className?: string;
 }) {
   return (
-    <Card className={`text-center space-y-3 ${className}`}>
-      <p className="text-sm font-bold text-label/85">{message}</p>
-      {action ? <div className="flex justify-center">{action}</div> : null}
-    </Card>
+    <PremiumEmptyState
+      message={message}
+      title={title}
+      action={action}
+      icono={icono}
+      badge={badge}
+      variant={variant}
+      className={className}
+    />
   );
 }

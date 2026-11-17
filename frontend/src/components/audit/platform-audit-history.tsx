@@ -7,6 +7,7 @@
  */
 
 import { ButtonLink } from '../form';
+import { Icono } from '../icono';
 import { PageHeader } from '../page-header';
 import { useCallback, useState } from 'react';
 import { auditApi } from '@/lib/access/audit';
@@ -34,8 +35,10 @@ export function PlatformAuditHistory({ platformId }: { platformId: number }) {
         title="Historial de la plataforma"
         description={nombre ?? 'Eventos sobre la plataforma y sus accesos.'}
         actions={
-          <ButtonLink href={RUTA_AUDITORIA} variant="secondary">
-            Toda la auditoría
+          <ButtonLink href={RUTA_AUDITORIA} variant="fila" className="nx-btn-toolbar !px-2.5">
+            <Icono nombre="auditoria" tamano="sm" ariaHidden={true} />
+            <span className="sr-only">Toda la auditoría</span>
+            <span aria-hidden="true">Auditoría</span>
           </ButtonLink>
         }
       />

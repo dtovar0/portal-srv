@@ -3,7 +3,7 @@ import { TRAZOS, type NombreIcono } from './icono-trazos';
 
 export type { NombreIcono };
 
-export type TamanoIcono = 'sm' | 'md' | 'lg' | 'xl';
+export type TamanoIcono = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface IconoProps {
   nombre: NombreIcono;
@@ -14,6 +14,7 @@ interface IconoProps {
 }
 
 const DIMENSIONES: Record<TamanoIcono, { width: number; height: number; clase: string }> = {
+  xs: { width: 14, height: 14, clase: 'w-3.5 h-3.5' },
   sm: { width: 16, height: 16, clase: 'w-4 h-4' },
   md: { width: 20, height: 20, clase: 'w-5 h-5' },
   lg: { width: 24, height: 24, clase: 'w-6 h-6' },

@@ -56,12 +56,12 @@ const contadores = (etiqueta: string) =>
   screen.queryAllByText(etiqueta).filter((el) => el.tagName === 'P');
 
 describe('Dashboard', () => {
-  it('DIS-079: el admin ve las acciones del encabezado, solicitudes pendientes y actividad reciente', async () => {
+  it('DIS-079: el admin ve la distribución responsiva con actividad reciente', async () => {
     render(<Dashboard />);
-    expect(await screen.findByRole('link', { name: 'Revisar aprobaciones' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Exportar/ })).toBeNull();
-    expect(await screen.findByRole('heading', { level: 2, name: 'Solicitudes pendientes' })).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 2, name: 'Actividad reciente' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Actividad reciente' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3, name: 'Plataformas por área' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3, name: 'Más visitadas' })).toBeTruthy();
   });
 
   it('DIS-079: quien no administra no ve esas secciones', async () => {
@@ -99,8 +99,8 @@ describe('Dashboard', () => {
     permisos.is_admin = false;
     render(<Dashboard />);
     await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
-    expect(contadores('Áreas')).toHaveLength(2);
-    expect(contadores('Plataformas')).toHaveLength(2);
+    expect(contadores('Áreas')).toHaveLength(1);
+    expect(contadores('Plataformas')).toHaveLength(1);
   });
 
   it('no muestra Áreas ni Plataformas mientras carga la sesión (DIS-037)', async () => {
@@ -108,9 +108,8 @@ describe('Dashboard', () => {
     estado.cargando = true;
     render(<Dashboard />);
     await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
-    // Solo los del resumen por rol (el mock es global): ninguno de /stats.
-    expect(contadores('Áreas')).toHaveLength(1);
-    expect(contadores('Plataformas')).toHaveLength(1);
+    expect(contadores('Áreas')).toHaveLength(0);
+    expect(contadores('Plataformas')).toHaveLength(0);
   });
 
   it('si el resumen falla, el admin recupera Áreas y Plataformas de /stats (DIS-037)', async () => {
@@ -119,5 +118,23 @@ describe('Dashboard', () => {
     await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
     await waitFor(() => expect(contadores('Áreas')).toHaveLength(1));
     expect(contadores('Plataformas')).toHaveLength(1);
+  });
+
+  it('muestra la card Solicitudes entre Plataformas y Visitas con grid 60/40', async () => {
+    const { container } = render(<Dashboard />);
+    await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+    expect(screen.getByText('Solicitudes')).toBeTruthy();
+
+    // Verificamos que las 5 cards están presentes
+    expect(screen.getByText('Áreas')).toBeTruthy();
+    expect(contadores('Plataformas')).toHaveLength(1);
+    expect(screen.getByText('Solicitudes')).toBeTruthy();
+    expect(screen.getByText('Visitas')).toBeTruthy();
+
+    // Verificamos la distribución 60/40 de la segunda fila (3 cols / 2 cols en grid de 5)
+    const fila2Cols = container.querySelector('.lg\\:grid-cols-5');
+    expect(fila2Cols).toBeTruthy();
+    expect(container.querySelector('.lg\\:col-span-3')).toBeTruthy();
+    expect(container.querySelector('.lg\\:col-span-2')).toBeTruthy();
   });
 });

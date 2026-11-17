@@ -17,7 +17,8 @@ import type { Job } from '@/lib/access/types';
 import { usePolling } from '@/lib/use-polling';
 import { formatearFecha } from '../access/fecha';
 import { DataList, DataListItem, Dato } from '../data-table';
-import { Modal } from '../form';
+import { Button, Modal } from '../form';
+import { Icono } from '../icono';
 import { useSession } from '../session-provider';
 import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
 import { ESTADOS_EJECUCION, OPERACIONES, PROVEEDORES, RESULTADOS_INTENTO, esTransitorio } from './job-catalog';
@@ -44,12 +45,25 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   const intentos = data ? [...data.attempts].sort((a, b) => b.n - a.n) : [];
 
   return (
-    <Modal title={`Ejecución n.º ${job.id}`} onClose={onClose}>
+    <Modal
+      title={`Ejecución n.º ${job.id}`}
+      icon="ejecuciones"
+      onClose={onClose}
+      footer={
+        <Button variant="secondary" onClick={onClose} className="min-h-11 px-4">
+          <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+          Entendido
+        </Button>
+      }
+    >
       <dl className="grid gap-3 sm:grid-cols-2">
         <Dato etiqueta="Estado" valor={<Badge tone={estado.tono} icon={estado.icono}>{estado.texto}</Badge>} />
         <Dato etiqueta="Operación" valor={`${OPERACIONES[actual.operation]} · ${PROVEEDORES[actual.provider]}`} />
-        <Dato etiqueta="Usuario" valor={actual.user.name} />
-        <Dato etiqueta="Plataforma" valor={`${actual.platform.name} · ${actual.area.name}`} />
+        <Dato etiqueta="Usuario" valor={actual.user?.name ?? 'Usuario eliminado'} />
+        <Dato
+          etiqueta="Plataforma"
+          valor={`${actual.platform?.name ?? 'Plataforma eliminada'} · ${actual.area?.name ?? 'Área eliminada'}`}
+        />
         <Dato etiqueta="Intentos" valor={`${actual.attempts_count} de ${actual.max_attempts}`} />
         <Dato etiqueta="Próximo intento" valor={formatearFecha(actual.next_attempt_at)} />
         <Dato etiqueta="Creada" valor={formatearFecha(actual.created_at)} />

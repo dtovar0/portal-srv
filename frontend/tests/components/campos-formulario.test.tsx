@@ -7,6 +7,7 @@ import {
   Field,
   FieldErrorNote,
   FileInput,
+  Option,
   Radio,
   Select,
   TextArea,
@@ -86,6 +87,19 @@ describe('DIS-059: Componentes de formulario unificados', () => {
       );
       const select = screen.getByRole('combobox');
       expect(select.className).toContain('border-error-text');
+    });
+
+    it('renderiza Option con clase nexus-option y reenvía ref', () => {
+      const optionRef = createRef<HTMLOptionElement>();
+      render(
+        <Select aria-label="Selector">
+          <Option ref={optionRef} value="premium">
+            Opción Premium
+          </Option>
+        </Select>,
+      );
+      expect(optionRef.current).toBeInstanceOf(HTMLOptionElement);
+      expect(optionRef.current?.className).toContain('nexus-option');
     });
   });
 

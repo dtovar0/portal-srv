@@ -20,8 +20,9 @@ import { ListPager } from '../access/list-pager';
 import { listLoadError } from '../access/request-errors';
 import { useOpcionesAlcance } from '../access/scope-filters';
 import { Button } from '../form';
+import { Icono } from '../icono';
 import { useSession } from '../session-provider';
-import { Card, EmptyNote, ErrorNote, Spinner, SuccessNote } from '../ui';
+import { Card, ErrorNote, PremiumEmptyState, Spinner, SuccessNote } from '../ui';
 import { hayTransitorios } from './job-catalog';
 import { JobDetailModal } from './job-detail-modal';
 import { JobRetryDialog } from './job-retry-dialog';
@@ -36,7 +37,9 @@ export const VACIO_EJECUCIONES = 'Todavía no hay ejecuciones en tu alcance.';
 export const VACIO_EJECUCIONES_FILTROS = 'Ninguna ejecución coincide con los filtros.';
 
 export function avisoReintento(job: Job): string {
-  return `Reintento en curso: ejecución n.º ${job.id} de ${job.user.name} en ${job.platform.name}.`;
+  const userName = job.user?.name ?? 'el usuario';
+  const platformName = job.platform?.name ?? 'la plataforma';
+  return `Reintento en curso: ejecución n.º ${job.id} de ${userName} en ${platformName}.`;
 }
 
 export function JobsLog() {
@@ -135,16 +138,8 @@ export function JobsLog() {
   }
 
   return (
-    <section aria-labelledby="ejecuciones-titulo" className="space-y-4">
-      <div>
-        <h2 id="ejecuciones-titulo" className="text-lg font-semibold">Bitácora de ejecuciones</h2>
-        <p className="text-sm text-label">
-          Cada vez que el portal otorga o retira un acceso en una plataforma. Se actualiza sola
-          mientras haya ejecuciones en curso.
-        </p>
-      </div>
-
-      <div role="status" ref={avisoRef} tabIndex={-1} className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary">
+    <section aria-labelledby="ejecuciones-titulo" className="flex h-full w-full flex-col gap-4 min-h-0">
+      <div role="status" ref={avisoRef} tabIndex={-1} className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0">
         {aviso ? (
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -155,56 +150,127 @@ export function JobsLog() {
         ) : null}
       </div>
 
-      <JobsFilters filtros={filtros} alcance={alcance} onChange={cambiar} />
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-label" aria-live="polite">
-          {recargando
-            ? 'Recargando…'
-            : data ? `${data.total} ${data.total === 1 ? 'ejecución' : 'ejecuciones'}` : ''}
-        </p>
-        <Button
-          variant="secondary"
-          onClick={recargar}
-          aria-disabled={lista.loading || undefined}
-          className="aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          Recargar
-        </Button>
-      </div>
-
-      {lista.loading && !data ? <Spinner label="Cargando las ejecuciones…" /> : null}
-
-      {lista.error ? (
-        <div className="space-y-3">
-          <ErrorNote message={lista.error} />
-          <Button variant="secondary" onClick={lista.refresh}>Reintentar</Button>
-        </div>
-      ) : null}
-
-      {data ? (
-        items.length === 0 ? (
-          <div role="status">
-            <EmptyNote message={hayFiltrosEjecuciones(filtros) ? VACIO_EJECUCIONES_FILTROS : VACIO_EJECUCIONES} />
+      {/* Grid de 1 columna y 2 filas (10/90): Fila 1 contenedor con botones, Fila 2 tabla al 100% */}
+      <div className="grid w-full flex-1 min-h-0 grid-cols-1 grid-rows-[auto_1fr] gap-4">
+        {/* Fila 1 (N columnas, 1 fila): Barra de botones estandarizada */}
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
+          {/* A LA IZQUIERDA: Filtros tipo barra de botones */}
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 id="ejecuciones-titulo" className="sr-only">
+              Bitácora de ejecuciones
+            </h2>
+            <JobsFilters filtros={filtros} alcance={alcance} onChange={cambiar} />
+            {data ? (
+              <span
+                className="text-xs font-bold text-label whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60"
+                aria-live="polite"
+              >
+                {recargando
+                  ? 'Recargando…'
+                  : `${data.total} ${data.total === 1 ? 'ejecución' : 'ejecuciones'}`}
+              </span>
+            ) : null}
           </div>
-        ) : (
-          <>
-            <JobsTable
-              items={items}
-              esSuperadmin={esSuperadmin}
-              onDetalle={abrirDetalle}
-              onReintentar={abrirReintento}
-            />
-            <ListPager
-              page={data.page}
-              perPage={data.per_page}
-              total={data.total}
-              label="Páginas de la bitácora de ejecuciones"
-              onChange={setPage}
-            />
-          </>
-        )
-      ) : null}
+
+          {/* A LA DERECHA: Botones de acción */}
+          <div className="flex flex-wrap items-center gap-2">
+            {hayFiltrosEjecuciones(filtros) ? (
+              <Button
+                variant="fila"
+                onClick={() => {
+                  setFiltros(FILTROS_EJECUCIONES_INICIALES);
+                  setPage(1);
+                }}
+                aria-label="Restablecer filtros"
+                title="Restablecer filtros"
+                className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+              >
+                <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
+                <span>Limpiar</span>
+              </Button>
+            ) : null}
+
+            <div className="h-6 w-px bg-panel-border/80 self-center mx-1 shrink-0" aria-hidden="true" />
+
+            <Button
+              variant="fila"
+              onClick={recargar}
+              aria-disabled={lista.loading || undefined}
+              className="nx-btn-toolbar !px-2.5 aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary shadow-xs"
+            >
+              <Icono nombre="actividad" tamano="sm" ariaHidden={true} />
+              <span>Recargar</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Fila 2: La tabla ocupa el 100% de la altura disponible de forma responsiva */}
+        <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-hidden">
+          {lista.loading && !data ? <Spinner label="Cargando las ejecuciones…" /> : null}
+
+          {lista.error ? (
+            <div className="space-y-3">
+              <ErrorNote message={lista.error} />
+              <Button variant="secondary" onClick={lista.refresh}>Reintentar</Button>
+            </div>
+          ) : null}
+
+          {data ? (
+            items.length === 0 ? (
+              <div role="status" className="flex-1 h-full min-h-0 flex flex-col">
+                <PremiumEmptyState
+                  icono="ejecuciones"
+                  badge={hayFiltrosEjecuciones(filtros) ? 'Filtros activos' : 'Sin ejecuciones'}
+                  title={hayFiltrosEjecuciones(filtros) ? 'Sin resultados para la búsqueda' : 'Bitácora sin actividad'}
+                  message={hayFiltrosEjecuciones(filtros) ? VACIO_EJECUCIONES_FILTROS : VACIO_EJECUCIONES}
+                  className="flex-1 h-full min-h-72"
+                  action={
+                    hayFiltrosEjecuciones(filtros) ? (
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setFiltros(FILTROS_EJECUCIONES_INICIALES);
+                          setPage(1);
+                        }}
+                      >
+                        Restablecer filtros
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" onClick={recargar}>
+                        Recargar lista
+                      </Button>
+                    )
+                  }
+                />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 h-full w-full overflow-y-auto">
+                <JobsTable
+                  items={items}
+                  esSuperadmin={esSuperadmin}
+                  onDetalle={abrirDetalle}
+                  onReintentar={abrirReintento}
+                  minRows={8}
+                  footer={
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <p className="text-xs font-semibold text-label">
+                        Total: {data.total} {data.total === 1 ? 'ejecución' : 'ejecuciones'}
+                      </p>
+                      <ListPager
+                        page={data.page}
+                        perPage={data.per_page}
+                        total={data.total}
+                        label="Páginas de la bitácora de ejecuciones"
+                        onChange={setPage}
+                      />
+                    </div>
+                  }
+                />
+              </div>
+            )
+          ) : null}
+        </div>
+      </div>
 
       {detalle ? <JobDetailModal job={detalle} onClose={cerrarDetalle} /> : null}
 

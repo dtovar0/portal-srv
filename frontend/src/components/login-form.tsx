@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { AuthContext } from '@/lib/types';
 import { Button, Checkbox, Field, TextInput } from './form';
+import { Icono } from './icono';
 import { PageHeader } from './page-header';
 import { Card, ErrorNote, Spinner } from './ui';
 
@@ -78,14 +79,22 @@ export function LoginForm() {
 
   return (
     <div className="grid min-h-screen place-items-center p-4">
-      <div className="w-full max-w-sm">
-        <PageHeader
-          title="Nexus"
-          description="Catálogo centralizado de plataformas"
-          className="mb-6 text-center sm:flex-col sm:items-center"
-        />
+      <div className="w-full max-w-md">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <span
+            className="mb-4 flex size-12 shrink-0 items-center justify-center rounded-2xl border border-superficie/20 bg-gradient-to-br from-primary via-brand to-accent text-texto-sobre-accion shadow-md"
+            aria-hidden="true"
+          >
+            <Icono nombre="escudo-ok" tamano="lg" />
+          </span>
+          <PageHeader
+            title="Portal de accesos"
+            description="Catálogo centralizado de plataformas"
+            className="text-center sm:flex-col sm:items-center"
+          />
+        </div>
 
-        <Card className="space-y-4">
+        <Card className="space-y-5 rounded-2xl border border-panel-border bg-panel-fill p-6 sm:p-8 shadow-2xl">
           {error ? <ErrorNote message={error} /> : null}
 
           {context.sso_user ? (
@@ -98,8 +107,9 @@ export function LoginForm() {
               <Button
                 onClick={enterWithSso}
                 disabled={busy}
-                className="w-full py-2"
+                className="w-full py-2 shadow-xs"
               >
+                <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
                 {busy ? 'Entrando…' : 'Entrar'}
               </Button>
             </div>
@@ -134,8 +144,9 @@ export function LoginForm() {
               <Button
                 type="submit"
                 disabled={busy || !email || !password}
-                className="w-full py-2"
+                className="w-full py-2 shadow-xs"
               >
+                <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
                 {busy ? 'Comprobando…' : 'Iniciar sesión'}
               </Button>
             </form>

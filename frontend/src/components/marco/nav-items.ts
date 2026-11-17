@@ -16,6 +16,8 @@ export interface NavItem {
   seccion: SeccionNav;
   /** Permiso mínimo; sin él el enlace no se muestra. */
   requires?: RoleRequirement;
+  /** Si es true, el enlace no se muestra en los menús de navegación. */
+  oculto?: boolean;
 }
 
 /** Entradas mínimas para mostrar la sección «Gestión» (con menos, van en «General»). */
@@ -25,25 +27,22 @@ export const SECCIONES: readonly SeccionNav[] = ['General', 'Gestión', 'Sistema
 
 /** Entradas por rol según la tabla de pantallas (REQUERIMIENTOS §4, FNC-070). */
 export const NAV: readonly NavItem[] = [
-  { href: '/', label: 'Panel', icono: 'panel', seccion: 'General' },
-  { href: '/platforms', label: 'Catálogo', icono: 'catalogo', seccion: 'General' },
+  { href: '/', label: 'Dashboard', icono: 'panel', seccion: 'General' },
+  { href: '/admin/platforms', label: 'Plataformas', icono: 'plataformas', seccion: 'General', requires: 'any_admin' },
   { href: '/requests', label: 'Mis solicitudes', icono: 'solicitudes', seccion: 'General', requires: 'requester' },
-  { href: '/favorites', label: 'Favoritos', icono: 'favorito', seccion: 'General' },
-  { href: '/notifications', label: 'Notificaciones', icono: 'campana', seccion: 'General' },
-  { href: '/approvals', label: 'Aprobaciones', icono: 'aprobaciones', seccion: 'Gestión', requires: 'any_admin' },
-  { href: '/admin/platforms', label: 'Administrar plataformas', icono: 'plataformas', seccion: 'Gestión', requires: 'any_admin' },
-  { href: '/admin/connectors', label: 'Conectores', icono: 'marca', seccion: 'Gestión', requires: 'admin' },
+  { href: '/approvals', label: 'Aprobaciones', icono: 'aprobaciones', seccion: 'Gestión', requires: 'any_admin', oculto: true },
   { href: '/areas', label: 'Áreas', icono: 'areas', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/users', label: 'Usuarios', icono: 'usuarios', seccion: 'Gestión', requires: 'any_admin' },
-  { href: '/inventory', label: 'Inventario', icono: 'inventario', seccion: 'Gestión', requires: 'any_admin' },
-  { href: '/admin/jobs', label: 'Ejecuciones', icono: 'ejecuciones', seccion: 'Gestión', requires: 'any_admin' },
-  { href: '/audit', label: 'Auditoría', icono: 'auditoria', seccion: 'Gestión' },
+  { href: '/admin/connectors', label: 'Conectores', icono: 'marca', seccion: 'Gestión', requires: 'admin' },
+  { href: '/inventory', label: 'Auditoría usuarios', icono: 'inventario', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/settings', label: 'Ajustes', icono: 'ajustes', seccion: 'Sistema' },
+  { href: '/admin/jobs', label: 'Log conectores', icono: 'ejecuciones', seccion: 'Sistema', requires: 'any_admin' },
+  { href: '/audit', label: 'Auditoría', icono: 'auditoria', seccion: 'Sistema' },
 ];
 
 /** Entradas que el rol puede ver, en el orden del menú. */
 export function entradasVisibles(permissions: Session['permissions']): NavItem[] {
-  return NAV.filter((item) => meetsRequirement(item.requires, permissions));
+  return NAV.filter((item) => !item.oculto && meetsRequirement(item.requires, permissions));
 }
 
 /** Entradas visibles agrupadas por sección; una sección sin entradas no aparece. */

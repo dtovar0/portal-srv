@@ -34,18 +34,18 @@ export function BarraLateral({
       id={ID_BARRA_LATERAL}
       aria-label="Menú lateral"
       data-colapsada={colapsada}
-      className={`hidden shrink-0 flex-col border-r border-borde bg-barra-lateral transition-[width] duration-media motion-reduce:transition-none md:flex ${
+      className={`hidden shrink-0 flex-col border-r border-barra-lateral-borde bg-barra-lateral transition-[width] duration-media motion-reduce:transition-none md:flex ${
         colapsada ? 'w-lateral-colapsada' : 'w-lateral'
       }`}
     >
-      <div className="flex h-barra-superior shrink-0 items-center gap-3 border-b border-borde px-5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-base bg-accion text-texto-sobre-accion">
+      <div className="flex h-barra-superior shrink-0 items-center gap-3 border-b border-barra-lateral-borde px-5">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-superficie/20 bg-gradient-to-br from-primary via-brand to-accent text-texto-sobre-accion shadow-xs">
           <Icono nombre="escudo-ok" />
         </span>
         {colapsada ? null : (
           <span className="flex min-w-0 flex-col">
-            <span className="truncate text-base font-bold leading-tight text-body-text">Portal de accesos</span>
-            <span className="truncate text-xs text-texto-secundario">Vivaro</span>
+            <span className="truncate text-base font-bold leading-tight text-barra-lateral-texto">Portal de accesos</span>
+            <span className="truncate text-xs text-barra-lateral-secundario">Vivaro</span>
           </span>
         )}
       </div>
@@ -55,7 +55,7 @@ export function BarraLateral({
       </div>
 
       <div
-        className={`flex shrink-0 items-center border-t border-borde p-3 ${colapsada ? 'justify-center' : ''}`}
+        className={`flex shrink-0 items-center border-t border-barra-lateral-borde p-3 ${colapsada ? 'justify-center' : ''}`}
       >
         <MenuUsuario session={session} segunSistema={segunSistema} onSegunSistema={onSegunSistema} colapsada={colapsada} />
       </div>

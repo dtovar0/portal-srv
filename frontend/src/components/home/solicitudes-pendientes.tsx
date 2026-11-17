@@ -44,17 +44,27 @@ export function nombreAccion(accion: 'Ver' | 'Rechazar' | 'Aprobar', request: Ac
 
 function Encabezado() {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <Icono nombre="documento" className="text-label" />
-        <h2 id={TITULO_ID} className="text-base font-semibold">Solicitudes pendientes</h2>
+    <div className="flex w-full items-center justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <span
+          className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-superficie text-primary-text shadow-xs"
+          aria-hidden="true"
+        >
+          <Icono nombre="documento" tamano="md" ariaHidden={true} />
+        </span>
+        <div className="min-w-0">
+          <h2 id={TITULO_ID} className="text-sm font-bold tracking-tight text-body-text truncate">
+            Solicitudes pendientes
+          </h2>
+          <p className="text-xs text-label truncate">Bandeja de solicitudes por autorizar</p>
+        </div>
       </div>
       <Link
         href={rutaConFiltro(RUTA_APROBACIONES, { status: 'pendiente' })}
-        className="inline-flex min-h-12 min-w-12 items-center gap-1 whitespace-nowrap rounded-lg px-2 text-sm font-semibold text-activo-texto outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="inline-flex min-h-12 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-xs font-bold text-primary-text transition-colors hover:bg-surface-container outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
-        Ver todas
-        <Icono nombre="chevron-der" tamano="sm" />
+        <span>Ver todas</span>
+        <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} />
       </Link>
     </div>
   );
@@ -116,8 +126,9 @@ export function SolicitudesPendientes() {
     {
       key: 'acciones',
       header: 'Acciones',
+      headerClassName: 'px-6 py-4 font-black tracking-wider text-primary-text text-right select-none',
       cell: (r) => (
-        <div className="flex justify-end gap-1">
+        <div className="inline-flex items-center justify-end gap-2">
           <ButtonLink
             href={rutaConFiltro(RUTA_APROBACIONES, { status: 'pendiente' })}
             variant="fila"
@@ -148,7 +159,7 @@ export function SolicitudesPendientes() {
           )}
         </div>
       ),
-      cellClassName: 'px-3 py-2 text-right',
+      cellClassName: 'whitespace-nowrap px-6 py-3 text-right',
     },
   ];
 

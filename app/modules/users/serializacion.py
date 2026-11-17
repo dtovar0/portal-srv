@@ -10,8 +10,8 @@ def usuario_gestionado(cuenta):
         'role': cuenta.role,
         'is_active': cuenta.is_active,
         'auth_source': cuenta.auth_source,
-        'areas': [{'id': a.id, 'name': a.name} for a in (cuenta.areas or [])],
-        'managed_areas': [{'id': a.id, 'name': a.name}
+        'areas': [{'id': a.id, 'name': a.name, 'icon': getattr(a, 'icon', None) or 'areas', 'color': getattr(a, 'color', None) or '#6366f1'} for a in (cuenta.areas or [])],
+        'managed_areas': [{'id': a.id, 'name': a.name, 'icon': getattr(a, 'icon', None) or 'areas', 'color': getattr(a, 'color', None) or '#6366f1'}
                           for a in (cuenta.managed_areas or [])],
         'last_login_at': (cuenta.last_login_at.isoformat()
                           if cuenta.last_login_at else None),

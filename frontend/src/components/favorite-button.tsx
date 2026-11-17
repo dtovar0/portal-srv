@@ -43,7 +43,7 @@ export function FavoriteButton({
     } catch {
       setFavorite(previous);
       // DIS-010 (H-17): antes el fallo era silencioso.
-      avisar('error', 'No se pudo actualizar el favorito. Inténtalo de nuevo.');
+      avisar('error', 'No se pudo actualizar el favorito.', 'Favoritos');
     } finally {
       setBusy(false);
     }

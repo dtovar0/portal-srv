@@ -12,10 +12,10 @@ import { AuditHistory } from './audit/audit-history';
 
 export function AuditLog() {
   return (
-    <div className="space-y-6">
+    <div className="flex h-full w-full flex-col gap-4 min-h-0">
       <PageHeader
         title="Auditoría"
-        description="Registro de acciones sobre el sistema."
+        className="shrink-0"
       />
       <AuditHistory cargar={auditApi.list} />
     </div>

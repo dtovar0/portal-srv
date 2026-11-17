@@ -24,6 +24,7 @@ export const BotonIcono = React.forwardRef<HTMLButtonElement, BotonIconoProps>(f
       type="button"
       aria-label={etiqueta}
       title={etiqueta}
+      data-tooltip={etiqueta}
       {...props}
       className={`${CLASE_BOTON_ICONO} ${className}`}
     >
