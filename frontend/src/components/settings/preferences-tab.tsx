@@ -35,7 +35,7 @@ export function PreferencesTab() {
   }
 
   return (
-    <Card className="space-y-4">
+    <Card className="flex h-full w-full flex-1 min-h-0 flex-col space-y-4">
       {state.error ? <ErrorNote message={state.error} /> : null}
 
       <Checkbox

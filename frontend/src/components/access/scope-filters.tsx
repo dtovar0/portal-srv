@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 import { api } from '@/lib/api';
 import type { AreaRef } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
-import { Field, Select } from '../form';
+import { Field, Option, Select } from '../form';
 import { useSession } from '../session-provider';
 
 /** Plataforma del filtro: solo lo que el filtro necesita de `Platform`. */
@@ -71,6 +71,7 @@ export function ScopeSelects({
   platformId,
   opciones,
   areaSelectId,
+  variant = 'field',
   onChange,
 }: {
   areaId: number | null;
@@ -78,12 +79,56 @@ export function ScopeSelects({
   opciones: OpcionesAlcance;
   /** `id` del selector de área (para llevarle el foco desde fuera). */
   areaSelectId?: string;
+  variant?: 'field' | 'inline';
   onChange: (cambio: CambioAlcance) => void;
 }) {
   const { areas, plataformas, esSuperadmin } = opciones;
   const visibles = areaId === null
     ? plataformas
     : plataformas.filter((p) => p.area_id === areaId);
+
+  if (variant === 'inline') {
+    return (
+      <>
+        <div className="relative">
+          <label htmlFor={areaSelectId ?? 'scope-filtro-area'} className="sr-only">Área</label>
+          <Select
+            id={areaSelectId ?? 'scope-filtro-area'}
+            aria-label="Área"
+            value={areaId ?? ''}
+            onChange={(event) => {
+              const nueva = event.target.value ? Number(event.target.value) : null;
+              const sigue = plataformas.some(
+                (p) => p.id === platformId && (nueva === null || p.area_id === nueva));
+              onChange({ areaId: nueva, platformId: sigue ? platformId : null });
+            }}
+            className="h-12 !w-auto min-w-36 text-xs font-semibold rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <Option value="">{esSuperadmin ? 'Todas las áreas' : 'Todas mis áreas'}</Option>
+            {areas.map((area) => (
+              <Option key={area.id} value={area.id}>{area.name}</Option>
+            ))}
+          </Select>
+        </div>
+        <div className="relative">
+          <label htmlFor="scope-filtro-plataforma" className="sr-only">Plataforma</label>
+          <Select
+            id="scope-filtro-plataforma"
+            aria-label="Plataforma"
+            value={platformId ?? ''}
+            onChange={(event) =>
+              onChange({ platformId: event.target.value ? Number(event.target.value) : null })}
+            className="h-12 !w-auto min-w-36 text-xs font-semibold rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <Option value="">Todas las plataformas</Option>
+            {visibles.map((plataforma) => (
+              <Option key={plataforma.id} value={plataforma.id}>{plataforma.name}</Option>
+            ))}
+          </Select>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -98,9 +143,9 @@ export function ScopeSelects({
             onChange({ areaId: nueva, platformId: sigue ? platformId : null });
           }}
         >
-          <option value="">{esSuperadmin ? 'Todas las áreas' : 'Todas mis áreas'}</option>
+          <Option value="">{esSuperadmin ? 'Todas las áreas' : 'Todas mis áreas'}</Option>
           {areas.map((area) => (
-            <option key={area.id} value={area.id}>{area.name}</option>
+            <Option key={area.id} value={area.id}>{area.name}</Option>
           ))}
         </Select>
       </Field>
@@ -110,9 +155,9 @@ export function ScopeSelects({
           onChange={(event) =>
             onChange({ platformId: event.target.value ? Number(event.target.value) : null })}
         >
-          <option value="">Todas las plataformas</option>
+          <Option value="">Todas las plataformas</Option>
           {visibles.map((plataforma) => (
-            <option key={plataforma.id} value={plataforma.id}>{plataforma.name}</option>
+            <Option key={plataforma.id} value={plataforma.id}>{plataforma.name}</Option>
           ))}
         </Select>
       </Field>

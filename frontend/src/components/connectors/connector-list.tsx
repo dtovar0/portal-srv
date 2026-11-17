@@ -10,6 +10,7 @@
 
 import type { Platform } from '@/lib/types';
 import { Button } from '../form';
+import { Icono } from '../icono';
 import { Badge } from '../ui';
 import { ETIQUETA_CELDA, ResponsiveList, ResponsiveRow } from '../access/responsive-list';
 
@@ -40,7 +41,14 @@ export function ConnectorList({
   return (
     <ResponsiveList columns={COLUMNAS} headers={ENCABEZADOS_CONECTORES} label="Plataformas con conector">
       {plataformas.map((p) => (
-        <ResponsiveRow key={p.id} columns={COLUMNAS} label={`Conector de ${p.name}`}>
+        <ResponsiveRow
+          key={p.id}
+          columns={COLUMNAS}
+          label={`Conector de ${p.name}`}
+          interactive={true}
+          selected={seleccionada === p.id}
+          onClick={() => onSelect(p)}
+        >
           <div className="min-w-0">
             <dt className={ETIQUETA_CELDA}>Plataforma</dt>
             <dd className="break-words font-semibold text-body-text">{p.name}</dd>
@@ -63,13 +71,17 @@ export function ConnectorList({
             <dd>
               <Button
                 id={botonConfigurarId(p.id)}
-                variant={seleccionada === p.id ? 'primary' : 'secondary'}
+                variant={seleccionada === p.id ? 'fila-primario' : 'fila'}
                 aria-label={`Configurar el conector de ${p.name}`}
                 aria-current={seleccionada === p.id || undefined}
-                onClick={() => onSelect(p)}
-                className="focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(p);
+                }}
+                className="nx-btn-toolbar !px-2.5 focus-visible:ring-2 focus-visible:ring-primary"
               >
-                Configurar
+                <Icono nombre="ajustes" tamano="sm" ariaHidden={true} />
+                <span>Configurar</span>
               </Button>
             </dd>
           </div>

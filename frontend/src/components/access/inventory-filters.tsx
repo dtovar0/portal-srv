@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import type { AccessLevel, AccessOrigin, InventoryParams } from '@/lib/access/types';
 import { FilterBar, FilterBarGrid, FilterBarSearch } from '../filter-bar';
-import { Field, Select, TextInput } from '../form';
+import { Field, Option, Select, TextInput } from '../form';
 import { NIVELES } from './access-status-badge';
 import { FILTROS } from './my-access';
 import { type OpcionesAlcance, ScopeSelects } from './scope-filters';
@@ -112,7 +112,7 @@ export function InventoryFilters({
             onChange={(event) => onChange({ status: event.target.value as FiltroEstado })}
           >
             {FILTROS.map((filtro) => (
-              <option key={filtro.valor} value={filtro.valor}>{filtro.texto}</option>
+              <Option key={filtro.valor} value={filtro.valor}>{filtro.texto}</Option>
             ))}
           </Select>
         </Field>
@@ -122,9 +122,9 @@ export function InventoryFilters({
             onChange={(event) =>
               onChange({ level: (event.target.value || null) as AccessLevel | null })}
           >
-            <option value="">Todos los niveles</option>
+            <Option value="">Todos los niveles</Option>
             {(Object.keys(NIVELES) as AccessLevel[]).map((nivel) => (
-              <option key={nivel} value={nivel}>{NIVELES[nivel]}</option>
+              <Option key={nivel} value={nivel}>{NIVELES[nivel]}</Option>
             ))}
           </Select>
         </Field>
@@ -134,9 +134,9 @@ export function InventoryFilters({
             onChange={(event) =>
               onChange({ origin: (event.target.value || null) as AccessOrigin | null })}
           >
-            <option value="">Todos los orígenes</option>
+            <Option value="">Todos los orígenes</Option>
             {(Object.keys(ORIGENES_INVENTARIO) as AccessOrigin[]).map((origen) => (
-              <option key={origen} value={origen}>{ORIGENES_INVENTARIO[origen]}</option>
+              <Option key={origen} value={origen}>{ORIGENES_INVENTARIO[origen]}</Option>
             ))}
           </Select>
         </Field>

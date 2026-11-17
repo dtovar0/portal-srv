@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import type { Area, DirectoryUser, ManagedUser, Platform, UserInput } from '@/lib/types';
 import { Button, Checkbox, Field, Modal, TextInput } from '../form';
+import { Icono } from '../icono';
 import { ErrorNote } from '../ui';
 import { GrupoChips } from './grupo-chips';
 import { TagPicker } from './tag-picker';
@@ -86,12 +87,17 @@ export function UserForm({
 
   return (
     <Modal
-      title={user ? `Editar ${user.name}` : 'Nuevo usuario'}
+      title={user ? 'Editar usuario' : 'Nuevo usuario'}
       onClose={onClose}
+      icon="usuarios"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button onClick={save} disabled={saving}>
+          <Button variant="secondary" onClick={onClose} className="min-h-12 min-w-28 text-xs font-bold">
+            <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+            Cancelar
+          </Button>
+          <Button onClick={save} disabled={saving} className="min-h-12 min-w-28 text-xs font-bold shadow-xs">
+            <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
             {saving ? 'Guardando…' : 'Guardar'}
           </Button>
         </>

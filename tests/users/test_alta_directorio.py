@@ -103,7 +103,7 @@ def test_superadmin_crea_la_entrada_y_la_cuenta_sin_contrasena(
     assert usuario['role'] == ROLE_USER
     assert usuario['auth_source'] == 'ldap'
     assert usuario['is_active'] is True
-    assert usuario['areas'] == [{'id': escena['B'], 'name': 'Área B'}]
+    assert [{'id': a['id'], 'name': a['name']} for a in usuario['areas']] == [{'id': escena['B'], 'name': 'Área B'}]
     assert usuario['managed_areas'] == []
     assert usuario['last_login_at'] is None
 

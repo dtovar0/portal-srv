@@ -8,20 +8,21 @@ const permisos = (admin: boolean, area: boolean) => ({
 });
 
 describe('menú por rol', () => {
-  it('Gestión solo aparece con 2 o más entradas; con una (Auditoría) pasa a General', () => {
+  it('usuario ve General y Sistema (con Auditoría en Sistema); admin ve además Gestión', () => {
     const usuario = seccionesVisibles(permisos(false, false));
     expect(usuario.map((s) => s.seccion)).toEqual(['General', 'Sistema']);
-    expect(usuario[0].entradas.map((e) => e.label)).toContain('Auditoría');
+    expect(usuario[1].entradas.map((e) => e.label)).toContain('Auditoría');
     const admin = seccionesVisibles(permisos(false, true));
     expect(admin.map((s) => s.seccion)).toEqual(['General', 'Gestión', 'Sistema']);
-    expect(admin[0].entradas.map((e) => e.label)).not.toContain('Auditoría');
-    expect(admin[1].entradas.map((e) => e.label)).toContain('Auditoría');
+    expect(admin[1].entradas.map((e) => e.label)).not.toContain('Aprobaciones');
+    expect(admin[2].entradas.map((e) => e.label)).toEqual(['Ajustes', 'Log conectores', 'Auditoría']);
   });
 
   it('el usuario solo ve lo común; el admin ve más', () => {
     const usuario = entradasVisibles(permisos(false, false)).map((e) => e.label);
     expect(usuario).toContain('Mis solicitudes');
     expect(usuario).not.toContain('Aprobaciones');
+    expect(usuario).not.toContain('Notificaciones');
     expect(entradasVisibles(permisos(true, false)).map((e) => e.label)).toContain('Conectores');
     expect(entradasVisibles(permisos(false, true)).map((e) => e.label)).not.toContain('Conectores');
   });
@@ -29,8 +30,8 @@ describe('menú por rol', () => {
 
 describe('entradaDeRuta', () => {
   it('coincide exacta o por prefijo más largo', () => {
-    expect(entradaDeRuta('/')?.label).toBe('Panel');
-    expect(entradaDeRuta('/admin/jobs')?.label).toBe('Ejecuciones');
+    expect(entradaDeRuta('/')?.label).toBe('Dashboard');
+    expect(entradaDeRuta('/admin/jobs')?.label).toBe('Log conectores');
     expect(entradaDeRuta('/audit/platforms/4')?.label).toBe('Auditoría');
     expect(entradaDeRuta('/desconocida')).toBeNull();
     expect(entradaDeRuta(null)).toBeNull();
@@ -46,8 +47,8 @@ describe('comandos', () => {
 
   it('filtra por todas las palabras y pone primero las que empiezan por la consulta', () => {
     expect(filtrarComandos(comandos, '')).toHaveLength(comandos.length);
-    expect(filtrarComandos(comandos, 'plataformas').map((c) => c.etiqueta)).toEqual(['Administrar plataformas']);
-    expect(filtrarComandos(comandos, 'a').at(0)?.etiqueta.toLowerCase().startsWith('a')).toBe(true);
+    expect(filtrarComandos(comandos, 'plataformas').map((c) => c.etiqueta)).toEqual(['Plataformas']);
+    expect(normalizar(filtrarComandos(comandos, 'a').at(0)?.etiqueta ?? '').startsWith('a')).toBe(true);
     expect(filtrarComandos(comandos, 'zzz')).toEqual([]);
   });
 

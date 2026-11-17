@@ -9,6 +9,7 @@ import type { AuditEntryV1 } from '@/lib/access/types';
 import { formatearFecha } from '../access/fecha';
 import { ETIQUETA_CELDA, ResponsiveList, ResponsiveRow } from '../access/responsive-list';
 import { Button } from '../form';
+import { Icono } from '../icono';
 import { Badge } from '../ui';
 import { ACTOR_SISTEMA, etiquetaAccion, resultado } from './audit-actions';
 
@@ -36,9 +37,11 @@ function dondeOcurrio(entry: AuditEntryV1): string | null {
 function Fila({
   entry,
   onDetalle,
+  striped,
 }: {
   entry: AuditEntryV1;
   onDetalle: (entry: AuditEntryV1, boton: HTMLButtonElement) => void;
+  striped?: boolean;
 }) {
   const fecha = formatearFecha(entry.time);
   const evento = etiquetaAccion(entry.action);
@@ -46,7 +49,7 @@ function Fila({
   const donde = dondeOcurrio(entry);
 
   return (
-    <ResponsiveRow columns={COLUMNAS} label={`${evento}, ${fecha}`}>
+    <ResponsiveRow columns={COLUMNAS} label={`${evento}, ${fecha}`} striped={striped}>
       <div>
         <dt className={ETIQUETA_CELDA}>Fecha</dt>
         <dd className="text-sm tabular-nums text-body-text">{fecha}</dd>
@@ -82,11 +85,13 @@ function Fila({
         <dt className="sr-only">Detalle</dt>
         <dd>
           <Button
-            variant="secondary"
+            variant="fila"
             onClick={(event) => onDetalle(entry, event.currentTarget)}
             aria-label={`Ver detalle: ${evento}, ${fecha}`}
+            className="nx-btn-toolbar !px-2.5 focus-visible:ring-2 focus-visible:ring-primary"
           >
-            Ver detalle
+            <Icono nombre="ver" tamano="sm" ariaHidden={true} />
+            <span>Detalle</span>
           </Button>
         </dd>
       </div>
@@ -94,16 +99,38 @@ function Fila({
   );
 }
 
+function GhostFila({ index }: { index: number }) {
+  const isStriped = index % 2 === 1;
+  return (
+    <li
+      key={`ghost-${index}`}
+      role="presentation"
+      aria-hidden="true"
+      className={`p-4 md:px-6 border-b border-panel-border/30 select-none pointer-events-none ${isStriped ? 'bg-fondo/75' : 'bg-panel-fill'}`}
+    >
+      <div className="h-10 flex items-center">&nbsp;</div>
+    </li>
+  );
+}
+
 export function AuditTable({
   items,
   onDetalle,
+  minRows = 8,
 }: {
   items: AuditEntryV1[];
   onDetalle: (entry: AuditEntryV1, boton: HTMLButtonElement) => void;
+  minRows?: number;
 }) {
+  const ghostCount = Math.max(0, minRows - items.length);
   return (
     <ResponsiveList columns={COLUMNAS} headers={ENCABEZADOS} label="Registros de auditoría">
-      {items.map((entry) => <Fila key={entry.id} entry={entry} onDetalle={onDetalle} />)}
+      {items.map((entry, idx) => (
+        <Fila key={entry.id} entry={entry} onDetalle={onDetalle} striped={idx % 2 === 1} />
+      ))}
+      {Array.from({ length: ghostCount }, (_, i) => (
+        <GhostFila key={`ghost-${i}`} index={items.length + i} />
+      ))}
     </ResponsiveList>
   );
 }

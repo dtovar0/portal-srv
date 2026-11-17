@@ -26,7 +26,7 @@ import logging
 import re
 from dataclasses import dataclass
 
-from ldap3 import BASE, MODIFY_ADD, MODIFY_DELETE, SUBTREE
+from ldap3 import BASE, MODIFY_ADD, MODIFY_DELETE, MODIFY_REPLACE, SUBTREE
 from ldap3.core.exceptions import (LDAPAttributeOrValueExistsResult,
                                    LDAPEntryAlreadyExistsResult,
                                    LDAPException, LDAPNoSuchAttributeResult,
@@ -45,7 +45,7 @@ from app.modules.directory.errors import (MOTIVO_DATOS_INCOMPLETOS,
                                           clasificar_error)
 from app.modules.directory.ldap_client import (
     ATRIBUTOS_MIEMBRO_POR_IDENTIFICADOR, ClienteDirectorio, ErrorDirectorio,
-    escapar_filtro, escapar_valor_dn, valor_de_membresia)
+    UsuarioDirectorio, escapar_filtro, escapar_valor_dn, valor_de_membresia)
 
 logger = logging.getLogger(__name__)
 
@@ -68,12 +68,13 @@ PATRON_CORREO = re.compile(r'[^@\s]+@[^@\s]+\.[^@\s]+')
 
 @dataclass(frozen=True)
 class DatosCuenta:
-    """Datos de una cuenta nueva; sin contraseña (P8)."""
+    """Datos de una cuenta nueva."""
 
     identificador: str
     nombre: str
     apellido: str
     correo: str
+    password: str | None = None
 
 
 def _leer_grupo(conexion, cfg, dn):
@@ -123,6 +124,22 @@ class EscritorDirectorio:
                     and bajo_base(usuario.dn, cfg.usuarios_base_dn)
                     and valor_de_membresia(cfg, usuario))
 
+    def _normalizar_usuario(self, user):
+        """Convierte `user` (str o `UsuarioDirectorio`) en `UsuarioDirectorio`."""
+        if isinstance(user, UsuarioDirectorio):
+            return user
+        if isinstance(user, str):
+            identificador = user.strip()
+            cfg = self.configuracion
+            if ',' in identificador:
+                rdn = identificador.split(',')[0]
+                uid = rdn.split('=', 1)[1] if '=' in rdn else identificador
+                return UsuarioDirectorio(dn=identificador, identificador=uid)
+            dn = (f'{cfg.atributo_usuario}='
+                  f'{escapar_valor_dn(identificador)},{cfg.usuarios_base_dn}')
+            return UsuarioDirectorio(dn=dn, identificador=identificador)
+        return user
+
     def _ejecutar(self, operacion, dn, accion):
         """Corre `accion(conexion)` y convierte cualquier fallo en resultado."""
         try:
@@ -144,7 +161,11 @@ class EscritorDirectorio:
     # ------------------------------------------------------------------ #
 
     def add_member(self, group_dn, user):
-        """Agrega `user` (`UsuarioDirectorio`) al grupo `group_dn`."""
+        """Agrega `user` (`UsuarioDirectorio` o str) al grupo `group_dn`."""
+        user = self._normalizar_usuario(user)
+        if not user or not getattr(user, 'dn', None):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                      MOTIVO_DATOS_INCOMPLETOS)
         if self._fuera_de_base(group_dn, user):
             return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
                                       MOTIVO_FUERA_DE_BASE)
@@ -178,7 +199,11 @@ class EscritorDirectorio:
         return self._ejecutar('alta de miembro', group_dn, alta_miembro)
 
     def remove_member(self, group_dn, user):
-        """Quita `user` (`UsuarioDirectorio`) del grupo `group_dn`."""
+        """Quita `user` (`UsuarioDirectorio` o str) del grupo `group_dn`."""
+        user = self._normalizar_usuario(user)
+        if not user or not getattr(user, 'dn', None):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                      MOTIVO_DATOS_INCOMPLETOS)
         if self._fuera_de_base(group_dn, user):
             return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
                                       MOTIVO_FUERA_DE_BASE)
@@ -242,6 +267,8 @@ class EscritorDirectorio:
             ATRIBUTO_CORREO: datos.correo,
             cfg.atributo_usuario: datos.identificador,
         }
+        if datos.password:
+            atributos['userPassword'] = datos.password
         filtro = (f'({cfg.atributo_usuario}='
                   f'{escapar_filtro(datos.identificador)})')
 
@@ -261,3 +288,72 @@ class EscritorDirectorio:
             return ResultadoEscritura(Resultado.HECHO, dn)
 
         return self._ejecutar('alta de cuenta', dn, alta_cuenta)
+
+    # ------------------------------------------------------------------ #
+    # Baja de cuentas
+    # ------------------------------------------------------------------ #
+
+    def delete_user(self, user):
+        """Elimina una cuenta en `LDAP_USERS_BASE_DN`."""
+        usuario = self._normalizar_usuario(user)
+        if not usuario or not getattr(usuario, 'dn', None):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, '',
+                                      MOTIVO_DATOS_INCOMPLETOS)
+        cfg = self.configuracion
+        if not bajo_base(usuario.dn, cfg.usuarios_base_dn) or mismo_dn(usuario.dn, cfg.usuarios_base_dn):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, usuario.dn,
+                                      MOTIVO_FUERA_DE_BASE)
+
+        dn = usuario.dn
+
+        def baja_cuenta(conexion):
+            if not _existe(conexion, dn):
+                return ResultadoEscritura(Resultado.NO_EXISTE, dn,
+                                          MOTIVO_USUARIO_INEXISTENTE)
+            try:
+                conexion.delete(dn)
+            except LDAPNoSuchObjectResult:
+                return ResultadoEscritura(Resultado.NO_EXISTE, dn,
+                                          MOTIVO_USUARIO_INEXISTENTE)
+            return ResultadoEscritura(Resultado.HECHO, dn)
+
+        return self._ejecutar('baja de cuenta', dn, baja_cuenta)
+
+    # ------------------------------------------------------------------ #
+    # Cambio de contraseña
+    # ------------------------------------------------------------------ #
+
+    def change_password(self, user, new_password, old_password=None):
+        """Cambia la contraseña (`userPassword`) de una cuenta en `LDAP_USERS_BASE_DN`."""
+        if not new_password or not isinstance(new_password, str):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, '',
+                                      MOTIVO_DATOS_INVALIDOS)
+        usuario = self._normalizar_usuario(user)
+        if not usuario or not getattr(usuario, 'dn', None):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, '',
+                                      MOTIVO_DATOS_INCOMPLETOS)
+        cfg = self.configuracion
+        if not bajo_base(usuario.dn, cfg.usuarios_base_dn) or mismo_dn(usuario.dn, cfg.usuarios_base_dn):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, usuario.dn,
+                                      MOTIVO_FUERA_DE_BASE)
+
+        dn = usuario.dn
+
+        def modificar_clave(conexion):
+            if not _existe(conexion, dn):
+                return ResultadoEscritura(Resultado.NO_EXISTE, dn,
+                                          MOTIVO_USUARIO_INEXISTENTE)
+            if old_password:
+                if not self.cliente.verificar_contrasena(usuario, old_password):
+                    return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
+                                              MOTIVO_DATOS_INVALIDOS)
+            try:
+                conexion.modify(dn, {'userPassword': [(MODIFY_REPLACE, [new_password])]})
+            except LDAPNoSuchObjectResult:
+                return ResultadoEscritura(Resultado.NO_EXISTE, dn,
+                                          MOTIVO_USUARIO_INEXISTENTE)
+            return ResultadoEscritura(Resultado.HECHO, dn)
+
+        return self._ejecutar('cambio de contraseña', dn, modificar_clave)
+
+    set_password = change_password

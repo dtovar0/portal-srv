@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { ButtonLink } from './form';
+import { Icono } from './icono';
 
 export interface PageHeaderProps {
   title: React.ReactNode;
@@ -30,30 +31,44 @@ export function PageHeader({
   h1Ref,
   className = '',
 }: PageHeaderProps) {
+  const tieneHerramientas = Boolean(backHref || actions || description);
+
   return (
-    <header className={`flex flex-col gap-4 pb-6 sm:flex-row sm:items-center sm:justify-between ${className}`}>
-      <div className="min-w-0 flex-1">
-        {backHref ? (
-          <div className="mb-2">
-            <ButtonLink href={backHref} variant="secondary" className="min-h-9 px-3 text-xs">
-              ← {backLabel}
-            </ButtonLink>
+    <header className={tieneHerramientas ? className : `${className} contents`.trim()}>
+      {/* DIS-068: H1 único accesible para lectores de pantalla; el título visual está en la BarraSuperior */}
+      <h1 ref={h1Ref} tabIndex={-1} className="sr-only">
+        {title}
+      </h1>
+
+      {tieneHerramientas ? (
+        <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {backHref ? (
+              <ButtonLink
+                href={backHref}
+                variant="secondary"
+                className="inline-flex min-h-9 items-center gap-1.5 px-3 text-xs font-semibold shadow-xs"
+              >
+                <Icono nombre="chevron-izq" tamano="sm" ariaHidden={true} />
+                <span>{backLabel}</span>
+              </ButtonLink>
+            ) : null}
+            {description ? (
+              <p className="text-sm font-normal leading-relaxed text-label">
+                {description}
+              </p>
+            ) : null}
           </div>
-        ) : null}
-        <h1
-          ref={h1Ref}
-          tabIndex={-1}
-          className="text-2xl font-bold tracking-tight text-body-text outline-none"
-        >
-          {title}
-        </h1>
-        {description ? (
-          <p className="mt-1 text-sm text-label">{description}</p>
-        ) : null}
-      </div>
-      {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
-          {actions}
+
+          {actions ? (
+            <div
+              role="toolbar"
+              aria-label={typeof title === 'string' ? `Herramientas de ${title}` : 'Herramientas de página'}
+              className="flex shrink-0 flex-wrap items-center gap-3"
+            >
+              {actions}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </header>

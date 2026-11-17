@@ -371,6 +371,14 @@ CASOS = (
          lambda esc: f'{A}/access/{esc.acceso_id}/revoke', administradores(),
          _json({'reason': 'Revocación de prueba'}), _con_acceso_activo,
          nota='Área ajena o acceso automático de otro admin: 404'),
+    Caso('GET', f'{A}/platforms/<int:platform_id>/access',
+         _plataforma('/access'), administradores(),
+         nota='DIS-082: plataforma de otra área: 404'),
+    Caso('POST', f'{A}/platforms/<int:platform_id>/access',
+         _plataforma('/access'), administradores(201),
+         lambda esc: {'json': {'user_id': esc.objetivo_id, 'level': 'usuario'}},
+         nota='DIS-082: asignación directa; cuenta o plataforma fuera de '
+              'alcance: 404 (tests/access/test_platform_access_api.py)'),
 
     # ---- Áreas (areas/api.py) ----
     Caso('POST', f'{A}/areas', _fija(f'{A}/areas'), administradores(201),

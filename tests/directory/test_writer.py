@@ -28,9 +28,12 @@ def _usuario(uid):
 
 def _entrada(directorio, dn, atributos=('*',)):
     with directorio.cliente.conexion_servicio() as conexion:
-        conexion.search(dn, '(objectClass=*)', ldap3.BASE,
-                        attributes=list(atributos))
-        return conexion.entries[0] if conexion.entries else None
+        try:
+            conexion.search(dn, '(objectClass=*)', ldap3.BASE,
+                            attributes=list(atributos))
+            return conexion.entries[0] if conexion.entries else None
+        except exc_ldap.LDAPNoSuchObjectResult:
+            return None
 
 
 def _miembros(directorio, dn, atributo='member'):
@@ -522,18 +525,118 @@ def test_datos_incompletos_no_crean_nada(escritor, operaciones, datos):
 
 
 # --------------------------------------------------------------------------- #
-# Sin borrado de cuentas en v1
+# Operaciones de borrado de cuentas, cambio de contraseña y alta con clave
 # --------------------------------------------------------------------------- #
 
-def test_no_hay_operacion_de_borrado_de_cuentas():
+def test_operaciones_publicas_del_escritor():
     publicos = {nombre for nombre, _ in
                 inspect.getmembers(EscritorDirectorio, inspect.isfunction)
                 if not nombre.startswith('_')}
 
-    assert publicos == {'add_member', 'remove_member', 'create_user'}
-    fuente = inspect.getsource(writer)
-    assert '.delete(' not in fuente
-    assert 'MODIFY_REPLACE' not in fuente
+    assert publicos == {'add_member', 'remove_member', 'create_user',
+                        'delete_user', 'change_password', 'set_password'}
+
+
+def test_alta_de_cuenta_con_contrasena(directorio, escritor, operaciones):
+    datos = DatosCuenta('carlos', 'Carlos', 'Gomez', 'carlos@pruebas.local',
+                        password='Password123!')
+    resultado = escritor.create_user(datos)
+
+    assert resultado.resultado is Resultado.HECHO
+    assert resultado.exito is True
+    entrada = _entrada(directorio, dn_persona('carlos'))
+    assert entrada is not None
+    assert 'userPassword' in entrada
+    assert entrada['userPassword'].value in (b'Password123!', 'Password123!')
+
+
+def test_borrar_cuenta_existente_por_objeto_o_identificador_o_dn(directorio, escritor):
+    directorio.persona('usuario_a')
+    directorio.persona('usuario_b')
+    directorio.persona('usuario_c')
+
+    # Por UsuarioDirectorio
+    res1 = escritor.delete_user(_usuario('usuario_a'))
+    assert res1.resultado is Resultado.HECHO
+    assert _entrada(directorio, dn_persona('usuario_a')) is None
+
+    # Por identificador (str)
+    res2 = escritor.delete_user('usuario_b')
+    assert res2.resultado is Resultado.HECHO
+    assert _entrada(directorio, dn_persona('usuario_b')) is None
+
+    # Por DN (str)
+    res3 = escritor.delete_user(dn_persona('usuario_c'))
+    assert res3.resultado is Resultado.HECHO
+    assert _entrada(directorio, dn_persona('usuario_c')) is None
+
+
+def test_borrar_cuenta_inexistente_es_no_existe(directorio, escritor):
+    resultado = escritor.delete_user('no_existe')
+    assert resultado.resultado is Resultado.NO_EXISTE
+    assert resultado.motivo == errors.MOTIVO_USUARIO_INEXISTENTE
+
+
+def test_borrar_cuenta_fuera_de_base_o_base_dn_es_error_permanente(escritor):
+    # Fuera de base
+    res1 = escritor.delete_user(f'uid=hacker,{BASE_DN}')
+    assert res1.resultado is Resultado.ERROR_PERMANENTE
+    assert res1.motivo == errors.MOTIVO_FUERA_DE_BASE
+
+    # Base DN misma
+    res2 = escritor.delete_user(USUARIOS_BASE_DN)
+    assert res2.resultado is Resultado.ERROR_PERMANENTE
+    assert res2.motivo == errors.MOTIVO_FUERA_DE_BASE
+
+
+def test_cambiar_contrasena_por_identificador_y_dn(directorio, escritor):
+    directorio.persona('ana')
+
+    # Cambiar por identificador
+    res1 = escritor.change_password('ana', 'NuevaClave456!')
+    assert res1.resultado is Resultado.HECHO
+    entrada1 = _entrada(directorio, dn_persona('ana'))
+    assert entrada1['userPassword'].value in (b'NuevaClave456!', 'NuevaClave456!')
+
+    # Cambiar por DN y usando set_password alias
+    res2 = escritor.set_password(dn_persona('ana'), 'OtraClave789!')
+    assert res2.resultado is Resultado.HECHO
+    entrada2 = _entrada(directorio, dn_persona('ana'))
+    assert entrada2['userPassword'].value in (b'OtraClave789!', 'OtraClave789!')
+
+
+def test_cambiar_contrasena_datos_invalidos_o_inexistente(directorio, escritor):
+    # Clave vacía o inválida
+    res1 = escritor.change_password('ana', '')
+    assert res1.resultado is Resultado.ERROR_PERMANENTE
+    assert res1.motivo == errors.MOTIVO_DATOS_INVALIDOS
+
+    # Usuario inexistente
+    res2 = escritor.change_password('no_existe', 'ClaveValida123!')
+    assert res2.resultado is Resultado.NO_EXISTE
+    assert res2.motivo == errors.MOTIVO_USUARIO_INEXISTENTE
+
+    # Fuera de base
+    res3 = escritor.change_password(f'uid=intruso,{BASE_DN}', 'ClaveValida123!')
+    assert res3.resultado is Resultado.ERROR_PERMANENTE
+    assert res3.motivo == errors.MOTIVO_FUERA_DE_BASE
+
+
+def test_agregar_y_quitar_miembro_usando_string_identificador(directorio, escritor):
+    directorio.persona('daniela')
+    directorio.persona('otro')
+    grupo = directorio.grupo('finanzas-grupo', [dn_persona('otro')])
+
+    # Agregar usando string identificador
+    res_add = escritor.add_member(grupo, 'daniela')
+    assert res_add.resultado is Resultado.HECHO
+    assert dn_persona('daniela') in _miembros(directorio, grupo)
+
+    # Quitar usando string identificador
+    res_rem = escritor.remove_member(grupo, 'daniela')
+    assert res_rem.resultado is Resultado.HECHO
+    assert dn_persona('daniela') not in _miembros(directorio, grupo)
+    assert dn_persona('otro') in _miembros(directorio, grupo)
 
 
 def test_la_lectura_sigue_siendo_de_solo_lectura(directorio):

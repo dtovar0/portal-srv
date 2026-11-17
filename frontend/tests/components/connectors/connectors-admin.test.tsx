@@ -171,6 +171,38 @@ describe('lista de plataformas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(await screen.findByRole('list', { name: 'Plataformas con conector' })).toBeTruthy();
   });
+
+  it('muestra los botones de Editar, Eliminar y Nuevo en la barra de herramientas con sus estados', async () => {
+    render(<ConnectorsAdmin />);
+    await screen.findByRole('list', { name: 'Plataformas con conector' });
+
+    const btnEditar = screen.getByRole('button', { name: 'Editar' });
+    const btnEliminar = screen.getByRole('button', { name: 'Eliminar' });
+    const btnNuevo = screen.getByRole('button', { name: 'Nuevo conector' });
+
+    expect((btnEditar as HTMLButtonElement).disabled).toBe(true);
+    expect((btnEliminar as HTMLButtonElement).disabled).toBe(true);
+    expect((btnNuevo as HTMLButtonElement).disabled).toBe(false);
+
+    // Seleccionar Contabilidad (tiene conector)
+    fireEvent.click(screen.getByRole('button', { name: 'Configurar el conector de Contabilidad' }));
+
+    const btnEditarActivo = screen.getByRole('button', { name: 'Editar conector de Contabilidad' });
+    const btnEliminarActivo = screen.getByRole('button', { name: 'Eliminar conector de Contabilidad' });
+
+    expect((btnEditarActivo as HTMLButtonElement).disabled).toBe(false);
+    expect((btnEliminarActivo as HTMLButtonElement).disabled).toBe(false);
+
+    // Al hacer click en Eliminar en el toolbar abre el diálogo de eliminación
+    fireEvent.click(btnEliminarActivo);
+    const dialogo = await screen.findByRole('alertdialog', { name: 'Eliminar conector' });
+    expect(dialogo).toBeTruthy();
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
+
+    // Al hacer click en Nuevo conector configura la plataforma sin conector (Nómina)
+    fireEvent.click(btnNuevo);
+    expect(await screen.findByRole('region', { name: 'Conector de Nómina' })).toBeTruthy();
+  });
 });
 
 describe('panel del conector', () => {

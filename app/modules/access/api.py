@@ -24,18 +24,21 @@ from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.authz import (any_admin_required, can_manage_user, is_admin,
+from app.authz import (any_admin_required, can_manage_platform, can_manage_user, is_admin,
                        is_any_admin, managed_area_ids)
 from app.modules.access import consultas, errores, rules, services
 from app.modules.access.errores import ErrorDeAcceso
 from app.modules.access.models import PlatformAccessGrant
 from app.modules.access.serializacion import accesos_publicos
-from app.modules.access.tipos import ESTADOS, ESTADOS_VIGENTES
+from app.modules.access.tipos import ESTADOS, ESTADOS_VIGENTES, ORIGEN_SOLICITUD
 from app.modules.api.csrf_provisional import escritura_del_portal
 from app.modules.api.helpers import (NO_ENCONTRADO, error_response,
                                      leer_cuerpo)
 from app.modules.audit.parametros import ParametroInvalido, leer_paginacion
 from app.modules.auth.models import User
+from app.modules.core.models import Platform
+from app.modules.access_requests.models import PlatformAccessRequest
+from app.modules.provisioning.reloj import ahora
 
 access_api_bp = Blueprint('api_access', __name__, url_prefix='/api/v1')
 
@@ -43,6 +46,7 @@ PARAMETRO_INVALIDO = ('Parámetro de consulta inválido.', 400,
                       'parametro_invalido')
 FILTRO_VIGENTE = 'vigente'
 CAMPOS_REVOCAR = frozenset({'reason'})
+CAMPOS_OTORGAR = frozenset({'user_id', 'level'})
 
 
 def _estados(args):
@@ -117,7 +121,8 @@ def revoke_access(access_id):
     if rechazo is not None:
         return rechazo
     try:
-        services.revocar(acceso, actor=current_user, motivo=motivo)
+        services.revocar(acceso, actor=current_user, motivo=motivo,
+                         manual=services.registro_manual(acceso.platform))
         db.session.commit()
     except ErrorDeAcceso as error:
         db.session.rollback()
@@ -128,3 +133,74 @@ def revoke_access(access_id):
         return error_response(*errores.estado_invalido().respuesta)
     acceso_json, = accesos_publicos([acceso])
     return jsonify({'status': 'success', 'access': acceso_json})
+
+
+@access_api_bp.route('/platforms/<int:platform_id>/access')
+@login_required
+@any_admin_required
+def platform_access(platform_id):
+    plataforma = db.session.get(Platform, platform_id)
+    if plataforma is None or not can_manage_platform(plataforma, current_user):
+        return error_response(*NO_ENCONTRADO)
+    consulta = (PlatformAccessGrant.query
+                .filter(PlatformAccessGrant.platform_id == plataforma.id,
+                        PlatformAccessGrant.status.in_(ESTADOS_VIGENTES))
+                .order_by(PlatformAccessGrant.granted_at.desc()))
+    accesos = consulta.all()
+    return jsonify({
+        'items': accesos_publicos(accesos, con_trabajo=is_any_admin()),
+        'total': len(accesos),
+    })
+
+
+@access_api_bp.route('/platforms/<int:platform_id>/access', methods=['POST'])
+@login_required
+@any_admin_required
+@escritura_del_portal
+def grant_platform_access(platform_id):
+    plataforma = db.session.get(Platform, platform_id)
+    if plataforma is None or not can_manage_platform(plataforma, current_user):
+        return error_response(*NO_ENCONTRADO)
+    datos, error = leer_cuerpo(CAMPOS_OTORGAR)
+    if error is not None:
+        return error
+    user_id = datos.get('user_id')
+    level = datos.get('level') or 'usuario'
+    try:
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        return error_response('Usuario inválido.', 400, 'parametro_invalido',
+                              fields={'user_id': 'Debe ser un número.'})
+    cuenta = db.session.get(User, user_id)
+    if cuenta is None:
+        return error_response(*NO_ENCONTRADO)
+    try:
+        rules.validar_otorgamiento(current_user, cuenta, plataforma, ORIGEN_SOLICITUD)
+    except ErrorDeAcceso as err:
+        return error_response(*err.respuesta)
+    try:
+        solicitud = PlatformAccessRequest(
+            user_id=cuenta.id,
+            platform_id=plataforma.id,
+            level=level,
+            justification='Asignación directa por administrador',
+            status='aprobada',
+            decided_by=current_user.id,
+            decided_at=ahora(),
+        )
+        solicitud.sincronizar_slot()
+        db.session.add(solicitud)
+        db.session.flush()
+
+        acceso = services.otorgar(cuenta, plataforma, level, ORIGEN_SOLICITUD,
+                                  actor=current_user, request_id=solicitud.id,
+                                  manual=services.registro_manual(plataforma))
+        db.session.commit()
+    except ErrorDeAcceso as err:
+        db.session.rollback()
+        return error_response(*err.respuesta)
+    except IntegrityError:
+        db.session.rollback()
+        return error_response(*errores.nivel_vigente().respuesta)
+    acceso_json, = accesos_publicos([acceso])
+    return jsonify({'status': 'success', 'access': acceso_json}), 201

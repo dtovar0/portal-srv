@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useAsync } from '@/lib/use-async';
 import { Button, ConfirmDialog } from './form';
+import { Icono } from './icono';
 import { PageHeader } from './page-header';
 import { Card, EmptyNote, ErrorNote, RegionDeAviso, Skeleton } from './ui';
 
@@ -54,20 +55,31 @@ export function NotificationsList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full w-full flex-1 min-h-0 flex-col space-y-6">
       <PageHeader
         title="Notificaciones"
-        description={unread > 0 ? `${unread} sin leer.` : 'Todo al día.'}
+        description={unread > 0 ? `${unread} sin leer.` : undefined}
         actions={
           <div className="flex flex-wrap gap-2">
             {unread > 0 ? (
-              <Button variant="secondary" onClick={markAll} disabled={busy}>
-                Marcar todas como leídas
+              <Button
+                variant="secondary"
+                onClick={markAll}
+                disabled={busy}
+                className="inline-flex items-center gap-2"
+              >
+                <Icono nombre="aprobar" tamano="sm" ariaHidden={true} />
+                <span>Marcar todas como leídas</span>
               </Button>
             ) : null}
             {(data ?? []).length > 0 ? (
-              <Button variant="danger" onClick={() => setClearing(true)}>
-                Vaciar
+              <Button
+                variant="danger"
+                onClick={() => setClearing(true)}
+                className="inline-flex items-center gap-2"
+              >
+                <Icono nombre="eliminar" tamano="sm" ariaHidden={true} />
+                <span>Vaciar</span>
               </Button>
             ) : null}
           </div>
@@ -78,42 +90,48 @@ export function NotificationsList() {
         {error ? <ErrorNote message={error} /> : null}
       </RegionDeAviso>
 
-      {loading ? (
-        <Skeleton variant="fila" count={4} ariaLabel="Cargando notificaciones…" />
-      ) : !error ? (
-        (data ?? []).length === 0 ? (
-          <EmptyNote message="No tienes notificaciones." />
-        ) : (
-          <div className="space-y-2">
-            {(data ?? []).map((item) => (
-              <Card
-                key={item.id}
-                className={item.is_read ? undefined : 'border-primary/40'}
-              >
-                <div className="flex gap-3">
-                  <span
-                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${TONES[item.type] ?? TONES.info}`}
-                    aria-hidden
-                  >
-                    {ICONS[item.type] ?? 'i'}
-                  </span>
-                  {/* DIS-005: leída = solo el texto atenuado (`opacity-85`, ≥ 5,18:1); el chip conserva su contraste. */}
-                  <div className={`min-w-0 flex-1 ${item.is_read ? 'opacity-85' : ''}`}>
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="font-medium">
-                        <span className="sr-only">{TIPOS[item.type] ?? TIPOS.info}: </span>
-                        {item.title}
-                      </p>
-                      <span className="text-xs text-label">{item.time}</span>
+      <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-hidden">
+        {loading ? (
+          <Skeleton variant="fila" count={4} ariaLabel="Cargando notificaciones…" />
+        ) : !error ? (
+          (data ?? []).length === 0 ? (
+            <EmptyNote
+              icono="campana"
+              message="No tienes notificaciones."
+              className="flex-1 h-full min-h-72"
+            />
+          ) : (
+            <div className="flex-1 min-h-0 h-full w-full overflow-y-auto space-y-2 pr-1">
+              {(data ?? []).map((item) => (
+                <Card
+                  key={item.id}
+                  className={item.is_read ? undefined : 'border-primary/40'}
+                >
+                  <div className="flex gap-3">
+                    <span
+                      className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${TONES[item.type] ?? TONES.info}`}
+                      aria-hidden
+                    >
+                      {ICONS[item.type] ?? 'i'}
+                    </span>
+                    {/* DIS-005: leída = solo el texto atenuado (`opacity-85`, ≥ 5,18:1); el chip conserva su contraste. */}
+                    <div className={`min-w-0 flex-1 ${item.is_read ? 'opacity-85' : ''}`}>
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="font-medium">
+                          <span className="sr-only">{TIPOS[item.type] ?? TIPOS.info}: </span>
+                          {item.title}
+                        </p>
+                        <span className="text-xs text-label">{item.time}</span>
+                      </div>
+                      <p className="mt-0.5 text-sm text-label">{item.message}</p>
                     </div>
-                    <p className="mt-0.5 text-sm text-label">{item.message}</p>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )
-      ) : null}
+                </Card>
+              ))}
+            </div>
+          )
+        ) : null}
+      </div>
 
       {clearing ? (
         <ConfirmDialog

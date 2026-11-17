@@ -215,13 +215,19 @@ describe('DataTable con encabezado (H3, H6)', () => {
 });
 
 describe('Actividad reciente', () => {
-  it('lista los eventos reales con icono decorativo según el resultado', async () => {
+  it('lista los eventos reales con icono según la entidad y badge con icono según el resultado', async () => {
     vi.mocked(auditApi.list).mockResolvedValue(pagina([EVENTO]));
     const { container } = render(<ActividadReciente />);
     expect(await screen.findByText('Solicitud rechazada')).toBeTruthy();
     expect(screen.getByRole('list', { name: 'Actividad reciente' }).getAttribute('role')).toBe('list');
     expect(container.querySelector('ul[role="list"]')).toBeTruthy();
     expect(container.querySelector('span[aria-hidden="true"].nx-tono-error svg')).toBeTruthy();
+    expect(screen.getByText('Error')).toBeTruthy();
+    expect(container.querySelector('.nx-badge.nx-badge-error svg')).toBeTruthy();
+
+    expect(vistaEvento({ ...EVENTO, action: 'cuenta_directorio_creada' }).icono).toBe('usuarios');
+    expect(vistaEvento({ ...EVENTO, action: 'plataforma_creada' }).icono).toBe('plataformas');
+    expect(vistaEvento({ ...EVENTO, action: 'area_creada' }).icono).toBe('areas');
     expect(vistaEvento({ ...EVENTO, action: 'solicitud_creada' }).icono).toBe('reloj');
     expect(vistaEvento({ ...EVENTO, status: 'success' }).tono).toBe('success');
     expect(vistaEvento({ ...EVENTO, status: 'otro' }).tono).toBe('activo');
@@ -235,5 +241,22 @@ describe('Actividad reciente', () => {
     vi.mocked(auditApi.list).mockRejectedValue(new Error('x'));
     render(<ActividadReciente />);
     expect(await screen.findByText(/No se pudo|No se pudieron|No se pudo cargar/)).toBeTruthy();
+  });
+
+  it('oculta la paginación si solo hay 1 página y la muestra cuando hay más de 1', async () => {
+    // 1 página (<= 8 registros): nav de paginación oculto
+    vi.mocked(auditApi.list).mockResolvedValue({ items: [EVENTO], page: 1, per_page: 8, total: 5 });
+    render(<ActividadReciente />);
+    expect(await screen.findByText(/5 registros/)).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: 'Paginación de actividad reciente' })).toBeNull();
+
+    cleanup();
+
+    // Más de 1 página (> 8 registros): nav de paginación visible con < N/TOTAL >
+    const ochoEventos = Array.from({ length: 8 }, (_, i) => ({ ...EVENTO, id: i + 1 }));
+    vi.mocked(auditApi.list).mockResolvedValue({ items: ochoEventos, page: 1, per_page: 8, total: 24 });
+    render(<ActividadReciente />);
+    expect(await screen.findByRole('navigation', { name: 'Paginación de actividad reciente' })).toBeTruthy();
+    expect(screen.getByText('1/3')).toBeTruthy();
   });
 });

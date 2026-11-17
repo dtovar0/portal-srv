@@ -22,6 +22,7 @@ import { useAsync } from '@/lib/use-async';
 import { formatearFecha } from '../access/fecha';
 import { Dato } from '../audit/audit-detail-modal';
 import { Button } from '../form';
+import { Icono } from '../icono';
 import { Badge, Card, ErrorNote, Spinner, SuccessNote } from '../ui';
 import { ESTADOS_CREDENCIAL, TIPOS_CONECTOR, esTipoConocido } from './connector-catalog';
 import { ConnectorDeleteDialog } from './connector-delete-dialog';
@@ -143,6 +144,7 @@ export function ConnectorPanel({
           <p className="text-sm text-label">{platform.area_name ?? '—'}</p>
         </div>
         <Button variant="secondary" onClick={onClose} className="focus-visible:ring-2 focus-visible:ring-primary">
+          <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           Cerrar
         </Button>
       </div>
@@ -206,6 +208,7 @@ export function ConnectorPanel({
                   aria-describedby={`${titleId}-prueba-pista`}
                   className="aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary"
                 >
+                  <Icono nombre="actividad" tamano="sm" ariaHidden={true} className="mr-1.5" />
                   {probando ? 'Probando…' : 'Probar conexión'}
                 </Button>
                 <Button
@@ -215,6 +218,7 @@ export function ConnectorPanel({
                   aria-label={`Eliminar el conector de ${platform.name}`}
                   className="focus-visible:ring-2 focus-visible:ring-primary"
                 >
+                  <Icono nombre="eliminar" tamano="sm" ariaHidden={true} className="mr-1.5" />
                   Eliminar
                 </Button>
                 <span id={`${titleId}-prueba-pista`} className="text-sm text-label">

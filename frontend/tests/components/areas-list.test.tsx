@@ -84,7 +84,7 @@ function dialogo() {
 }
 
 function tarjeta(nombre: string) {
-  return within(screen.getByText(nombre).closest('div.rounded-xl') as HTMLElement);
+  return within((screen.getByText(nombre).closest('tr') ?? screen.getByText(nombre).closest('div.rounded-xl')) as HTMLElement);
 }
 
 describe('AreasList por rol', () => {
@@ -102,10 +102,18 @@ describe('AreasList por rol', () => {
 
     expect(screen.getByText('Nueva área')).toBeTruthy();
     expect(screen.queryByText('Administradores')).toBeNull();
-    expect(tarjeta('Finanzas').getByText('Editar')).toBeTruthy();
-    expect(tarjeta('Finanzas').getByText('Eliminar')).toBeTruthy();
-    expect(tarjeta('Sistemas').queryByText('Editar')).toBeNull();
-    expect(tarjeta('Sistemas').queryByText('Eliminar')).toBeNull();
+    expect(screen.queryByText('Admins')).toBeNull();
+
+    // Finanzas está en sus áreas administradas: botones de barra habilitados
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    expect((screen.getByRole('button', { name: 'Editar Finanzas' }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole('button', { name: 'Eliminar Finanzas' }) as HTMLButtonElement).disabled).toBe(false);
+
+    // Sistemas no está en sus áreas administradas: botones de barra deshabilitados
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
+    expect((screen.getByRole('button', { name: 'Editar Sistemas' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Eliminar Sistemas' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('admin de área: el alta no envía color y el área nueva queda gestionable', async () => {
@@ -114,20 +122,35 @@ describe('AreasList por rol', () => {
     fireEvent.click(await screen.findByText('Nueva área'));
     fireEvent.change(dialogo().getByLabelText('Nombre'), { target: { value: 'Compras' } });
     vi.mocked(api.areas).mockResolvedValue([FINANZAS, SISTEMAS, area(9, 'Compras')]);
+    fireEvent.click(dialogo().getByText('Siguiente'));
     fireEvent.click(dialogo().getByText('Guardar'));
 
     await waitFor(() => expect(api.createArea).toHaveBeenCalledTimes(1));
     expect(vi.mocked(api.createArea).mock.calls[0][0]).not.toHaveProperty('color');
     await screen.findByText('Compras');
-    expect(tarjeta('Compras').getByText('Editar')).toBeTruthy();
     expect(tarjeta('Compras').getByText('Administras')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Seleccionar Compras'));
+    expect((screen.getByRole('button', { name: 'Editar Compras' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('superadmin: ve todas las áreas y el botón Administradores en cada una', async () => {
     render(<AreasList />);
     await screen.findByText('Sistemas');
     expect(screen.getByText('Nueva área')).toBeTruthy();
-    expect(screen.getAllByText('Administradores')).toHaveLength(2);
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    expect(screen.getByRole('button', { name: 'Administradores de Finanzas' })).toBeTruthy();
+  });
+
+  it('renderiza exactamente las columnas: Área, Descripción, Plataformas, Usuarios y Estado, sin columna de Alcance', async () => {
+    render(<AreasList />);
+    await screen.findByText('Finanzas');
+
+    expect(screen.getByRole('columnheader', { name: 'Área' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Descripción' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Plataformas' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Usuarios' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Estado' })).toBeTruthy();
+    expect(screen.queryByRole('columnheader', { name: 'Alcance' })).toBeNull();
   });
 });
 
@@ -135,7 +158,8 @@ describe('Administradores del área (superadmin)', () => {
   it('lista solo admin_area, busca y asigna con managed-areas', async () => {
     render(<AreasList />);
     await screen.findByText('Finanzas');
-    fireEvent.click(tarjeta('Finanzas').getByText('Administradores'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Administradores de Finanzas' }));
 
     const modal = dialogo();
     await modal.findByText('Luis · luis@ejemplo.local');
@@ -155,7 +179,8 @@ describe('Administradores del área (superadmin)', () => {
   it('quitar a un admin se confirma antes de guardar', async () => {
     render(<AreasList />);
     await screen.findByText('Finanzas');
-    fireEvent.click(tarjeta('Finanzas').getByText('Administradores'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Administradores de Finanzas' }));
     fireEvent.click(await dialogo().findByLabelText('Luis · luis@ejemplo.local'));
     fireEvent.click(dialogo().getByText('Guardar'));
 
@@ -169,7 +194,8 @@ describe('Administradores del área (superadmin)', () => {
     vi.mocked(api.users).mockResolvedValue([ANA]);
     render(<AreasList />);
     await screen.findByText('Finanzas');
-    fireEvent.click(tarjeta('Finanzas').getByText('Administradores'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Administradores de Finanzas' }));
     expect(await screen.findByText('No hay cuentas con rol de administrador de área.')).toBeTruthy();
   });
 
@@ -178,7 +204,8 @@ describe('Administradores del área (superadmin)', () => {
       new ApiError(409, 'x', { code: 'rol_no_admin' }));
     render(<AreasList />);
     await screen.findByText('Finanzas');
-    fireEvent.click(tarjeta('Finanzas').getByText('Administradores'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Administradores de Finanzas' }));
     fireEvent.click(await dialogo().findByLabelText('Eva · eva@ejemplo.local'));
     fireEvent.click(dialogo().getByText('Guardar'));
 
@@ -196,6 +223,7 @@ describe('Errores del formulario y de la baja', () => {
     render(<AreasList />);
     fireEvent.click(await screen.findByText('Nueva área'));
     fireEvent.change(dialogo().getByLabelText('Nombre'), { target: { value: 'X' } });
+    fireEvent.click(dialogo().getByText('Siguiente'));
     fireEvent.click(dialogo().getByText('Guardar'));
 
     expect(await screen.findByText('Entre 2 y 100 caracteres.')).toBeTruthy();
@@ -211,6 +239,7 @@ describe('Errores del formulario y de la baja', () => {
     render(<AreasList />);
     fireEvent.click(await screen.findByText('Nueva área'));
     fireEvent.change(dialogo().getByLabelText('Nombre'), { target: { value: 'Sistemas' } });
+    fireEvent.click(dialogo().getByText('Siguiente'));
     fireEvent.click(dialogo().getByText('Guardar'));
     expect(await screen.findByText('Ya existe un área con ese nombre.')).toBeTruthy();
   });
@@ -225,7 +254,8 @@ describe('Errores del formulario y de la baja', () => {
     vi.mocked(api.deleteArea).mockRejectedValue(new ApiError(409, 'x', { code }));
     render(<AreasList />);
     await screen.findByText('Finanzas');
-    fireEvent.click(tarjeta('Finanzas').getByText('Eliminar'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar Finanzas' }));
     fireEvent.click(dialogo().getByText('Eliminar'));
 
     await waitFor(() => expect(api.deleteArea).toHaveBeenCalledWith(3));
@@ -250,18 +280,19 @@ describe('Estados de la lista', () => {
 });
 
 describe('Accesibilidad (auditor-accesibilidad)', () => {
-  it('acciones de tarjeta con el nombre del área en su nombre accesible', async () => {
+  it('acciones de barra con el nombre del área en su nombre accesible', async () => {
     render(<AreasList />);
     await screen.findByText('Finanzas');
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
     expect(screen.getByRole('button', { name: 'Editar Finanzas' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Administradores de Finanzas' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Eliminar Finanzas' })).toBeTruthy();
   });
 
-  it('nombre vacío: error ligado al campo y foco en él', async () => {
+  it('nombre vacío: error ligado al campo y foco en él al intentar avanzar', async () => {
     render(<AreasList />);
     fireEvent.click(await screen.findByText('Nueva área'));
-    fireEvent.click(dialogo().getByText('Guardar'));
+    fireEvent.click(dialogo().getByText('Siguiente'));
 
     const nombre = dialogo().getByLabelText('Nombre');
     expect(nombre.getAttribute('aria-invalid')).toBe('true');
@@ -271,10 +302,39 @@ describe('Accesibilidad (auditor-accesibilidad)', () => {
     expect(api.createArea).not.toHaveBeenCalled();
   });
 
+  it('asistente de 2 pasos: navegación entre Paso 1 (Descripción) y Paso 2 (Estilo visual) con vista previa', async () => {
+    render(<AreasList />);
+    fireEvent.click(await screen.findByText('Nueva área'));
+
+    // Paso 1: Descripción
+    expect(dialogo().getByText('1. Descripción')).toBeTruthy();
+    expect(dialogo().getByText('2. Estilo')).toBeTruthy();
+    expect(dialogo().getByLabelText('Nombre')).toBeTruthy();
+    expect(dialogo().getByLabelText('Descripción')).toBeTruthy();
+    expect(dialogo().queryByLabelText('Color del área')).toBeNull();
+
+    // Llenar datos y avanzar
+    fireEvent.change(dialogo().getByLabelText('Nombre'), { target: { value: 'Marketing' } });
+    fireEvent.change(dialogo().getByLabelText('Descripción'), { target: { value: 'Área de marketing y marca' } });
+    fireEvent.click(dialogo().getByText('Siguiente'));
+
+    // Paso 2: Estilo visual
+    expect(await dialogo().findByLabelText(/^Color/)).toBeTruthy();
+    expect(dialogo().getByText('Vista previa')).toBeTruthy();
+    expect(dialogo().getByText('MA')).toBeTruthy();
+    expect(dialogo().getByLabelText('Activa')).toBeTruthy();
+
+    // Retroceder al Paso 1
+    fireEvent.click(dialogo().getByText('Atrás'));
+    expect(dialogo().getByLabelText('Nombre')).toBeTruthy();
+    expect((dialogo().getByLabelText('Nombre') as HTMLInputElement).value).toBe('Marketing');
+  });
+
   it('panel: la región de estado existe antes de guardar y solo cambia su texto', async () => {
     render(<AreasList />);
     await screen.findByText('Finanzas');
-    fireEvent.click(tarjeta('Finanzas').getByText('Administradores'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Administradores de Finanzas' }));
     await dialogo().findByLabelText('Eva · eva@ejemplo.local');
     const estado = dialogo().getByTestId('estado-guardado');
     expect(estado.getAttribute('role')).toBe('status');

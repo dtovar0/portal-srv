@@ -42,12 +42,17 @@ body {
     animation-duration: 0.25s;
 }
 
-/* GLOBAL SELECT NATIVE ARROW KILLER */
+/* GLOBAL SELECT STYLING */
 select {
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    background-image: none !important;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+@supports (appearance: base-select) {
+    select {
+        appearance: base-select;
+        -webkit-appearance: base-select;
+    }
 }
 select::-ms-expand {
     display: none !important;
@@ -70,3 +75,28 @@ input:-webkit-autofill:active{
 :root { color-scheme: light dark; }
 html.light { color-scheme: light; }
 html.dark { color-scheme: dark; }
+
+/* === MODERN MINIMAL SCROLLBARS === */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-panel-border)) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-panel-border));
+    border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-primary) / 0.4);
+}
+

@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { useAsync } from '@/lib/use-async';
 import type { EmailTemplate } from '@/lib/types';
 import { Button, Checkbox, Field, TextArea, TextInput } from '../form';
+import { Icono } from '../icono';
 import { Card, EmptyNote, ErrorNote, Spinner } from '../ui';
 
 export function TemplatesTab() {
@@ -19,7 +20,7 @@ export function TemplatesTab() {
   if (loading) return <Spinner />;
   if (error) return <ErrorNote message={error} />;
   if ((data ?? []).length === 0) {
-    return <EmptyNote message="No hay plantillas configuradas." />;
+    return <EmptyNote message="No hay plantillas configuradas." className="flex-1 h-full min-h-72" />;
   }
 
   async function save() {
@@ -38,7 +39,7 @@ export function TemplatesTab() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full w-full flex-1 min-h-0 flex-col space-y-3">
       {(data ?? []).map((template) => {
         const isOpen = open?.slug === template.slug;
         return (
@@ -66,6 +67,7 @@ export function TemplatesTab() {
                   }
                 }}
               >
+                <Icono nombre={isOpen ? 'cerrar' : 'editar'} tamano="sm" ariaHidden={true} className="mr-1.5" />
                 {isOpen ? 'Cerrar' : 'Editar'}
               </Button>
             </div>
@@ -92,6 +94,7 @@ export function TemplatesTab() {
                   onChange={(e) => setDraft({ ...draft, is_html: e.target.checked })}
                 />
                 <Button onClick={save} disabled={saving}>
+                  <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
                   {saving ? 'Guardando…' : 'Guardar plantilla'}
                 </Button>
               </div>

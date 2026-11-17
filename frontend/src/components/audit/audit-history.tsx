@@ -18,6 +18,7 @@ import { ListPager } from '../access/list-pager';
 import { listLoadError } from '../access/request-errors';
 import { useOpcionesAlcance } from '../access/scope-filters';
 import { Button } from '../form';
+import { Icono } from '../icono';
 import { useSession } from '../session-provider';
 import { EmptyNote, ErrorNote, Spinner } from '../ui';
 import { AuditDetailModal } from './audit-detail-modal';
@@ -111,59 +112,105 @@ export function AuditHistory({
   }
 
   return (
-    <div className="space-y-4">
-      <AuditFilters
-        filtros={filtros}
-        opciones={opciones}
-        conAlcance={mostrarAlcance}
-        onChange={cambiar}
-      />
+    <div className="flex h-full w-full flex-col gap-4 min-h-0">
+      {/* Grid de 1 columna y 2 filas (10/90): Fila 1 contenedor con botones, Fila 2 tabla al 100% */}
+      <div className="grid w-full flex-1 min-h-0 grid-cols-1 grid-rows-[auto_1fr] gap-4">
+        {/* Fila 1 (N columnas, 1 fila): Barra de botones estandarizada */}
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
+          <h2 className="sr-only">Filtros de auditoría</h2>
+          <AuditFilters
+            filtros={filtros}
+            opciones={opciones}
+            conAlcance={mostrarAlcance}
+            onChange={cambiar}
+            acciones={
+              <>
+                {hayFiltros(filtros) ? (
+                  <Button
+                    variant="fila"
+                    onClick={() => {
+                      setFiltros(FILTROS_INICIALES);
+                      setPage(1);
+                    }}
+                    aria-label="Restablecer filtros"
+                    title="Restablecer filtros"
+                    className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+                  >
+                    <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
+                    <span>Limpiar</span>
+                  </Button>
+                ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-label" aria-live="polite">
-          {recargando
-            ? 'Recargando…'
-            : data ? `${data.total} ${data.total === 1 ? 'registro' : 'registros'}` : ''}
-        </p>
-        {/* `aria-disabled` mientras carga: el foco se queda en el botón (con `disabled` caería en `body`). */}
-        <Button
-          variant="secondary"
-          onClick={recargar}
-          aria-disabled={lista.loading || undefined}
-          className="aria-disabled:opacity-40"
-        >
-          Recargar
-        </Button>
-      </div>
+                {data ? (
+                  <span
+                    className="text-xs font-bold text-label whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60"
+                    aria-live="polite"
+                  >
+                    {recargando
+                      ? 'Recargando…'
+                      : `${data.total} ${data.total === 1 ? 'registro' : 'registros'}`}
+                  </span>
+                ) : null}
 
-      {lista.loading && !data ? <Spinner label="Cargando la auditoría…" /> : null}
+                <div className="h-6 w-px bg-panel-border/80 self-center mx-1 shrink-0" aria-hidden="true" />
 
-      {lista.error ? (
-        <div className="space-y-3">
-          <ErrorNote message={lista.error} />
-          <Button variant="secondary" onClick={lista.reload}>Reintentar</Button>
+                <Button
+                  variant="fila"
+                  onClick={recargar}
+                  aria-disabled={lista.loading || undefined}
+                  className="nx-btn-toolbar !px-2.5 aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary shadow-xs"
+                >
+                  <Icono nombre="actividad" tamano="sm" ariaHidden={true} />
+                  <span>Recargar</span>
+                </Button>
+              </>
+            }
+          />
         </div>
-      ) : null}
 
-      {data && !lista.error ? (
-        data.items.length === 0 ? (
-          // Anunciado: el vacío suele llegar tras cambiar un filtro.
-          <div role="status">
-            <EmptyNote message={hayFiltros(filtros) ? VACIO_CON_FILTROS : VACIO_SIN_FILTROS} />
-          </div>
-        ) : (
-          <>
-            <AuditTable items={data.items} onDetalle={abrir} />
-            <ListPager
-              page={data.page}
-              perPage={data.per_page}
-              total={data.total}
-              label="Páginas de la auditoría"
-              onChange={setPage}
-            />
-          </>
-        )
-      ) : null}
+        {/* Fila 2: La tabla ocupa el 100% de la altura disponible de forma responsiva */}
+        <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-hidden">
+          {lista.loading && !data ? <Spinner label="Cargando la auditoría…" /> : null}
+
+          {lista.error ? (
+            <div className="space-y-3">
+              <ErrorNote message={lista.error} />
+              <Button
+                variant="fila"
+                onClick={lista.reload}
+                className="nx-btn-toolbar !px-2.5"
+              >
+                <Icono nombre="actividad" tamano="sm" ariaHidden={true} />
+                <span>Reintentar</span>
+              </Button>
+            </div>
+          ) : null}
+
+          {data && !lista.error ? (
+            data.items.length === 0 ? (
+              <div role="status" className="flex-1 h-full min-h-0 flex flex-col">
+                <EmptyNote
+                  message={hayFiltros(filtros) ? VACIO_CON_FILTROS : VACIO_SIN_FILTROS}
+                  className="flex-1 h-full min-h-72"
+                />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 h-full w-full overflow-y-auto flex flex-col justify-between">
+                <AuditTable items={data.items} onDetalle={abrir} />
+                <div className="pt-3">
+                  <ListPager
+                    page={data.page}
+                    perPage={data.per_page}
+                    total={data.total}
+                    label="Páginas de la auditoría"
+                    onChange={setPage}
+                  />
+                </div>
+              </div>
+            )
+          ) : null}
+        </div>
+      </div>
 
       {detalle ? <AuditDetailModal entry={detalle} onClose={cerrar} /> : null}
     </div>

@@ -5,6 +5,8 @@ export type Role = 'administrador' | 'admin_area' | 'usuario';
 export interface AreaRef {
   id: number;
   name: string;
+  icon?: string;
+  color?: string;
 }
 
 export interface Session {
@@ -96,6 +98,7 @@ export interface Stats {
   platforms: number;
   visits: number;
   users?: number;
+  requests?: number;
   most_visited: { id: number; name: string; visits: number }[];
   platforms_by_area: { area: string; color: string; count: number }[];
 }
@@ -219,6 +222,6 @@ export interface DirectoryUser {
   name: string;
   email: string;
   account: string;
-  /** Ya existe una cuenta en Nexus con ese correo. */
+  /** Ya existe una cuenta en el Portal con ese correo. */
   exists: boolean;
 }

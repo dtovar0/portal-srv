@@ -15,9 +15,11 @@ import { describeRetryError } from './job-errors';
 
 /** Qué pasará al reintentar, según la operación. */
 export function efectoReintento(job: Job): string {
+  const userName = job.user?.name ?? 'el usuario';
+  const platformName = job.platform?.name ?? 'la plataforma';
   return job.operation === 'otorgar'
-    ? `Se volverá a intentar dar acceso a ${job.user.name} en ${job.platform.name}. El acceso pasará a "en proceso" y el servidor revisa antes que siga siendo válido.`
-    : `Se volverá a intentar retirar el acceso de ${job.user.name} en ${job.platform.name}. El acceso pasará a "revocando".`;
+    ? `Se volverá a intentar dar acceso a ${userName} en ${platformName}. El acceso pasará a "en proceso" y el servidor revisa antes que siga siendo válido.`
+    : `Se volverá a intentar retirar el acceso de ${userName} en ${platformName}. El acceso pasará a "revocando".`;
 }
 
 export function JobRetryDialog({

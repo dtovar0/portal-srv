@@ -11,7 +11,7 @@ class SMTPConfig(db.Model):
     auth_enabled = db.Column(db.Boolean, default=True)
     username = db.Column(db.String(100), nullable=True)
     password = db.Column(db.String(100), nullable=True) # Should be encrypted in production
-    sender_name = db.Column(db.String(100), default='Nexus System')
+    sender_name = db.Column(db.String(100), default='Portal de accesos')
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def to_dict(self):

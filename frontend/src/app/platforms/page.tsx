@@ -12,7 +12,6 @@ export default function Page() {
       <div className="space-y-6">
         <PageHeader
           title="Plataformas"
-          description="Catálogo de plataformas disponibles y accesos directos."
         />
         <PlatformsView />
       </div>

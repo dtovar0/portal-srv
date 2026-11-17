@@ -13,6 +13,7 @@ import type {
   Session, SmtpConfig, Stats,
   SystemSettings, UserInput,
 } from './types';
+import type { Access } from './access/types';
 
 /** Backend local de desarrollo; por nombre de host, sin IP (FNC-069, absorbe
  *  FNC-005 parcial). En staging y prod se fija `BACKEND_URL`. */
@@ -179,6 +180,20 @@ export const api = {
   setPlatformUsers: (id: number, userIds: number[]) =>
     request<{ status: string }>(`/platforms/${id}/users`,
       { method: 'PUT', body: JSON.stringify({ user_ids: userIds }) }),
+  platformAccess: (platformId: number) =>
+    request<{ items: Access[]; total: number }>(`/platforms/${platformId}/access`),
+  userAccess: (userId: number, status = 'vigente') =>
+    request<{ items: Access[]; total: number }>(`/users/${userId}/access?status=${status}`),
+  grantPlatformAccess: (platformId: number, userId: number, level = 'usuario') =>
+    request<{ status: string; access: Access }>(
+      `/platforms/${platformId}/access`,
+      { method: 'POST', body: JSON.stringify({ user_id: userId, level }) },
+    ),
+  revokeAccess: (accessId: number, reason?: string | null) =>
+    request<{ status: string; access: Access }>(
+      `/access/${accessId}/revoke`,
+      { method: 'POST', body: JSON.stringify(reason ? { reason } : {}) },
+    ),
 
   // --- Usuarios ---
   createUser: (input: UserInput) =>

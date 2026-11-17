@@ -121,13 +121,11 @@ describe('Toast', () => {
     expect(screen.queryByText('Guardado.')).toBeNull();
   });
 
-  it('error en región de alerta, no se cierra solo y se cierra con el botón', () => {
+  it('error en región de alerta, se cierra solo tras TOAST_MS y se cierra antes con el botón', () => {
     render(<ToastProvider><Disparador /></ToastProvider>);
     fireEvent.click(screen.getByRole('button', { name: 'mal' }));
     expect(screen.getByText('Falló.').closest('[role="alert"]')).toBeTruthy();
-    act(() => { vi.advanceTimersByTime(TOAST_MS * 5); });
-    expect(screen.getByText('Falló.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar aviso' }));
+    act(() => { vi.advanceTimersByTime(TOAST_MS + 10); });
     expect(screen.queryByText('Falló.')).toBeNull();
   });
 
@@ -172,14 +170,16 @@ describe('Toast', () => {
     expect(screen.queryByText('Guardado.')).toBeNull();
   });
 
-  it('DIS-049: el error sigue sin temporizador tras pasar el cursor', () => {
+  it('DIS-049: el error se pausa con el cursor y reanuda completo al salir', () => {
     render(<ToastProvider><Disparador /></ToastProvider>);
     fireEvent.click(screen.getByRole('button', { name: 'mal' }));
     const tarjeta = screen.getByText('Falló.').parentElement as HTMLElement;
     fireEvent.pointerEnter(tarjeta, { pointerType: 'mouse' });
-    fireEvent.pointerLeave(tarjeta, { pointerType: 'mouse' });
     act(() => { vi.advanceTimersByTime(TOAST_MS * 5); });
     expect(screen.getByText('Falló.')).toBeTruthy();
+    fireEvent.pointerLeave(tarjeta, { pointerType: 'mouse' });
+    act(() => { vi.advanceTimersByTime(TOAST_MS + 10); });
+    expect(screen.queryByText('Falló.')).toBeNull();
   });
 
   it('DIS-049: con un diálogo abierto (raíz inert, trampa de foco) Tab llega a "Cerrar aviso" y vuelve al diálogo', () => {

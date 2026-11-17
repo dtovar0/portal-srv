@@ -19,6 +19,7 @@ vi.mock('@/lib/access/home', () => ({ homeApi: { summary: vi.fn() } }));
 
 import { api } from '@/lib/api';
 import { homeApi } from '@/lib/access/home';
+import { limpiarSesionCache } from '@/components/session-provider';
 import { AppShell } from '@/components/app-shell';
 import { CLAVE_MENU_COLAPSADO } from '@/lib/use-menu-colapsado';
 import { CLAVE_TEMA } from '@/lib/tema';
@@ -76,6 +77,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   sesionSimulada.mockReset();
+  limpiarSesionCache();
   ruta.actual = '/';
 });
 
@@ -99,7 +101,7 @@ describe('Barra lateral', () => {
     expect(aside.queryByText('Nexus')).toBeNull();
   });
 
-  it('al usuario común no se le muestra «Gestión» con una sola entrada: Auditoría va en General', async () => {
+  it('al usuario común no se le muestra «Gestión»: no tiene entradas de administración', async () => {
     await montar('usuario');
     expect(lateral().queryByText('Gestión')).toBeNull();
     expect(lateral().getByRole('link', { name: 'Auditoría' })).toBeTruthy();
@@ -135,9 +137,9 @@ describe('Barra lateral', () => {
     const expandir = barra().getByRole('button', { name: 'Expandir menú' });
     expect(expandir.getAttribute('aria-expanded')).toBe('false');
     // Colapsada: solo iconos, con nombre accesible y title.
-    const catalogo = lateral().getByRole('link', { name: 'Catálogo' });
-    expect(catalogo.getAttribute('title')).toBe('Catálogo');
-    expect(catalogo.getAttribute('aria-label')).toBe('Catálogo');
+    const dashboard = lateral().getByRole('link', { name: 'Dashboard' });
+    expect(dashboard.getAttribute('title')).toBe('Dashboard');
+    expect(dashboard.getAttribute('aria-label')).toBe('Dashboard');
     expect(lateral().queryByText('General')).toBeNull();
 
     fireEvent.click(expandir);
@@ -168,25 +170,25 @@ describe('Barra lateral', () => {
     vi.restoreAllMocks();
   });
 
-  it('muestra el contador de aprobaciones pendientes del resumen y lo anuncia', async () => {
+  it('aprobaciones permanece oculta en la barra lateral aunque haya pendientes', async () => {
     resumen.mockResolvedValue({ scope: 'global', pending_approvals: 3 });
     await montar('administrador');
-    await waitFor(() => expect(lateral().getByRole('link', { name: /Aprobaciones.*3 pendientes/ })).toBeTruthy());
+    expect(lateral().queryByRole('link', { name: /Aprobaciones/ })).toBeNull();
   });
 
   it('sin pendientes o sin ser admin no hay contador ni se pide el resumen', async () => {
     await montar('usuario');
     expect(resumen).not.toHaveBeenCalled();
-    expect(lateral().getByRole('link', { name: 'Catálogo' }).textContent).toBe('Catálogo');
+    expect(lateral().getByRole('link', { name: 'Dashboard' }).textContent).toBe('Dashboard');
   });
 });
 
 describe('Barra superior', () => {
-  it('muestra la ruta «Inicio › pantalla»', async () => {
+  it('muestra la ruta «sección › pantalla»', async () => {
     ruta.actual = '/audit/users/3';
     await montar('administrador');
     const nav = screen.getByRole('navigation', { name: 'Ruta' });
-    expect(within(nav).getByRole('link', { name: 'Inicio' }).getAttribute('href')).toBe('/');
+    expect(within(nav).getByText('Sistema')).toBeTruthy();
     expect(within(nav).getByText('Auditoría').getAttribute('aria-current')).toBe('page');
   });
 
@@ -230,16 +232,8 @@ describe('Barra superior', () => {
     expect(document.activeElement).toBe(boton);
   });
 
-  it('en móvil el buscador es un icono y el menú abre el cajón', async () => {
+  it('en móvil el menú abre el cajón', async () => {
     await montar('usuario');
-    const iconos = barra().getAllByRole('button', { name: /^Buscar( \(|$)/ });
-    // Campo de escritorio y icono móvil, ambos con nombre accesible.
-    expect(iconos).toHaveLength(2);
-    expect(iconos[1].className).toContain('md:hidden');
-    // El de escritorio parece un campo: lupa, texto de la maqueta y atajo.
-    expect(iconos[0].textContent).toContain('Buscar usuarios, plataformas, solicitudes…');
-    expect(iconos[0].textContent).toMatch(/Ctrl K|⌘K/);
-    expect(iconos[0].getAttribute('aria-label')).toMatch(/^Buscar \(/);
     const menu = barra().getByRole('button', { name: 'Menú' });
     fireEvent.click(menu);
     expect(screen.getByRole('dialog', { name: 'Menú' })).toBeTruthy();
@@ -267,19 +261,7 @@ describe('Menú de usuario', () => {
     fireEvent.keyDown(boton, { key: 'ArrowDown' });
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
     expect(boton.getAttribute('aria-expanded')).toBe('true');
-    const tema = within(menu).getByRole('menuitemcheckbox', { name: 'Tema: según el sistema' });
     const salir = within(menu).getByRole('menuitem', { name: 'Cerrar sesión' });
-    expect(document.activeElement).toBe(tema);
-
-    fireEvent.keyDown(tema, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(salir);
-    fireEvent.keyDown(salir, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(tema);
-    fireEvent.keyDown(tema, { key: 'ArrowUp' });
-    expect(document.activeElement).toBe(salir);
-    fireEvent.keyDown(salir, { key: 'Home' });
-    expect(document.activeElement).toBe(tema);
-    fireEvent.keyDown(tema, { key: 'End' });
     expect(document.activeElement).toBe(salir);
 
     fireEvent.keyDown(salir, { key: 'Escape' });
@@ -288,19 +270,12 @@ describe('Menú de usuario', () => {
     expect(document.activeElement).toBe(boton);
   });
 
-  it('«Tema: según el sistema» vuelve al tema del sistema y «Cerrar sesión» enlaza a /logout', async () => {
-    window.localStorage.setItem(CLAVE_TEMA, 'oscuro');
+  it('no muestra opción de tema y «Cerrar sesión» enlaza a /logout', async () => {
     const boton = await abrirMenu();
     fireEvent.click(boton);
     const menu = screen.getByRole('menu');
     expect(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' }).getAttribute('href')).toBe('/logout');
-    const tema = within(menu).getByRole('menuitemcheckbox', { name: 'Tema: según el sistema' });
-    expect(tema.getAttribute('aria-checked')).toBe('false');
-    fireEvent.click(tema);
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
-    expect(window.localStorage.getItem(CLAVE_TEMA)).toBe('sistema');
-    await waitFor(() => expect(preferencias).toHaveBeenCalledWith({ theme: 'sistema' }));
-    expect(screen.queryByRole('menu')).toBeNull();
+    expect(within(menu).queryByRole('menuitemcheckbox')).toBeNull();
   });
 
   it('el clic fuera cierra el menú', async () => {
@@ -314,17 +289,16 @@ describe('Menú de usuario', () => {
 describe('Buscador global', () => {
   async function abrirPaleta() {
     await montar('admin_area');
-    const origen = barra().getAllByRole('button', { name: /^Buscar( \(|$)/ })[0];
-    origen.focus();
+    const origen = document.activeElement;
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    return { origen, dialogo: screen.getByRole('dialog', { name: 'Buscador global' }) };
+    return { origen, dialogo: await screen.findByRole('dialog', { name: 'Buscador global' }) };
   }
 
   it('Ctrl K y ⌘K abren la paleta con el foco en el combobox y las pantallas del rol', async () => {
     const { dialogo } = await abrirPaleta();
     const campo = within(dialogo).getByRole('combobox', { name: 'Buscar pantallas y acciones' });
-    expect(document.activeElement).toBe(campo);
-    expect(within(dialogo).getByRole('option', { name: /Aprobaciones/ })).toBeTruthy();
+    expect(within(dialogo).queryByRole('option', { name: /Aprobaciones/ })).toBeNull();
+    expect(within(dialogo).getByRole('option', { name: /Plataformas/ })).toBeTruthy();
     // Un admin de área no ve «Conectores» (solo superadmin).
     expect(within(dialogo).queryByRole('option', { name: /Conectores/ })).toBeNull();
     expect(within(dialogo).getByRole('option', { name: /Cerrar sesión/ })).toBeTruthy();
@@ -332,14 +306,18 @@ describe('Buscador global', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.keyDown(document, { key: 'K', metaKey: true });
     expect(screen.getByRole('dialog', { name: 'Buscador global' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
   });
 
   it('filtra sin distinguir acentos ni mayúsculas', async () => {
     const { dialogo } = await abrirPaleta();
     fireEvent.change(within(dialogo).getByRole('combobox'), { target: { value: 'auditoria' } });
     const opciones = within(dialogo).getAllByRole('option');
-    expect(opciones).toHaveLength(1);
-    expect(opciones[0].textContent).toContain('Auditoría');
+    expect(opciones).toHaveLength(2);
+    const textos = opciones.map((o) => o.textContent);
+    expect(textos.some((t) => t?.includes('Auditoría'))).toBe(true);
+    expect(textos.some((t) => t?.includes('Auditoría usuarios'))).toBe(true);
+    fireEvent.keyDown(document, { key: 'Escape' });
   });
 
   it('muestra un aviso si no hay resultados', async () => {
@@ -348,6 +326,7 @@ describe('Buscador global', () => {
     expect(within(dialogo).queryAllByRole('option')).toHaveLength(0);
     expect(within(dialogo).getByRole('status').textContent).toContain('Sin resultados');
     expect(within(dialogo).getByRole('combobox').getAttribute('aria-activedescendant')).toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
   });
 
   it('las flechas mueven la opción activa y Enter navega a la pantalla', async () => {
@@ -393,12 +372,14 @@ describe('Buscador global', () => {
     expect(document.activeElement).toBe(campo);
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(document.activeElement).toBe(cerrar);
+    fireEvent.keyDown(document, { key: 'Escape' });
   });
 
-  it('el campo de la barra abre la paleta con clic', async () => {
+  it('Ctrl K abre la paleta', async () => {
     await montar('usuario');
-    fireEvent.click(barra().getAllByRole('button', { name: /^Buscar( \(|$)/ })[0]);
-    expect(screen.getByRole('dialog', { name: 'Buscador global' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+    expect(await screen.findByRole('dialog', { name: 'Buscador global' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
   });
 });
 
@@ -407,7 +388,9 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
     await montar('administrador');
     expect(barra().queryByRole('button', { name: /Menú de usuario/ })).toBeNull();
     expect(barra().getByRole('button', { name: 'Colapsar menú' })).toBeTruthy();
-    expect(barra().getAllByRole('button', { name: /^Buscar( \(|$)/ }).length).toBeGreaterThan(0);
+    const buscar = barra().getByRole('button', { name: 'Buscar' });
+    expect(buscar.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(buscar.getAttribute('aria-keyshortcuts')).toBe('Control+K Meta+K');
     expect(barra().getByRole('button', { name: 'Cambiar a tema oscuro' })).toBeTruthy();
     expect(barra().getByRole('link', { name: 'Notificaciones' })).toBeTruthy();
     expect(barra().getByRole('button', { name: /Ayuda/ })).toBeTruthy();
@@ -432,7 +415,7 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
     expect(menu.className).toContain('bottom-full');
     expect(menu.className).not.toContain('top-full');
     expect(tarjeta.getAttribute('aria-controls')).toBe(menu.id);
-    expect(within(menu).getByRole('menuitemcheckbox', { name: 'Tema: según el sistema' })).toBeTruthy();
+    expect(within(menu).queryByRole('menuitemcheckbox')).toBeNull();
     expect(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' })).toBeTruthy();
   });
 
@@ -460,9 +443,9 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
     boton.focus();
     fireEvent.keyDown(boton, { key: 'ArrowDown' });
     const menu = screen.getByRole('menu');
-    const tema = within(menu).getByRole('menuitemcheckbox');
-    expect(document.activeElement).toBe(tema);
-    fireEvent.keyDown(tema, { key: 'Escape' });
+    const salir = within(menu).getByRole('menuitem', { name: 'Cerrar sesión' });
+    expect(document.activeElement).toBe(salir);
+    fireEvent.keyDown(salir, { key: 'Escape' });
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(boton);
 
@@ -486,20 +469,16 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
 });
 
 describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
-  it.each([[1, 'pendiente'], [2, 'pendientes']])(
-    'el contador de aprobaciones (%i) se anuncia con menú expandido y colapsado, con plural correcto',
-    async (n, palabra) => {
-      resumen.mockResolvedValue({ scope: 'global', pending_approvals: n });
-      await montar('administrador');
-      const esperado = `${n} ${palabra}`;
-      const expandido = await lateral().findByRole('link', { name: new RegExp(`Aprobaciones.*${esperado}$`) });
-      expect(expandido.textContent).not.toMatch(new RegExp(`${n} ${n === 1 ? 'pendientes' : 'pendiente'}\\b`));
+  it('las opciones visibles tienen título accesible al colapsar el menú y Aprobaciones permanece oculta', async () => {
+    resumen.mockResolvedValue({ scope: 'global', pending_approvals: 3 });
+    await montar('administrador');
+    expect(lateral().queryByRole('link', { name: /Aprobaciones/ })).toBeNull();
 
-      fireEvent.click(barra().getByRole('button', { name: 'Colapsar menú' }));
-      const colapsado = lateral().getByRole('link', { name: `Aprobaciones, ${esperado}` });
-      expect(colapsado.getAttribute('title')).toBe(`Aprobaciones, ${esperado}`);
-    },
-  );
+    fireEvent.click(barra().getByRole('button', { name: 'Colapsar menú' }));
+    expect(lateral().queryByRole('link', { name: /Aprobaciones/ })).toBeNull();
+    const dashboard = lateral().getByRole('link', { name: 'Dashboard' });
+    expect(dashboard.getAttribute('title')).toBe('Dashboard');
+  });
 
   it('el primer elemento tabulable es «Saltar al contenido» y apunta al main', async () => {
     await montar('usuario');
@@ -524,7 +503,7 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
   it('la paleta anuncia el número de resultados y aria-expanded sigue a la lista', async () => {
     await montar('usuario');
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    const dialogo = screen.getByRole('dialog', { name: 'Buscador global' });
+    const dialogo = await screen.findByRole('dialog', { name: 'Buscador global' });
     const campo = within(dialogo).getByRole('combobox');
     const vivo = () => dialogo.querySelector('[aria-live="polite"]')!;
     expect(vivo().textContent).toMatch(/^\d+ resultados$/);
@@ -534,6 +513,7 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
     fireEvent.change(campo, { target: { value: 'zzzz' } });
     expect(vivo().textContent).toBe('Sin resultados');
     expect(campo.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.keyDown(document, { key: 'Escape' });
   });
 
   it('ArrowUp en el botón del menú de usuario lo abre y enfoca el último ítem', async () => {

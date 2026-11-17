@@ -321,7 +321,7 @@ def test_bd_sin_servidor_cae_al_entorno(app, monkeypatch):
 @pytest.mark.parametrize('variable,valor,campo,esperado', [
     ('SMTP_PORT', 'no-numero', 'port', 587),
     ('SMTP_ENCRYPTION', 'otra', 'encryption', 'starttls'),
-    ('SMTP_SENDER_NAME', '', 'sender_name', 'Nexus'),
+    ('SMTP_SENDER_NAME', '', 'sender_name', 'Portal'),
 ])
 def test_valores_invalidos_del_entorno_usan_el_valor_por_defecto(
         app, monkeypatch, variable, valor, campo, esperado):

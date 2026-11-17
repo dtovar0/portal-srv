@@ -13,6 +13,22 @@ export const NOMBRE_MAX = 100;
 export const DESCRIPCION_MAX = 1000;
 export const URL_MAX = 255;
 
+/**
+ * Normaliza el enlace directo ingresado por el usuario.
+ * Si el usuario omite el protocolo (ej. "google.com", "localhost:3000", "app.local/panel"),
+ * se le antepone "https://" automáticamente para evitar errores de validación y agilizar el alta.
+ */
+export function normalizarEnlaceDirecto(valor: string | null | undefined): string {
+  if (!valor) return '';
+  const limpio = valor.trim();
+  if (!limpio) return '';
+  if (/^https:\/\//i.test(limpio)) return limpio;
+  if (/^\/\//.test(limpio)) return `https:${limpio}`;
+  if (/^(http:\/\/|ftp:\/\/|javascript:|mailto:|data:|file:)/i.test(limpio)) return limpio;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(limpio)) return limpio;
+  return `https://${limpio}`;
+}
+
 /** Validación previa al envío; el backend vuelve a validar todo. */
 export function validate(form: PlatformInput, integration: IntegrationValue, isEdit: boolean) {
   const errors: Record<string, string> = {};
@@ -22,11 +38,8 @@ export function validate(form: PlatformInput, integration: IntegrationValue, isE
   }
   if (!form.description?.trim()) errors.description = 'La descripción es obligatoria.';
   if (!form.area_id) errors.area_id = 'Selecciona un área.';
-  const link = form.direct_link?.trim();
+  const link = normalizarEnlaceDirecto(form.direct_link);
   if (link && !enlaceSeguro(link)) errors.direct_link = 'Usa una dirección https://.';
-  if (!isEdit && !integration.integration_type) {
-    errors.integration_type = 'Selecciona el tipo de integración.';
-  }
   const dnUsuario = integration.ldap_group_user_dn.trim().toLowerCase();
   if (dnUsuario && dnUsuario === integration.ldap_group_admin_dn.trim().toLowerCase()) {
     errors.ldap_group_admin_dn = 'Los grupos de usuario y admin deben ser distintos.';
@@ -51,12 +64,14 @@ export function buildPayload(
     ...form,
     name: form.name?.trim(),
     description: form.description?.trim(),
-    direct_link: form.direct_link?.trim() ?? '',
+    direct_link: normalizarEnlaceDirecto(form.direct_link),
   };
-  const tipo = integration.integration_type || currentType || '';
-  if (integration.integration_type && (!isEdit || isSuperadmin)) {
+  if (!isEdit) {
+    payload.integration_type = integration.integration_type || 'conector';
+  } else if (integration.integration_type && isSuperadmin) {
     payload.integration_type = integration.integration_type;
   }
+  const tipo = !isEdit ? payload.integration_type : (integration.integration_type || currentType || '');
   if (isSuperadmin && tipo === 'ldap') {
     for (const campo of ['ldap_group_user_dn', 'ldap_group_admin_dn'] as const) {
       const dn = integration[campo].trim();

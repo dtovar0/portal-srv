@@ -7,8 +7,8 @@ import { Button } from '../form';
 import { Badge, Card } from '../ui';
 
 const ROLE_LABELS: Record<string, string> = {
-  administrador: 'Admin global',
-  admin_area: 'Admin de área',
+  administrador: 'Super admin',
+  admin_area: 'Admin',
   usuario: 'Usuario',
 };
 
@@ -36,11 +36,26 @@ export function UserCard({
           <p className="truncate text-sm text-label">{user.email}</p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge>{ROLE_LABELS[user.role] ?? user.role}</Badge>
-          <Badge tone={user.is_active ? 'success' : 'warning'}>
+          <Badge
+            tone={user.role === 'administrador' ? 'violet' : user.role === 'admin_area' ? 'sky' : 'slate'}
+            title={ROLE_LABELS[user.role] ?? user.role}
+          >
+            {ROLE_LABELS[user.role] ?? user.role}
+          </Badge>
+          <Badge
+            tone={user.is_active ? 'success' : 'warning'}
+            icon={user.is_active ? 'exito' : 'aviso'}
+            title={user.is_active ? 'Activo' : 'Inactivo'}
+          >
             {user.is_active ? 'Activo' : 'Inactivo'}
           </Badge>
-          <Badge>{user.auth_source}</Badge>
+          <Badge
+            tone={user.auth_source === 'ldap' ? 'primary' : 'slate'}
+            icon={user.auth_source === 'ldap' ? 'plataformas' : 'documento'}
+            title={user.auth_source}
+          >
+            {user.auth_source}
+          </Badge>
         </div>
       </div>
 

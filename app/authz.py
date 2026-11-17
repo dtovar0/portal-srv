@@ -1,5 +1,5 @@
 """
-Autorización centralizada de Nexus (multitenant por área).
+Autorización centralizada del Portal (multitenant por área).
 
 Este módulo concentra las reglas de acceso. El resto de la aplicación debe pedir
 permisos aquí en lugar de comparar `current_user.role` a mano.

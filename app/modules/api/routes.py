@@ -233,6 +233,16 @@ def stats():
             for a in areas_q.all()
         ],
     }
+    from app.modules.access_requests.approvals import bandeja
+    from app.modules.access_requests.models import PlatformAccessRequest
+    if is_admin():
+        payload['requests'] = PlatformAccessRequest.query.count()
+    elif is_area_admin():
+        payload['requests'] = bandeja(current_user).count()
+    else:
+        payload['requests'] = PlatformAccessRequest.query.filter_by(
+            user_id=current_user.id).count()
+
     if is_admin() or is_area_admin():
         payload['users'] = scoped_users().count()
     return jsonify(payload)

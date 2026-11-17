@@ -6,7 +6,7 @@
  * usuario lo reemplazan.
  */
 
-import { Select } from './form';
+import { Option, Select } from './form';
 import { useTema } from './use-tema';
 import { TEMAS } from '@/lib/tema';
 
@@ -20,7 +20,7 @@ export function ThemeSelector() {
         value={tema}
         onChange={(e) => { void elegir(e.target.value); }}
       >
-        {TEMAS.map((t) => <option key={t.id} value={t.id}>{t.etiqueta}</option>)}
+        {TEMAS.map((t) => <Option key={t.id} value={t.id}>{t.etiqueta}</Option>)}
       </Select>
     </div>
   );

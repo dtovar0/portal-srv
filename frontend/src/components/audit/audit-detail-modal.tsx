@@ -12,13 +12,14 @@
 import type { AuditEntryV1 } from '@/lib/access/types';
 import { DataLabel, DataList, DataListItem } from '../data-table';
 import { formatearFecha } from '../access/fecha';
-import { Modal } from '../form';
+import { Button, Modal } from '../form';
+import { Icono } from '../icono';
 import { Badge } from '../ui';
 import { etiquetaAccion, resultado } from './audit-actions';
 import { compararCampos } from './audit-diff';
 import { quienActuo } from './audit-table';
 
-export const TITULO_DETALLE = 'Detalle del registro';
+export const TITULO_DETALLE = 'Detalle';
 
 /** Dato de un detalle (`dt`/`dd`); reutilizado en DIS-022. */
 export function Dato({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) {
@@ -31,7 +32,17 @@ export function AuditDetailModal({ entry, onClose }: { entry: AuditEntryV1; onCl
   const tono = resultado(entry.status);
 
   return (
-    <Modal title={TITULO_DETALLE} onClose={onClose}>
+    <Modal
+      title={TITULO_DETALLE}
+      icon="auditoria"
+      onClose={onClose}
+      footer={
+        <Button variant="secondary" onClick={onClose} className="min-h-11 px-4">
+          <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+          Entendido
+        </Button>
+      }
+    >
       <dl className="grid gap-3 sm:grid-cols-2">
         <Dato etiqueta="Fecha" valor={formatearFecha(entry.time)} />
         <Dato etiqueta="Resultado" valor={<Badge tone={tono.tono} icon={tono.icono}>{tono.texto}</Badge>} />

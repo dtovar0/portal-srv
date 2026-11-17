@@ -70,7 +70,7 @@ export function MyRequestsView() {
             getPanelId={panelId}
           />
 
-          <TabPanel id={panelId(pestana)} tabId={tabId(pestana)}>
+          <TabPanel id={panelId(pestana)} tabId={tabId(pestana)} variant="card">
             {pestana === 'solicitudes'
               ? <MyRequests estadoInicial={inicial.pestana === 'solicitudes' ? inicial.solicitud : undefined} />
               : <MyAccess estadoInicial={inicial.pestana === 'accesos' ? inicial.acceso : undefined} />}

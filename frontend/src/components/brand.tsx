@@ -23,7 +23,7 @@ export function Brand({
 
   return (
     <div className={`flex flex-col select-none ${className}`}>
-      <span className={`tracking-tight text-body-text ${sizeClasses[size]}`}>Nexus</span>
+      <span className={`tracking-tight text-body-text ${sizeClasses[size]}`}>Portal</span>
       {subtitle ? (
         <span className="text-xs text-label">
           Catálogo centralizado de plataformas

@@ -10,7 +10,7 @@ import '../styles/components.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Nexus',
+  title: 'Portal de accesos',
   description: 'Catálogo centralizado de plataformas',
 };
 

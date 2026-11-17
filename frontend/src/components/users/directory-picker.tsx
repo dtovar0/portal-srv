@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import type { DirectoryUser } from '@/lib/types';
 import { Button, Modal, TextInput } from '../form';
+import { Icono } from '../icono';
 import { Badge, EmptyNote, ErrorNote } from '../ui';
 
 export function DirectoryPicker({
@@ -36,9 +37,15 @@ export function DirectoryPicker({
 
   return (
     <Modal
-      title="Buscar en el directorio"
+      title="Directorio"
+      icon="buscar"
       onClose={onClose}
-      footer={<Button variant="secondary" onClick={onClose}>Cerrar</Button>}
+      footer={
+        <Button variant="secondary" onClick={onClose}>
+          <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+          Cerrar
+        </Button>
+      }
     >
       {error ? <ErrorNote message={error} /> : null}
 
@@ -51,6 +58,7 @@ export function DirectoryPicker({
           autoFocus
         />
         <Button onClick={search} disabled={busy || term.trim().length < 2}>
+          <Icono nombre="buscar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           {busy ? 'Buscando…' : 'Buscar'}
         </Button>
       </div>
@@ -75,7 +83,8 @@ export function DirectoryPicker({
                   <Badge>Ya existe</Badge>
                 ) : (
                   <Button variant="secondary" onClick={() => onPick(found)}>
-                    Dar de alta
+                    <Icono nombre="mas" tamano="sm" ariaHidden={true} className="mr-1.5" />
+                    Añadir
                   </Button>
                 )}
               </li>

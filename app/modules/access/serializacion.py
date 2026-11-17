@@ -27,16 +27,16 @@ def _actores(accesos):
 
 def acceso_publico(acceso, actores, con_trabajo=True):
     usuario, plataforma = acceso.user, acceso.platform
-    area = plataforma.area
+    area = plataforma.area if plataforma else None
     datos = {
         'id': acceso.id,
         'status': acceso.status,
         'level': acceso.level,
         'origin': acceso.origin,
         'user': {'id': usuario.id, 'name': usuario.nombre or usuario.email,
-                 'email': usuario.email},
+                 'email': usuario.email} if usuario else None,
         'platform': {'id': plataforma.id, 'name': plataforma.name,
-                     'integration_type': plataforma.integration_type},
+                     'integration_type': plataforma.integration_type} if plataforma else None,
         'area': {'id': area.id, 'name': area.name} if area else None,
         'request_id': acceso.request_id,
         'granted_by': actores.get(acceso.granted_by),

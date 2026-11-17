@@ -7,7 +7,7 @@
 
 import type { CatalogItem } from '@/lib/access/types';
 import { FILTRO_BUSQUEDA, FILTRO_SELECTOR, FilterBar } from '../filter-bar';
-import { Select, TextInput } from '../form';
+import { Option, Select, TextInput } from '../form';
 
 /** Id del buscador: el foco vuelve aquí al cerrar el aviso. */
 export const BUSCADOR_ID = 'catalogo-buscar';
@@ -57,9 +57,9 @@ export function CatalogFilters({
         aria-label="Filtrar el catálogo por área"
         className={FILTRO_SELECTOR}
       >
-        <option value="">Todas las áreas</option>
+        <Option value="">Todas las áreas</Option>
         {areas.map((area) => (
-          <option key={area.id} value={area.id}>{area.name}</option>
+          <Option key={area.id} value={area.id}>{area.name}</Option>
         ))}
       </Select>
     </FilterBar>

@@ -93,6 +93,74 @@ describe('DIS-071: Tablas y listas unificadas', () => {
       fireEvent.click(filas[2]);
       expect(onRowClick).toHaveBeenCalledWith(ITEMS[1]);
     });
+
+    it('soporta selectedKeys múltiples y paginación estandarizada', () => {
+      const onPageChange = vi.fn();
+      render(
+        <DataTable
+          label="Tabla paginada"
+          columns={COLUMNAS}
+          rows={ITEMS}
+          rowKey={(r) => r.id}
+          emptyMessage="Sin elementos"
+          selectedKeys={new Set(['1', '2'])}
+          page={1}
+          totalPages={3}
+          totalRecords={6}
+          onPageChange={onPageChange}
+        />,
+      );
+
+      const filas = screen.getAllByRole('row');
+      expect(filas[1].getAttribute('aria-selected')).toBe('true');
+      expect(filas[2].getAttribute('aria-selected')).toBe('true');
+
+      expect(screen.getByText('2 de 6 registros')).toBeDefined();
+      expect(screen.getByText('1/3')).toBeDefined();
+
+      const btnSiguiente = screen.getByRole('button', { name: 'Página siguiente de tabla paginada' });
+      fireEvent.click(btnSiguiente);
+      expect(onPageChange).toHaveBeenCalledWith(2);
+    });
+
+    it('oculta la paginación cuando solo hay 1 página', () => {
+      render(
+        <DataTable
+          label="Tabla única"
+          columns={COLUMNAS}
+          rows={ITEMS}
+          rowKey={(r) => r.id}
+          emptyMessage="Sin elementos"
+          page={1}
+          totalPages={1}
+          totalRecords={2}
+          onPageChange={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByRole('navigation')).toBeNull();
+      expect(screen.getByText('2 de 2 registros')).toBeDefined();
+    });
+
+    it('renderiza ghost rows para completar registros por página', () => {
+      const { container } = render(
+        <DataTable
+          label="Tabla con ghost rows"
+          columns={COLUMNAS}
+          rows={ITEMS}
+          rowKey={(r) => r.id}
+          emptyMessage="Sin elementos"
+          targetRows={8}
+          ghostRows={true}
+        />,
+      );
+
+      // ITEMS tiene 2 elementos, targetRows es 8 -> debe haber 6 filas fantasma con aria-hidden
+      const ghostRows = container.querySelectorAll('tbody tr[aria-hidden="true"]');
+      expect(ghostRows.length).toBe(6);
+      expect(ghostRows[0].className).toContain('opacity-70');
+      expect(ghostRows[0].className).toContain('nx-table-row-item');
+    });
   });
 
   describe('ResponsiveList & ResponsiveRow', () => {

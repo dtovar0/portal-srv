@@ -8,7 +8,7 @@
 
 import type { Job, JobOperation, JobParams, JobStatus } from '@/lib/access/types';
 import { FilterBar, FilterBarGrid } from '../filter-bar';
-import { Field, Select } from '../form';
+import { Field, Option, Select } from '../form';
 import { type OpcionesAlcance, ScopeSelects } from '../access/scope-filters';
 import { ESTADOS_EJECUCION, OPERACIONES, PROVEEDORES } from './job-catalog';
 
@@ -45,7 +45,7 @@ export function parametrosEjecuciones(filtros: FiltrosEjecuciones, page: number)
 
 function opciones<K extends string>(mapa: Record<K, string>) {
   return (Object.keys(mapa) as K[]).map((valor) => (
-    <option key={valor} value={valor}>{mapa[valor]}</option>
+    <Option key={valor} value={valor}>{mapa[valor]}</Option>
   ));
 }
 
@@ -63,43 +63,56 @@ export function JobsFilters({
   onChange: (cambio: Partial<FiltrosEjecuciones>) => void;
 }) {
   return (
-    <FilterBar label="Filtros de ejecuciones">
-      <FilterBarGrid>
-        <Field label="Estado">
-          <Select
-            id={FILTRO_ESTADO_ID}
-            value={filtros.status ?? ''}
-            onChange={(event) => onChange({ status: (event.target.value || null) as JobStatus | null })}
-          >
-            <option value="">Todos los estados</option>
-            {opciones(TEXTO_ESTADOS)}
-          </Select>
-        </Field>
-        <Field label="Operación">
-          <Select
-            value={filtros.operation ?? ''}
-            onChange={(event) => onChange({ operation: (event.target.value || null) as JobOperation | null })}
-          >
-            <option value="">Todas las operaciones</option>
-            {opciones(OPERACIONES)}
-          </Select>
-        </Field>
-        <Field label="Proveedor">
-          <Select
-            value={filtros.provider ?? ''}
-            onChange={(event) => onChange({ provider: (event.target.value || null) as Job['provider'] | null })}
-          >
-            <option value="">Todos los proveedores</option>
-            {opciones(PROVEEDORES)}
-          </Select>
-        </Field>
-        <ScopeSelects
-          areaId={filtros.areaId}
-          platformId={filtros.platformId}
-          opciones={alcance}
-          onChange={onChange}
-        />
-      </FilterBarGrid>
-    </FilterBar>
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative">
+        <label htmlFor={FILTRO_ESTADO_ID} className="sr-only">Estado</label>
+        <Select
+          id={FILTRO_ESTADO_ID}
+          aria-label="Estado"
+          value={filtros.status ?? ''}
+          onChange={(event) => onChange({ status: (event.target.value || null) as JobStatus | null })}
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <Option value="">Todos los estados</Option>
+          {opciones(TEXTO_ESTADOS)}
+        </Select>
+      </div>
+
+      <div className="relative">
+        <label htmlFor="ejecuciones-filtro-operacion" className="sr-only">Operación</label>
+        <Select
+          id="ejecuciones-filtro-operacion"
+          aria-label="Operación"
+          value={filtros.operation ?? ''}
+          onChange={(event) => onChange({ operation: (event.target.value || null) as JobOperation | null })}
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <Option value="">Todas las operaciones</Option>
+          {opciones(OPERACIONES)}
+        </Select>
+      </div>
+
+      <div className="relative">
+        <label htmlFor="ejecuciones-filtro-proveedor" className="sr-only">Proveedor</label>
+        <Select
+          id="ejecuciones-filtro-proveedor"
+          aria-label="Proveedor"
+          value={filtros.provider ?? ''}
+          onChange={(event) => onChange({ provider: (event.target.value || null) as Job['provider'] | null })}
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <Option value="">Todos los proveedores</Option>
+          {opciones(PROVEEDORES)}
+        </Select>
+      </div>
+
+      <ScopeSelects
+        areaId={filtros.areaId}
+        platformId={filtros.platformId}
+        opciones={alcance}
+        variant="inline"
+        onChange={onChange}
+      />
+    </div>
   );
 }

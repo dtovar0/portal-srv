@@ -59,10 +59,10 @@ export function Marco({ session, children }: { session: Session; children: React
             <MobileMenu>
               {(close) => (
                 <>
-                  <NavPrincipal onNavigate={close} contadores={contadores} />
+                  <NavPrincipal onNavigate={close} contadores={contadores} enBarraLateral={false} />
                   {/* Pie del cajón: la tarjeta de usuario queda a la vista aunque la lista se desplace. */}
                   <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex border-t border-borde bg-panel-fill p-3">
-                    <MenuUsuario session={session} segunSistema={tema === 'sistema'} onSegunSistema={() => { void elegir('sistema'); }} />
+                    <MenuUsuario session={session} segunSistema={tema === 'sistema'} onSegunSistema={() => { void elegir('sistema'); }} enBarraLateral={false} />
                   </div>
                 </>
               )}
@@ -82,7 +82,7 @@ export function Marco({ session, children }: { session: Session; children: React
           id="contenido"
           tabIndex={-1}
           data-desplazable=""
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6 outline-none"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-fondo p-6 outline-none flex flex-col"
         >
           {children}
         </main>

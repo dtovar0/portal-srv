@@ -121,10 +121,16 @@ export function AlertDialog({
 
   const config = TYPE_CONFIG[type];
   const botonVariante = confirmVariant ?? config.defaultVariant;
+  const headerGradient =
+    botonVariante === 'danger'
+      ? 'bg-gradient-to-r from-error/95 via-error to-error'
+      : type === 'aviso' || type === 'pregunta'
+      ? 'bg-gradient-to-r from-warning/95 via-warning to-warning'
+      : 'bg-gradient-to-r from-primary via-brand to-accent';
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-overlay backdrop-blur-xs p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-overlay/70 backdrop-blur-md p-4 transition-all duration-300"
       onClick={(e) => {
         // Clic en el fondo no confirma; si no está ocupado permite cerrar
         if (e.target === e.currentTarget && !busy) {
@@ -139,42 +145,70 @@ export function AlertDialog({
         aria-labelledby={titleId}
         aria-describedby={describedBy ?? (message ? descId : undefined)}
         tabIndex={-1}
-        className="nx-modal-glass relative w-full max-w-dialogo rounded-2xl p-6 text-center shadow-2xl outline-none"
+        className="nx-modal-glass flex w-full max-w-xl flex-col overflow-hidden rounded-xl border border-panel-border/90 bg-gradient-to-b from-superficie via-superficie to-superficie-hundida shadow-2xl outline-none"
       >
-        {/* Ícono grande circular centrado */}
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border">
-          <div
-            className={`flex h-12 w-12 items-center justify-center rounded-full border ${config.contenedorColor} ${config.iconoColor}`}
-          >
-            <Icono nombre={config.icono} tamano="lg" ariaHidden={true} />
+        {/* HEADER: Estandarizado con degradado y badge */}
+        <div className={`flex h-18 shrink-0 items-center justify-between border-b border-superficie/10 ${headerGradient} px-6 py-4`}>
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-superficie/25 bg-superficie/15 text-texto-sobre-accion shadow-sm backdrop-blur-xs" aria-hidden="true">
+              <Icono nombre={config.icono} tamano="md" ariaHidden={true} />
+            </span>
+            <h2 id={titleId} className="text-base font-bold tracking-tight text-texto-sobre-accion truncate">
+              {title}
+            </h2>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            aria-label="Cerrar"
+            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl text-texto-sobre-accion/80 transition-colors hover:bg-superficie/15 hover:text-texto-sobre-accion focus-visible:ring-2 focus-visible:ring-superficie"
+          >
+            <Icono nombre="cerrar" tamano="md" ariaHidden={true} />
+          </button>
         </div>
 
-        {/* Título de la alerta */}
-        <h2 id={titleId} className="text-lg font-bold text-body-text">
-          {title}
-        </h2>
+        {/* BODY: Con flex-1 y scroll accesible */}
+        <div className="flex-1 min-h-0 space-y-5 overflow-y-auto bg-panel-fill px-6 py-6 text-body-text flex flex-col justify-center items-center text-center">
+          {/* Ícono grande centrado con relieve y halo */}
+          <div className="mx-auto flex size-20 items-center justify-center rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-brand/10 to-accent/10 shadow-lg p-1">
+            <div
+              className={`flex size-14 items-center justify-center rounded-lg border shadow-xs ${config.contenedorColor} ${config.iconoColor}`}
+            >
+              <Icono nombre={config.icono} tamano="lg" ariaHidden={true} />
+            </div>
+          </div>
 
-        {/* Mensaje descriptivo */}
-        {message ? (
-          <p id={descId} className="mt-2 text-sm text-label">
-            {message}
-          </p>
-        ) : null}
+          {/* Mensaje descriptivo */}
+          {message ? (
+            <div className="max-w-md mx-auto space-y-3">
+              <p id={descId} className="text-base font-semibold text-body-text leading-relaxed">
+                {message}
+              </p>
+              {botonVariante === 'danger' || type === 'error' || type === 'aviso' ? (
+                <div className="rounded-xl border border-error/20 bg-error/5 p-3 text-xs text-error-text font-medium flex items-center justify-center gap-2">
+                  <Icono nombre="aviso" tamano="sm" ariaHidden={true} />
+                  <span>Esta acción no se puede deshacer y los datos se eliminarán permanentemente.</span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
-        {/* Contenido / formulario opcional */}
-        {children ? <div className="mt-4 text-left">{children}</div> : null}
+          {/* Contenido / formulario opcional */}
+          {children ? <div className="mt-2 text-left w-full space-y-4">{children}</div> : null}
+        </div>
 
-        {/* Botones de acción */}
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
+        {/* FOOTER: Estandarizado con distribución entre extremos (Cancelar izq, Confirmar der) */}
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-panel-border/80 bg-superficie-hundida/90 px-6 py-4 shadow-xs [&>*:only-child]:ml-auto">
           {cancelLabel ? (
             <Button
               ref={cancelButtonRef}
               variant="secondary"
               disabled={busy}
               onClick={onClose}
-              className="min-h-12 min-w-28"
+              className="min-h-12 min-w-28 text-xs font-bold"
             >
+              <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
               {cancelLabel}
             </Button>
           ) : null}
@@ -186,13 +220,21 @@ export function AlertDialog({
             form={confirmForm}
             type={confirmType ?? (confirmForm ? 'submit' : 'button')}
             aria-describedby={confirmAriaDescribedBy}
+            aria-disabled={busy || undefined}
             onClick={() => {
+              if (busy) return;
               if (confirmForm && confirmType === 'submit') return;
               if (onConfirm) onConfirm();
               else onClose();
             }}
-            className="min-h-12 min-w-28"
+            className="min-h-12 min-w-28 text-xs font-bold shadow-xs"
           >
+            <Icono
+              nombre={botonVariante === 'danger' ? 'eliminar' : 'aprobar'}
+              tamano="sm"
+              ariaHidden={true}
+              className="mr-1.5"
+            />
             {confirmLabel}
           </Button>
         </div>

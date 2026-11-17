@@ -195,9 +195,9 @@ export const PARES: ParContraste[] = [
   { id: 'invalido-borde/superficie-hundida', texto: '--invalido-borde', fondo: '--color-superficie-hundida', minimo: MIN_NO_TEXTO },
   // DIS-076: paleta del diseño aprobado. Navegación y texto sobre la barra lateral, texto secundario y
   // tenue sobre el fondo de página, texto sobre entrada y encabezado de tabla, activo y estados con su fondo.
-  texto('nav/barra-lateral', '--color-navegacion', '--color-barra-lateral'),
-  texto('texto/barra-lateral', '--color-texto', '--color-barra-lateral'),
-  texto('texto-secundario/barra-lateral', '--color-texto-secundario', '--color-barra-lateral'),
+  texto('nav/barra-lateral', '--color-barra-lateral-nav', '--color-barra-lateral'),
+  texto('texto/barra-lateral', '--color-barra-lateral-texto', '--color-barra-lateral'),
+  texto('texto-secundario/barra-lateral', '--color-barra-lateral-secundario', '--color-barra-lateral'),
   texto('texto-secundario/fondo', '--color-texto-secundario', '--color-fondo'),
   texto('texto-tenue/fondo', '--color-texto-tenue', '--color-fondo'),
   texto('texto/entrada', '--color-texto', '--color-entrada-fondo'),
@@ -217,6 +217,12 @@ export const PARES: ParContraste[] = [
   texto('nx-texto-error/tarjeta', '--badge-error-text', '--color-panel-fill'),
   texto('nexus-btn-fila-primario', '--color-on-primary', '--color-primary-solid'),
   { id: 'borde/fondo', texto: '--color-borde', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
-  { id: 'borde/barra-lateral', texto: '--color-borde', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
+  { id: 'borde/barra-lateral', texto: '--color-barra-lateral-borde', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
   { id: 'accion/fondo', texto: '--color-accion', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
+  // DIS-082: placeholder (`placeholder:text-placeholder`) sobre superficie y fondo de página.
+  texto('placeholder/superficie', '--color-placeholder', '--color-superficie'),
+  texto('placeholder/fondo', '--color-placeholder', '--color-fondo'),
+  // DIS-082: anillo de foco del menú lateral sobre la barra y sobre el ítem activo (no texto, 3:1).
+  { id: 'barra-lateral-foco/barra-lateral', texto: '--color-barra-lateral-foco', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
+  { id: 'barra-lateral-foco/activo-fondo', texto: '--color-barra-lateral-foco', fondo: '--color-activo-fondo', minimo: MIN_NO_TEXTO },
 ];

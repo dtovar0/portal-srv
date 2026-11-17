@@ -40,7 +40,7 @@ export function useTema() {
     try {
       await api.savePreferences({ theme: id });
     } catch {
-      avisar('error', 'No se pudo guardar el tema en tu cuenta. Puede volver al anterior al cambiar de pantalla.');
+      avisar('error', 'No se pudo guardar el tema en tu cuenta.', 'Tema');
     }
   }, [avisar]);
 

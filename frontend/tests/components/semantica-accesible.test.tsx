@@ -5,7 +5,7 @@
  * - `th scope="col"` y columna de acciones con texto: ya probados con `DataTable`
  *   (componentes-comunes.test.tsx) y Administrar plataformas (platform-admin.test.tsx).
  */
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Area, AppNotification } from '@/lib/types';
 
@@ -54,8 +54,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('FNC-034: nombres accesibles contextuales', () => {
-  it('Áreas: Editar, Administradores y Eliminar llevan el nombre del área', async () => {
+  it('Áreas: Editar, Administradores y Eliminar llevan el nombre del área al seleccionarla', async () => {
     render(<AreasList />);
+    fireEvent.click(await screen.findByLabelText('Seleccionar Finanzas'));
     for (const nombre of ['Editar Finanzas', 'Administradores de Finanzas', 'Eliminar Finanzas']) {
       expect(await screen.findByRole('button', { name: nombre })).toBeTruthy();
     }

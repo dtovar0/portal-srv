@@ -212,9 +212,9 @@ export interface Job {
   operation: JobOperation;
   provider: 'ldap' | 'conector';
   access_id: number;
-  user: Ref;
-  platform: Ref;
-  area: Ref;
+  user: Ref | null;
+  platform: Ref | null;
+  area: Ref | null;
   attempts_count: number;
   max_attempts: number;
   next_attempt_at: string | null;

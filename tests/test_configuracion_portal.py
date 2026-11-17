@@ -10,7 +10,7 @@ from app.modules.settings.models import SystemConfig
 
 CAMPOS = ('portal_name', 'portal_identity_type', 'bg_color', 'text_color')
 ESPERADOS = {
-    'portal_name': 'Nexus Core AI',
+    'portal_name': 'Portal de accesos',
     'portal_identity_type': 'icon',
     'bg_color': '#0f172a',
     'text_color': '#ffffff',

@@ -13,6 +13,7 @@ import { usersApi } from '@/lib/access/users';
 import { useAsync } from '@/lib/use-async';
 import type { Area, ManagedUser } from '@/lib/types';
 import { Button, Checkbox, ConfirmDialog, Field, Modal, TextInput } from '../form';
+import { Icono } from '../icono';
 import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
 import { mensajeDeError } from './area-errors';
 
@@ -85,15 +86,20 @@ export function AreaAdminsPanel({ area, onClose }: { area: Area; onClose: () => 
 
   return (
     <Modal
-      title={`Administradores de ${area.name}`}
+      title="Administradores"
+      icon="usuarios"
       onClose={onClose}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+          <Button variant="secondary" onClick={onClose}>
+            <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+            Cerrar
+          </Button>
           <Button
             onClick={() => (quitados.length > 0 ? setConfirming(true) : guardar())}
             disabled={saving || pendientes.length === 0}
           >
+            <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
             {saving ? 'Guardando…' : 'Guardar'}
           </Button>
         </>

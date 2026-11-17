@@ -22,9 +22,16 @@ export interface NavPrincipalProps {
   colapsada?: boolean;
   /** Contador por `href` (p. ej. aprobaciones pendientes); solo se muestra si es mayor que cero. */
   contadores?: Readonly<Record<string, number>>;
+  /** Aplica los tokens específicos del menú lateral oscuro (por defecto true). */
+  enBarraLateral?: boolean;
 }
 
-export function NavPrincipal({ onNavigate, colapsada = false, contadores = {} }: NavPrincipalProps) {
+export function NavPrincipal({
+  onNavigate,
+  colapsada = false,
+  contadores = {},
+  enBarraLateral = true,
+}: NavPrincipalProps) {
   const { session } = useSession();
   const pathname = usePathname();
   if (!session) return null;
@@ -34,9 +41,15 @@ export function NavPrincipal({ onNavigate, colapsada = false, contadores = {} }:
       {seccionesVisibles(session.permissions).map(({ seccion, entradas }, indice) => (
         <div key={seccion} className="flex flex-col gap-0.5">
           {colapsada ? (
-            indice > 0 ? <hr className="mx-3 my-2 border-borde-sutil" /> : null
+            indice > 0 ? (
+              <hr className={`mx-3 my-2 ${enBarraLateral ? 'border-barra-lateral-borde' : 'border-borde-sutil'}`} />
+            ) : null
           ) : (
-            <p className={`px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-texto-secundario ${indice > 0 ? 'pt-5' : 'pt-1'}`}>
+            <p
+              className={`px-3 pb-2 text-xs font-semibold uppercase tracking-wide ${
+                enBarraLateral ? 'text-barra-lateral-secundario' : 'text-texto-secundario'
+              } ${indice > 0 ? 'pt-5' : 'pt-1'}`}
+            >
               {seccion}
             </p>
           )}
@@ -52,12 +65,16 @@ export function NavPrincipal({ onNavigate, colapsada = false, contadores = {} }:
                 aria-label={colapsada ? nombre : undefined}
                 title={colapsada ? nombre : undefined}
                 onClick={onNavigate}
-                className={`relative flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`relative flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm outline-none transition-colors focus-visible:ring-2 ${
+                  enBarraLateral ? 'focus-visible:ring-barra-lateral-foco' : 'focus-visible:ring-primary'
+                } ${
                   colapsada ? 'justify-center' : ''
                 } ${
                   activo
-                    ? 'bg-activo-fondo font-semibold text-activo-texto'
-                    : 'font-medium text-navegacion hover:bg-surface-container hover:text-body-text active:bg-surface-container'
+                    ? 'bg-activo-fondo font-semibold text-activo-texto shadow-xs'
+                    : enBarraLateral
+                      ? 'font-medium text-barra-lateral-nav hover:bg-barra-lateral-hover hover:text-barra-lateral-texto active:bg-barra-lateral-presionado'
+                      : 'font-medium text-navegacion hover:bg-surface-container hover:text-body-text active:bg-surface-container'
                 }`}
               >
                 <Icono nombre={item.icono} />

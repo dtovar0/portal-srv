@@ -4,7 +4,9 @@ import { NotificationsList } from '@/components/notifications-list';
 export default function Page() {
   return (
     <AppShell>
-      <NotificationsList />
+      <div className="flex h-full w-full flex-1 flex-col min-h-0">
+        <NotificationsList />
+      </div>
     </AppShell>
   );
 }

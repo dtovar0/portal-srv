@@ -28,29 +28,38 @@ const SessionContext = createContext<SessionState>({
  *  de login vive ya en el frontend. */
 const LOGIN_URL = '/login';
 
+/** Caché en memoria para evitar parpadeos y re-peticiones de sesión entre cambios de página. */
+let cachedSession: Session | null = null;
+
+export function limpiarSesionCache() {
+  cachedSession = null;
+}
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<SessionState>({
-    session: null,
-    loading: true,
+  const [state, setState] = useState<SessionState>(() => ({
+    session: cachedSession,
+    loading: !cachedSession,
     error: null,
-  });
+  }));
 
   useEffect(() => {
     let active = true;
 
     api.session()
       .then((session) => {
+        cachedSession = session;
         if (active) setState({ session, loading: false, error: null });
       })
       .catch((error: unknown) => {
         if (!active) return;
         // Sin sesión válida, a la pantalla de acceso.
         if (error instanceof ApiError && error.isUnauthenticated) {
+          cachedSession = null;
           window.location.href = LOGIN_URL;
           return;
         }
         setState({
-          session: null,
+          session: cachedSession,
           loading: false,
           error: error instanceof Error ? error.message : 'Error de sesión',
         });

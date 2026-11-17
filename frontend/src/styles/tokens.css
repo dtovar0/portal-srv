@@ -97,6 +97,9 @@
   --p-noche-850: 22 27 38;
   --p-noche-900: 17 22 33;
   --p-noche-950: 12 17 29;
+  /* DIS-082: placeholder opaco = label-text al 85% (AA >= 4.5:1 sobre superficie y fondo). */
+  --p-placeholder-claro:  97 108 128;
+  --p-placeholder-oscuro: 129 132 138;
 
   /* Activo (selección de navegación) y estados, claro y oscuro */
   --p-activo-fondo-claro:  239 244 255;
@@ -126,7 +129,15 @@
   --color-superficie: var(--p-blanco);
   --color-superficie-elevada: var(--p-blanco);
   --color-superficie-hundida: var(--p-gris-50);
-  --color-barra-lateral: var(--p-blanco);
+  --color-barra-lateral: var(--p-noche-900);
+  --color-barra-lateral-borde: var(--p-noche-500);
+  --color-barra-lateral-texto: var(--p-noche-50);
+  --color-barra-lateral-secundario: var(--p-noche-300);
+  --color-barra-lateral-nav: var(--p-noche-200);
+  --color-barra-lateral-hover: 255 255 255 / 0.08;
+  --color-barra-lateral-presionado: 255 255 255 / 0.14;
+  --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
   --color-entrada-fondo: var(--p-gris-50);
   --color-tabla-encabezado: var(--p-gris-50);
   --color-velo: 0 0 0 / 0.6;
@@ -139,8 +150,8 @@
   --color-texto-sobre-peligro: 255 255 255;
   --color-texto-enlace: var(--p-marca-700);
   --color-navegacion: var(--p-gris-800);
-  --color-activo-fondo: var(--p-activo-fondo-claro);
-  --color-activo-texto: var(--p-marca-700);
+  --color-activo-fondo: var(--p-activo-fondo-oscuro);
+  --color-activo-texto: var(--p-activo-texto-oscuro);
 
   /* Borde */
   --color-borde: var(--p-gris-500);
@@ -223,7 +234,7 @@
 
   --color-body-bg: #f5f6f8;
   --color-body-text: #101828;
-  --color-header-bg: var(--color-barra-lateral);
+  --color-header-bg: var(--color-superficie);
   --color-header-text: var(--color-texto);
 
   --badge-primary-bg: var(--color-accion-tenue);
@@ -275,12 +286,13 @@
   --color-input-border: var(--color-borde);
   --color-input-focus: var(--color-accion);
   --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-claro);
 
   --color-texto-sobre-fondo-oscuro: 255 255 255;
   --color-texto-sobre-fondo-claro: 0 0 0;
 
-  --radius-base: 10px;
-  --radius-panel: 14px;
+  --radius-base: 8px;
+  --radius-panel: 10px;
 
   /* Interacción y Estados (DIS-056) */
   --foco-anillo: 29 78 216;
@@ -371,6 +383,14 @@
     --color-superficie-elevada: var(--p-noche-800);
     --color-superficie-hundida: var(--p-noche-900);
     --color-barra-lateral: var(--p-noche-900);
+    --color-barra-lateral-borde: var(--p-noche-500);
+    --color-barra-lateral-texto: var(--p-noche-50);
+    --color-barra-lateral-secundario: var(--p-noche-300);
+    --color-barra-lateral-nav: var(--p-noche-200);
+    --color-barra-lateral-hover: 255 255 255 / 0.08;
+    --color-barra-lateral-presionado: 255 255 255 / 0.14;
+    --color-barra-lateral-elemento: 255 255 255 / 0.05;
+    --color-barra-lateral-foco: var(--p-noche-50);
     --color-entrada-fondo: var(--p-noche-950);
     --color-tabla-encabezado: var(--p-noche-900);
     --color-velo: 0 0 0 / 0.6;
@@ -484,6 +504,7 @@
     --color-input-text: #f5f5f6;
     --color-input-border: var(--color-borde);
     --color-label-text: var(--color-texto-secundario);
+    --color-placeholder: var(--p-placeholder-oscuro);
 
     --color-texto-sobre-fondo-oscuro: 255 255 255;
     --color-texto-sobre-fondo-claro: 0 0 0;
@@ -557,6 +578,14 @@ html.dark {
   --color-superficie-elevada: var(--p-noche-800);
   --color-superficie-hundida: var(--p-noche-900);
   --color-barra-lateral: var(--p-noche-900);
+  --color-barra-lateral-borde: var(--p-noche-500);
+  --color-barra-lateral-texto: var(--p-noche-50);
+  --color-barra-lateral-secundario: var(--p-noche-300);
+  --color-barra-lateral-nav: var(--p-noche-200);
+  --color-barra-lateral-hover: 255 255 255 / 0.08;
+  --color-barra-lateral-presionado: 255 255 255 / 0.14;
+  --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
   --color-entrada-fondo: var(--p-noche-950);
   --color-tabla-encabezado: var(--p-noche-900);
   --color-velo: 0 0 0 / 0.6;
@@ -670,6 +699,7 @@ html.dark {
   --color-input-text: #f5f5f6;
   --color-input-border: var(--color-borde);
   --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-oscuro);
 
   --color-texto-sobre-fondo-oscuro: 255 255 255;
   --color-texto-sobre-fondo-claro: 0 0 0;

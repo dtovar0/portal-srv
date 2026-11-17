@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { requestsApi } from '@/lib/access/requests';
 import type { AccessLevel, AccessRequest, CatalogItem } from '@/lib/access/types';
 import { Button, Field, Modal, Radio, TextArea } from '../form';
+import { Icono } from '../icono';
 import { FieldErrorNote, FieldHint, describedBy } from '../platforms/field-notes';
 import { Card, ErrorNote } from '../ui';
 import { NIVELES } from './access-status-badge';
@@ -84,14 +85,22 @@ export function RequestFormModal({
   return (
     <Modal
       title={`Solicitar acceso a ${item.platform.name}`}
+      icon="solicitudes"
       onClose={onClose}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
+            <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
             Cancelar
           </Button>
-          <Button type="submit" form={FORM_ID} disabled={sending || niveles.length === 0}>
-            {sending ? 'Enviando…' : 'Enviar solicitud'}
+          <Button
+            type="submit"
+            form={FORM_ID}
+            aria-label={sending ? 'Enviando…' : 'Enviar solicitud'}
+            disabled={sending || niveles.length === 0}
+          >
+            <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+            {sending ? 'Enviando…' : 'Enviar'}
           </Button>
         </>
       }

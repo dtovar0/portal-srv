@@ -62,7 +62,9 @@ def export_backup():
 
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr('nexus_config.json', json.dumps(payload, indent=2))
+        config_bytes = json.dumps(payload, indent=2)
+        archive.writestr('portal_config.json', config_bytes)
+        archive.writestr('nexus_config.json', config_bytes)
     buffer.seek(0)
 
     add_audit_log('EXPORTAR CONFIGURACIÓN', module='Ajustes', status='success',
@@ -70,7 +72,7 @@ def export_backup():
 
     stamp = datetime.now().strftime('%Y-%m-%d')
     return send_file(buffer, mimetype='application/zip', as_attachment=True,
-                     download_name=f'nexus_backup_{stamp}.zip')
+                     download_name=f'portal_backup_{stamp}.zip')
 
 
 @respaldo_api_bp.route('/backup', methods=['POST'])
@@ -91,10 +93,11 @@ def import_backup():
     upload.seek(0)
     try:
         with zipfile.ZipFile(upload) as archive:
-            if 'nexus_config.json' not in archive.namelist():
+            config_name = 'portal_config.json' if 'portal_config.json' in archive.namelist() else 'nexus_config.json'
+            if config_name not in archive.namelist():
                 return error_response(
-                    'El paquete no contiene nexus_config.json.')
-            with archive.open('nexus_config.json') as handle:
+                    'El paquete no contiene portal_config.json ni nexus_config.json.')
+            with archive.open(config_name) as handle:
                 data = json.load(handle)
     except (zipfile.BadZipFile, json.JSONDecodeError) as exc:
         return error_response(f'No se pudo leer el paquete: {exc}')

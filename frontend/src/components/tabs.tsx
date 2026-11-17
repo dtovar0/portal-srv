@@ -12,6 +12,7 @@
  */
 
 import React, { useRef } from 'react';
+import { Icono, type NombreIcono } from './icono';
 
 export function destinoPorTecla(tecla: string, actual: number, total: number): number | null {
   if (total <= 0) return null;
@@ -33,6 +34,8 @@ export interface TabItem<T extends string = string> {
   id: T;
   label: React.ReactNode;
   disabled?: boolean;
+  icon?: NombreIcono;
+  badge?: React.ReactNode;
 }
 
 export interface TabsProps<T extends string = string> {
@@ -70,7 +73,7 @@ export function Tabs<T extends string = string>({
 
   return (
     <div
-      className={`flex flex-wrap gap-1 border-b border-panel-border ${className}`}
+      className={`inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-2xl border border-panel-border bg-superficie-hundida/70 p-1.5 shadow-inner ${className}`}
       role="tablist"
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledby}
@@ -95,13 +98,32 @@ export function Tabs<T extends string = string>({
             disabled={item.disabled}
             onClick={() => !item.disabled && onChange(item.id)}
             onKeyDown={(event) => alPulsar(event, indice)}
-            className={`-mb-px min-h-12 border-b-2 px-3 py-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`group relative inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-5 py-2.5 text-sm outline-none transition-all duration-corta focus-visible:ring-2 focus-visible:ring-primary ${
               isSelected
-                ? 'border-primary font-medium text-primary-text'
-                : 'border-transparent text-label hover:text-body-text'
+                ? 'border border-panel-border/80 border-b-2 border-b-primary bg-superficie font-bold text-primary-text shadow-1 scale-[1.01]'
+                : 'border border-transparent text-label font-medium hover:border-panel-border/40 hover:bg-superficie/60 hover:text-body-text'
             } ${item.disabled ? 'estado-deshabilitado pointer-events-none' : ''}`}
           >
-            {item.label}
+            {item.icon ? (
+              <Icono
+                nombre={item.icon}
+                tamano="sm"
+                ariaHidden={true}
+                className={isSelected ? 'text-primary-text' : 'text-label group-hover:text-body-text'}
+              />
+            ) : null}
+            <span>{item.label}</span>
+            {item.badge !== undefined && item.badge !== null ? (
+              <span
+                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  isSelected
+                    ? 'bg-primary/15 text-primary-text'
+                    : 'border border-panel-border/60 bg-superficie text-label'
+                }`}
+              >
+                {item.badge}
+              </span>
+            ) : null}
           </button>
         );
       })}
@@ -113,16 +135,29 @@ export interface TabPanelProps extends React.HTMLAttributes<HTMLDivElement> {
   id: string;
   tabId: string;
   children: React.ReactNode;
+  variant?: 'default' | 'card';
 }
 
-export function TabPanel({ id, tabId, children, className = '', ...props }: TabPanelProps) {
+export function TabPanel({
+  id,
+  tabId,
+  children,
+  variant = 'default',
+  className = '',
+  ...props
+}: TabPanelProps) {
+  const baseEstilo =
+    variant === 'card'
+      ? 'rounded-2xl border border-panel-border bg-superficie p-6 sm:p-8 shadow-1'
+      : 'rounded-2xl';
+
   return (
     <div
       role="tabpanel"
       id={id}
       aria-labelledby={tabId}
       tabIndex={0}
-      className={`rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary ${className}`}
+      className={`nx-tab-panel mt-6 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-fondo ${baseEstilo} ${className}`}
       {...props}
     >
       {children}

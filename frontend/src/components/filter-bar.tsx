@@ -26,6 +26,7 @@ export interface FilterBarProps {
   children: React.ReactNode;
   className?: string;
   layout?: 'row' | 'stack';
+  variant?: 'flat' | 'card';
   error?: string | null;
   errorId?: string;
 }
@@ -35,13 +36,17 @@ export function FilterBar({
   children,
   className = '',
   layout = 'row',
+  variant = 'flat',
   error,
   errorId,
 }: FilterBarProps) {
   const baseLayout = layout === 'row' ? 'flex flex-wrap items-center gap-3' : 'space-y-3';
+  const variantStyles = variant === 'card'
+    ? 'bg-panel-fill border border-panel-border rounded-2xl p-4 shadow-xs'
+    : '';
 
   return (
-    <div role="search" aria-label={label} className={`${baseLayout} ${className}`}>
+    <div role="search" aria-label={label} className={`${baseLayout} ${variantStyles} ${className}`.trim()}>
       {children}
       {error ? (
         <div className="w-full min-h-5">

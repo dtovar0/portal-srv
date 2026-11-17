@@ -11,7 +11,7 @@
  */
 
 import type { IntegrationType } from '@/lib/types';
-import { ButtonLink, Field, Select, TextInput } from '../form';
+import { ButtonLink, Field, Option, Select, TextInput } from '../form';
 import { describedBy, FieldErrorNote, FieldHint } from './field-notes';
 
 /** Valores de la sección; `''` = sin elegir (alta) o sin cambiar (edición). */
@@ -101,13 +101,13 @@ export function PlatformIntegrationFields({
               onChange={(e) =>
                 onChange({ integration_type: e.target.value as IntegrationType | '' })}
             >
-              <option value="">
+              <Option value="">
                 {isEdit ? `Sin cambiar (${etiquetaTipo(currentType)})` : 'Selecciona un tipo'}
-              </option>
+              </Option>
               {TIPOS_INTEGRACION.map((t) => (
-                <option key={t.value} value={t.value}>
+                <Option key={t.value} value={t.value}>
                   {t.label}
-                </option>
+                </Option>
               ))}
             </Select>
           </Field>
