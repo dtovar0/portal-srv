@@ -114,7 +114,7 @@ export function ConnectorsAdmin() {
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar plataformas con conector…"
-              className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-label/60 shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             {busqueda ? (
               <button
@@ -258,7 +258,7 @@ export function ConnectorsAdmin() {
                       <span className="block text-sm font-bold text-body-text">{p.name}</span>
                       <span className="block text-xs text-label">{p.area_name ?? 'Sin área asignada'}</span>
                     </div>
-                    <Icono nombre="flecha-derecha" tamano="sm" ariaHidden={true} className="text-label" />
+                    <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} className="text-label" />
                   </button>
                 ))}
             </div>

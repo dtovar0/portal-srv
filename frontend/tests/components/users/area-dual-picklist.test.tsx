@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Area } from '@/lib/types';
 import { AreaDualPicklist } from '@/components/users/area-dual-picklist';
@@ -28,6 +29,42 @@ const AREAS: Area[] = [
 
 afterEach(() => {
   cleanup();
+});
+
+const TRES: Area[] = [
+  ...AREAS.map((a) => ({ ...a, platforms_count: 0 })),
+  { ...AREAS[0]!, id: 3, name: 'Finanzas' },
+];
+
+/** Controla `selected` como lo hace el formulario real. */
+function Controlado({ inicial = [] as number[] }) {
+  const [sel, setSel] = useState(inicial);
+  return <AreaDualPicklist areas={TRES} selected={sel} onChange={setSel} />;
+}
+
+describe('AreaDualPicklist: foco y anuncios (DIS-082)', () => {
+  it('al asignar, el foco pasa al ítem vecino de la lista de disponibles y se anuncia', () => {
+    render(<Controlado />);
+    fireEvent.click(screen.getByLabelText('Asignar Operaciones'));
+    expect(document.activeElement).toBe(screen.getByLabelText('Asignar Sistemas Críticos'));
+    expect(document.querySelector('[data-region-anuncios]')?.textContent).toBe('«Operaciones» asignada, 1 asignada');
+  });
+
+  it('al quitar el último ítem de la lista, el foco queda en la lista y se anuncia', () => {
+    render(<Controlado inicial={[1]} />);
+    fireEvent.click(screen.getByLabelText('Quitar Operaciones'));
+    expect(document.activeElement).toBe(screen.getByRole('list', { name: 'Áreas asignadas' }));
+    expect(document.querySelector('[data-region-anuncios]')?.textContent).toBe('«Operaciones» quitada, 0 asignadas');
+  });
+
+  it('al cancelar el desafío, el foco vuelve al botón de origen', () => {
+    render(<AreaDualPicklist areas={AREAS} selected={[]} onChange={vi.fn()} />);
+    const origen = screen.getByLabelText('Asignar Sistemas Críticos');
+    origen.focus();
+    fireEvent.click(origen);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(document.activeElement).toBe(origen);
+  });
 });
 
 describe('AreaDualPicklist', () => {

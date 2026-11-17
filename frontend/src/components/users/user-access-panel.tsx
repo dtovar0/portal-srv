@@ -10,14 +10,14 @@
  * - Conforme a tokens y reglas de arquitectura del sistema.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { grantsApi } from '@/lib/access/grants';
-import type { Access, AccessStatus } from '@/lib/access/types';
+import type { Access } from '@/lib/access/types';
 import type { ManagedUser, Platform } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { Button, Modal } from '../form';
-import { Icono } from '../icono';
+import { Icono, type NombreIcono } from '../icono';
 import { useToast } from '../toast';
 import { EmptyNote, Spinner } from '../ui';
 
@@ -106,17 +106,20 @@ export function UserAccessPanel({
   const plataformas = useMemo(() => platformsAsync.data ?? [], [platformsAsync.data]);
 
   // Determina si el usuario tiene acceso a una plataforma
-  const tieneAcceso = (p: Platform) => cambios[p.id] ?? accesosPorPlataforma.has(p.id);
+  const tieneAcceso = useCallback(
+    (p: Platform) => cambios[p.id] ?? accesosPorPlataforma.has(p.id),
+    [cambios, accesosPorPlataforma],
+  );
 
   // División en listas: Izquierda (sin acceso) y Derecha (con acceso)
   const sinAcceso = useMemo(
     () => plataformas.filter((p) => !tieneAcceso(p)),
-    [plataformas, cambios, accesosPorPlataforma],
+    [plataformas, tieneAcceso],
   );
 
   const conAcceso = useMemo(
     () => plataformas.filter((p) => tieneAcceso(p)),
-    [plataformas, cambios, accesosPorPlataforma],
+    [plataformas, tieneAcceso],
   );
 
   // Filtrado por buscador en cada columna
@@ -133,7 +136,7 @@ export function UserAccessPanel({
   // Cambios pendientes
   const pendientes = useMemo(
     () => plataformas.filter((p) => tieneAcceso(p) !== accesosPorPlataforma.has(p.id)),
-    [plataformas, cambios, accesosPorPlataforma],
+    [plataformas, tieneAcceso, accesosPorPlataforma],
   );
   const aRevocar = useMemo(() => pendientes.filter((p) => !tieneAcceso(p)), [pendientes, tieneAcceso]);
   const aOtorgar = useMemo(() => pendientes.filter((p) => tieneAcceso(p)), [pendientes, tieneAcceso]);
@@ -266,7 +269,7 @@ export function UserAccessPanel({
                         value={searchSinAcceso}
                         onChange={(e) => setSearchSinAcceso(e.target.value)}
                         aria-label="Filtrar plataformas sin acceso"
-                        className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-label/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+                        className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
                       />
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
                         <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -295,7 +298,7 @@ export function UserAccessPanel({
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <div className="size-7 rounded-lg bg-surface-container group-hover:bg-primary/10 group-hover:text-primary-text flex items-center justify-center shrink-0 text-label font-bold text-xs transition-colors">
-                                  <Icono nombre={(p.icon as any) || 'plataformas'} tamano="xs" ariaHidden={true} />
+                                  <Icono nombre={(p.icon as NombreIcono) || 'plataformas'} tamano="xs" ariaHidden={true} />
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-xs font-bold truncate text-body-text group-hover:text-primary-text transition-colors">
@@ -336,7 +339,7 @@ export function UserAccessPanel({
                         value={searchConAcceso}
                         onChange={(e) => setSearchConAcceso(e.target.value)}
                         aria-label="Filtrar plataformas con acceso"
-                        className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-label/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+                        className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
                       />
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
                         <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -365,7 +368,7 @@ export function UserAccessPanel({
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <div className="size-7 rounded-lg bg-primary/10 text-primary-text group-hover:bg-error/10 group-hover:text-error-text flex items-center justify-center shrink-0 font-bold text-xs transition-colors">
-                                  <Icono nombre={(p.icon as any) || 'plataformas'} tamano="xs" ariaHidden={true} />
+                                  <Icono nombre={(p.icon as NombreIcono) || 'plataformas'} tamano="xs" ariaHidden={true} />
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-xs font-bold truncate text-body-text group-hover:text-error-text transition-colors">

@@ -10,10 +10,12 @@
  * - Sin botones intermedios ni scroll lateral: diseño limpio de 2 columnas responsivas.
  */
 
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import type { Area, AreaRef } from '@/lib/types';
 import { Button } from '../form';
 import { Icono } from '../icono';
+import { useFocoTrasMover } from '@/lib/use-foco-tras-mover';
+import { RegionDeAnuncios } from '../region-de-anuncios';
 import { ErrorNote, Spinner } from '../ui';
 
 const CAPTCHA_WORDS = ['CONFIRMAR', 'ACCESO', 'SEGURIDAD', 'PLATAFORMA', 'AUTORIZAR'];
@@ -41,6 +43,15 @@ export function AreaDualPicklist({
 }: AreaDualPicklistProps) {
   const generatedId = useId();
   const baseId = propId || generatedId;
+  const { refLista, enfocarTras } = useFocoTrasMover();
+  const [anuncio, setAnuncio] = useState('');
+  /** Botón que abrió el desafío: el foco vuelve ahí al cancelar. */
+  const origenRef = useRef<HTMLElement | null>(null);
+
+  function anunciar(area: AreaRef | Area, asignada: boolean, total: number) {
+    const cuenta = `${total} ${total === 1 ? 'asignada' : 'asignadas'}`;
+    setAnuncio(`«${area.name}» ${asignada ? 'asignada' : 'quitada'}, ${cuenta}`);
+  }
 
   // Filtros de búsqueda en cada columna
   const [searchAvailable, setSearchAvailable] = useState('');
@@ -77,7 +88,8 @@ export function AreaDualPicklist({
     return (area as Area).platforms_count ?? 0;
   }
 
-  function transferirArea(area: AreaRef | Area) {
+  function transferirArea(area: AreaRef | Area, origen?: HTMLElement) {
+    origenRef.current = origen ?? null;
     if (tienePlataformas(area)) {
       // Iniciar desafío de seguridad
       const randomIndex = Math.floor(Math.random() * CAPTCHA_WORDS.length);
@@ -88,7 +100,9 @@ export function AreaDualPicklist({
       setPendingArea(area);
     } else {
       // Transferencia directa con un clic
+      enfocarTras('disponibles', availableAreas, area.id);
       onChange([...selected, area.id]);
+      anunciar(area, true, selected.length + 1);
     }
   }
 
@@ -98,7 +112,9 @@ export function AreaDualPicklist({
       setCaptchaError(`Escribe exactamente la palabra "${captchaWord}".`);
       return;
     }
+    enfocarTras('disponibles', availableAreas, pendingArea.id);
     onChange([...selected, pendingArea.id]);
+    anunciar(pendingArea, true, selected.length + 1);
     setPendingArea(null);
     setCaptchaInput('');
     setCaptchaError(null);
@@ -108,14 +124,18 @@ export function AreaDualPicklist({
     setPendingArea(null);
     setCaptchaInput('');
     setCaptchaError(null);
+    origenRef.current?.focus();
   }
 
-  function quitarArea(id: number) {
-    onChange(selected.filter((item) => item !== id));
+  function quitarArea(area: AreaRef | Area) {
+    enfocarTras('asignadas', assignedAreas, area.id);
+    onChange(selected.filter((item) => item !== area.id));
+    anunciar(area, false, selected.length - 1);
   }
 
   return (
     <div className="flex flex-col gap-3 w-full overflow-hidden" id={baseId}>
+      <RegionDeAnuncios mensaje={anuncio} />
       {loading ? <Spinner /> : null}
       {loadError ? <ErrorNote message={loadError} /> : null}
 
@@ -171,7 +191,7 @@ export function AreaDualPicklist({
                 setCaptchaError(null);
               }}
               placeholder={`Escribe ${captchaWord}...`}
-              className="w-full h-11 rounded-xl border border-panel-border/80 bg-fondo px-4 text-xs font-mono font-bold text-body-text placeholder:text-label/50 focus:border-warning focus:outline-none focus:ring-1 focus:ring-warning shadow-inner-soft transition-colors"
+              className="w-full h-11 rounded-xl border border-panel-border/80 bg-fondo px-4 text-xs font-mono font-bold text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary shadow-inner-soft transition-colors"
               autoFocus
             />
             {captchaError ? (
@@ -221,7 +241,7 @@ export function AreaDualPicklist({
               value={searchAvailable}
               onChange={(e) => setSearchAvailable(e.target.value)}
               aria-label="Filtrar áreas disponibles"
-              className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-label/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+              className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
             />
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
               <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -229,8 +249,10 @@ export function AreaDualPicklist({
           </div>
 
           <ul
+            ref={refLista('disponibles')}
+            tabIndex={-1}
             aria-label="Áreas disponibles"
-            className="flex-1 min-h-48 max-h-60 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
+            className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-60 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
           >
             {availableAreas.length === 0 ? (
               <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -246,7 +268,8 @@ export function AreaDualPicklist({
                   >
                     <button
                       type="button"
-                      onClick={() => transferirArea(area)}
+                      data-item-id={area.id}
+                      onClick={(e) => transferirArea(area, e.currentTarget)}
                       aria-label={`Asignar ${area.name}`}
                       title={`Haz clic para asignar ${area.name}`}
                       className="w-full min-h-12 min-w-12 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-panel-border/60 bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-[0.98] transition-all cursor-pointer select-none text-left shadow-2xs group"
@@ -301,7 +324,7 @@ export function AreaDualPicklist({
               value={searchAssigned}
               onChange={(e) => setSearchAssigned(e.target.value)}
               aria-label="Filtrar áreas asignadas"
-              className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-label/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+              className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
             />
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
               <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -309,8 +332,10 @@ export function AreaDualPicklist({
           </div>
 
           <ul
+            ref={refLista('asignadas')}
+            tabIndex={-1}
             aria-label="Áreas asignadas"
-            className="flex-1 min-h-48 max-h-60 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-primary/20"
+            className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-60 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-primary/20"
           >
             {assignedAreas.length === 0 ? (
               <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -326,7 +351,8 @@ export function AreaDualPicklist({
                   >
                     <button
                       type="button"
-                      onClick={() => quitarArea(area.id)}
+                      data-item-id={area.id}
+                      onClick={() => quitarArea(area)}
                       aria-label={`Quitar ${area.name}`}
                       title={`Haz clic para quitar ${area.name}`}
                       className="w-full min-h-12 min-w-12 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-primary/30 bg-superficie hover:border-error/60 hover:bg-error/5 active:scale-[0.98] transition-all cursor-pointer select-none text-left shadow-2xs group"

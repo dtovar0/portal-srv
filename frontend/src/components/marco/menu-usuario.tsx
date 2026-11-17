@@ -107,10 +107,10 @@ export function MenuUsuario({
         onClick={() => setAbierto((v) => !v)}
         onKeyDown={alTeclearBoton}
         title={colapsada ? `Menú de usuario: ${session.name}` : undefined}
-        className={`flex min-h-11 items-center rounded-control outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`flex min-h-11 items-center rounded-control outline-none transition-colors focus-visible:ring-2 ${
           enBarraLateral
-            ? 'text-barra-lateral-texto hover:bg-barra-lateral-hover active:bg-barra-lateral-presionado'
-            : 'text-body-text hover:bg-surface-container'
+            ? 'focus-visible:ring-barra-lateral-foco text-barra-lateral-texto hover:bg-barra-lateral-hover active:bg-barra-lateral-presionado'
+            : 'focus-visible:ring-primary text-body-text hover:bg-surface-container'
         } ${
           colapsada
             ? 'min-w-11 justify-center'

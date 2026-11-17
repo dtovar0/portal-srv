@@ -18,7 +18,7 @@ import { mensajeDeError } from './areas/area-errors';
 import { AreaForm } from './areas/area-form';
 import { DataTable, type DataColumn } from './data-table';
 import { Button, ConfirmDialog } from './form';
-import { Icono } from './icono';
+import { Icono, type NombreIcono } from './icono';
 import { PageHeader } from './page-header';
 import { RequireRole, meetsRequirement } from './require-role';
 import { useSession } from './session-provider';
@@ -189,7 +189,7 @@ function AreasScreen() {
               aria-hidden="true"
             >
               {area.icon ? (
-                <Icono nombre={area.icon as any} tamano="sm" ariaHidden={true} />
+                <Icono nombre={area.icon as NombreIcono} tamano="sm" ariaHidden={true} />
               ) : (
                 area.name.slice(0, 2).toUpperCase()
               )}
@@ -221,7 +221,7 @@ function AreasScreen() {
         cellClassName: 'px-6 py-1.5 text-center',
         cell: (area) => (
           <span className="inline-flex h-8 items-center gap-2 font-bold text-xs text-body-text bg-surface-container px-3 rounded-lg border border-panel-border/60 shadow-2xs">
-            <Icono nombre="plataformas" tamano="sm" ariaHidden={true} className="text-primary" />
+            <Icono nombre="plataformas" tamano="sm" ariaHidden={true} className="text-primary-text" />
             <span>{area.platforms_count}</span>
           </span>
         ),
@@ -233,7 +233,7 @@ function AreasScreen() {
         cellClassName: 'px-6 py-1.5 text-center',
         cell: (area) => (
           <span className="inline-flex h-8 items-center gap-2 font-bold text-xs text-body-text bg-surface-container px-3 rounded-lg border border-panel-border/60 shadow-2xs">
-            <Icono nombre="usuarios" tamano="sm" ariaHidden={true} className="text-primary" />
+            <Icono nombre="usuarios" tamano="sm" ariaHidden={true} className="text-primary-text" />
             <span>{area.users_count}</span>
           </span>
         ),
@@ -292,7 +292,7 @@ function AreasScreen() {
                   setPage(1);
                 }}
                 placeholder="Buscar áreas…"
-                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-label/60 shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               {busqueda ? (
                 <button

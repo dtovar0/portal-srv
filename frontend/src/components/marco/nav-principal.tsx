@@ -65,7 +65,9 @@ export function NavPrincipal({
                 aria-label={colapsada ? nombre : undefined}
                 title={colapsada ? nombre : undefined}
                 onClick={onNavigate}
-                className={`relative flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`relative flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm outline-none transition-colors focus-visible:ring-2 ${
+                  enBarraLateral ? 'focus-visible:ring-barra-lateral-foco' : 'focus-visible:ring-primary'
+                } ${
                   colapsada ? 'justify-center' : ''
                 } ${
                   activo

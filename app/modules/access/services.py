@@ -7,6 +7,9 @@
   acceso pasa a `activo`/`revocado` solo tras confirmar el éxito (SEC-CON-09).
 - Subir de nivel (P5): el acceso anterior pasa a `revocando` con motivo
   `reemplazado_por_nivel_superior` y el nuevo a `en_proceso`, juntos.
+- Plataforma sin conector (`registro_manual`): no hay ejecutor; el acceso
+  pasa directo a `activo`/`revocado`, sin trabajo en la cola. Solo cuando el
+  llamador lo pide (asignación y retiro directos del administrador).
 - `actor`: la cuenta de la sesión (los endpoints pasan `current_user`) o
   `None` para el sistema (FNC-055). La auditoría toma el actor de la sesión.
 - Dos peticiones simultáneas que pasan las reglas chocan con las
@@ -19,7 +22,8 @@ from app.modules.access.consultas import vigentes_de
 from app.modules.access.models import PlatformAccessGrant
 from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO, ESTADO_FALLIDO,
                                       ESTADO_FALLO_REVOCACION,
-                                      ESTADO_REVOCANDO, MOTIVO_REEMPLAZO,
+                                      ESTADO_REVOCADO, ESTADO_REVOCANDO,
+                                      ESTADOS_OCUPANTES, MOTIVO_REEMPLAZO,
                                       ORIGEN_ADMIN_DE_AREA)
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
@@ -64,23 +68,44 @@ def _auditar(evento, acceso, usuario, plataforma, antes, detalle, sistema):
         after=estado_auditado(acceso), as_system=sistema, commit=False)
 
 
-def _pedir_revocacion(acceso, actor, motivo, momento):
+def registro_manual(plataforma):
+    """`True` si la plataforma usa conector pero no tiene uno disponible: el
+    ejecutor no puede aplicar el cambio y el administrador lo hace a mano."""
+    from app.modules.connectors.consultas import conector_disponible
+    from app.modules.platforms.tipos import TIPO_CONECTOR
+    return (plataforma is not None
+            and plataforma.integration_type == TIPO_CONECTOR
+            and not conector_disponible(plataforma))
+
+
+def _pedir_revocacion(acceso, actor, motivo, momento, manual=False):
     antes = estado_auditado(acceso)
-    acceso.status = ESTADO_REVOCANDO
+    acceso.status = ESTADO_REVOCADO if manual else ESTADO_REVOCANDO
     acceso.revoked_by = actor.id if actor is not None else None
     acceso.revoke_reason = motivo
     acceso.updated_at = momento
+    if manual:
+        acceso.revoked_at = momento
     acceso.sincronizar_slots()
     db.session.flush()  # libera el lugar del nivel antes del nuevo acceso
     plataforma, usuario = acceso.platform, acceso.user
-    _encolar(acceso, OPERACION_REVOCAR, plataforma)
+    if manual:
+        detalle = (f'Revocación de nivel {acceso.level} en {plataforma.name} '
+                   f'registrada (plataforma sin conector).')
+    else:
+        _encolar(acceso, OPERACION_REVOCAR, plataforma)
+        detalle = (f'Revocación de nivel {acceso.level} en {plataforma.name} '
+                   f'solicitada.')
     _auditar(Evento.ACCESO_REVOCADO, acceso, usuario, plataforma, antes,
-             f'Revocación de nivel {acceso.level} en {plataforma.name} '
-             f'solicitada.', actor is None)
+             detalle, actor is None)
 
 
-def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None):
-    """Crea el acceso `en_proceso` y su trabajo `otorgar`; lo devuelve."""
+def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None,
+            manual=False):
+    """Crea el acceso `en_proceso` y su trabajo `otorgar`; lo devuelve.
+
+    Con `manual=True` (plataforma sin conector) nace `activo` y sin trabajo.
+    """
     rules.validar_datos(nivel, origen, request_id)
     rules.validar_otorgamiento(actor, usuario, plataforma, origen)
     reemplazado = rules.acceso_a_reemplazar(
@@ -88,16 +113,20 @@ def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None):
 
     momento = ahora()
     if reemplazado is not None:
-        _pedir_revocacion(reemplazado, actor, MOTIVO_REEMPLAZO, momento)
+        _pedir_revocacion(reemplazado, actor, MOTIVO_REEMPLAZO, momento,
+                          manual=manual)
     acceso = PlatformAccessGrant(
         user_id=usuario.id, platform_id=plataforma.id, level=nivel,
         origin=origen, request_id=request_id,
         granted_by=actor.id if actor is not None else None,
-        granted_at=momento, status=ESTADO_EN_PROCESO, updated_at=momento)
+        granted_at=momento,
+        status=ESTADO_ACTIVO if manual else ESTADO_EN_PROCESO,
+        updated_at=momento)
     acceso.sincronizar_slots()
     db.session.add(acceso)
     db.session.flush()
-    _encolar(acceso, OPERACION_OTORGAR, plataforma)
+    if not manual:
+        _encolar(acceso, OPERACION_OTORGAR, plataforma)
     detalle = (f'sistema dio permisos de acceso a admin {usuario.email}'
                if origen == ORIGEN_ADMIN_DE_AREA else
                f'Acceso nivel {nivel} a {plataforma.name} otorgado.')
@@ -106,20 +135,25 @@ def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None):
     return acceso
 
 
-def _tomar_activo(acceso):
-    """`UPDATE ... WHERE status = 'activo'` (H2, auditoría FNC-058): solo una
+def _tomar_activo(acceso, desde=(ESTADO_ACTIVO,)):
+    """`UPDATE ... WHERE status IN desde` (H2, auditoría FNC-058): solo una
     transacción toma el acceso, también con READ COMMITTED; la otra espera el
     bloqueo de la fila, ve el estado confirmado y no cambia nada."""
     tomadas = (PlatformAccessGrant.query
                .filter(PlatformAccessGrant.id == acceso.id,
-                       PlatformAccessGrant.status == ESTADO_ACTIVO)
+                       PlatformAccessGrant.status.in_(desde))
                .update({PlatformAccessGrant.status: ESTADO_REVOCANDO},
                        synchronize_session=False))
     return tomadas == 1
 
 
-def revocar(acceso, actor=None, motivo=None):
+def revocar(acceso, actor=None, motivo=None, manual=False):
     """`activo` → `revocando` y trabajo `revocar`; lo devuelve.
+
+    Con `manual=True` (plataforma sin conector): desde `en_proceso`, `activo`
+    o `fallido` pasa a `revocado` sin trabajo (ningún ejecutor lo resolvería)
+    y cancela los `otorgar` en espera; las mismas reglas y la misma
+    comprobación de estado en la BD. Desde `revocado`: `409 estado_invalido`.
 
     Desde otro estado (incluido `revocado`) no encola nada:
     `409 estado_invalido`. El estado se comprueba en la BD (`_tomar_activo`),
@@ -129,9 +163,14 @@ def revocar(acceso, actor=None, motivo=None):
     motivo = rules.limpiar_motivo(motivo)
     rules.validar_revocacion(actor, acceso)
     # `fallo_revocacion` → `revocando` es solo el reintento (FNC-062).
-    if acceso.status != ESTADO_ACTIVO or not _tomar_activo(acceso):
+    desde = ESTADOS_OCUPANTES if manual else (ESTADO_ACTIVO,)
+    if acceso.status not in desde or not _tomar_activo(acceso, desde):
         raise errores.estado_invalido()
-    _pedir_revocacion(acceso, actor, motivo, ahora())
+    momento = ahora()
+    if manual:
+        queue.cancelar_otorgar_en_espera(acceso.user_id, acceso.platform,
+                                         acceso.level, momento)
+    _pedir_revocacion(acceso, actor, motivo, momento, manual=manual)
     return acceso
 
 

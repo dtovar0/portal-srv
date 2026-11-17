@@ -231,7 +231,8 @@ describe('Menú móvil', () => {
     }
     for (const enlace of within(document.querySelector('aside')!).getAllByRole('link')) {
       expect(enlace.className).toContain('focus-visible:ring-2');
-      expect(enlace.className).toContain('focus-visible:ring-primary');
+      // DIS-082: la barra lateral es oscura en ambos temas; su anillo tiene token propio (3:1).
+      expect(enlace.className).toContain('focus-visible:ring-barra-lateral-foco');
     }
     expect(panel.className).toContain('border-primary');
   });

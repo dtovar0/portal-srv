@@ -50,7 +50,9 @@ export function useAsync<T>(
     let active = true;
     setState((prev) => ({
       ...prev,
-      loading: prev.data === null,
+      // Con `cacheKey` (SWR) la revalidación no muestra "cargando" si ya hay datos;
+      // sin él, cada carga o recarga manual sí lo hace.
+      loading: cacheKey ? prev.data === null : true,
       error: null,
     }));
 

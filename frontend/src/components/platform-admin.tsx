@@ -16,7 +16,7 @@ import { AreaForm } from './areas/area-form';
 import { mensajeDeError } from './areas/area-errors';
 import { DataTable } from './data-table';
 import { Button, ConfirmDialog } from './form';
-import { Icono } from './icono';
+import { Icono, type NombreIcono } from './icono';
 import { PageHeader } from './page-header';
 import { columnasPlataformas } from './platforms/platform-columns';
 import { MissingLinkNote } from './platforms/missing-link-note';
@@ -460,7 +460,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                     setPageAreas(1);
                   }}
                   aria-label="Buscar áreas"
-                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-label/60 shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 {busquedaAreas ? (
                   <button
@@ -818,7 +818,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                                 : 'border-primary/20 bg-primary/10 text-primary-text'
                             }`}
                           >
-                            <Icono nombre={(area.icon as any) || 'areas'} tamano="md" />
+                            <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano="md" />
                           </span>
                           <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             {isInactiva ? (
@@ -960,7 +960,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                     setPagePlataformas(1);
                   }}
                   aria-label={`Buscar plataformas en ${selectedArea.name}`}
-                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-label/60 shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 {busquedaPlataformas ? (
                   <button

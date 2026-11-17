@@ -13,6 +13,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { api } from '@/lib/api';
+import { limpiarSesionCache } from '@/components/session-provider';
 import { AppShell } from '@/components/app-shell';
 import { FORBIDDEN_MESSAGE, RequireRole, type RoleRequirement } from '@/components/require-role';
 
@@ -58,6 +59,7 @@ const ESPERADO: Record<Rol, string[]> = {
 afterEach(() => {
   cleanup();
   sesionSimulada.mockReset();
+  limpiarSesionCache();
 });
 
 describe('Menú por rol', () => {

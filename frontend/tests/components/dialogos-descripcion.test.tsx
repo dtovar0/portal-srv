@@ -93,7 +93,7 @@ describe('describedBy y botón de confirmar', () => {
 
   it('Reintentar ejecución: describe el efecto; botón primario', () => {
     render(<JobRetryDialog job={MOCK_JOB} onClose={nada} onRetried={nada} onStale={nada} />);
-    expect(descripcion()).toContain(MOCK_JOB.platform.name);
+    expect(descripcion()).toContain(MOCK_JOB.platform?.name ?? '');
     expect(descripcion()).toContain(`n.º ${MOCK_JOB.id}`);
     expect(confirmar(/^Reintentar$/).className).not.toContain(PELIGRO);
   });

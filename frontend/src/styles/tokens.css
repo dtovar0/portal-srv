@@ -97,6 +97,9 @@
   --p-noche-850: 22 27 38;
   --p-noche-900: 17 22 33;
   --p-noche-950: 12 17 29;
+  /* DIS-082: placeholder opaco = label-text al 85% (AA >= 4.5:1 sobre superficie y fondo). */
+  --p-placeholder-claro:  97 108 128;
+  --p-placeholder-oscuro: 129 132 138;
 
   /* Activo (selección de navegación) y estados, claro y oscuro */
   --p-activo-fondo-claro:  239 244 255;
@@ -134,6 +137,7 @@
   --color-barra-lateral-hover: 255 255 255 / 0.08;
   --color-barra-lateral-presionado: 255 255 255 / 0.14;
   --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
   --color-entrada-fondo: var(--p-gris-50);
   --color-tabla-encabezado: var(--p-gris-50);
   --color-velo: 0 0 0 / 0.6;
@@ -282,6 +286,7 @@
   --color-input-border: var(--color-borde);
   --color-input-focus: var(--color-accion);
   --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-claro);
 
   --color-texto-sobre-fondo-oscuro: 255 255 255;
   --color-texto-sobre-fondo-claro: 0 0 0;
@@ -385,6 +390,7 @@
     --color-barra-lateral-hover: 255 255 255 / 0.08;
     --color-barra-lateral-presionado: 255 255 255 / 0.14;
     --color-barra-lateral-elemento: 255 255 255 / 0.05;
+    --color-barra-lateral-foco: var(--p-noche-50);
     --color-entrada-fondo: var(--p-noche-950);
     --color-tabla-encabezado: var(--p-noche-900);
     --color-velo: 0 0 0 / 0.6;
@@ -498,6 +504,7 @@
     --color-input-text: #f5f5f6;
     --color-input-border: var(--color-borde);
     --color-label-text: var(--color-texto-secundario);
+    --color-placeholder: var(--p-placeholder-oscuro);
 
     --color-texto-sobre-fondo-oscuro: 255 255 255;
     --color-texto-sobre-fondo-claro: 0 0 0;
@@ -578,6 +585,7 @@ html.dark {
   --color-barra-lateral-hover: 255 255 255 / 0.08;
   --color-barra-lateral-presionado: 255 255 255 / 0.14;
   --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
   --color-entrada-fondo: var(--p-noche-950);
   --color-tabla-encabezado: var(--p-noche-900);
   --color-velo: 0 0 0 / 0.6;
@@ -691,6 +699,7 @@ html.dark {
   --color-input-text: #f5f5f6;
   --color-input-border: var(--color-borde);
   --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-oscuro);
 
   --color-texto-sobre-fondo-oscuro: 255 255 255;
   --color-texto-sobre-fondo-claro: 0 0 0;

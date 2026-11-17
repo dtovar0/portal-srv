@@ -30,11 +30,7 @@ from app.modules.access import consultas, errores, rules, services
 from app.modules.access.errores import ErrorDeAcceso
 from app.modules.access.models import PlatformAccessGrant
 from app.modules.access.serializacion import accesos_publicos
-from app.modules.access.tipos import (
-    ESTADO_ACTIVO, ESTADO_EN_PROCESO, ESTADO_FALLIDO, ESTADO_FALLO_REVOCACION,
-    ESTADO_REVOCADO, ESTADO_REVOCANDO, ESTADOS, ESTADOS_VIGENTES, ORIGEN_SOLICITUD
-)
-from app.modules.audit.events import Evento
+from app.modules.access.tipos import ESTADOS, ESTADOS_VIGENTES, ORIGEN_SOLICITUD
 from app.modules.api.csrf_provisional import escritura_del_portal
 from app.modules.api.helpers import (NO_ENCONTRADO, error_response,
                                      leer_cuerpo)
@@ -125,29 +121,8 @@ def revoke_access(access_id):
     if rechazo is not None:
         return rechazo
     try:
-        from app.modules.connectors.consultas import conector_disponible
-        from app.modules.platforms.tipos import TIPO_LDAP
-        plataforma = acceso.platform
-        sin_conector = not conector_disponible(plataforma) and plataforma.integration_type != TIPO_LDAP
-
-        if sin_conector:
-            momento = ahora()
-            usuario = acceso.user
-            antes = services.estado_auditado(acceso)
-            acceso.status = ESTADO_REVOCADO
-            acceso.revoked_by = current_user.id
-            acceso.revoke_reason = motivo or 'Retirado por administrador'
-            acceso.revoked_at = momento
-            acceso.updated_at = momento
-            acceso.sincronizar_slots()
-            db.session.flush()
-            services._auditar(
-                Evento.ACCESO_REVOCADO, acceso, usuario, plataforma, antes,
-                f'Revocación de acceso para {plataforma.name}.',
-                False
-            )
-        else:
-            services.revocar(acceso, actor=current_user, motivo=motivo)
+        services.revocar(acceso, actor=current_user, motivo=motivo,
+                         manual=services.registro_manual(acceso.platform))
         db.session.commit()
     except ErrorDeAcceso as error:
         db.session.rollback()
@@ -218,13 +193,8 @@ def grant_platform_access(platform_id):
         db.session.flush()
 
         acceso = services.otorgar(cuenta, plataforma, level, ORIGEN_SOLICITUD,
-                                  actor=current_user, request_id=solicitud.id)
-        from app.modules.connectors.consultas import conector_disponible
-        from app.modules.platforms.tipos import TIPO_LDAP
-        if not conector_disponible(plataforma) and plataforma.integration_type != TIPO_LDAP:
-            acceso.status = ESTADO_ACTIVO
-            acceso.sincronizar_slots()
-            db.session.flush()
+                                  actor=current_user, request_id=solicitud.id,
+                                  manual=services.registro_manual(plataforma))
         db.session.commit()
     except ErrorDeAcceso as err:
         db.session.rollback()

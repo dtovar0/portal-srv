@@ -106,6 +106,7 @@ export default {
         'barra-lateral-hover': 'rgb(var(--color-barra-lateral-hover))',
         'barra-lateral-presionado': 'rgb(var(--color-barra-lateral-presionado))',
         'barra-lateral-elemento': 'rgb(var(--color-barra-lateral-elemento))',
+        'barra-lateral-foco': 'rgb(var(--color-barra-lateral-foco) / <alpha-value>)',
         navegacion: 'rgb(var(--color-navegacion) / <alpha-value>)',
         'activo-fondo': 'rgb(var(--color-activo-fondo) / <alpha-value>)',
         'activo-texto': 'rgb(var(--color-activo-texto) / <alpha-value>)',
@@ -134,6 +135,7 @@ export default {
         'input-border': 'rgb(var(--color-input-border) / <alpha-value>)',
         'input-focus': 'rgb(var(--color-input-focus) / <alpha-value>)',
         label: 'rgb(var(--color-label-text) / <alpha-value>)',
+        placeholder: 'rgb(var(--color-placeholder) / <alpha-value>)',
 
         // Navigation & Tabs
         'tab-bar': 'rgb(var(--color-tab-bar-bg) / <alpha-value>)',

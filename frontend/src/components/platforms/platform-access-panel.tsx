@@ -10,13 +10,15 @@
  * - Conforme a tokens y escala simétrica (DIS-072).
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import type { Access } from '@/lib/access/types';
 import type { Area, ManagedUser, Platform } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
+import { useFocoTrasMover } from '@/lib/use-foco-tras-mover';
 import { Button, Modal } from '../form';
 import { Icono } from '../icono';
+import { RegionDeAnuncios } from '../region-de-anuncios';
 import { useToast } from '../toast';
 import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
 
@@ -42,6 +44,8 @@ export function PlatformAccessPanel({
   const [searchSinAcceso, setSearchSinAcceso] = useState('');
   const [searchConAcceso, setSearchConAcceso] = useState('');
   const [saving, setSaving] = useState(false);
+  const [anuncio, setAnuncio] = useState('');
+  const { refLista, enfocarTras } = useFocoTrasMover();
 
   // Mapa de accesos vigentes de la plataforma: user_id -> Access
   const accesosPorUsuario = useMemo(() => {
@@ -59,17 +63,20 @@ export function PlatformAccessPanel({
   }, [usersAsync.data, area.id]);
 
   // Determina si un usuario tiene acceso (estado actual o cambio pendiente)
-  const tieneAcceso = (u: ManagedUser) => cambios[u.id] ?? accesosPorUsuario.has(u.id);
+  const tieneAcceso = useCallback(
+    (u: ManagedUser) => cambios[u.id] ?? accesosPorUsuario.has(u.id),
+    [cambios, accesosPorUsuario],
+  );
 
   // División en listas: Izquierda (sin acceso) y Derecha (con acceso)
   const sinAcceso = useMemo(
     () => usuariosDelArea.filter((u) => !tieneAcceso(u)),
-    [usuariosDelArea, cambios, accesosPorUsuario],
+    [usuariosDelArea, tieneAcceso],
   );
 
   const conAcceso = useMemo(
     () => usuariosDelArea.filter((u) => tieneAcceso(u)),
-    [usuariosDelArea, cambios, accesosPorUsuario],
+    [usuariosDelArea, tieneAcceso],
   );
 
   // Filtrado por buscador en cada columna
@@ -86,17 +93,21 @@ export function PlatformAccessPanel({
   // Cambios pendientes
   const pendientes = useMemo(
     () => usuariosDelArea.filter((u) => tieneAcceso(u) !== accesosPorUsuario.has(u.id)),
-    [usuariosDelArea, cambios, accesosPorUsuario],
+    [usuariosDelArea, tieneAcceso, accesosPorUsuario],
   );
   const aRevocar = useMemo(() => pendientes.filter((u) => !tieneAcceso(u)), [pendientes, tieneAcceso]);
   const aOtorgar = useMemo(() => pendientes.filter((u) => tieneAcceso(u)), [pendientes, tieneAcceso]);
 
   function darAcceso(user: ManagedUser) {
+    enfocarTras('sin-acceso', sinAccesoVisibles, user.id);
     setCambios((prev) => ({ ...prev, [user.id]: true }));
+    setAnuncio(`«${user.name || user.email}» pasa a con acceso, ${conAcceso.length + 1} con acceso`);
   }
 
   function quitarAcceso(user: ManagedUser) {
+    enfocarTras('con-acceso', conAccesoVisibles, user.id);
     setCambios((prev) => ({ ...prev, [user.id]: false }));
+    setAnuncio(`«${user.name || user.email}» pasa a sin acceso, ${sinAcceso.length + 1} sin acceso`);
   }
 
   async function guardar() {
@@ -168,6 +179,7 @@ export function PlatformAccessPanel({
       }
     >
       <div className="space-y-4">
+        <RegionDeAnuncios mensaje={anuncio} />
         {/* Cabecera contextual */}
         <div className="flex items-center justify-between gap-2 p-3 rounded-xl border border-panel-border/80 bg-surface-container/60 shadow-xs">
           <div className="min-w-0">
@@ -216,7 +228,7 @@ export function PlatformAccessPanel({
                     value={searchSinAcceso}
                     onChange={(e) => setSearchSinAcceso(e.target.value)}
                     aria-label="Filtrar usuarios sin acceso"
-                    className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-label/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+                    className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
                   />
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
                     <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -224,8 +236,10 @@ export function PlatformAccessPanel({
                 </div>
 
                 <ul
+                  ref={refLista('sin-acceso')}
+                  tabIndex={-1}
                   aria-label={`Usuarios sin acceso a ${platform.name}`}
-                  className="flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
+                  className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
                 >
                   {sinAccesoVisibles.length === 0 ? (
                     <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -238,6 +252,7 @@ export function PlatformAccessPanel({
                       <li key={user.id} className="p-0 list-none">
                         <button
                           type="button"
+                          data-item-id={user.id}
                           onClick={() => darAcceso(user)}
                           aria-label={`Otorgar acceso a ${user.name || user.email}`}
                           title={`Haz clic para otorgar acceso a ${user.name || user.email}`}
@@ -286,7 +301,7 @@ export function PlatformAccessPanel({
                     value={searchConAcceso}
                     onChange={(e) => setSearchConAcceso(e.target.value)}
                     aria-label="Filtrar usuarios con acceso"
-                    className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-label/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+                    className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
                   />
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
                     <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -294,8 +309,10 @@ export function PlatformAccessPanel({
                 </div>
 
                 <ul
+                  ref={refLista('con-acceso')}
+                  tabIndex={-1}
                   aria-label={`Usuarios con acceso a ${platform.name}`}
-                  className="flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-primary/20"
+                  className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-primary/20"
                 >
                   {conAccesoVisibles.length === 0 ? (
                     <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -310,6 +327,7 @@ export function PlatformAccessPanel({
                         <li key={user.id} className="p-0 list-none">
                           <button
                             type="button"
+                            data-item-id={user.id}
                             onClick={() => quitarAcceso(user)}
                             aria-label={`Retirar acceso a ${user.name || user.email}`}
                             title={`Haz clic para retirar acceso a ${user.name || user.email}`}
@@ -331,7 +349,7 @@ export function PlatformAccessPanel({
 
                             <div className="flex items-center gap-1.5 shrink-0">
                               {esNuevo ? (
-                                <Badge tone="accent">Nuevo</Badge>
+                                <Badge tone="primary">Nuevo</Badge>
                               ) : (
                                 <Badge tone="success" dot>Activo</Badge>
                               )}

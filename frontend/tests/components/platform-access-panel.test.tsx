@@ -19,15 +19,29 @@ vi.mock('@/lib/api', async (importOriginal) => {
 import { api } from '@/lib/api';
 import { PlatformAccessPanel } from '@/components/platforms/platform-access-panel';
 
-const AREA: Area = { id: 3, name: 'Finanzas', description: 'Área financiera', status: 'Activo' };
+const AREA: Area = {
+  id: 3, name: 'Finanzas', description: 'Área financiera', icon: 'areas', color: '', status: 'Activo',
+  platforms_count: 1, users_count: 3,
+};
 const PLATAFORMA: Platform = {
   id: 12,
   name: 'Contabilidad',
   description: 'Sistema contable',
   area_id: 3,
+  area_name: 'Finanzas',
+  area_color: '',
+  area_icon: 'areas',
   direct_link: 'https://contabilidad.ejemplo.local',
+  icon: 'plataformas',
+  logo_url: null,
   status: 'Activo',
   integration_type: 'conector',
+  ldap_group_user_dn: null,
+  ldap_group_admin_dn: null,
+  groups_status: 'sin_verificar',
+  has_connector: true,
+  active_grants: 0,
+  is_favorite: false,
   bg_color: '',
   text_color: '',
   visits: 0,
@@ -40,9 +54,10 @@ const USUARIOS: ManagedUser[] = [
     email: 'carlos@ejemplo.local',
     role: 'usuario',
     is_active: true,
-    areas: [AREA],
+    auth_source: 'local',
+    last_login_at: null,
+    areas: [{ id: AREA.id, name: AREA.name }],
     managed_areas: [],
-    created_at: '2026-01-01',
   },
   {
     id: 2,
@@ -50,9 +65,10 @@ const USUARIOS: ManagedUser[] = [
     email: 'ana@ejemplo.local',
     role: 'usuario',
     is_active: true,
-    areas: [AREA],
+    auth_source: 'local',
+    last_login_at: null,
+    areas: [{ id: AREA.id, name: AREA.name }],
     managed_areas: [],
-    created_at: '2026-01-01',
   },
   {
     id: 3,
@@ -60,9 +76,10 @@ const USUARIOS: ManagedUser[] = [
     email: 'pedro@otro.local',
     role: 'usuario',
     is_active: true,
-    areas: [{ id: 99, name: 'Ventas', description: '', status: 'Activo' }],
+    auth_source: 'local',
+    last_login_at: null,
+    areas: [{ id: 99, name: 'Ventas' }],
     managed_areas: [],
-    created_at: '2026-01-01',
   },
 ];
 
@@ -162,6 +179,20 @@ describe('PlatformAccessPanel (Dual Picklist)', () => {
     await waitFor(() => expect(api.revokeAccess).toHaveBeenCalledTimes(1));
     expect(api.revokeAccess).toHaveBeenCalledWith(101, expect.any(String));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('al mover un usuario, el foco queda en la lista de origen y se anuncia (DIS-082)', async () => {
+    render(<PlatformAccessPanel platform={PLATAFORMA} area={AREA} onClose={() => {}} />);
+    await screen.findByText('Ana López');
+    const listaSinAcceso = screen.getByRole('list', { name: `Usuarios sin acceso a ${PLATAFORMA.name}` });
+
+    fireEvent.click(within(listaSinAcceso).getByRole('button', { name: /Otorgar acceso a Ana López/i }));
+
+    // Era el único sin acceso: el foco queda en la lista.
+    expect(document.activeElement).toBe(listaSinAcceso);
+    expect(document.querySelector('[data-region-anuncios]')?.textContent).toBe(
+      '«Ana López» pasa a con acceso, 2 con acceso',
+    );
   });
 
   it('filtra usuarios independientemente en los buscadores de ambas columnas', async () => {

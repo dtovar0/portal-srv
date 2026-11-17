@@ -1,15 +1,14 @@
 'use client';
 
 /**
- * Buscador global de la barra superior (DIS-078): el campo (escritorio) o un icono (móvil) abren
- * la paleta de comandos; `Ctrl K` / `⌘K` la abre desde cualquier parte. Busca entre las pantallas
- * del menú y las acciones del rol, en el cliente.
+ * Buscador global de la barra superior (DIS-078): un botón de icono «Buscar», visible en todos los
+ * tamaños, abre la paleta de comandos; `Ctrl K` / `⌘K` la abre también desde cualquier parte. Busca
+ * entre las pantallas del menú y las acciones del rol, en el cliente.
  */
 
 import { useEffect, useState } from 'react';
-import { Icono } from '../icono';
 import { BotonIcono } from './boton-icono';
-import { esAtajoBusqueda, textoAtajo, type Comando } from './comandos';
+import { esAtajoBusqueda, type Comando } from './comandos';
 import { PaletaComandos } from './paleta-comandos';
 
 export function BuscadorGlobal({ comandos }: { comandos: readonly Comando[] }) {
@@ -25,6 +24,16 @@ export function BuscadorGlobal({ comandos }: { comandos: readonly Comando[] }) {
     return () => document.removeEventListener('keydown', alTeclear);
   }, []);
 
-  if (!abierta) return null;
-  return <PaletaComandos comandos={comandos} onCerrar={() => setAbierta(false)} />;
+  return (
+    <>
+      <BotonIcono
+        icono="buscar"
+        etiqueta="Buscar"
+        aria-haspopup="dialog"
+        aria-keyshortcuts="Control+K Meta+K"
+        onClick={() => setAbierta(true)}
+      />
+      {abierta ? <PaletaComandos comandos={comandos} onCerrar={() => setAbierta(false)} /> : null}
+    </>
+  );
 }

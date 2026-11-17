@@ -19,6 +19,7 @@ vi.mock('@/lib/access/home', () => ({ homeApi: { summary: vi.fn() } }));
 
 import { api } from '@/lib/api';
 import { homeApi } from '@/lib/access/home';
+import { limpiarSesionCache } from '@/components/session-provider';
 import { AppShell } from '@/components/app-shell';
 import { CLAVE_MENU_COLAPSADO } from '@/lib/use-menu-colapsado';
 import { CLAVE_TEMA } from '@/lib/tema';
@@ -76,6 +77,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   sesionSimulada.mockReset();
+  limpiarSesionCache();
   ruta.actual = '/';
 });
 
@@ -382,11 +384,13 @@ describe('Buscador global', () => {
 });
 
 describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
-  it('ya no está en la barra superior, que conserva ☰, ruta, tema, notificaciones y ayuda sin buscador', async () => {
+  it('ya no está en la barra superior, que conserva ☰, ruta, buscador, tema, notificaciones y ayuda', async () => {
     await montar('administrador');
     expect(barra().queryByRole('button', { name: /Menú de usuario/ })).toBeNull();
     expect(barra().getByRole('button', { name: 'Colapsar menú' })).toBeTruthy();
-    expect(barra().queryByRole('button', { name: /^Buscar( \(|$)/ })).toBeNull();
+    const buscar = barra().getByRole('button', { name: 'Buscar' });
+    expect(buscar.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(buscar.getAttribute('aria-keyshortcuts')).toBe('Control+K Meta+K');
     expect(barra().getByRole('button', { name: 'Cambiar a tema oscuro' })).toBeTruthy();
     expect(barra().getByRole('link', { name: 'Notificaciones' })).toBeTruthy();
     expect(barra().getByRole('button', { name: /Ayuda/ })).toBeTruthy();

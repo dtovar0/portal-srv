@@ -86,3 +86,81 @@ def test_revocar_acceso_en_proceso_o_fallido_sin_conector_lo_cancela_exitosament
     assert data['access']['status'] == 'revocado'
     assert recargar(acceso.id).status == 'revocado'
 
+
+
+# ---------------------------------------------------------------------------
+# Regresión (revisión 2026-11-17): plataforma sin conector.
+# ---------------------------------------------------------------------------
+
+def _plataforma_sin_conector(escena, nombre='Sin conector'):
+    from app.modules.platforms.tipos import TIPO_CONECTOR
+    return fabricas.crear_plataforma(escena['area'], nombre,
+                                     integration_type=TIPO_CONECTOR)
+
+
+def test_otorgar_sin_conector_queda_activo_sin_trabajo_en_cola(
+        escena, cliente_como, cola_falsa):
+    """Antes se encolaba un `otorgar` que el worker fallaba (sin conector) y
+    el acceso mostrado como activo terminaba en `fallido`."""
+    from app.modules.provisioning.models import ProvisioningJob
+    plataforma = _plataforma_sin_conector(escena)
+    cliente = cliente_como(escena['admin'])
+    res = cliente.post(
+        f"{A}/platforms/{plataforma.id}/access",
+        json={'user_id': escena['usuario'].id, 'level': 'usuario'},
+        headers={'Sec-Fetch-Site': 'same-origin'})
+    assert res.status_code == 201
+    acceso_id = res.get_json()['access']['id']
+    assert recargar(acceso_id).status == ESTADO_ACTIVO
+    assert ProvisioningJob.query.filter_by(access_id=acceso_id).count() == 0
+
+
+def test_revocar_sin_conector_ya_revocado_responde_409(escena, cliente_como):
+    """Antes se volvía a revocar y se sobrescribían `revoked_by` y el motivo."""
+    from app.modules.access.tipos import ESTADO_REVOCADO
+    plataforma = _plataforma_sin_conector(escena)
+    acceso = PlatformAccessGrant(
+        user_id=escena['usuario'].id, platform_id=plataforma.id,
+        level=NIVEL_USUARIO, origin=ORIGEN_SOLICITUD, status=ESTADO_REVOCADO,
+        revoke_reason='motivo original')
+    acceso.sincronizar_slots()
+    db.session.add(acceso)
+    db.session.commit()
+
+    cliente = cliente_como(escena['admin'])
+    res = cliente.post(f"{A}/access/{acceso.id}/revoke",
+                       json={'reason': 'otra vez'},
+                       headers={'Sec-Fetch-Site': 'same-origin'})
+    assert res.status_code == 409
+    assert recargar(acceso.id).revoke_reason == 'motivo original'
+
+
+def test_revocar_sin_conector_en_proceso_cancela_el_otorgar_en_espera(
+        escena, cliente_como, cola_falsa):
+    from app.modules.provisioning.models import ProvisioningJob
+    from app.modules.access import services
+    from app.modules.provisioning import queue
+    from app.modules.provisioning.tipos import OPERACION_OTORGAR
+    plataforma = _plataforma_sin_conector(escena)
+    acceso = PlatformAccessGrant(
+        user_id=escena['usuario'].id, platform_id=plataforma.id,
+        level=NIVEL_USUARIO, origin=ORIGEN_SOLICITUD,
+        status=ESTADO_EN_PROCESO)
+    acceso.sincronizar_slots()
+    db.session.add(acceso)
+    db.session.flush()
+    queue.encolar(OPERACION_OTORGAR, acceso.user_id, plataforma, acceso.level,
+                  services.clave_idempotencia(acceso, OPERACION_OTORGAR),
+                  access_id=acceso.id)
+    db.session.commit()
+
+    cliente = cliente_como(escena['admin'])
+    res = cliente.post(f"{A}/access/{acceso.id}/revoke",
+                       json={'reason': 'sin conector'},
+                       headers={'Sec-Fetch-Site': 'same-origin'})
+    assert res.status_code == 200
+    assert recargar(acceso.id).status == 'revocado'
+    pendientes = ProvisioningJob.query.filter(
+        ProvisioningJob.access_id == acceso.id,
+        ProvisioningJob.status != 'cancelado').count()
+    assert pendientes == 0

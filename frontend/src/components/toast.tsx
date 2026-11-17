@@ -134,7 +134,7 @@ function Tarjeta({ aviso, onCerrar, onPausa, onReanudar }: PropsTarjeta) {
         type="button"
         onClick={() => onCerrar(aviso.id)}
         aria-label="Cerrar aviso"
-        className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-label/60 transition-all hover:bg-surface-container hover:text-body-text active:scale-95 focus-visible:ring-2 focus-visible:ring-primary -mr-2 -my-2"
+        className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-label transition-all hover:bg-surface-container hover:text-body-text active:scale-95 focus-visible:ring-2 focus-visible:ring-primary -mr-2 -my-2"
       >
         <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
         <span className="sr-only">Cerrar aviso</span>

@@ -131,7 +131,7 @@ export function AuditFilters({
                 onChange={(event) => setBorrador(event.target.value)}
                 placeholder="Quién actuó o sobre qué…"
                 aria-label="Buscar en la auditoría por quién actuó o sobre qué"
-                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-label/60 shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               {borrador ? (
                 <button

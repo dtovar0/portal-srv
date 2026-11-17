@@ -219,4 +219,10 @@ export const PARES: ParContraste[] = [
   { id: 'borde/fondo', texto: '--color-borde', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
   { id: 'borde/barra-lateral', texto: '--color-barra-lateral-borde', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
   { id: 'accion/fondo', texto: '--color-accion', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
+  // DIS-082: placeholder (`placeholder:text-placeholder`) sobre superficie y fondo de página.
+  texto('placeholder/superficie', '--color-placeholder', '--color-superficie'),
+  texto('placeholder/fondo', '--color-placeholder', '--color-fondo'),
+  // DIS-082: anillo de foco del menú lateral sobre la barra y sobre el ítem activo (no texto, 3:1).
+  { id: 'barra-lateral-foco/barra-lateral', texto: '--color-barra-lateral-foco', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
+  { id: 'barra-lateral-foco/activo-fondo', texto: '--color-barra-lateral-foco', fondo: '--color-activo-fondo', minimo: MIN_NO_TEXTO },
 ];

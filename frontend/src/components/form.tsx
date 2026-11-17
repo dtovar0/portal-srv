@@ -51,7 +51,7 @@ export function Field({
 // users.html: el input estándar del portal con estados completos (DIS-059).
 const FIELD_BASE =
   'w-full bg-superficie border border-panel-border rounded-xl px-4 ' +
-  'text-sm font-semibold text-body-text placeholder:text-label/70 shadow-xs ' +
+  'text-sm font-semibold text-body-text placeholder:text-placeholder shadow-xs ' +
   'hover:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all ' +
   'aria-invalid:border-error-text aria-invalid:focus:ring-error/20 ' +
   'disabled:cursor-not-allowed disabled:bg-surface-container/20 disabled:text-label/50 ' +
