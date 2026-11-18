@@ -24,7 +24,7 @@ import { Button, ButtonLink } from '../form';
 import { DataTable, type DataColumn } from '../data-table';
 import { Icono } from '../icono';
 import { useSession } from '../session-provider';
-import { SuccessNote } from '../ui';
+import { useToast } from '../toast';
 
 const NOMBRE_LISTA = 'las solicitudes pendientes';
 const TITULO_ID = 'panel-pendientes-titulo';
@@ -79,13 +79,12 @@ export function SolicitudesPendientes() {
     { intervalSeconds: session?.preferences.refresh_interval },
   );
   const [decision, setDecision] = useState<Decision | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const { avisar } = useToast();
   const disparador = useRef<HTMLElement | null>(null);
   const refrescar = lista.refresh;
 
   const abrir = (nueva: Decision, trigger: HTMLButtonElement) => {
     disparador.current = trigger;
-    setAviso(null);
     setDecision(nueva);
   };
   // Estable: `Modal` reinstala su efecto (y el foco) si cambia `onClose`.
@@ -94,8 +93,8 @@ export function SolicitudesPendientes() {
     if (disparador.current?.isConnected) disparador.current.focus();
   }, []);
   const decidida = (request: AccessRequest) => {
-    setAviso(avisoDecision(request));
-    setDecision(null);
+    avisar('success', avisoDecision(request), 'Solicitud decidida');
+    cerrar(); // cierra el diálogo y devuelve el foco al botón que lo abrió
     refrescar();
   };
 
@@ -165,7 +164,6 @@ export function SolicitudesPendientes() {
 
   return (
     <section aria-labelledby={TITULO_ID} className="min-w-0 space-y-3 xl:col-span-2">
-      <div role="status">{aviso ? <SuccessNote>{aviso}</SuccessNote> : null}</div>
       <DataTable
         label="Solicitudes pendientes"
         encabezado={<Encabezado />}

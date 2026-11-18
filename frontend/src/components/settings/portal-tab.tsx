@@ -7,7 +7,8 @@ import { api } from '@/lib/api';
 import { useAsync } from '@/lib/use-async';
 import { Button, Field, FileInput, TextInput } from '../form';
 import { Icono } from '../icono';
-import { Card, ErrorNote, Spinner, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Card, ErrorNote, Spinner } from '../ui';
 
 export function PortalTab() {
   const { data, loading, error, reload } = useAsync(() => api.settings(), []);
@@ -15,6 +16,7 @@ export function PortalTab() {
   const [state, setState] = useState<{ saving: boolean; saved: boolean; error: string | null }>(
     { saving: false, saved: false, error: null },
   );
+  const { avisar } = useToast();
 
   if (loading) return <Spinner />;
   if (error) return <ErrorNote message={error} />;
@@ -33,6 +35,7 @@ export function PortalTab() {
   function pickLogo(file: File) {
     if (file.size > 512 * 1024) {
       setState({ ...state, error: 'La imagen supera 512 KB.' });
+      avisar('error', 'La imagen supera 512 KB.', 'Imagen demasiado grande');
       return;
     }
     const reader = new FileReader();
@@ -51,18 +54,17 @@ export function PortalTab() {
     try {
       await api.saveSettings(value);
       setState({ saving: false, saved: true, error: null });
+      avisar('success', 'La configuración del portal se guardó.', 'Guardado');
       reload();
     } catch (err) {
-      setState({
-        saving: false, saved: false,
-        error: err instanceof Error ? err.message : 'No se pudo guardar',
-      });
+      const mensaje = err instanceof Error ? err.message : 'No se pudo guardar';
+      setState({ saving: false, saved: false, error: mensaje });
+      avisar('error', mensaje, 'Error al guardar');
     }
   }
 
   return (
     <Card className="flex h-full w-full flex-1 min-h-0 flex-col space-y-4">
-      {state.error ? <ErrorNote message={state.error} /> : null}
 
       <Field label="Nombre del portal">
         <TextInput
@@ -128,7 +130,6 @@ export function PortalTab() {
           <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           {state.saving ? 'Guardando…' : 'Guardar'}
         </Button>
-        {state.saved ? <SuccessNote>Guardado.</SuccessNote> : null}
       </div>
     </Card>
   );

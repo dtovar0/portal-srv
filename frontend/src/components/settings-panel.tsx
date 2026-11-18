@@ -7,6 +7,7 @@ import { PageHeader } from './page-header';
 import { useSession } from './session-provider';
 import { Tabs, TabPanel } from './tabs';
 import { BackupTab } from './settings/backup-tab';
+import { BulkImportTab } from './settings/bulk-import-tab';
 import { DirectoryTab } from './settings/directory-tab';
 import { PortalTab } from './settings/portal-tab';
 import { PreferencesTab } from './settings/preferences-tab';
@@ -29,6 +30,7 @@ export function SettingsPanel() {
           { id: 'templates', label: 'Plantillas' },
           { id: 'ldap', label: 'Directorio' },
           { id: 'backup', label: 'Respaldo' },
+          { id: 'bulk-import', label: 'Importación masiva' },
         ] as { id: Tab; label: string }[])
       : []),
     { id: 'preferences', label: 'Mis preferencias' },
@@ -53,6 +55,7 @@ export function SettingsPanel() {
         {tab === 'templates' ? <TemplatesTab /> : null}
         {tab === 'ldap' ? <DirectoryTab /> : null}
         {tab === 'backup' ? <BackupTab /> : null}
+        {tab === 'bulk-import' ? <BulkImportTab /> : null}
         {tab === 'preferences' ? <PreferencesTab /> : null}
       </TabPanel>
     </div>

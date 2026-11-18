@@ -44,6 +44,18 @@ describe('api: éxito', () => {
   });
 });
 
+describe('api: importación masiva', () => {
+  it('pide /api/v1/import/bulk una sola vez con el prefijo (regresión: se duplicaba)', async () => {
+    fetchSimulado.mockResolvedValue(respuesta(200, { status: 'success', total: 0 }));
+
+    await api.bulkImport('areas', [], true);
+
+    const [url, init] = fetchSimulado.mock.calls[0];
+    expect(url).toBe('/api/v1/import/bulk');
+    expect(JSON.parse(String(init?.body))).toEqual({ entity: 'areas', records: [], dry_run: true });
+  });
+});
+
 describe('api: errores', () => {
   it('error HTTP: lanza ApiError con el estado y el mensaje del backend', async () => {
     fetchSimulado.mockResolvedValue(respuesta(403, { message: 'Sin permiso' }));

@@ -699,7 +699,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                             onClick={() => actualizarGridFilas(f)}
                             className={`flex min-h-12 min-w-12 items-center justify-center rounded-lg text-xs font-bold transition-all ${
                               gridFilas === f
-                                ? 'bg-primary text-primary-contrast shadow-xs'
+                                ? 'bg-primary text-on-primary shadow-xs'
                                 : 'bg-superficie-hundida text-body-text hover:bg-surface-container'
                             }`}
                             aria-pressed={gridFilas === f}
@@ -724,7 +724,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                             onClick={() => actualizarGridColumnas(c)}
                             className={`flex min-h-12 min-w-12 items-center justify-center rounded-lg text-xs font-bold transition-all ${
                               gridColumnas === c
-                                ? 'bg-primary text-primary-contrast shadow-xs'
+                                ? 'bg-primary text-on-primary shadow-xs'
                                 : 'bg-superficie-hundida text-body-text hover:bg-surface-container'
                             }`}
                             aria-pressed={gridColumnas === c}

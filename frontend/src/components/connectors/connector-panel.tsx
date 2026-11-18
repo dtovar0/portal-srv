@@ -9,8 +9,8 @@
  * - `404` al leer = la plataforma aún no tiene configuración.
  * - "Probar conexión" usa la configuración guardada; el resultado es un texto
  *   propio (el detalle del fallo solo va al registro del servidor).
- * - Sin refresco periódico (contrato, "Refresco"). Tras guardar, eliminar o
- *   probar, el aviso (`status`) recibe el foco.
+ * - Sin refresco periódico (contrato, "Refresco"). El resultado de guardar,
+ *   eliminar o probar se avisa con toast (DIS-091).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -23,7 +23,8 @@ import { formatearFecha } from '../access/fecha';
 import { Dato } from '../audit/audit-detail-modal';
 import { Button } from '../form';
 import { Icono } from '../icono';
-import { Badge, Card, ErrorNote, Spinner, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Badge, Card, ErrorNote, Spinner } from '../ui';
 import { ESTADOS_CREDENCIAL, TIPOS_CONECTOR, esTipoConocido } from './connector-catalog';
 import { ConnectorDeleteDialog } from './connector-delete-dialog';
 import {
@@ -32,7 +33,6 @@ import {
 import { ConnectorForm } from './connector-form';
 
 type Tono = 'exito' | 'error';
-interface Aviso { texto: string; tono: Tono }
 
 export const AVISO_GUARDADO = 'Conector guardado.';
 export const AVISO_SIN_VERIFICAR = 'Conector guardado. La credencial queda sin verificar: prueba la conexión.';
@@ -60,28 +60,25 @@ export function ConnectorPanel({
 }) {
   const titleId = `conector-${platform.id}-titulo`;
   const titulo = useRef<HTMLHeadingElement>(null);
-  const avisoRef = useRef<HTMLDivElement>(null);
+  const { avisar } = useToast();
   const eliminarId = `conector-${platform.id}-eliminar`;
 
   const carga = useAsync(() => cargar(platform.id), [platform.id]);
   /** Respuesta de una escritura propia: manda sobre la última lectura. */
   const [propio, setPropio] = useState<{ connector: Connector | null } | null>(null);
-  const [aviso, setAviso] = useState<Aviso | null>(null);
   const [probando, setProbando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     titulo.current?.focus();
     setPropio(null);
-    setAviso(null);
   }, [platform.id]);
 
   const estado = propio ?? carga.data;
   const connector = estado?.connector ?? null;
 
   function anunciar(texto: string, tono: Tono) {
-    setAviso({ texto, tono });
-    requestAnimationFrame(() => avisoRef.current?.focus());
+    avisar(tono === 'exito' ? 'success' : 'error', texto, 'Conector');
   }
 
   function recargar() {
@@ -98,7 +95,6 @@ export function ConnectorPanel({
   async function probar() {
     if (probando) return;
     setProbando(true);
-    setAviso(null);
     try {
       const resultado = await connectorsApi.test(platform.id);
       const ok = resultado.result === 'ok';
@@ -149,28 +145,6 @@ export function ConnectorPanel({
         </Button>
       </div>
 
-      {/* Dos regiones vivas fijas: el éxito se anuncia con `status` y el fallo con `alert`. */}
-      <div
-        ref={avisoRef}
-        tabIndex={-1}
-        className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      >
-        <div role="status">
-          {aviso?.tono === 'exito' ? (
-            <Card>
-              <SuccessNote>{aviso.texto}</SuccessNote>
-            </Card>
-          ) : null}
-        </div>
-        <div role="alert">
-          {aviso?.tono === 'error' ? (
-            <Card>
-              <p className="text-sm font-bold text-error-text">{aviso.texto}</p>
-            </Card>
-          ) : null}
-        </div>
-      </div>
-
       {carga.loading && !estado ? <Spinner label="Cargando el conector…" /> : null}
 
       {carga.error && !propio ? (
@@ -214,7 +188,7 @@ export function ConnectorPanel({
                 <Button
                   id={eliminarId}
                   variant="secondary"
-                  onClick={() => { setAviso(null); setEliminando(true); }}
+                  onClick={() => setEliminando(true)}
                   aria-label={`Eliminar el conector de ${platform.name}`}
                   className="focus-visible:ring-2 focus-visible:ring-primary"
                 >

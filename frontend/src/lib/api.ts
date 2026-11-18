@@ -289,4 +289,45 @@ export const api = {
     }
     return data as { status: string; restored: string[] };
   },
+
+  /** Importación masiva (Bulk Import) de usuarios, áreas o plataformas. */
+  bulkImport: (entity: 'users' | 'areas' | 'platforms', records: Record<string, unknown>[], dryRun = false) =>
+    request<BulkImportResult>('/import/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ entity, records, dry_run: dryRun }),
+    }),
+
+  /** Descarga plantilla CSV para importación masiva. */
+  downloadImportTemplate: async (entity: 'users' | 'areas' | 'platforms') => {
+    const response = await fetch(`${BASE}/api/v1/import/template/${entity}`, {
+      credentials: 'include',
+      headers: { Accept: 'text/csv' },
+    });
+    if (!response.ok) throw new ApiError(response.status, 'No se pudo descargar la plantilla');
+    return response.blob();
+  },
 };
+
+export interface BulkImportItem {
+  row: number;
+  email?: string;
+  name?: string;
+  role?: string;
+  area?: string;
+  areas?: string[];
+  status: 'valid' | 'error';
+  error: string | null;
+}
+
+export interface BulkImportResult {
+  status: 'success' | 'error';
+  entity: string;
+  dry_run: boolean;
+  total: number;
+  valid: number;
+  created: number;
+  errors: { row: number; item: string; error: string }[];
+  items: BulkImportItem[];
+  message?: string;
+}
+

@@ -11,6 +11,7 @@
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '@/components/toast';
 import type { Area, ManagedUser } from '@/lib/types';
 
 vi.mock('@/lib/access/users', () => ({
@@ -279,7 +280,7 @@ describe('UsersList: alta en el directorio', () => {
   });
 
   it('admin de área: abre el modal de 2 pasos y crea la cuenta', async () => {
-    render(<UsersList />);
+    render(<ToastProvider><UsersList /></ToastProvider>);
     fireEvent.click(await screen.findByText('Nuevo usuario'));
     const modal = within(screen.getByRole('dialog'));
     expect(modal.getByLabelText('Nombre completo')).toBeTruthy();
@@ -291,9 +292,11 @@ describe('UsersList: alta en el directorio', () => {
     fireEvent.click(modal.getByLabelText('Asignar Finanzas'));
     enviar();
 
-    const aviso = await screen.findByText('Se creó la cuenta de Ana Ruiz.');
+    // DIS-091: el resultado sale en un toast y el foco vuelve a "Nuevo usuario".
+    const aviso = await screen.findByText('Ana Ruiz se agregó al directorio.');
+    expect(aviso.closest('.nx-toast')).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
-    await waitFor(() => expect(document.activeElement).toBe(aviso.closest('[role="status"]')));
+    await waitFor(() => expect(document.activeElement?.textContent).toContain('Nuevo usuario'));
     await waitFor(() => expect(api.users).toHaveBeenCalledTimes(2));
   });
 });

@@ -198,7 +198,7 @@ export function DirectoryAccountForm({
                 type="button"
                 variant="primary"
                 onClick={avanzarAlPaso2}
-                className="min-h-12 px-6 bg-gradient-to-r from-primary via-brand to-accent hover:opacity-95 active:scale-[0.98] text-primary-contrast shadow-md font-bold text-xs inline-flex items-center gap-2 transition-all"
+                className="min-h-12 px-6 bg-gradient-to-r from-primary via-brand to-accent hover:opacity-95 active:scale-[0.98] text-on-primary shadow-md font-bold text-xs inline-flex items-center gap-2 transition-all"
               >
                 <span>Siguiente</span>
                 <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} />
@@ -221,7 +221,7 @@ export function DirectoryAccountForm({
                 form={FORM_ID}
                 variant="primary"
                 aria-disabled={sending ? 'true' : undefined}
-                className="min-h-12 px-6 bg-gradient-to-r from-primary via-brand to-accent hover:opacity-95 active:scale-[0.98] text-primary-contrast shadow-md font-bold text-xs inline-flex items-center gap-2 transition-all"
+                className="min-h-12 px-6 bg-gradient-to-r from-primary via-brand to-accent hover:opacity-95 active:scale-[0.98] text-on-primary shadow-md font-bold text-xs inline-flex items-center gap-2 transition-all"
               >
                 <Icono nombre="aprobar" tamano="sm" ariaHidden={true} />
                 {sending ? 'Creando…' : 'Crear'}

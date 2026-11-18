@@ -7,6 +7,12 @@
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '@/components/toast';
+
+/** Con el proveedor de avisos: los resultados se anuncian con toast (DIS-091). */
+function renderConToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 import type { AccessRequest, Paginated } from '@/lib/access/types';
 
 vi.mock('@/lib/access/requests', () => ({
@@ -148,7 +154,7 @@ describe('ApprovalsInbox: aprobar', () => {
       status: 'success',
       request: { ...PENDIENTE, status: 'aprobada', access: { id: 90, status: 'en_proceso' } },
     });
-    render(<ApprovalsInbox />);
+    renderConToast(<ApprovalsInbox />);
     const ana = await screen.findByRole('listitem', { name: FILA_ANA });
     fireEvent.click(within(ana).getByRole('button', { name: 'Aprobar la solicitud de Ana Ruiz para Contabilidad' }));
     const dialogo = screen.getByRole('alertdialog', { name: 'Aprobar solicitud' });
@@ -161,9 +167,11 @@ describe('ApprovalsInbox: aprobar', () => {
     const actualizada = fila(FILA_ANA);
     expect(within(actualizada).getByText('Aprobada')).toBeTruthy();
     expect(within(actualizada).queryByRole('button')).toBeNull();
+    // DIS-091: el resultado sale en un toast (`status`); el foco va al filtro de estado.
     const aviso = screen.getByText(/Solicitud aprobada: Ana Ruiz en Contabilidad/);
+    expect(aviso.closest('.nx-toast')).toBeTruthy();
     expect(aviso.closest('[role="status"]')).toBeTruthy();
-    await waitFor(() => expect(document.activeElement).toBe(aviso.closest('[role="status"]')));
+    await waitFor(() => expect(document.activeElement?.tagName).toBe('SELECT'));
   });
 
   it('cancelar no llama a la API y devuelve el foco al botón', async () => {
@@ -242,8 +250,8 @@ describe('ApprovalsInbox: foco (auditor-accesibilidad)', () => {
 });
 
 describe('ApprovalsInbox: rechazar', () => {
-  async function abrirRechazo() {
-    render(<ApprovalsInbox />);
+  async function abrirRechazo(renderizar: (ui: React.ReactElement) => unknown = render) {
+    renderizar(<ApprovalsInbox />);
     fireEvent.click(within(await screen.findByRole('listitem', { name: FILA_ANA }))
       .getByRole('button', { name: /^Rechazar/ }));
     const dialogo = screen.getByRole('alertdialog', { name: 'Rechazar solicitud' });
@@ -273,7 +281,7 @@ describe('ApprovalsInbox: rechazar', () => {
     vi.mocked(requestsApi.reject).mockResolvedValue({
       status: 'success', request: { ...PENDIENTE, status: 'rechazada', rejection_reason: MOTIVO },
     });
-    const { motivo, enviar } = await abrirRechazo();
+    const { motivo, enviar } = await abrirRechazo(renderConToast);
     fireEvent.change(motivo, { target: { value: `  ${MOTIVO}  ` } });
     expect(enviar.disabled).toBe(false);
     fireEvent.click(enviar);

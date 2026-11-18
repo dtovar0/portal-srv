@@ -8,6 +8,7 @@ import { useAsync } from '@/lib/use-async';
 import type { EmailTemplate } from '@/lib/types';
 import { Button, Checkbox, Field, TextArea, TextInput } from '../form';
 import { Icono } from '../icono';
+import { useToast } from '../toast';
 import { Card, EmptyNote, ErrorNote, Spinner } from '../ui';
 
 export function TemplatesTab() {
@@ -15,7 +16,7 @@ export function TemplatesTab() {
   const [open, setOpen] = useState<EmailTemplate | null>(null);
   const [draft, setDraft] = useState<Partial<EmailTemplate>>({});
   const [saving, setSaving] = useState(false);
-  const [problem, setProblem] = useState<string | null>(null);
+  const { avisar } = useToast();
 
   if (loading) return <Spinner />;
   if (error) return <ErrorNote message={error} />;
@@ -26,13 +27,16 @@ export function TemplatesTab() {
   async function save() {
     if (!open) return;
     setSaving(true);
-    setProblem(null);
     try {
       await api.saveTemplate(open.slug, draft);
+      avisar('success', `La plantilla «${open.name || open.slug}» se guardó.`, 'Guardado');
+      const editar = `plantilla-${open.slug}-editar`;
       setOpen(null);
+      // "Guardar" desaparece al cerrar el editor: el foco vuelve a "Editar" de esa plantilla.
+      requestAnimationFrame(() => document.getElementById(editar)?.focus());
       reload();
     } catch (err) {
-      setProblem(err instanceof Error ? err.message : 'No se pudo guardar');
+      avisar('error', err instanceof Error ? err.message : 'No se pudo guardar', 'Error al guardar');
     } finally {
       setSaving(false);
     }
@@ -52,6 +56,7 @@ export function TemplatesTab() {
                 </p>
               </div>
               <Button
+                id={`plantilla-${template.slug}-editar`}
                 variant="secondary"
                 onClick={() => {
                   if (isOpen) {
@@ -74,7 +79,6 @@ export function TemplatesTab() {
 
             {isOpen ? (
               <div className="mt-4 space-y-4 border-t border-panel-border pt-4">
-                {problem ? <ErrorNote message={problem} /> : null}
                 <Field label="Asunto">
                   <TextInput
                     value={draft.subject ?? ''}

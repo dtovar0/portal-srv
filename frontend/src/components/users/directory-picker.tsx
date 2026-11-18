@@ -7,7 +7,8 @@ import { api } from '@/lib/api';
 import type { DirectoryUser } from '@/lib/types';
 import { Button, Modal, TextInput } from '../form';
 import { Icono } from '../icono';
-import { Badge, EmptyNote, ErrorNote } from '../ui';
+import { useToast } from '../toast';
+import { Badge, EmptyNote } from '../ui';
 
 export function DirectoryPicker({
   onPick,
@@ -19,16 +20,15 @@ export function DirectoryPicker({
   const [term, setTerm] = useState('');
   const [results, setResults] = useState<DirectoryUser[] | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { avisar } = useToast();
 
   async function search() {
     setBusy(true);
-    setError(null);
     try {
       const found = await api.searchDirectory(term);
       setResults(found.users);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo buscar');
+      avisar('error', err instanceof Error ? err.message : 'No se pudo buscar', 'Búsqueda en el directorio');
       setResults(null);
     } finally {
       setBusy(false);
@@ -47,8 +47,6 @@ export function DirectoryPicker({
         </Button>
       }
     >
-      {error ? <ErrorNote message={error} /> : null}
-
       <div className="flex gap-2">
         <TextInput
           value={term}

@@ -228,4 +228,53 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
       expect(api.deleteUser).toHaveBeenCalledWith(EMERGENCIA.id);
     });
   });
+
+  it('si el usuario no tiene áreas, el botón Accesos a plataformas está deshabilitado con aviso', async () => {
+    const usuarioSinAreas: ManagedUser = { ...ADMIN_AREA, id: 10, name: 'Pedro Sin Areas', areas: [] };
+    const usuarioConAreas: ManagedUser = { ...ADMIN_AREA, id: 11, name: 'Maria Con Areas', areas: [{ id: 3, name: 'Finanzas' }] };
+    vi.mocked(api.users).mockResolvedValue([usuarioSinAreas, usuarioConAreas]);
+    render(<UsersList />);
+    await screen.findByText('Pedro Sin Areas');
+
+    // Selecciona usuario sin áreas
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Pedro Sin Areas' }));
+    const botonAccesosPedro = screen.getByRole('button', { name: 'Accesos de Pedro Sin Areas' });
+    expect(botonAccesosPedro.hasAttribute('disabled')).toBe(true);
+    expect(botonAccesosPedro.getAttribute('title')).toBe('El usuario no tiene áreas asignadas. Asigna al menos 1 área primero');
+
+    // El botón Áreas sí está habilitado para poder asignarle áreas
+    const botonAreasPedro = screen.getByRole('button', { name: 'Áreas de Pedro Sin Areas' });
+    expect(botonAreasPedro.hasAttribute('disabled')).toBe(false);
+
+    // Deselecciona y selecciona usuario con áreas
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Pedro Sin Areas' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Maria Con Areas' }));
+    const botonAccesosMaria = screen.getByRole('button', { name: 'Accesos de Maria Con Areas' });
+    expect(botonAccesosMaria.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('selección múltiple de usuarios permite asignar áreas y accesos a plataformas en lote', async () => {
+    const user1: ManagedUser = { ...ADMIN_AREA, id: 21, name: 'User Uno', email: 'uno@ejemplo.com', areas: [{ id: 3, name: 'Finanzas' }] };
+    const user2: ManagedUser = { ...ADMIN_AREA, id: 22, name: 'User Dos', email: 'dos@ejemplo.com', areas: [{ id: 7, name: 'TI' }] };
+    vi.mocked(api.users).mockResolvedValue([user1, user2]);
+    render(<UsersList />);
+    await screen.findByText('User Uno');
+
+    // Selecciona ambos usuarios
+    fireEvent.click(screen.getByLabelText('Seleccionar todos los usuarios'));
+
+    // Ambos tienen áreas: Áreas y Accesos están habilitados
+    const botonAreas = screen.getByRole('button', { name: 'Áreas de User Uno' });
+    const botonAccesos = screen.getByRole('button', { name: 'Accesos de User Uno' });
+    expect(botonAreas.hasAttribute('disabled')).toBe(false);
+    expect(botonAreas.getAttribute('title')).toBe('Asignar áreas a 2 usuarios seleccionados');
+    expect(botonAccesos.hasAttribute('disabled')).toBe(false);
+    expect(botonAccesos.getAttribute('title')).toBe('Accesos de 2 usuarios seleccionados');
+
+    // Abrir Áreas para selección múltiple
+    fireEvent.click(botonAreas);
+    expect(await screen.findByRole('heading', { name: 'Accesos — 2 usuarios seleccionados' })).toBeTruthy();
+    expect(screen.getByText('Selección múltiple:')).toBeTruthy();
+    expect(screen.getByText('2 usuarios')).toBeTruthy();
+  });
 });

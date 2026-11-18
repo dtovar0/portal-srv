@@ -129,7 +129,7 @@ export function FileInput({ className = '', ...props }: React.InputHTMLAttribute
     <input
       type="file"
       {...props}
-      className={`min-h-12 text-sm text-label file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-contrast file:cursor-pointer hover:file:opacity-90 ${className}`}
+      className={`min-h-12 text-sm text-label file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-on-primary file:cursor-pointer hover:file:opacity-90 ${className}`}
     />
   );
 }
