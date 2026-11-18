@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
+import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 import { useAsync } from '@/lib/use-async';
 import type { DirectoryUser, ManagedUser } from '@/lib/types';
 import { DataTable, type DataColumn } from './data-table';
@@ -41,7 +42,7 @@ export function UsersList() {
   const platforms = useAsync(() => api.platforms(), []);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ManagedUser | null>(null);
-  const [removing, setRemoving] = useState<ManagedUser | null>(null);
+  const [removing, setRemoving] = useState<ManagedUser[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [directory, setDirectory] = useState(false);
@@ -90,19 +91,33 @@ export function UsersList() {
   }
 
   async function remove() {
-    if (!removing) return;
-    const correo = removing.email;
+    if (!removing || removing.length === 0) return;
     setBusy(true);
     setProblem(null);
+    const count = removing.length;
     try {
-      await api.deleteUser(removing.id);
-      avisar('success', `Cuenta de ${correo} retirada.`, 'Usuario eliminado');
+      const { eliminados, error } = await eliminarEnLote(removing, (u) => api.deleteUser(u.id));
       setRemoving(null);
+      setSelectedUserIds((prev) => {
+        const next = new Set(prev);
+        eliminados.forEach((u) => next.delete(u.id));
+        return next;
+      });
+      if (error) {
+        const base = error instanceof Error ? error.message : 'No se pudieron eliminar las cuentas.';
+        const msg = mensajeLoteParcial(eliminados.length, count, base);
+        setProblem(msg);
+        avisar('error', msg, 'Error');
+      } else {
+        avisar(
+          'success',
+          count === 1
+            ? `Cuenta de ${removing[0].email} retirada.`
+            : `${count} cuentas de usuarios retiradas.`,
+          count === 1 ? 'Usuario eliminado' : 'Usuarios eliminados',
+        );
+      }
       users.reload();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo eliminar la cuenta.';
-      setProblem(msg);
-      avisar('error', msg, 'Error');
     } finally {
       setBusy(false);
     }
@@ -140,6 +155,11 @@ export function UsersList() {
   }, [users.data, activeSelectedIds, lastSelectedId]);
 
   const isSingleSelected = activeSelectedIds.size === 1;
+
+  const selectedUsers = useMemo(() => {
+    if (!users.data || activeSelectedIds.size === 0) return [];
+    return users.data.filter((u) => activeSelectedIds.has(u.id));
+  }, [users.data, activeSelectedIds]);
 
   const totalUsers = filteredUsers.length;
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
@@ -383,9 +403,13 @@ export function UsersList() {
         />
       ) : null}
 
-      {problem || users.error ? (
+      {problem ? (
+        <div className="sr-only" role="alert">
+          {problem}
+        </div>
+      ) : users.error ? (
         <RegionDeAviso minHeight="min-h-0" className="shrink-0">
-          {problem ? <ErrorNote message={problem} /> : <ErrorNote message={users.error!} />}
+          <ErrorNote message={users.error} />
         </RegionDeAviso>
       ) : null}
 
@@ -483,18 +507,24 @@ export function UsersList() {
               <span>Editar</span>
             </Button>
 
-            {/* Botón Eliminar: activo solo si se selecciona exactamente 1 fila */}
+            {/* Botón Eliminar: activo si hay 1 o más filas seleccionadas */}
             <Button
               variant="fila-peligro"
-              disabled={!isSingleSelected}
-              onClick={() => effectiveSelectedUser && setRemoving(effectiveSelectedUser)}
-              aria-label={effectiveSelectedUser ? `Eliminar ${effectiveSelectedUser.name}` : 'Eliminar'}
+              disabled={activeSelectedIds.size === 0}
+              onClick={() => selectedUsers.length > 0 && setRemoving(selectedUsers)}
+              aria-label={
+                selectedUsers.length === 1
+                  ? `Eliminar ${selectedUsers[0]?.name}`
+                  : selectedUsers.length > 1
+                  ? `Eliminar ${selectedUsers.length} usuarios seleccionados`
+                  : 'Eliminar'
+              }
               title={
-                isSingleSelected
-                  ? `Eliminar ${effectiveSelectedUser?.name}`
-                  : activeSelectedIds.size > 1
-                  ? 'Solo se puede eliminar 1 usuario a la vez'
-                  : 'Selecciona 1 usuario para eliminar'
+                selectedUsers.length === 1
+                  ? `Eliminar ${selectedUsers[0]?.name}`
+                  : selectedUsers.length > 1
+                  ? `Eliminar ${selectedUsers.length} usuarios seleccionados`
+                  : 'Selecciona al menos 1 usuario para eliminar'
               }
               className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
             >
@@ -609,8 +639,12 @@ export function UsersList() {
 
       {removing ? (
         <ConfirmDialog
-          title="Eliminar usuario"
-          message={`Se eliminará la cuenta de ${removing.email}. Esta acción no se puede deshacer.`}
+          title={removing.length === 1 ? 'Eliminar usuario' : 'Eliminar usuarios'}
+          message={
+            removing.length === 1
+              ? `Se eliminará la cuenta de ${removing[0].email}. Esta acción no se puede deshacer.`
+              : `Se eliminarán las cuentas de los ${removing.length} usuarios seleccionados. Esta acción no se puede deshacer.`
+          }
           onConfirm={remove}
           onCancel={() => setRemoving(null)}
           busy={busy}

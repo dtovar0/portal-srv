@@ -15,7 +15,8 @@ import type { AccessLevel, AccessRequest, CatalogItem } from '@/lib/access/types
 import { Button, Field, Modal, Radio, TextArea } from '../form';
 import { Icono } from '../icono';
 import { FieldErrorNote, FieldHint, describedBy } from '../platforms/field-notes';
-import { Card, ErrorNote } from '../ui';
+import { Card } from '../ui';
+import { useToast } from '../toast';
 import { NIVELES } from './access-status-badge';
 import {
   JUSTIFICACION_MAX, MENSAJE_JUSTIFICACION_LARGA, MENSAJES_SOLICITUD, describeRequestError,
@@ -48,6 +49,7 @@ export function RequestFormModal({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
+  const toast = useToast();
 
   // El servidor recorta la justificación: se cuenta y valida igual.
   const texto = justification.trim();
@@ -59,6 +61,7 @@ export function RequestFormModal({
     if (sending) return;
     if (!level || excede) {
       setError(MENSAJES_SOLICITUD.validacion);
+      toast.avisar('warning', MENSAJES_SOLICITUD.validacion, 'Solicitud incompleta');
       setFields(level ? {} : { level: 'Elige un nivel.' });
       if (excede) document.getElementById(JUSTIFICACION_ID)?.focus();
       return;
@@ -76,6 +79,7 @@ export function RequestFormModal({
     } catch (err) {
       const view = describeRequestError(err);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al solicitar');
       setFields(view.fields);
       if (view.fields.justification) document.getElementById(JUSTIFICACION_ID)?.focus();
       setSending(false);
@@ -159,7 +163,7 @@ export function RequestFormModal({
           <FieldErrorNote id={JUSTIFICACION_ERROR_ID} message={errorJustificacion} />
         </div>
 
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </form>
     </Modal>
   );

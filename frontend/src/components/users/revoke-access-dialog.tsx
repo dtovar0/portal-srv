@@ -12,7 +12,7 @@ import type { Access } from '@/lib/access/types';
 import { AlertDialog } from '../alert-dialog';
 import { Field, TextArea } from '../form';
 import { FieldErrorNote, FieldHint, describedBy } from '../platforms/field-notes';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import { NIVELES } from '../access/access-status-badge';
 import {
   MENSAJE_MOTIVO_REVOCACION, REVOCACION_MOTIVO_MAX, describeRevokeError,
@@ -47,6 +47,7 @@ export function RevokeAccessDialog({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
+  const toast = useToast();
 
   const texto = motivo.trim();
   const excede = texto.length > REVOCACION_MOTIVO_MAX;
@@ -64,6 +65,7 @@ export function RevokeAccessDialog({
     } catch (err) {
       const view = describeRevokeError(err);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al revocar');
       setFields(view.fields);
       if (view.stale) onStale();
       if (view.fields.reason) document.getElementById(MOTIVO_ID)?.focus();
@@ -114,7 +116,7 @@ export function RevokeAccessDialog({
 
         <p className="text-sm text-label">La persona verá este motivo en Mis accesos.</p>
 
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </form>
     </AlertDialog>
   );

@@ -23,7 +23,8 @@ import { PageHeader } from './page-header';
 import { RequireRole, meetsRequirement } from './require-role';
 import { useSession } from './session-provider';
 import { useToast } from './toast';
-import { Badge, EmptyNote, ErrorNote, RegionDeAviso, Spinner } from './ui';
+import { Badge, EmptyNote, ErrorNote, Spinner } from './ui';
+import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 
 /** Sin rol de administración muestra el estado "sin permiso" y no llama a la API. */
 export function AreasList() {
@@ -40,7 +41,7 @@ function AreasScreen() {
   const { data, loading, error, reload } = useAsync(() => api.areas(), []);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Area | null>(null);
-  const [removing, setRemoving] = useState<Area | null>(null);
+  const [removing, setRemoving] = useState<Area[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<Area | null>(null);
@@ -58,20 +59,32 @@ function AreasScreen() {
   );
 
   async function remove() {
-    if (!removing) return;
-    const nombre = removing.name;
+    if (!removing || removing.length === 0) return;
     setBusy(true);
     setProblem(null);
+    const count = removing.length;
     try {
-      await api.deleteArea(removing.id);
-      avisar('success', `"${nombre}" fue retirada.`, 'Área eliminada');
+      const { eliminados, error } = await eliminarEnLote(removing, (a) => api.deleteArea(a.id));
       setRemoving(null);
+      setSelectedAreaIds((prev) => {
+        const next = new Set(prev);
+        eliminados.forEach((a) => next.delete(a.id));
+        return next;
+      });
+      if (error) {
+        const msg = mensajeLoteParcial(eliminados.length, count, mensajeDeError(error, 'No se pudo eliminar'));
+        setProblem(msg);
+        avisar('error', msg, 'Error');
+      } else {
+        avisar(
+          'success',
+          count === 1
+            ? `"${removing[0].name}" fue retirada.`
+            : `${count} áreas fueron retiradas.`,
+          count === 1 ? 'Área eliminada' : 'Áreas eliminadas',
+        );
+      }
       reload();
-    } catch (err) {
-      setRemoving(null);
-      const msg = mensajeDeError(err, 'No se pudo eliminar');
-      setProblem(msg);
-      avisar('error', msg, 'Error');
     } finally {
       setBusy(false);
     }
@@ -139,6 +152,15 @@ function AreasScreen() {
   const effectiveSelectedArea = singleSelectedId
     ? displayAreas.find((a) => a.id === singleSelectedId) ?? null
     : null;
+
+  const selectedAreas = useMemo(() => {
+    if (!data || activeSelectedIds.size === 0) return [];
+    return data.filter((a) => activeSelectedIds.has(a.id));
+  }, [data, activeSelectedIds]);
+
+  const canDeleteSelected =
+    selectedAreas.length > 0 &&
+    (isAdmin || selectedAreas.every((a) => managedIds.has(a.id)));
 
   const columnas = useMemo<DataColumn<Area>[]>(
     () => [
@@ -267,9 +289,9 @@ function AreasScreen() {
       />
 
       {problem ? (
-        <RegionDeAviso minHeight="min-h-0" className="shrink-0">
-          <ErrorNote message={problem} />
-        </RegionDeAviso>
+        <div className="sr-only" role="alert">
+          {problem}
+        </div>
       ) : null}
 
       {/* Grid de 1 columna y 2 filas (10/90): Fila 1 contenedor con botones, Fila 2 tabla al 100% */}
@@ -362,15 +384,23 @@ function AreasScreen() {
             {/* Botón Eliminar */}
             <Button
               variant="fila-peligro"
-              disabled={!isSingleSelected || (!isAdmin && !managedIds.has(effectiveSelectedArea?.id ?? -1))}
-              onClick={() => effectiveSelectedArea && setRemoving(effectiveSelectedArea)}
-              aria-label={effectiveSelectedArea ? `Eliminar ${effectiveSelectedArea.name}` : 'Eliminar'}
+              disabled={!canDeleteSelected}
+              onClick={() => selectedAreas.length > 0 && setRemoving(selectedAreas)}
+              aria-label={
+                selectedAreas.length === 1
+                  ? `Eliminar ${selectedAreas[0]?.name}`
+                  : selectedAreas.length > 1
+                  ? `Eliminar ${selectedAreas.length} áreas seleccionadas`
+                  : 'Eliminar'
+              }
               title={
-                isSingleSelected
-                  ? `Eliminar ${effectiveSelectedArea?.name}`
-                  : activeSelectedIds.size > 1
-                  ? 'Solo se puede eliminar 1 área a la vez'
-                  : 'Selecciona 1 área para eliminar'
+                selectedAreas.length === 0
+                  ? 'Selecciona al menos 1 área para eliminar'
+                  : !canDeleteSelected
+                  ? 'No tienes permisos para eliminar alguna de las áreas seleccionadas'
+                  : selectedAreas.length === 1
+                  ? `Eliminar ${selectedAreas[0]?.name}`
+                  : `Eliminar ${selectedAreas.length} áreas seleccionadas`
               }
               className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
             >
@@ -451,8 +481,12 @@ function AreasScreen() {
 
       {removing ? (
         <ConfirmDialog
-          title="Eliminar área"
-          message={`Se eliminará "${removing.name}". Si tiene plataformas asignadas, primero hay que reasignarlas.`}
+          title={removing.length === 1 ? 'Eliminar área' : 'Eliminar áreas'}
+          message={
+            removing.length === 1
+              ? `Se eliminará "${removing[0].name}". Un área no se puede borrar si tiene plataformas asignadas. Los usuarios asignados se desvincularán del área.`
+              : `Se eliminarán las ${removing.length} áreas seleccionadas. Las áreas con plataformas asignadas no se pueden borrar. Los usuarios asignados se desvincularán de las áreas.`
+          }
           onConfirm={remove}
           onCancel={() => setRemoving(null)}
           busy={busy}

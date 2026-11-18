@@ -21,7 +21,7 @@ import type { Connector } from '@/lib/access/types';
 import { Button, Checkbox, Field, Option, Select, TextInput } from '../form';
 import { Icono } from '../icono';
 import { FieldErrorNote, FieldHint, describedBy, focusFirstError } from '../platforms/field-notes';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import {
   type CampoConector, type FormularioConector, HOST_MAX, PUERTO_MAX, PUERTO_MIN, REFERENCIA_MAX,
   TIPOS_CONECTOR, cuerpoConector, esTipoConocido, formularioDesde, parametrosConservados,
@@ -66,6 +66,7 @@ export function ConnectorForm({
   const [fields, setFields] = useState<Partial<Record<CampoConector, string>>>({});
   const [paramErrors, setParamErrors] = useState<Record<string, string>>({});
   const [anuncio, setAnuncio] = useState('');
+  const toast = useToast();
 
   const campos = parametrosDelTipo(form.type);
   const conservados = Object.keys(parametrosConservados(guardado, form.type));
@@ -104,7 +105,9 @@ export function ConnectorForm({
     const erroresParams = validarParametros(form.type, form.params);
     if (Object.keys(errores).length > 0 || Object.keys(erroresParams).length > 0) {
       const total = Object.keys(errores).length + Object.keys(erroresParams).length;
-      setError(total === 1 ? MENSAJE_REVISA : `Revisa ${total} campos marcados.`);
+      const msg = total === 1 ? MENSAJE_REVISA : `Revisa ${total} campos marcados.`;
+      setError(msg);
+      toast.avisar('warning', msg, 'Datos incompletos');
       setFields(errores);
       setParamErrors(erroresParams);
       focusFirstError(ordenCon(erroresParams), { ...errores, ...erroresParams } as Record<string, string>);
@@ -121,6 +124,7 @@ export function ConnectorForm({
     } catch (err) {
       const view = describeConnectorSaveError(err, form.type);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al guardar');
       setFields(view.fields);
       setParamErrors(view.paramFields);
       setSending(false);
@@ -239,7 +243,7 @@ export function ConnectorForm({
         onChange={(event) => cambiar('active', event.target.checked)}
       />
 
-      {error ? <ErrorNote message={error} /> : null}
+      {error ? <div className="sr-only" role="alert">{error}</div> : null}
 
       <div className="flex flex-wrap justify-end gap-3">
         <Button

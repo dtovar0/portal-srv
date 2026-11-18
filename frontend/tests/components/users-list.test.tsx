@@ -16,7 +16,7 @@ vi.mock('@/lib/api', async (original) => ({
   ...(await original<typeof import('@/lib/api')>()),
   api: {
     users: vi.fn(), areas: vi.fn(), platforms: vi.fn(),
-    createUser: vi.fn(), updateUser: vi.fn(), setUserAreas: vi.fn(),
+    createUser: vi.fn(), updateUser: vi.fn(), deleteUser: vi.fn(), setUserAreas: vi.fn(),
     setUserPlatforms: vi.fn(), searchDirectory: vi.fn(),
   },
 }));
@@ -200,5 +200,32 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
     const badgeIcono = screen.getByTitle('Finanzas');
     expect(badgeIcono).toBeTruthy();
     expect(badgeIcono.getAttribute('aria-label')).toBe('Finanzas');
+  });
+
+  it('selección múltiple activa el botón Eliminar y permite eliminar en lote', async () => {
+    vi.mocked(api.users).mockResolvedValue([ADMIN_AREA, EMERGENCIA]);
+    render(<UsersList />);
+    await screen.findByText('Luis Paz');
+
+    const selectAllCheckbox = screen.getByLabelText('Seleccionar todos los usuarios');
+    fireEvent.click(selectAllCheckbox);
+
+    // Con selección múltiple (2 usuarios): Editar y Accesos deshabilitados, Eliminar activo
+    expect(screen.getByRole('button', { name: 'Accesos de Luis Paz' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Editar Luis Paz' }).hasAttribute('disabled')).toBe(true);
+    const botonEliminar = screen.getByRole('button', { name: 'Eliminar 2 usuarios seleccionados' });
+    expect(botonEliminar.hasAttribute('disabled')).toBe(false);
+
+    // Al hacer clic, abre confirmación múltiple
+    fireEvent.click(botonEliminar);
+    expect(await screen.findByRole('heading', { name: 'Eliminar usuarios' })).toBeTruthy();
+    expect(screen.getByText('Se eliminarán las cuentas de los 2 usuarios seleccionados. Esta acción no se puede deshacer.')).toBeTruthy();
+
+    // Al confirmar, llama a api.deleteUser para cada uno
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+    await waitFor(() => {
+      expect(api.deleteUser).toHaveBeenCalledWith(ADMIN_AREA.id);
+      expect(api.deleteUser).toHaveBeenCalledWith(EMERGENCIA.id);
+    });
   });
 });

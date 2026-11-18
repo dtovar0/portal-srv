@@ -6,7 +6,8 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import type { InactiveUser } from '@/lib/types';
 import { Button, ConfirmDialog, Field, TextInput } from '../form';
-import { Card, ErrorNote } from '../ui';
+import { Card } from '../ui';
+import { useToast } from '../toast';
 
 export function PurgePanel({ onDone }: { onDone: () => void }) {
   const [days, setDays] = useState(30);
@@ -14,6 +15,7 @@ export function PurgePanel({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const toast = useToast();
 
   async function load() {
     setBusy(true);
@@ -22,7 +24,9 @@ export function PurgePanel({ onDone }: { onDone: () => void }) {
       const result = await api.inactiveUsers(days);
       setPreview(result.users);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo consultar');
+      const msg = err instanceof Error ? err.message : 'No se pudo consultar';
+      setError(msg);
+      toast.avisar('error', msg, 'Error al consultar');
     } finally {
       setBusy(false);
     }
@@ -36,7 +40,9 @@ export function PurgePanel({ onDone }: { onDone: () => void }) {
       setPreview(null);
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo purgar');
+      const msg = err instanceof Error ? err.message : 'No se pudo purgar';
+      setError(msg);
+      toast.avisar('error', msg, 'Error al purgar');
       setConfirming(false);
     } finally {
       setBusy(false);
@@ -54,7 +60,7 @@ export function PurgePanel({ onDone }: { onDone: () => void }) {
         </p>
       </div>
 
-      {error ? <ErrorNote message={error} /> : null}
+      {error ? <div className="sr-only" role="alert">{error}</div> : null}
 
       <div className="flex flex-wrap items-end gap-2">
         <Field label="Días sin actividad">

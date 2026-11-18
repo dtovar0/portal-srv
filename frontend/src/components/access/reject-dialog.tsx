@@ -12,7 +12,7 @@ import type { AccessRequest } from '@/lib/access/types';
 import { AlertDialog } from '../alert-dialog';
 import { Field, TextArea } from '../form';
 import { FieldErrorNote, FieldHint, describedBy } from '../platforms/field-notes';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import { NIVELES } from './access-status-badge';
 import { MENSAJE_MOTIVO, MOTIVO_MAX, MOTIVO_MIN, describeDecisionError } from './request-errors';
 
@@ -48,6 +48,7 @@ export function RejectDialog({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
+  const toast = useToast();
 
   const texto = motivo.trim();
   const valido = texto.length >= MOTIVO_MIN && texto.length <= MOTIVO_MAX;
@@ -66,6 +67,7 @@ export function RejectDialog({
     } catch (err) {
       const view = describeDecisionError(err);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al rechazar');
       setFields(view.fields);
       if (view.stale) onStale();
       if (view.fields.reason) document.getElementById(MOTIVO_ID)?.focus();
@@ -113,7 +115,7 @@ export function RejectDialog({
 
         <p className="text-sm text-label">El solicitante verá este motivo.</p>
 
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </form>
     </AlertDialog>
   );

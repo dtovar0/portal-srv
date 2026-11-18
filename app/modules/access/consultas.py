@@ -55,12 +55,12 @@ def de_usuario(usuario_id, estados, area_ids=None):
     """Accesos de una cuenta en `estados`, del más reciente al más antiguo
     (FNC-058). `area_ids`: solo las plataformas de esas áreas (admin de
     área); `None` = sin filtro (superadmin o la propia cuenta)."""
-    consulta = PlatformAccessGrant.query.filter(
-        PlatformAccessGrant.user_id == usuario_id,
-        PlatformAccessGrant.status.in_(estados))
+    consulta = (PlatformAccessGrant.query
+                .join(Platform, Platform.id == PlatformAccessGrant.platform_id)
+                .filter(
+                    PlatformAccessGrant.user_id == usuario_id,
+                    PlatformAccessGrant.status.in_(estados)))
     if area_ids is not None:
-        consulta = (consulta
-                    .join(Platform, Platform.id == PlatformAccessGrant.platform_id)
-                    .filter(Platform.area_id.in_(area_ids)))
+        consulta = consulta.filter(Platform.area_id.in_(area_ids))
     return consulta.order_by(PlatformAccessGrant.granted_at.desc(),
                              PlatformAccessGrant.id.desc())

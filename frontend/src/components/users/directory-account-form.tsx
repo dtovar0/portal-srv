@@ -13,6 +13,7 @@
 
 import { useState } from 'react';
 import { usersApi } from '@/lib/access/users';
+import { generarContrasenaSegura, LONGITUD_MINIMA_GENERADOR } from '@/lib/generador-contrasena';
 import type { Area, AreaRef, ManagedUser } from '@/lib/types';
 import { Button, Field, Modal, TextInput } from '../form';
 import { Icono } from '../icono';
@@ -73,6 +74,44 @@ export function DirectoryAccountForm({
   const [fields, setFields] = useState<Partial<Record<CampoAlta, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+
+  function handleGenerarContrasena() {
+    let nueva: string;
+    try {
+      nueva = generarContrasenaSegura(LONGITUD_MINIMA_GENERADOR);
+    } catch (err) {
+      avisar('error', err instanceof Error ? err.message : 'No se pudo generar la contraseña.', 'Error');
+      return;
+    }
+    cambiar('password', nueva);
+    cambiar('confirmPassword', nueva);
+    setMostrarPassword(true);
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(nueva).then(
+        () => {
+          avisar(
+            'success',
+            `Contraseña segura de ${LONGITUD_MINIMA_GENERADOR} caracteres generada y copiada al portapapeles.`,
+            'Contraseña generada',
+          );
+        },
+        () => {
+          avisar(
+            'success',
+            `Contraseña segura de ${LONGITUD_MINIMA_GENERADOR} caracteres generada.`,
+            'Contraseña generada',
+          );
+        },
+      );
+    } else {
+      avisar(
+        'success',
+        `Contraseña segura de ${LONGITUD_MINIMA_GENERADOR} caracteres generada.`,
+        'Contraseña generada',
+      );
+    }
+  }
 
   function cambiar<K extends CampoAlta>(campo: K, valor: FormularioAlta[K]) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -192,9 +231,9 @@ export function DirectoryAccountForm({
         </div>
       }
     >
-      <form id={FORM_ID} onSubmit={submit} noValidate aria-busy={sending} className="space-y-4">
+      <form id={FORM_ID} onSubmit={submit} noValidate aria-busy={sending} className="space-y-3">
         {/* Indicador de progreso de 2 pasos con diseño premium */}
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-panel-border/80 bg-surface-container/60 shadow-xs select-none">
+        <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-panel-border/80 bg-surface-container/60 shadow-xs select-none">
           <div className="flex items-center gap-2.5">
             <span
               className={`size-7 rounded-lg flex items-center justify-center text-xs font-black transition-colors ${
@@ -206,7 +245,7 @@ export function DirectoryAccountForm({
               {paso === 2 ? '✓' : '1'}
             </span>
             <span className={`text-xs font-bold ${paso === 1 ? 'text-body-text' : 'text-label'}`}>
-              1. Datos de usuario
+              Datos de usuario
             </span>
           </div>
 
@@ -223,7 +262,7 @@ export function DirectoryAccountForm({
               2
             </span>
             <span className={`text-xs font-bold ${paso === 2 ? 'text-body-text' : 'text-label'}`}>
-              2. Accesos y áreas
+              Accesos y áreas
             </span>
           </div>
         </div>
@@ -297,7 +336,7 @@ export function DirectoryAccountForm({
                 <Field label="Contraseña">
                   <TextInput
                     id={IDS.password}
-                    type="password"
+                    type={mostrarPassword ? 'text' : 'password'}
                     value={form.password ?? ''}
                     onChange={(e) => cambiar('password', e.target.value)}
                     placeholder="Mínimo 8 caracteres"
@@ -321,7 +360,7 @@ export function DirectoryAccountForm({
                 <Field label="Confirmar contraseña">
                   <TextInput
                     id={IDS.confirmPassword}
-                    type="password"
+                    type={mostrarPassword ? 'text' : 'password'}
                     value={form.confirmPassword ?? ''}
                     onChange={(e) => cambiar('confirmPassword', e.target.value)}
                     placeholder="Repite la contraseña"
@@ -339,6 +378,54 @@ export function DirectoryAccountForm({
                     </span>
                   ) : null}
                 </div>
+              </div>
+            </div>
+
+            {/* Generador de contraseña alfanumérica con símbolos (mínimo 16 caracteres) ubicado abajo de los inputs */}
+            <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border/80 bg-surface-container/40">
+              <span className="text-xs text-label font-medium truncate">
+                Clave segura (16+ caracteres)
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleGenerarContrasena}
+                  aria-label="Generar contraseña"
+                  className="min-h-12 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 active:scale-[0.98] text-primary-text font-bold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  title="Generar contraseña alfanumérica con símbolos de 16 caracteres"
+                >
+                  <Icono nombre="marca" tamano="xs" ariaHidden={true} className="text-primary-text shrink-0" />
+                  <span>Generar</span>
+                </button>
+                {form.password ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setMostrarPassword((prev) => !prev)}
+                      aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                      className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border/80 bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                    >
+                      <Icono nombre="ver" tamano="xs" ariaHidden={true} className="text-label shrink-0" />
+                      <span>{mostrarPassword ? 'Ocultar' : 'Ver'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+                          navigator.clipboard.writeText(form.password || '');
+                          avisar('success', 'Contraseña copiada al portapapeles.', 'Copiada');
+                        }
+                      }}
+                      aria-label="Copiar contraseña al portapapeles"
+                      className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border/80 bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      title="Copiar contraseña al portapapeles"
+                    >
+                      <Icono nombre="documento" tamano="xs" ariaHidden={true} className="text-label shrink-0" />
+                      <span>Copiar</span>
+                    </button>
+                  </>
+                ) : null}
               </div>
             </div>
           </div>

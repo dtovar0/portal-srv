@@ -27,6 +27,7 @@ import { RequireRole } from './require-role';
 import { useSession } from './session-provider';
 import { useToast } from './toast';
 import { Badge, EmptyNote, ErrorNote } from './ui';
+import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 
 const CLASES_COLS: Record<number, string> = {
   2: 'sm:grid-cols-2 lg:grid-cols-2',
@@ -77,7 +78,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(initialAreaId ?? null);
   const [editing, setEditing] = useState<Platform | null>(null);
   const [creating, setCreating] = useState(false);
-  const [removing, setRemoving] = useState<Platform | null>(null);
+  const [removing, setRemoving] = useState<Platform[] | null>(null);
   const [managingAccess, setManagingAccess] = useState<Platform | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -87,17 +88,19 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
   const [removingArea, setRemovingArea] = useState<Area | null>(null);
   const [busyRemovingArea, setBusyRemovingArea] = useState(false);
 
-  // Sincronizar con el location bar y navegación del navegador
+  // Sincronizar con el location bar y navegación del navegador manteniendo la URL limpia
   function handleSelectArea(area: Area) {
     setSelectedAreaId(area.id);
     setBusquedaPlataformas('');
     setPagePlataformas(1);
     setSelectedPlatformIds(new Set());
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('area', String(area.id));
-      url.searchParams.set('area_name', area.name);
-      window.history.pushState({ areaId: area.id }, '', url.pathname + url.search);
+      try {
+        sessionStorage.setItem('portal_selected_area_id', String(area.id));
+        sessionStorage.setItem('portal_selected_area_name', area.name);
+      } catch {}
+      // Mantener la barra de direcciones limpia sin query params (?area=...&area_name=...)
+      window.history.pushState({ areaId: area.id, areaName: area.name }, '', window.location.pathname);
       window.dispatchEvent(new Event('popstate'));
     }
   }
@@ -108,28 +111,53 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     setPagePlataformas(1);
     setSelectedPlatformIds(new Set());
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('area');
-      url.searchParams.delete('area_name');
-      window.history.pushState({}, '', url.pathname + (url.search ? url.search : ''));
+      try {
+        sessionStorage.removeItem('portal_selected_area_id');
+        sessionStorage.removeItem('portal_selected_area_name');
+      } catch {}
+      // Mantener la barra de direcciones limpia sin query params
+      window.history.pushState({ areaId: null, areaName: null }, '', window.location.pathname);
       window.dispatchEvent(new Event('popstate'));
     }
   }
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (initialAreaId === undefined) {
-      const sp = new URLSearchParams(window.location.search);
-      const aId = sp.get('area');
-      if (aId && selectedAreaId === null) {
-        setSelectedAreaId(Number(aId));
+
+    // Si la URL venía con parámetros de consulta residuales (?area=...&area_name=...), capturar y limpiar
+    const sp = new URLSearchParams(window.location.search);
+    const aId = sp.get('area');
+    if (aId) {
+      const parsedId = Number(aId);
+      if (initialAreaId === undefined && selectedAreaId === null) {
+        setSelectedAreaId(parsedId);
+      }
+      try {
+        sessionStorage.setItem('portal_selected_area_id', String(parsedId));
+        if (sp.get('area_name')) {
+          sessionStorage.setItem('portal_selected_area_name', sp.get('area_name') || '');
+        }
+      } catch {}
+      // Limpiar inmediatamente la barra de direcciones para ocultar el query string
+      window.history.replaceState(
+        { areaId: parsedId, areaName: sp.get('area_name') || '' },
+        '',
+        window.location.pathname,
+      );
+    } else if (initialAreaId === undefined && selectedAreaId === null) {
+      const stateId = (window.history.state as { areaId?: number | null })?.areaId;
+      if (typeof stateId === 'number') {
+        setSelectedAreaId(stateId);
       }
     }
 
-    function onPopState() {
-      const curSp = new URLSearchParams(window.location.search);
-      const curId = curSp.get('area');
-      setSelectedAreaId(curId ? Number(curId) : null);
+    function onPopState(e: PopStateEvent) {
+      const stateId = (e.state as { areaId?: number | null })?.areaId ?? (window.history.state as { areaId?: number | null })?.areaId;
+      if (typeof stateId === 'number' || stateId === null) {
+        setSelectedAreaId(stateId);
+      } else {
+        setSelectedAreaId(null);
+      }
     }
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -312,6 +340,11 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     ? displayPlataformas.find((p) => p.id === singleSelectedPlatformId) ?? null
     : null;
 
+  const selectedPlatforms = useMemo(() => {
+    if (!platforms.data || activeSelectedPlatformIds.size === 0) return [];
+    return platforms.data.filter((p) => activeSelectedPlatformIds.has(p.id));
+  }, [platforms.data, activeSelectedPlatformIds]);
+
   // Foco: al cerrar un diálogo vuelve al disparador.
   const trigger = useRef<HTMLElement | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -386,23 +419,29 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
   );
 
   async function remove() {
-    if (!removing) return;
-    const nombre = removing.name;
+    if (!removing || removing.length === 0) return;
     setBusy(true);
+    const count = removing.length;
     try {
-      await api.deletePlatform(removing.id);
-      avisar('success', `"${nombre}" fue retirada.`, 'Plataforma eliminada');
+      const { eliminados, error } = await eliminarEnLote(removing, (p) => api.deletePlatform(p.id));
       setSelectedPlatformIds((prev) => {
         const next = new Set(prev);
-        next.delete(removing.id);
+        eliminados.forEach((p) => next.delete(p.id));
         return next;
       });
       closeDialogs();
+      if (error) {
+        avisar('error', mensajeLoteParcial(eliminados.length, count, describeDeleteError(error)), 'Error');
+      } else {
+        avisar(
+          'success',
+          count === 1
+            ? `"${removing[0].name}" fue retirada.`
+            : `${count} plataformas fueron retiradas.`,
+          count === 1 ? 'Plataforma eliminada' : 'Plataformas eliminadas',
+        );
+      }
       platforms.reload();
-    } catch (err) {
-      closeDialogs();
-      const msg = describeDeleteError(err);
-      avisar('error', msg, 'Error');
     } finally {
       setBusy(false);
     }
@@ -1056,23 +1095,25 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
               {canManage ? (
                 <Button
                   variant="fila-peligro"
-                  disabled={!isSinglePlatformSelected}
+                  disabled={activeSelectedPlatformIds.size === 0}
                   onClick={(e) => {
-                    if (effectiveSelectedPlatform) {
-                      open(e, () => setRemoving(effectiveSelectedPlatform));
+                    if (selectedPlatforms.length > 0) {
+                      open(e, () => setRemoving(selectedPlatforms));
                     }
                   }}
                   aria-label={
-                    effectiveSelectedPlatform
-                      ? `Eliminar ${effectiveSelectedPlatform.name}`
+                    activeSelectedPlatformIds.size === 1
+                      ? `Eliminar ${selectedPlatforms[0]?.name}`
+                      : activeSelectedPlatformIds.size > 1
+                      ? `Eliminar ${activeSelectedPlatformIds.size} plataformas seleccionadas`
                       : 'Eliminar'
                   }
                   title={
-                    isSinglePlatformSelected
-                      ? `Eliminar ${effectiveSelectedPlatform?.name}`
+                    activeSelectedPlatformIds.size === 1
+                      ? `Eliminar ${selectedPlatforms[0]?.name}`
                       : activeSelectedPlatformIds.size > 1
-                      ? 'Solo se puede eliminar 1 plataforma a la vez'
-                      : 'Selecciona 1 plataforma para eliminar'
+                      ? `Eliminar ${activeSelectedPlatformIds.size} plataformas seleccionadas`
+                      : 'Selecciona al menos 1 plataforma para eliminar'
                   }
                   className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
                 >
@@ -1182,8 +1223,12 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
 
       {removing ? (
         <ConfirmDialog
-          title="Eliminar plataforma"
-          message={`Se eliminará "${removing.name}". Esta acción no se puede deshacer.`}
+          title={removing.length === 1 ? 'Eliminar plataforma' : 'Eliminar plataformas'}
+          message={
+            removing.length === 1
+              ? `Se eliminará "${removing[0].name}". Esta acción no se puede deshacer.`
+              : `Se eliminarán las ${removing.length} plataformas seleccionadas. Esta acción no se puede deshacer.`
+          }
           onConfirm={remove}
           onCancel={closeDialogs}
           busy={busy}

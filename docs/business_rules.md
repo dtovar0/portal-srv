@@ -33,7 +33,7 @@ En la vista detallada de plataformas de un área (`/admin/platforms`), la barra 
 Al hacer click en la tarjeta del área "Demo Finanzas", la barra superior muestra a la izquierda el botón de retorno "Áreas", el campo de búsqueda de plataformas y a su derecha la insignia de "Demo Finanzas". A la derecha de la barra se muestran los botones "Accesos", "Editar", "Eliminar", un separador y el botón "Nuevo".
 
 ### Impacto
-Afecta a [frontend/src/components/platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx) y a la suite de pruebas en [frontend/tests/components/platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [frontend/src/components/platform-admin.tsx](../frontend/src/components/platform-admin.tsx) y a la suite de pruebas en [frontend/tests/components/platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Botones de Barra de Herramientas en Plataformas
@@ -45,7 +45,7 @@ Los botones de acción en la barra de herramientas de la vista de plataformas si
 En la vista de plataformas del área seleccionada, el bloque de botones a la derecha muestra en orden y con tipografía en mayúsculas: `ADMINS`, `EDITAR`, `ELIMINAR`, la línea divisoria vertical y `+ NUEVO`.
 
 ### Impacto
-Afecta a [frontend/src/components/platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx) y pruebas en [frontend/tests/components/platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [frontend/src/components/platform-admin.tsx](../frontend/src/components/platform-admin.tsx) y pruebas en [frontend/tests/components/platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Formulario Asistido de Creación y Edición de Áreas
@@ -59,7 +59,7 @@ El modal de creación y edición de áreas (`AreaForm`) opera como un asistente 
 Al hacer click en "Nuevo" o "Editar área", el modal inicia en el paso 1 "Descripción". El usuario ingresa el nombre "Marketing" y descripción; al pulsar "Siguiente", avanza al paso 2 "Estilo visual" donde visualiza en vivo la tarjeta previa con el chip "MA" y puede ajustar el color o estado antes de presionar "Guardar".
 
 ### Impacto
-Afecta a [frontend/src/components/areas/area-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas/area-form.tsx), [frontend/src/components/areas-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas-list.tsx) y pruebas en [frontend/tests/components/areas-list.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/areas-list.test.tsx).
+Afecta a [frontend/src/components/areas/area-form.tsx](../frontend/src/components/areas/area-form.tsx), [frontend/src/components/areas-list.tsx](../frontend/src/components/areas-list.tsx) y pruebas en [frontend/tests/components/areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
 
 
 ## Estandarización de Radio de Borde en Modales y Botones
@@ -74,7 +74,7 @@ Para garantizar consistencia visual y armonía en la jerarquía geométrica del 
 Al abrir el modal de "Nueva área" o un diálogo de confirmación, la ventana modal presenta esquinas con radio uniforme de 12px (`rounded-xl`), igual al de las tarjetas del catálogo. Los botones inferiores "Cancelar", "Atrás", "Siguiente" o "Guardar" lucen esquinas de 8px (`var(--radius-base)`), consistentes y simétricas, sin deformación tipo píldora.
 
 ### Impacto
-Afecta a [frontend/src/components/form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/form.tsx), [frontend/src/components/alert-dialog.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/alert-dialog.tsx), [frontend/src/styles/components.css](file:///home/dtovar/bayblade/pokemon/frontend/src/styles/components.css), [frontend/src/components/areas/area-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas/area-form.tsx) y [frontend/src/components/users/directory-account-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users/directory-account-form.tsx).
+Afecta a [frontend/src/components/form.tsx](../frontend/src/components/form.tsx), [frontend/src/components/alert-dialog.tsx](../frontend/src/components/alert-dialog.tsx), [frontend/src/styles/components.css](../frontend/src/styles/components.css), [frontend/src/components/areas/area-form.tsx](../frontend/src/components/areas/area-form.tsx) y [frontend/src/components/users/directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx).
 
 
 ## Asistente de 2 Pasos en Modales de Creación y Edición (Plataforma y Área)
@@ -97,7 +97,7 @@ Los modales de creación y edición tanto de **Área** (`AreaForm`) como de **Pl
 Al pulsar "+ Nuevo" en la sección de plataformas, se abre el modal "Nueva plataforma" posicionado en el paso "1. Descripción". El usuario introduce nombre, descripción y tipo de integración. Al pulsar "Siguiente", el modal transiciona al paso "2. Estilo", donde visualiza una tarjeta simulada interactiva que reacciona a los colores de fondo y texto elegidos antes de presionar "Guardar".
 
 ### Impacto
-Afecta a [frontend/src/components/platforms/platform-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-form.tsx), [frontend/src/components/areas/area-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas/area-form.tsx), [frontend/tests/components/platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx) y [frontend/tests/components/areas-list.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/areas-list.test.tsx).
+Afecta a [frontend/src/components/platforms/platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx), [frontend/src/components/areas/area-form.tsx](../frontend/src/components/areas/area-form.tsx), [frontend/tests/components/platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx) y [frontend/tests/components/areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
 
 
 Simplificación del Modal de Nueva Plataforma (Omisión de Área y Conector)
@@ -114,7 +114,7 @@ En el modal de creación de una nueva plataforma (`PlatformForm`, modo alta `!is
 Al acceder al área "Demo Finanzas" y pulsar "+ NUEVO", el modal "Nueva plataforma" muestra en el Paso 1 únicamente los campos "Nombre", "Descripción" y "Enlace". No se muestra el selector de área ni la sección de integración/conector. Al pulsar "Siguiente", el Paso 2 muestra los colores y la tarjeta de vista previa con la insignia del área "Demo Finanzas". Al guardar, la plataforma se registra exitosamente asignada a "Demo Finanzas" con `integration_type: 'conector'`.
 
 ### Impacto
-Afecta a [platform-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-form.tsx), [platform-payload.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-payload.ts) y [platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx), [platform-payload.ts](../frontend/src/components/platforms/platform-payload.ts) y [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Selección por Checkbox y Notificaciones Toast en Tabla de Plataformas
@@ -132,7 +132,7 @@ Afecta a [platform-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/c
 Al visualizar las plataformas de "Demo Finanzas", cada fila inicia con un checkbox y ya no existe la columna "Acciones" al final. Al marcar el checkbox de la plataforma "asd", los botones "EDITAR" y "ELIMINAR" de la barra superior cambian su foco a "asd". Al editar y guardar, no aparece ninguna barra superior en la página, sino un toast flotante en la esquina inferior derecha confirmando "Se guardó «asd»".
 
 ### Impacto
-Afecta a [platform-columns.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-columns.tsx), [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx) y la suite de pruebas [platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [platform-columns.tsx](../frontend/src/components/platforms/platform-columns.tsx), [platform-admin.tsx](../frontend/src/components/platform-admin.tsx) y la suite de pruebas [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Normalización Automática del Protocolo en Enlaces de Plataformas
@@ -148,7 +148,7 @@ En los formularios de creación y edición de plataformas (`PlatformForm`), el c
 Al crear una plataforma llamada "ERP" y escribir simplemente `erp.empresa.local` en el campo Enlace, el usuario puede presionar directamente "Siguiente" o "Guardar" sin recibir ningún mensaje de error. El enlace se almacena y se envía al backend como `https://erp.empresa.local`.
 
 ### Impacto
-Afecta a [platform-payload.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-payload.ts), [platform-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-form.tsx) y pruebas en [platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [platform-payload.ts](../frontend/src/components/platforms/platform-payload.ts), [platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx) y pruebas en [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Reglas de Activación y Desactivación de Botones en la Tabla de Plataformas
@@ -157,14 +157,14 @@ Afecta a [platform-payload.ts](file:///home/dtovar/bayblade/pokemon/frontend/src
 1. **Regla de Selección Estricta en Toolbar**: En la vista de tabla de plataformas de un área (`/admin/platforms`), los botones de acción situados en la barra de herramientas a la izquierda del separador vertical (`ADMINS`, `EDITAR`, `ELIMINAR`) deben obedecer de forma uniforme las mismas reglas de activación y desactivación vigentes en los módulos de Usuarios (`users-list.tsx`) y Áreas (`areas-list.tsx`):
    - **0 filas seleccionadas**: Los botones `ADMINS`, `EDITAR` y `ELIMINAR` permanecen inactivos/deshabilitados (`disabled={true}`, con clases visuales de estado deshabilitado en gris tenue). Sus tooltips y atributos `title` indican claramente al usuario la acción requerida: `"Selecciona 1 plataforma para ver administradores"`, `"Selecciona 1 plataforma para editar"` y `"Selecciona 1 plataforma para eliminar"`.
    - **1 fila seleccionada**: Los botones se habilitan automáticamente (`disabled={false}`). `EDITAR` y `ELIMINAR` operan sobre la plataforma seleccionada (con `aria-label` y `title` contextuales: `"Editar {nombre}"`, `"Eliminar {nombre}"`). `ADMINS` permite abrir el panel de administradores del área activa. `ELIMINAR` utiliza la variante visual destructiva estándar `variant="fila-peligro"`.
-   - **Más de 1 fila seleccionada**: Los botones se deshabilitan preventivamente (`disabled={true}`), mostrando en su `title` el mensaje explicativo: `"Solo se puede editar 1 plataforma a la vez"` y `"Solo se puede eliminar 1 plataforma a la vez"`, junto al badge que indica el número total de plataformas seleccionadas.
+   - **Más de 1 fila seleccionada**: `ADMINS` y `EDITAR` se deshabilitan (`"Solo se puede editar 1 plataforma a la vez"`); `ELIMINAR` sigue activo para el borrado en lote (ver "Eliminación en Lote para Selección Múltiple de Áreas y Plataformas").
 2. **Consistencia Visual con el Botón Nuevo**: El botón `+ NUEVO` permanece ubicado a la derecha del separador vertical `|` como acción de creación primaria independiente de la selección (`variant="fila-primario"`), siempre disponible salvo durante la carga inicial o si no existen áreas disponibles.
 
 ### Ejemplo
 Al acceder a "Demo Finanzas" con 0 plataformas marcadas, los botones `ADMINS`, `EDITAR` y `ELIMINAR` se muestran en gris tenue y no permiten clic (deshabilitados), mientras que `+ NUEVO` permanece activo en azul primario. Al marcar la casilla de la plataforma "Contabilidad", los tres botones se iluminan y se vuelven interactivos, mostrando "Editar Contabilidad" y "Eliminar Contabilidad". Al desmarcarla o marcar más de una, los botones regresan inmediatamente a su estado deshabilitado.
 
 ### Impacto
-Afecta a [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx), [areas-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas-list.tsx), [users-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users-list.tsx) y a las pruebas en [platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [platform-admin.tsx](../frontend/src/components/platform-admin.tsx), [areas-list.tsx](../frontend/src/components/areas-list.tsx), [users-list.tsx](../frontend/src/components/users-list.tsx) y a las pruebas en [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Simplificación de los Asistentes de Plataformas (Eliminación de Área e Integración en Alta y Edición)
@@ -181,7 +181,7 @@ Afecta a [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/
 Al seleccionar una plataforma en la tabla y presionar el botón "EDITAR", se abre el diálogo "Editar plataforma" mostrando en el Paso 1 únicamente los campos Nombre, Descripción y Enlace (sin el selector desplegable de Área ni la sección de Integración). El usuario puede modificar el nombre o enlace, presionar "Siguiente" para ajustar los colores o estado en el Paso 2, y guardar de inmediato sin fricción ni validaciones accesorias de directorio o conector.
 
 ### Impacto
-Afecta a [platform-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-form.tsx), [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx) y la suite de pruebas [platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx), [platform-admin.tsx](../frontend/src/components/platform-admin.tsx) y la suite de pruebas [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Botón de Accesos en la Tabla de Plataformas (Gestión de Accesos por Plataforma)
@@ -203,7 +203,7 @@ Afecta a [platform-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/c
 Al seleccionar la plataforma "Contabilidad" dentro del área "Finanzas" y hacer clic en el botón "ACCESOS" de la barra de herramientas, se abre el panel modal "Accesos — Contabilidad". Si la usuaria "Ana López" no tiene acceso, el administrador marca su casilla y presiona "Guardar", otorgándole acceso inmediatamente. Si el usuario "Carlos Ruiz" ya tiene acceso y se desmarca su casilla, el sistema solicita confirmación ("¿Deseas retirar el acceso?") y al confirmar ejecuta la revocación formal.
 
 ### Impacto
-Afecta a [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx), [platform-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-access-panel.tsx), [api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [api.py](file:///home/dtovar/bayblade/pokemon/app/modules/access/api.py) y las suites de pruebas [platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx) y [platform-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-access-panel.test.tsx).
+Afecta a [platform-admin.tsx](../frontend/src/components/platform-admin.tsx), [platform-access-panel.tsx](../frontend/src/components/platforms/platform-access-panel.tsx), [api.ts](../frontend/src/lib/api.ts), [api.py](../app/modules/access/api.py) y las suites de pruebas [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx) y [platform-access-panel.test.tsx](../frontend/tests/components/platform-access-panel.test.tsx).
 
 
 ## Dual Picklist en la Gestión de Accesos por Plataforma
@@ -225,7 +225,7 @@ Afecta a [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/
 Al abrir el modal "Accesos — Contabilidad", en el lado izquierdo aparecen los usuarios de Finanzas que no cuentan con cuenta o permisos en Contabilidad, y en el lado derecho aquellos que ya están autorizados. El administrador puede hacer clic sobre "Ana López" en la izquierda para moverla a la derecha ("Con acceso"). Luego pulsa "Guardar" para consolidar el otorgamiento. Si traslada a "Carlos Ruiz" de la derecha a la izquierda y presiona "Guardar", el sistema despliega el diálogo "Revocar accesos" solicitando confirmación explícita para evitar revocaciones accidentales.
 
 ### Impacto
-Afecta a [platform-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-access-panel.tsx), [form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/form.tsx) y la suite de pruebas [platform-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-access-panel.test.tsx).
+Afecta a [platform-access-panel.tsx](../frontend/src/components/platforms/platform-access-panel.tsx), [form.tsx](../frontend/src/components/form.tsx) y la suite de pruebas [platform-access-panel.test.tsx](../frontend/tests/components/platform-access-panel.test.tsx).
 
 
 ## Cierre Automático del Modal de Accesos tras Guardar
@@ -237,7 +237,7 @@ Al completar exitosamente el guardado de los cambios en el modal de accesos por 
 El administrador transfiere a "Ana López" a la columna "Con acceso" y presiona "Guardar". Una vez que la API confirma el otorgamiento del acceso, se muestra el Toast de éxito y el modal se cierra automáticamente, regresando a la tabla de plataformas.
 
 ### Impacto
-Afecta a [platform-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-access-panel.tsx) y [platform-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-access-panel.test.tsx).
+Afecta a [platform-access-panel.tsx](../frontend/src/components/platforms/platform-access-panel.tsx) y [platform-access-panel.test.tsx](../frontend/tests/components/platform-access-panel.test.tsx).
 
 
 ## Guardado Directo Sin Diálogo de Confirmación en Dual Picklist de Accesos
@@ -249,7 +249,7 @@ En el modal de gestión de accesos por plataforma (`PlatformAccessPanel`), la tr
 El administrador traslada a un usuario de la columna "Con acceso" a "Sin acceso" y hace clic en "Guardar". El sistema procesa la revocación inmediatamente sin mostrar ninguna ventana emergente adicional, muestra la notificación Toast "Acceso retirado para «Contabilidad»." y cierra el modal devolviendo el foco a la tabla.
 
 ### Impacto
-Afecta a [platform-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-access-panel.tsx) y [platform-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-access-panel.test.tsx).
+Afecta a [platform-access-panel.tsx](../frontend/src/components/platforms/platform-access-panel.tsx) y [platform-access-panel.test.tsx](../frontend/tests/components/platform-access-panel.test.tsx).
 
 
 ## Notificaciones Exclusivas vía Toast en Gestión de Accesos
@@ -261,7 +261,7 @@ En el modal de administración de accesos por plataforma (`PlatformAccessPanel`)
 Cuando ocurre un error o se completa exitosamente el guardado de accesos, el sistema despacha `avisar('error', ...)` o `avisar('success', ...)`. Ningún bloque `<ErrorNote>` o `<Badge>` aparece dentro del modal.
 
 ### Impacto
-Afecta a [platform-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-access-panel.tsx) y [platform-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-access-panel.test.tsx).
+Afecta a [platform-access-panel.tsx](../frontend/src/components/platforms/platform-access-panel.tsx) y [platform-access-panel.test.tsx](../frontend/tests/components/platform-access-panel.test.tsx).
 
 
 ## Auto-cierre Universal de Notificaciones Toast
@@ -273,7 +273,7 @@ Todos los avisos y notificaciones mostrados a través del proveedor Toast (`Toas
 Al producirse un error en una operación, se despliega una tarjeta Toast roja en la esquina inferior derecha con su barra de progreso. El usuario puede leerla y, si no interactúa con ella, se disipa automáticamente tras 6 segundos sin requerir que haga clic en el botón de cerrar.
 
 ### Impacto
-Afecta a [toast.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/toast.tsx) y [componentes-comunes.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/componentes-comunes.test.tsx).
+Afecta a [toast.tsx](../frontend/src/components/toast.tsx) y [componentes-comunes.test.tsx](../frontend/tests/components/componentes-comunes.test.tsx).
 
 
 ## Gestión Directa de Accesos en Plataformas sin Conector Automatizado
@@ -285,7 +285,7 @@ En plataformas que no cuentan con un conector externo activo ni integración LDA
 Un administrador ingresa a los accesos de la plataforma "qw" (sin conector), mueve a "Usuario Demo 2" a la columna "Con acceso" y guarda: el acceso queda inmediatamente en estado "activo". Al retirarlo y guardar, el acceso se revoca de inmediato sin error de "Solo se revoca un acceso activo".
 
 ### Impacto
-Afecta a [api.py](file:///home/dtovar/bayblade/pokemon/app/modules/access/api.py) y [test_platform_access_api.py](file:///home/dtovar/bayblade/pokemon/tests/access/test_platform_access_api.py).
+Afecta a [api.py](../app/modules/access/api.py) y [test_platform_access_api.py](../tests/access/test_platform_access_api.py).
 
 
 ## Configuración de Duración a 8 Segundos en Auto-cierre Toast
@@ -297,7 +297,7 @@ El temporizador global de auto-cierre para todas las notificaciones Toast (`TOAS
 Al guardar o retirar un acceso, el aviso Toast generado se muestra durante 8 segundos completos mientras su barra de progreso disminuye suavemente, desapareciendo de forma automática si el usuario no interactúa con él.
 
 ### Impacto
-Afecta a [toast.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/toast.tsx), [components.css](file:///home/dtovar/bayblade/pokemon/frontend/src/styles/components.css) y [componentes-comunes.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/componentes-comunes.test.tsx).
+Afecta a [toast.tsx](../frontend/src/components/toast.tsx), [components.css](../frontend/src/styles/components.css) y [componentes-comunes.test.tsx](../frontend/tests/components/componentes-comunes.test.tsx).
 
 
 ## Optimización de Navegación: Caché en Memoria y Stale-While-Revalidate
@@ -311,7 +311,7 @@ Para eliminar bloqueos y destellos de "Cargando…" en las transiciones de pági
 Al navegar entre "Áreas", "Plataformas" y otras secciones del sistema, la barra superior, la barra lateral y los listados principales se muestran de inmediato sin el spinner de pantalla completa ni recargas vacías.
 
 ### Impacto
-Afecta a [session-provider.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/session-provider.tsx), [use-async.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/use-async.ts) y [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx).
+Afecta a [session-provider.tsx](../frontend/src/components/session-provider.tsx), [use-async.ts](../frontend/src/lib/use-async.ts) y [platform-admin.tsx](../frontend/src/components/platform-admin.tsx).
 
 
 ## Configuración de Icono en Áreas y Columnas Estandarizadas en Tabla de Usuarios
@@ -330,7 +330,7 @@ Afecta a [session-provider.tsx](file:///home/dtovar/bayblade/pokemon/frontend/sr
 En la tabla de usuarios, las columnas visibles son "Nombre", "Correo", "Rol", "Estado" y "Áreas asignadas". En la columna "Áreas asignadas", en lugar de etiquetas de texto como "Finanzas", se observan exclusivamente los iconos distintivos configurados para dichas áreas (por ejemplo el icono de estructura o de plataforma con tooltip de su nombre). Al dar de alta un área, en el paso 2 el administrador puede pulsar el icono deseado dentro de la cuadrícula interactiva.
 
 ### Impacto
-Afecta a [serializacion.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/serializacion.py), [types.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/types.ts), [area-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas/area-form.tsx), [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx), [users-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users-list.tsx) y pruebas en [users-list.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/users-list.test.tsx).
+Afecta a [serializacion.py](../app/modules/users/serializacion.py), [types.ts](../frontend/src/lib/types.ts), [area-form.tsx](../frontend/src/components/areas/area-form.tsx), [platform-admin.tsx](../frontend/src/components/platform-admin.tsx), [users-list.tsx](../frontend/src/components/users-list.tsx) y pruebas en [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
 
 
 ## Columnas Estandarizadas en la Tabla de Áreas
@@ -350,7 +350,7 @@ Queda eliminada la columna `Alcance` de la tabla, integrando el indicador de adm
 Al acceder a `/areas`, la tabla muestra los encabezados "Área", "Descripción", "Plataformas", "Usuarios" y "Estado". La columna previa "Alcance" no se despliega, optimizando el espacio horizontal y concentrando la información de descripción de cada área en su propia columna dedicada.
 
 ### Impacto
-Afecta a [areas-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas-list.tsx) y a la suite de pruebas en [areas-list.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/areas-list.test.tsx).
+Afecta a [areas-list.tsx](../frontend/src/components/areas-list.tsx) y a la suite de pruebas en [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
 
 
 ## Gestión de Usuarios y Accesos
@@ -367,7 +367,7 @@ Al guardar, se realizan las operaciones de otorgamiento (`grantPlatformAccess`) 
 Al seleccionar al usuario "Ana Ruiz" y presionar "Accesos", se despliega el modal flotante "Accesos — Ana Ruiz". En la columna "Sin acceso" se listan las plataformas disponibles. Al hacer clic en el botón "+" de la plataforma "GitLab", esta se transfiere inmediatamente a la columna "Con acceso" y el pie actualiza a "1 cambio pendiente". Al presionar "Guardar", se aplican las operaciones correspondientes y se muestra un toast de éxito "Accesos actualizados correctamente".
 
 ### Impacto
-Afecta a [user-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users/user-access-panel.tsx), [users-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users-list.tsx), [api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [serializacion.py](file:///home/dtovar/bayblade/pokemon/app/modules/access/serializacion.py) y las suites de pruebas en [user-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/users/user-access-panel.test.tsx) y [users-list.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/users-list.test.tsx).
+Afecta a [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx), [users-list.tsx](../frontend/src/components/users-list.tsx), [api.ts](../frontend/src/lib/api.ts), [serializacion.py](../app/modules/access/serializacion.py) y las suites de pruebas en [user-access-panel.test.tsx](../frontend/tests/components/users/user-access-panel.test.tsx) y [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
 
 
 ## Columnas Estandarizadas en la Tabla de Áreas
@@ -387,7 +387,7 @@ Queda eliminada la columna `Alcance` de la tabla, integrando el indicador de adm
 Al acceder a `/areas`, la tabla muestra los encabezados "Área", "Descripción", "Plataformas", "Usuarios" y "Estado". La columna previa "Alcance" no se despliega, optimizando el espacio horizontal y concentrando la información de descripción de cada área en su propia columna dedicada.
 
 ### Impacto
-Afecta a [areas-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas-list.tsx) y a la suite de pruebas en [areas-list.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/areas-list.test.tsx).
+Afecta a [areas-list.tsx](../frontend/src/components/areas-list.tsx) y a la suite de pruebas en [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
 
 
 ## Gestión de Usuarios y Accesos
@@ -404,7 +404,7 @@ Al guardar, se realizan las operaciones de otorgamiento (`grantPlatformAccess`) 
 Al seleccionar al usuario "Ana Ruiz" y presionar "Accesos", se despliega el modal flotante "Accesos — Ana Ruiz". En la columna "Sin acceso" se listan las plataformas disponibles. Al hacer clic en el botón "+" de la plataforma "GitLab", esta se transfiere inmediatamente a la columna "Con acceso" y el pie actualiza a "1 cambio pendiente". Al presionar "Guardar", se aplican las operaciones correspondientes y se muestra un toast de éxito "Accesos actualizados correctamente".
 
 ### Impacto
-Afecta a [user-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users/user-access-panel.tsx), [users-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users-list.tsx), [api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [serializacion.py](file:///home/dtovar/bayblade/pokemon/app/modules/access/serializacion.py) y las suites de pruebas en [user-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/users/user-access-panel.test.tsx) y [users-list.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/users-list.test.tsx).
+Afecta a [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx), [users-list.tsx](../frontend/src/components/users-list.tsx), [api.ts](../frontend/src/lib/api.ts), [serializacion.py](../app/modules/access/serializacion.py) y las suites de pruebas en [user-access-panel.test.tsx](../frontend/tests/components/users/user-access-panel.test.tsx) y [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
 
 
 ## Persistencia de Dimensiones de Cuadrícula en Plataformas
@@ -416,7 +416,7 @@ En la vista de administración de plataformas (`/admin/platforms`), las dimensio
 Un administrador ingresa a `General > Plataformas` y en el menú de cuadrícula selecciona la combinación `3×3`. El diseño se adapta de inmediato mostrando 9 ranuras y guardando los valores `3` y `3` en el almacenamiento local. Al navegar hacia otra ruta del sistema o refrescar la pestaña, la vista de plataformas mantiene activa la configuración de 3 filas por 3 columnas.
 
 ### Impacto
-Afecta a [platform-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platform-admin.tsx) y a la suite de pruebas en [platform-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/platform-admin.test.tsx).
+Afecta a [platform-admin.tsx](../frontend/src/components/platform-admin.tsx) y a la suite de pruebas en [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
 
 ## Botones Estandarizados en la Barra de Herramientas de Conectores
@@ -432,7 +432,7 @@ En la vista de administración de conectores (`/admin/connectors`), la barra de 
 Al ingresar a `Gestión > Conectores`, la barra de herramientas presenta a la derecha los botones `Editar` y `Eliminar` (ambos deshabilitados inicialmente), el separador vertical y `+ Nuevo`. Al seleccionar la plataforma "Contabilidad", los botones `Editar` y `Eliminar` se activan con sus respectivas etiquetas accesibles. Al presionar `Eliminar`, se despliega el diálogo de confirmación para revocar el conector sin necesidad de descender al panel inferior.
 
 ### Impacto
-Afecta a [connectors-admin.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/connectors-admin.tsx), [connector-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/connector-list.tsx) y a la suite de pruebas en [connectors-admin.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/connectors/connectors-admin.test.tsx).
+Afecta a [connectors-admin.tsx](../frontend/src/components/connectors/connectors-admin.tsx), [connector-list.tsx](../frontend/src/components/connectors/connector-list.tsx) y a la suite de pruebas en [connectors-admin.test.tsx](../frontend/tests/components/connectors/connectors-admin.test.tsx).
 
 
 ## Tolerancia a Entidades Nulas en Bitácora de Ejecuciones
@@ -445,7 +445,7 @@ Debido a que el backend retorna intencionalmente `null` cuando una entidad refer
 Si un trabajo de aprovisionamiento histórico referencia una plataforma que posteriormente fue eliminada de la base de datos (como el trabajo n.º 2), la bitácora despliega correctamente la fila identificando al usuario y señalando "Plataforma eliminada · [Nombre del área]" en lugar de interrumpir la renderización.
 
 ### Impacto
-Afecta a [jobs-table.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/jobs-table.tsx), [job-detail-modal.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/job-detail-modal.tsx), [job-retry-dialog.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/job-retry-dialog.tsx), [jobs-log.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/jobs-log.tsx), [types.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/access/types.ts) y a la suite de pruebas en [jobs-page.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/connectors/jobs-page.test.tsx).
+Afecta a [jobs-table.tsx](../frontend/src/components/connectors/jobs-table.tsx), [job-detail-modal.tsx](../frontend/src/components/connectors/job-detail-modal.tsx), [job-retry-dialog.tsx](../frontend/src/components/connectors/job-retry-dialog.tsx), [jobs-log.tsx](../frontend/src/components/connectors/jobs-log.tsx), [types.ts](../frontend/src/lib/access/types.ts) y a la suite de pruebas en [jobs-page.test.tsx](../frontend/tests/components/connectors/jobs-page.test.tsx).
 
 
 ## Script Unificado de Arranque de Servicios
@@ -462,7 +462,7 @@ Para facilitar el levantamiento del ecosistema de desarrollo en local, se dispon
 Al ejecutar `./start.sh` desde la terminal en la raíz del proyecto, el sistema aplica las migraciones pendientes y levanta de inmediato tanto el backend (`http://localhost:5001`) como el frontend (`http://localhost:3000`). Al presionar `Ctrl+C`, la terminal finaliza ambos subprocesos y libera los puertos de forma segura.
 
 ### Impacto
-Afecta a [start.sh](file:///home/dtovar/bayblade/pokemon/start.sh) y a los procedimientos de desarrollo local.
+Afecta a [start.sh](../start.sh) y a los procedimientos de desarrollo local.
 
 
 ## Limpieza Visual en Modal de Accesos (Dual Picklist)
@@ -474,61 +474,61 @@ En el modal de administración de accesos (`PlatformAccessPanel` y paneles anál
 Al abrir el modal de accesos para una plataforma desde el catálogo, la cabecera muestra inmediatamente los contadores y las dos columnas del Dual Picklist sin párrafos de texto instructivo innecesarios, permitiendo una visión despejada y directa de los usuarios asignados y disponibles.
 
 ### Impacto
-Afecta a [platform-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-access-panel.tsx) y a la experiencia de usuario en la administración de accesos del portal.
+Afecta a [platform-access-panel.tsx](../frontend/src/components/platforms/platform-access-panel.tsx) y a la experiencia de usuario en la administración de accesos del portal.
 
 
 ## Estandarización Global de Opciones de Selección (Option y nexus-option)
 
 ### Regla
-Todos los elementos desplegables de selección (`<Select>` y selectores del sistema) deben utilizar el componente reutilizable `<Option>` de [form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/form.tsx) o, en su defecto, portar la clase CSS `.nexus-option` (junto con tokens de fondo, texto y peso tipográfico semibold: `bg-input-bg text-input-text font-semibold`). Queda estrictamente prohibido el uso de etiquetas `<option>` nativas desnudas sin estilizado de clase, asegurando que en todos los navegadores y sistemas operativos las opciones respeten los tokens de superficie, contraste, estados `:checked`, `:hover` y soporte completo de modo oscuro.
+Todos los elementos desplegables de selección (`<Select>` y selectores del sistema) deben utilizar el componente reutilizable `<Option>` de [form.tsx](../frontend/src/components/form.tsx) o, en su defecto, portar la clase CSS `.nexus-option` (junto con tokens de fondo, texto y peso tipográfico semibold: `bg-input-bg text-input-text font-semibold`). Queda estrictamente prohibido el uso de etiquetas `<option>` nativas desnudas sin estilizado de clase, asegurando que en todos los navegadores y sistemas operativos las opciones respeten los tokens de superficie, contraste, estados `:checked`, `:hover` y soporte completo de modo oscuro.
 
 ### Ejemplo
 En los filtros de auditoría, bitácora de ejecuciones, alcance, inventario y solicitudes, cada opción se renderiza como `<Option value="...">Texto</Option>`, inyectando la clase `.nexus-option` y garantizando que el menú desplegable conserve el tema visual de Nexus en lugar de los estilos grises por defecto del navegador.
 
 ### Impacto
-Afecta a [form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/form.tsx), [select-premium.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/select-premium.tsx), [scope-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/scope-filters.tsx), [inventory-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/inventory-filters.tsx), [my-access.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/my-access.tsx), [approvals-inbox.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/approvals-inbox.tsx), [my-requests.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/my-requests.tsx), [catalog-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/catalog-filters.tsx), [theme-selector.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/theme-selector.tsx), [platform-integration-fields.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-integration-fields.tsx), [jobs-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/jobs-filters.tsx), [connector-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/connector-form.tsx), [connector-param-fields.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/connector-param-fields.tsx), [audit-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/audit/audit-filters.tsx), [smtp-tab.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/settings/smtp-tab.tsx) y [components.css](file:///home/dtovar/bayblade/pokemon/frontend/src/styles/components.css).
+Afecta a [form.tsx](../frontend/src/components/form.tsx), [select-premium.tsx](../frontend/src/components/select-premium.tsx), [scope-filters.tsx](../frontend/src/components/access/scope-filters.tsx), [inventory-filters.tsx](../frontend/src/components/access/inventory-filters.tsx), [my-access.tsx](../frontend/src/components/access/my-access.tsx), [approvals-inbox.tsx](../frontend/src/components/access/approvals-inbox.tsx), [my-requests.tsx](../frontend/src/components/access/my-requests.tsx), [catalog-filters.tsx](../frontend/src/components/access/catalog-filters.tsx), [theme-selector.tsx](../frontend/src/components/theme-selector.tsx), [platform-integration-fields.tsx](../frontend/src/components/platforms/platform-integration-fields.tsx), [jobs-filters.tsx](../frontend/src/components/connectors/jobs-filters.tsx), [connector-form.tsx](../frontend/src/components/connectors/connector-form.tsx), [connector-param-fields.tsx](../frontend/src/components/connectors/connector-param-fields.tsx), [audit-filters.tsx](../frontend/src/components/audit/audit-filters.tsx), [smtp-tab.tsx](../frontend/src/components/settings/smtp-tab.tsx) y [components.css](../frontend/src/styles/components.css).
 
 
 ## Supresión de Texto Instructivo en Modal de Accesos de Usuarios (UserAccessPanel)
 
 ### Regla
-En concordancia con la estandarización del modal de accesos de plataformas, en el modal de accesos de usuarios ([user-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users/user-access-panel.tsx)) se elimina el texto de instrucción ("Haz clic sobre cualquier plataforma para transferirla entre columnas..."). Las columnas Dual Picklist, los buscadores independientes y los botones interactivos proporcionan una interfaz autodirigida y ergonómica sin necesidad de leyendas explicativas estáticas.
+En concordancia con la estandarización del modal de accesos de plataformas, en el modal de accesos de usuarios ([user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx)) se elimina el texto de instrucción ("Haz clic sobre cualquier plataforma para transferirla entre columnas..."). Las columnas Dual Picklist, los buscadores independientes y los botones interactivos proporcionan una interfaz autodirigida y ergonómica sin necesidad de leyendas explicativas estáticas.
 
 ### Ejemplo
 Al seleccionar un usuario en la tabla de usuarios y hacer clic en el botón `Accesos`, el modal desplegado muestra de inmediato los contadores y las columnas de plataformas disponibles y asignadas, con máximo aprovechamiento del espacio vertical y sin bloques de texto redundantes.
 
 ### Impacto
-Afecta a [user-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users/user-access-panel.tsx) y a la suite de pruebas en [user-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/users/user-access-panel.test.tsx).
+Afecta a [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx) y a la suite de pruebas en [user-access-panel.test.tsx](../frontend/tests/components/users/user-access-panel.test.tsx).
 
 
 ## Estandarización Global de Opciones de Selección (Option y nexus-option)
 
 ### Regla
-Todos los elementos desplegables de selección (`<Select>` y selectores del sistema) deben utilizar el componente reutilizable `<Option>` de [form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/form.tsx) o, en su defecto, portar la clase CSS `.nexus-option` (junto con tokens de fondo, texto y peso tipográfico semibold: `bg-input-bg text-input-text font-semibold`). Queda estrictamente prohibido el uso de etiquetas `<option>` nativas desnudas sin estilizado de clase, asegurando que en todos los navegadores y sistemas operativos las opciones respeten los tokens de superficie, contraste, estados `:checked`, `:hover` y soporte completo de modo oscuro.
+Todos los elementos desplegables de selección (`<Select>` y selectores del sistema) deben utilizar el componente reutilizable `<Option>` de [form.tsx](../frontend/src/components/form.tsx) o, en su defecto, portar la clase CSS `.nexus-option` (junto con tokens de fondo, texto y peso tipográfico semibold: `bg-input-bg text-input-text font-semibold`). Queda estrictamente prohibido el uso de etiquetas `<option>` nativas desnudas sin estilizado de clase, asegurando que en todos los navegadores y sistemas operativos las opciones respeten los tokens de superficie, contraste, estados `:checked`, `:hover` y soporte completo de modo oscuro.
 
 ### Ejemplo
 En los filtros de auditoría, bitácora de ejecuciones, alcance, inventario y solicitudes, cada opción se renderiza como `<Option value="...">Texto</Option>`, inyectando la clase `.nexus-option` y garantizando que el menú desplegable conserve el tema visual de Nexus en lugar de los estilos grises por defecto del navegador.
 
 ### Impacto
-Afecta a [form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/form.tsx), [select-premium.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/select-premium.tsx), [scope-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/scope-filters.tsx), [inventory-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/inventory-filters.tsx), [my-access.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/my-access.tsx), [approvals-inbox.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/approvals-inbox.tsx), [my-requests.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/my-requests.tsx), [catalog-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/access/catalog-filters.tsx), [theme-selector.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/theme-selector.tsx), [platform-integration-fields.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-integration-fields.tsx), [jobs-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/jobs-filters.tsx), [connector-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/connector-form.tsx), [connector-param-fields.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/connectors/connector-param-fields.tsx), [audit-filters.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/audit/audit-filters.tsx), [smtp-tab.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/settings/smtp-tab.tsx) y [components.css](file:///home/dtovar/bayblade/pokemon/frontend/src/styles/components.css).
+Afecta a [form.tsx](../frontend/src/components/form.tsx), [select-premium.tsx](../frontend/src/components/select-premium.tsx), [scope-filters.tsx](../frontend/src/components/access/scope-filters.tsx), [inventory-filters.tsx](../frontend/src/components/access/inventory-filters.tsx), [my-access.tsx](../frontend/src/components/access/my-access.tsx), [approvals-inbox.tsx](../frontend/src/components/access/approvals-inbox.tsx), [my-requests.tsx](../frontend/src/components/access/my-requests.tsx), [catalog-filters.tsx](../frontend/src/components/access/catalog-filters.tsx), [theme-selector.tsx](../frontend/src/components/theme-selector.tsx), [platform-integration-fields.tsx](../frontend/src/components/platforms/platform-integration-fields.tsx), [jobs-filters.tsx](../frontend/src/components/connectors/jobs-filters.tsx), [connector-form.tsx](../frontend/src/components/connectors/connector-form.tsx), [connector-param-fields.tsx](../frontend/src/components/connectors/connector-param-fields.tsx), [audit-filters.tsx](../frontend/src/components/audit/audit-filters.tsx), [smtp-tab.tsx](../frontend/src/components/settings/smtp-tab.tsx) y [components.css](../frontend/src/styles/components.css).
 
 
 ## Supresión de Texto Instructivo en Modal de Accesos de Usuarios (UserAccessPanel)
 
 ### Regla
-En concordancia con la estandarización del modal de accesos de plataformas, en el modal de accesos de usuarios ([user-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users/user-access-panel.tsx)) se elimina el texto de instrucción ("Haz clic sobre cualquier plataforma para transferirla entre columnas..."). Las columnas Dual Picklist, los buscadores independientes y los botones interactivos proporcionan una interfaz autodirigida y ergonómica sin necesidad de leyendas explicativas estáticas.
+En concordancia con la estandarización del modal de accesos de plataformas, en el modal de accesos de usuarios ([user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx)) se elimina el texto de instrucción ("Haz clic sobre cualquier plataforma para transferirla entre columnas..."). Las columnas Dual Picklist, los buscadores independientes y los botones interactivos proporcionan una interfaz autodirigida y ergonómica sin necesidad de leyendas explicativas estáticas.
 
 ### Ejemplo
 Al seleccionar un usuario en la tabla de usuarios y hacer clic en el botón `Accesos`, el modal desplegado muestra de inmediato los contadores y las columnas de plataformas disponibles y asignadas, con máximo aprovechamiento del espacio vertical y sin bloques de texto redundantes.
 
 ### Impacto
-Afecta a [user-access-panel.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users/user-access-panel.tsx) y a la suite de pruebas en [user-access-panel.test.tsx](file:///home/dtovar/bayblade/pokemon/frontend/tests/components/users/user-access-panel.test.tsx).
+Afecta a [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx) y a la suite de pruebas en [user-access-panel.test.tsx](../frontend/tests/components/users/user-access-panel.test.tsx).
 
 
 ## Estandarización de Dimensiones de Iconos en Tablas (Usuarios y Áreas)
 
 ### Regla
-Todos los iconos contenedores, badges de estado, contadores numéricos y avatares en las tablas de entidades maestras ([users-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users-list.tsx), [areas-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas-list.tsx) y [platform-columns.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-columns.tsx)) deben estar rigurosamente estandarizados bajo el sistema de 8pt con una altura y escala unificada:
+Todos los iconos contenedores, badges de estado, contadores numéricos y avatares en las tablas de entidades maestras ([users-list.tsx](../frontend/src/components/users-list.tsx), [areas-list.tsx](../frontend/src/components/areas-list.tsx) y [platform-columns.tsx](../frontend/src/components/platforms/platform-columns.tsx)) deben estar rigurosamente estandarizados bajo el sistema de 8pt con una altura y escala unificada:
 - **Contenedores de iconos / Avatares**: Cuadrados de 32x32 px (`size-8`) con radio de curvatura uniforme (`rounded-lg`).
 - **Pastillas de contadores y estados**: Altura fija de 32 px (`h-8` / `!h-8`) con esquinas curvadas (`rounded-lg`) y relleno táctil equilibrado.
 - **Iconografía interna**: Escala estándar de 16 px (`tamano="sm"`), eliminando iconos reducidos (`tamano="xs"` o contenedores `size-7`) que producían disparidad visual respecto al avatar de la columna de nombre.
@@ -538,7 +538,7 @@ Todos los iconos contenedores, badges de estado, contadores numéricos y avatare
 En la tabla de usuarios, las insignias de estado (activo/inactivo y LDAP/local) y los iconos de áreas asignadas miden exactamente 32x32 px (`size-8`), alineándose de manera simétrica y con la misma presencia visual que el avatar del nombre. En la tabla de áreas, los contadores de plataformas y usuarios tienen altura de 32 px con iconos de 16 px (`tamano="sm"`), igualando la escala del chip de nombre de área.
 
 ### Impacto
-Afecta a [users-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/users-list.tsx), [areas-list.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/areas-list.tsx), [platform-columns.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platform-columns.tsx) y [ui.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/ui.tsx).
+Afecta a [users-list.tsx](../frontend/src/components/users-list.tsx), [areas-list.tsx](../frontend/src/components/areas-list.tsx), [platform-columns.tsx](../frontend/src/components/platforms/platform-columns.tsx) y [ui.tsx](../frontend/src/components/ui.tsx).
 
 
 ## Operaciones de Directorio LDAP en el Backend (CRUD de Usuarios, Contraseñas y Membresías)
@@ -554,4 +554,217 @@ El backend centraliza y garantiza la gestión integral de cuentas y membresías 
 Al invocar `escritor.create_user(DatosCuenta('carlos', 'Carlos', 'Gomez', 'carlos@dominio.com', password='Password123!'))`, el backend crea la entrada en LDAP con su `userPassword`. Para cambiar su contraseña, `escritor.change_password('carlos', 'NuevaClave456!')` actualiza la clave en OpenLDAP de forma segura y sin exponer credenciales en los logs. Para eliminar la cuenta, `escritor.delete_user('carlos')` verifica que el DN esté bajo la base autorizada y ejecuta la eliminación sin afectar ramas ajenas.
 
 ### Impacto
-Afecta a [writer.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/writer.py), [directory_accounts.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/directory_accounts.py), [ldap_provider.py](file:///home/dtovar/bayblade/pokemon/app/modules/provisioning/ldap_provider.py) y las suites de pruebas [test_writer.py](file:///home/dtovar/bayblade/pokemon/tests/directory/test_writer.py) y [test_alta_directorio.py](file:///home/dtovar/bayblade/pokemon/tests/users/test_alta_directorio.py).
+Afecta a [writer.py](../app/modules/directory/writer.py), [directory_accounts.py](../app/modules/users/directory_accounts.py), [ldap_provider.py](../app/modules/provisioning/ldap_provider.py) y las suites de pruebas [test_writer.py](../tests/directory/test_writer.py) y [test_alta_directorio.py](../tests/users/test_alta_directorio.py).
+
+
+## Eliminación en Lote para Selección Múltiple de Usuarios
+
+### Regla
+En la vista de administración de usuarios ([users-list.tsx](../frontend/src/components/users-list.tsx)), el botón de acción "Eliminar" en la barra de herramientas se habilita tanto para selección individual como para selecciones múltiples (`disabled={activeSelectedIds.size === 0}`):
+1. **Acción unificada**: Mientras que los botones "Accesos" y "Editar" requieren un alcance singular (`isSingleSelected = activeSelectedIds.size === 1`), el botón "Eliminar" permite la supresión de una o más cuentas de usuarios concurrentemente.
+2. **Confirmación contextual**: Al presionar "Eliminar" con múltiples registros seleccionados, el diálogo de confirmación `ConfirmDialog` adapta su título a "Eliminar usuarios" y expone explícitamente el conteo total de cuentas a retirar ("Se eliminarán las cuentas de los X usuarios seleccionados. Esta acción no se puede deshacer.").
+3. **Ejecución y notificación**: Tras la confirmación, el sistema ejecuta la baja de cada cuenta invocando `api.deleteUser`, limpia la selección activa, recarga la lista de usuarios y notifica mediante Toast el total de cuentas retiradas.
+
+### Ejemplo
+Al marcar la casilla superior para seleccionar todos los usuarios o seleccionar varias filas (por ejemplo, 3 usuarios), los botones "Accesos" y "Editar" permanecen deshabilitados con sus respectivas descripciones explicativas, mientras que el botón "Eliminar" se activa indicando "Eliminar 3 usuarios seleccionados". Al pulsarlo, el modal solicita confirmación para los 3 usuarios y, tras confirmar, retira las cuentas y muestra el aviso "3 cuentas de usuarios retiradas".
+
+### Impacto
+Afecta a [users-list.tsx](../frontend/src/components/users-list.tsx) y a la suite de pruebas en [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
+
+
+## Eliminación en Lote para Selección Múltiple de Áreas y Plataformas
+
+### Regla
+En las tablas de administración de entidades ([areas-list.tsx](../frontend/src/components/areas-list.tsx) y [platform-admin.tsx](../frontend/src/components/platform-admin.tsx)), el botón de acción "Eliminar" en la barra de herramientas admite tanto selección individual como selección múltiple de 2 o más registros:
+1. **Áreas ([areas-list.tsx](../frontend/src/components/areas-list.tsx))**:
+   - El botón "Eliminar" se habilita cuando hay al menos 1 área seleccionada y el usuario cuenta con permisos sobre todas las áreas seleccionadas (superadministrador, o administrador de área con todas las áreas seleccionadas dentro de `managedIds`).
+   - El diálogo de confirmación `ConfirmDialog` adapta título y mensaje en plural indicando el conteo de áreas ("Se eliminarán las X áreas seleccionadas. Si alguna tiene plataformas asignadas, primero hay que reasignarlas.").
+   - La eliminación ejecuta `api.deleteArea` secuencialmente por cada área, limpia la selección, recarga la lista y notifica con Toast el resultado ("X áreas fueron retiradas.").
+2. **Plataformas ([platform-admin.tsx](../frontend/src/components/platform-admin.tsx))**:
+   - En la tabla de plataformas de un área activa, el botón "Eliminar" se habilita para 1 o más plataformas seleccionadas (`activeSelectedPlatformIds.size > 0`). Los botones "Accesos" y "Editar" se mantienen restringidos a exactamente 1 plataforma (`isSinglePlatformSelected`).
+   - El diálogo de confirmación adapta título y mensaje ("Se eliminarán las X plataformas seleccionadas. Esta acción no se puede deshacer.").
+   - La eliminación invoca `api.deletePlatform` por cada plataforma en lote, retira los IDs de la selección activa, recarga el listado y reporta mediante Toast el total de plataformas eliminadas.
+
+### Ejemplo
+Al marcar varias casillas en la tabla de áreas (por ejemplo, 2 áreas administradas), el botón "Eliminar" se activa como "Eliminar 2 áreas seleccionadas". Al hacer click y confirmar en el modal, se eliminan ambas áreas y se muestra el toast "2 áreas fueron retiradas". De igual forma, en la tabla de plataformas de un área, al seleccionar 3 plataformas el botón "Eliminar" se activa para eliminarlas en lote tras la confirmación respectiva.
+
+### Impacto
+Afecta a [areas-list.tsx](../frontend/src/components/areas-list.tsx), [platform-admin.tsx](../frontend/src/components/platform-admin.tsx) y a las suites de pruebas [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx) y [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
+
+
+## Condiciones de Integridad para la Baja de Áreas (Plataformas y Usuarios)
+
+### Regla
+La eliminación de un área en el sistema está sujeta a las siguientes reglas estrictas de integridad referencial:
+1. **Plataformas vinculadas (Bloqueo de eliminación)**: Un área no puede eliminarse si contiene una o más plataformas asociadas (`area.platforms` no vacío). La API rechaza la solicitud con código `409 Conflict` (`area_con_plataformas`), requiriendo que las plataformas sean previamente eliminadas o reasignadas a otra área.
+2. **Usuarios asignados (Desvinculación automática)**: La existencia de usuarios asignados al área (`user_areas`) o administradores delegados (`area_admins`) no impide la baja del área. Al concretarse la eliminación del área, las asociaciones en las tablas relacionales secundarias se eliminan automáticamente (desvinculando a los usuarios y administradores de dicha área), mientras que las cuentas de usuario (`users`) se conservan intactas en el sistema y en el directorio.
+
+### Ejemplo
+Si el área "Finanzas" contiene 2 plataformas y 5 usuarios, al intentar eliminarla el sistema rechaza la operación informando que primero deben reasignarse o eliminarse sus plataformas. Una vez que las plataformas se han movido a otra área (dejando 0 plataformas en Finanzas), el área se elimina exitosamente y los 5 usuarios simplemente dejan de pertenecer a "Finanzas", manteniéndose activos en el catálogo de usuarios.
+
+### Impacto
+Afecta a [app/modules/areas/baja.py](../app/modules/areas/baja.py), [app/modules/areas/api.py](../app/modules/areas/api.py), [areas-list.tsx](../frontend/src/components/areas-list.tsx) y los modelos de datos en [app/modules/auth/models.py](../app/modules/auth/models.py).
+
+
+## Generador de Contraseñas Seguras en el Modal de Nueva Cuenta
+
+### Regla
+El modal de creación de nueva cuenta ([directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx)) incorpora un generador criptográfico de contraseñas de alta seguridad ([generador-contrasena.ts](../frontend/src/lib/generador-contrasena.ts)):
+1. **Composición y Longitud**: Genera contraseñas alfanuméricas con símbolos con una longitud mínima garantizada de 16 caracteres (`LONGITUD_MINIMA_GENERADOR = 16`). La contraseña generada incluye obligatoriamente al menos una letra mayúscula (`A-Z`), una minúscula (`a-z`), un dígito numérico (`0-9`) y un símbolo especial (`!@#$%^&*()_+-=[]{}|;:,.<>?`), distribuidos mediante aleatoriedad criptográfica (`window.crypto.getRandomValues`) y mezclados con el algoritmo Fisher-Yates.
+2. **Sincronización Automática de Campos**: Al pulsar el botón "Generar contraseña", el sistema asigna el valor generado simultáneamente a los campos `Contraseña` y `Confirmar contraseña`, eliminando discrepancias o errores de coincidencia, activa la visibilidad del texto para que el operador pueda inspeccionarlo y copia la contraseña al portapapeles del navegador emitiendo una notificación Toast informativa.
+3. **Controles de Inspección**: Se habilitan controles contextuales para alternar la visibilidad de la contraseña ("Ver / Ocultar") y para copiarla al portapapeles en cualquier momento ("Copiar").
+
+### Ejemplo
+Al crear un nuevo usuario mediante el botón "Nuevo", el administrador hace clic en "Generar contraseña". El sistema genera instantáneamente una clave de 16 caracteres como `k7$M9!wP#2zL&4qX`, la copia al portapapeles, muestra la notificación correspondiente y puebla automáticamente los campos de contraseña y confirmación sin necesidad de digitación manual.
+
+### Impacto
+Afecta a [directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx), [generador-contrasena.ts](../frontend/src/lib/generador-contrasena.ts) y a las suites de pruebas [directory-account-form.test.tsx](../frontend/tests/components/users/directory-account-form.test.tsx) y [generador-contrasena.test.ts](../frontend/tests/lib/generador-contrasena.test.ts).
+
+
+## Disposición Inferior del Generador de Contraseñas en el Modal de Nueva Cuenta
+
+### Regla
+En el formulario del modal de nueva cuenta ([directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx)), la barra de utilidades del generador de contraseñas seguras se posiciona inmediatamente debajo de la cuadrícula de campos de contraseña (`Contraseña` y `Confirmar contraseña`):
+- Los campos de entrada de credenciales se presentan de forma limpia y directa al usuario en su cuadrícula de 2 columnas.
+- La barra de herramientas ubicada abajo integra la leyenda de asistencia, el botón de acción principal ("Generar contraseña") y los controles secundarios dinámicos ("Ver / Ocultar" y "Copiar") preservando el flujo visual natural de arriba a abajo.
+
+### Ejemplo
+Al visualizar el Paso 1 en "Nueva cuenta", el operador observa primero los campos "Nombre completo", "Correo", y a continuación la cuadrícula con "Contraseña" y "Confirmar contraseña". Inmediatamente debajo de ambos campos encuentra el contenedor del generador con el botón "Generar contraseña".
+
+### Impacto
+Afecta a [directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx) y a la suite de pruebas [directory-account-form.test.tsx](../frontend/tests/components/users/directory-account-form.test.tsx).
+
+
+## Optimización Dimensional y Prevención de Desbordamiento en Modales
+
+### Regla
+Para garantizar que todos los modales con formularios complejos de 2 pasos ([directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx)) desplieguen su contenido íntegro sin generar barras de desplazamiento vertical internas (scroll) ni ocultar acciones secundarias:
+1. **Altura Base de Modal ([components.css](../frontend/src/styles/components.css))**: La clase `.nx-modal-glass` eleva su altura estándar a `640px` (respetando `max-height: 90vh`), proveyendo el espacio vertical necesario para alojar el encabezado, el indicador de pasos (stepper), los campos del formulario con sus reservas de error de layout (`min-h-5`) y las barras de herramientas auxiliares.
+2. **Compactación de Contenedores Auxiliares**: La barra de autogeneración de contraseñas adopta una disposición horizontal ultra compacta (`px-3 py-2`), alineando la leyenda y los botones de acción (`Generar`, `Ver / Ocultar`, `Copiar`) en una sola línea fluida sin generar saltos de línea ni forzar scroll.
+
+### Ejemplo
+Al abrir el modal "Nueva cuenta", todo el Paso 1 (stepper, nombre completo, correo, contraseña, confirmar contraseña y la barra del generador) se visualiza completo y despejado sobre los botones "Cancelar" y "Siguiente", sin que aparezca ninguna barra de desplazamiento vertical y sin elementos recortados detrás del pie del modal.
+
+### Impacto
+Afecta a [components.css](../frontend/src/styles/components.css), [directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx) y a la suite de pruebas [directory-account-form.test.tsx](../frontend/tests/components/users/directory-account-form.test.tsx).
+
+
+## Asistente de 3 Pasos en la Creación y Edición de Plataformas
+
+## Plataformas
+
+### Regla
+El asistente modal de alta y edición de plataformas ([platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx)) adopta un flujo guiado de 3 pasos progresivos:
+1. **Paso 1: Descripción**: Recopila los metadatos esenciales de la plataforma: `Nombre` (obligatorio), `Descripción` (obligatoria) y `Enlace directo` (con normalización automática de protocolo `https://`).
+2. **Paso 2: Diseño** (Sustituye a "Estilo"):
+   - **Personalización de Colores**: Permite seleccionar el `Color de fondo` (`bg_color`) y el `Color del icono` (`text_color`), con soporte de valores por omisión del sistema si no se especifican.
+   - **Identidad Visual**: Ofrece un selector interactivo dual entre:
+     - **Elegir icono del catálogo**: Cuadrícula accesible de iconos representativos del sistema (`ICONOS_PLATAFORMA`).
+     - **Subir imagen / logotipo**: Control de carga de archivos de imagen locales (PNG, JPG, SVG, WebP, máx. 2 MB) con lectura y previsualización instantánea.
+3. **Paso 3: Vista previa y activación**:
+   - **Vista previa de la plataforma**: Muestra una representación fiel de la tarjeta en vivo con el chip estilizado, icono o imagen subida, nombre, descripción, enlace y badge de estado.
+   - **Toggle de activación**: Reemplaza la casilla de verificación tradicional por un control conmutador accesible (`Toggle` / `role="switch"`), permitiendo alternar de forma intuitiva el estado `Activa` / `Inactiva` con retroalimentación visual reactiva inmediata.
+
+### Ejemplo
+Al crear una plataforma en el área Finanzas, el operador completa en el Paso 1 el nombre "ERP Central" y la URL. Al avanzar al Paso 2 ("Diseño"), puede seleccionar un color azul distintivo y cargar el archivo `erp-logo.svg` de su equipo o escoger el icono `panel` del catálogo. En el Paso 3 ("Vista previa"), revisa la tarjeta resultante exactamente como la verán los usuarios y conmuta el Toggle a "Activa" antes de pulsar "Guardar".
+
+### Impacto
+Afecta a [platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx), [form.tsx](../frontend/src/components/form.tsx), [platform-admin.tsx](../frontend/src/components/platform-admin.tsx) y a la suite de pruebas [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
+
+
+## Simetría de Espaciado y Ajuste Natural en Modales
+
+## UI/UX
+
+### Regla
+Para garantizar una distribución armónica y simétrica de los elementos dentro de las ventanas modales ([form.tsx](../frontend/src/components/form.tsx), [directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx)):
+1. **Ajuste Dinámico de Altura**: La clase `.nx-modal-glass` en [components.css](../frontend/src/styles/components.css) prescinde de una altura rígida forzada (`height: 640px`), adoptando un ajuste de altura natural al contenido con límite superior seguro `max-height: 90vh`.
+2. **Equidistancia y Simetría Vertical**: El espaciado inferior entre el último elemento interactivo del formulario (la barra compacta de "Clave segura") y el pie de página (`footer`) coincide exactamente con el espaciado superior entre la cabecera del modal y el primer elemento del formulario ("1. Datos de usuario"), ambos fijados de forma consistente en 24 px (`py-6`).
+
+### Ejemplo
+Al abrir el modal "Nueva cuenta", la distancia desde el divisor de la cabecera hasta el stepper ("1. Datos de usuario") es de exactamente 24 px, y la distancia desde la barra de "Clave segura" hasta el divisor del pie del modal es igualmente de 24 px, eliminando zonas muertas y evitando la aparición de barras de desplazamiento vertical innecesarias.
+
+### Impacto
+Afecta a [components.css](../frontend/src/styles/components.css), [form.tsx](../frontend/src/components/form.tsx), [directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx) y a la suite de pruebas [directory-account-form.test.tsx](../frontend/tests/components/users/directory-account-form.test.tsx).
+
+
+## Ocultamiento de Parámetros de Consulta (Clean URLs) en Navegación de Plataformas
+
+## Navegación
+
+### Regla
+Para evitar la exposición de parámetros internos en la barra de direcciones del navegador (`/admin/platforms?area=2&area_name=Demo+Finanzas`), la navegación entre la cuadrícula de áreas y el listado de plataformas gestionadas ([platform-admin.tsx](../frontend/src/components/platform-admin.tsx), [ruta-navegacion.tsx](../frontend/src/components/marco/ruta-navegacion.tsx)) implementa URLs limpias (Clean URLs):
+1. **Preservación de Estado sin Query String**: Al seleccionar un área, la información de navegación (`areaId`, `areaName`) se almacena en el estado del historial del navegador (`window.history.pushState({ areaId, areaName }, '', window.location.pathname)`) y en almacenamiento de sesión (`sessionStorage`), manteniendo la barra de direcciones permanentemente en `/admin/platforms` sin parámetros después del signo `?`.
+2. **Saneamiento Inmediato de URLs Residuales**: Si un usuario o enlace externo accede mediante una URL con parámetros de consulta (`?area=...&area_name=...`), el sistema extrae de forma transparente los identificadores necesarios para cargar el área e inmediatamente limpia la barra de direcciones mediante `window.history.replaceState`.
+3. **Migas de Pan y Navegación Histórica**: La ruta de migas de pan (`RutaNavegacion`) y los botones de retroceso/avance del navegador recuperan fluidamente el contexto del área seleccionada mediante los eventos `popstate` y el estado en memoria, sin requerir exponer cadenas de consulta en la URL visible.
+
+### Ejemplo
+Cuando un administrador hace clic sobre el área "Demo Finanzas" dentro de `/admin/platforms`, el sistema muestra la tabla y plataformas de "Demo Finanzas", actualiza las migas de pan a `Administración › Plataformas › Demo Finanzas`, y la barra de direcciones del navegador permanece limpia como `https://portal.empresa.local/admin/platforms`, sin mostrar `?area=2&area_name=Demo+Finanzas`.
+
+### Impacto
+Afecta a [platform-admin.tsx](../frontend/src/components/platform-admin.tsx), [ruta-navegacion.tsx](../frontend/src/components/marco/ruta-navegacion.tsx) y a la suite de pruebas [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
+
+
+## Supresión de Prefijos Numéricos Redundantes en Indicadores de Pasos (Wizards/Steppers)
+
+## UI/UX
+
+### Regla
+En todos los componentes de tipo asistente o paso a paso (`steppers` / `wizards`), las etiquetas de texto de cada paso no deben incluir números ni prefijos ordinales manuales (`1.`, `2.`, `3.`):
+1. **No Duplicidad con la Insignia Visual**: El número ordinal de cada paso se muestra de forma centralizada y estilizada dentro del círculo/insignia (`badge`) del paso (`[ 1 ]`, `[ 2 ]`, `[ 3 ]`), por lo que anteponerlo en el texto de la etiqueta resulta redundante y satura visualmente la cabecera del formulario.
+2. **Claridad y Concisión**: La etiqueta textual debe reflejar única y exclusivamente el título semántico del paso (por ejemplo, `Descripción`, `Diseño`, `Vista previa`, `Datos de usuario`, `Accesos y áreas`), facilitando la lectura accesible y evitando desfases tipográficos o rupturas de línea en dispositivos compactos.
+
+### Ejemplo
+En el diálogo modal "Nueva plataforma", la barra de navegación de pasos muestra visualmente los números 1, 2 y 3 en sus respectivos círculos indicadores, mientras que las etiquetas adyacentes muestran limpiamente `Descripción`, `Diseño` y `Vista previa` (en lugar de `1. Descripción`, `2. Diseño` y `3. Vista previa`). Igualmente, en "Nueva cuenta" se presentan como `Datos de usuario` y `Accesos y áreas`.
+
+### Impacto
+Afecta a [platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx), [directory-account-form.tsx](../frontend/src/components/users/directory-account-form.tsx), [area-form.tsx](../frontend/src/components/areas/area-form.tsx) y a las suites de pruebas [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx), [directory-account-form.test.tsx](../frontend/tests/components/users/directory-account-form.test.tsx) y [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
+
+
+## Notificaciones de Error y Validación Mediante Toast en Formularios y Diálogos
+
+## UI/UX
+
+### Regla
+1. **Sustitución de Banners Estáticos por Toasts**: Las alertas generales de validación (por ejemplo, "Revisa los campos marcados.") y los errores de operaciones en formularios, diálogos modales y paneles no deben renderizarse como cajas de alerta o banners visuales estáticos (`ErrorNote`) en el flujo del formulario, ya que alteran la geometría del modal y desplazan los campos de entrada. En su lugar, el sistema emite una notificación emergente no intrusiva mediante el servicio centralizado de `useToast`:
+   - Errores de validación o datos faltantes: notificación con tono de advertencia (`toast.avisar('warning', ...)`).
+   - Errores de API o rechazo de operaciones: notificación con tono de error (`toast.avisar('error', ...)`).
+2. **Preservación de Errores de Campo y Accesibilidad**:
+   - Cada campo individual que presente error conserva su indicador contextual (`FieldErrorNote`) y su borde visual para retroalimentación puntual.
+   - El mensaje general de error se conserva en el DOM de forma accesible para lectores de pantalla mediante una región viva oculta (`<div className="sr-only" role="alert">{error}</div>`), cumpliendo estrictamente con los criterios WCAG 4.1.3 sin generar impacto visual ni scroll innecesario.
+
+### Ejemplo
+Al abrir el modal "Nueva plataforma" y presionar "Siguiente" con campos obligatorios vacíos, los campos "Nombre" y "Descripción" se marcan con su mensaje de error respectivo, pero no aparece ninguna caja roja debajo del stepper. En su lugar, se despliega una notificación flotante Toast en la esquina con el mensaje "Revisa los campos marcados." sin alterar el alto ni la posición de los campos del formulario.
+
+### Impacto
+Afecta a [platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx), [area-form.tsx](../frontend/src/components/areas/area-form.tsx), [connector-form.tsx](../frontend/src/components/connectors/connector-form.tsx), [request-form-modal.tsx](../frontend/src/components/access/request-form-modal.tsx), [reject-dialog.tsx](../frontend/src/components/access/reject-dialog.tsx), [approve-dialog.tsx](../frontend/src/components/access/approve-dialog.tsx), [revoke-access-dialog.tsx](../frontend/src/components/users/revoke-access-dialog.tsx), [user-form.tsx](../frontend/src/components/users/user-form.tsx), [connector-delete-dialog.tsx](../frontend/src/components/connectors/connector-delete-dialog.tsx), [job-retry-dialog.tsx](../frontend/src/components/connectors/job-retry-dialog.tsx), [admin-role-dialog.tsx](../frontend/src/components/users/admin-role-dialog.tsx), [area-admins-panel.tsx](../frontend/src/components/areas/area-admins-panel.tsx), [purge-panel.tsx](../frontend/src/components/users/purge-panel.tsx), [areas-list.tsx](../frontend/src/components/areas-list.tsx) y [users-list.tsx](../frontend/src/components/users-list.tsx).
+
+
+## Eliminación en Cascada de Solicitudes y Accesos al Dar de Baja una Plataforma
+
+## Plataformas
+
+### Regla
+1. **Borrado en Cascada de Solicitudes y Registros Relacionados**:
+   - Al eliminar una plataforma (`DELETE /platforms/<id>`), el sistema elimina de forma atómica e inmediata todas las solicitudes de acceso asociadas a dicha plataforma (`PlatformAccessRequest`), incluyendo especialmente aquellas en estado `pendiente`, aprobadas o rechazadas.
+   - De igual forma, se eliminan los accesos asignados (`PlatformAccessGrant`), los conectores configurados (`PlatformConnector`) y las tareas de aprovisionamiento vinculadas (`ProvisioningJob`).
+2. **Consistencia de Consultas y Contadores de Bandeja**:
+   - Todas las consultas de solicitudes (personales en `consultas_solicitud.mias`, bandejas de aprobación en `approvals.bandeja` y métricas globales del tablero en `dashboard/summary` y `home/summary`) realizan un `INNER JOIN` con la tabla `platforms` (`Platform.id == PlatformAccessRequest.platform_id`).
+   - Queda estrictamente impedido que existan solicitudes huérfanas en el sistema o que se contabilicen solicitudes pendientes de plataformas que ya han sido dadas de baja o que no existen.
+
+### Ejemplo
+Si un usuario solicita acceso a la plataforma "Finanzas ERP" y la solicitud queda en estado "pendiente", pero posteriormente el administrador elimina la plataforma "Finanzas ERP" desde la gestión de plataformas, la solicitud pendiente se elimina automáticamente de la base de datos. Como consecuencia, el indicador de la campana, el contador de la barra de navegación y la bandeja de aprobaciones reflejan de inmediato 0 solicitudes pendientes.
+
+### Impacto
+Afecta a [api.py](../app/modules/platforms/api.py), [consultas.py](../app/modules/access_requests/consultas.py), [consultas.py](../app/modules/access/consultas.py), [routes.py](../app/modules/api/routes.py), [test_baja_plataforma.py](../tests/platforms/test_baja_plataforma.py) y al esquema relacional de [models.py](../app/modules/access_requests/models.py).
+
+
+## Baja de Plataformas con Accesos (FNC-144)
+
+### Regla
+- Una plataforma con accesos vigentes no se elimina: `409 plataforma_con_accesos`. Borrarla dejaría a la gente en los grupos del sistema real sin rastro en el portal.
+- Sin accesos vigentes, se eliminan sus solicitudes (también las pendientes), sus accesos revocados y su conector; los trabajos de aprovisionamiento se conservan desligados. La auditoría guarda los conteos.
+- Borrado en lote (usuarios, áreas, plataformas): se detiene en el primer error y avisa "Se eliminaron N de M." con el motivo; lo eliminado sale de la selección (FNC-145).
+
+### Impacto
+Afecta a [baja.py](../app/modules/platforms/baja.py), [api.py](../app/modules/platforms/api.py), [eliminar-en-lote.ts](../frontend/src/lib/eliminar-en-lote.ts) y a [test_baja_plataforma.py](../tests/platforms/test_baja_plataforma.py).

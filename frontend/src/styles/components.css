@@ -387,7 +387,6 @@ select option:disabled,
     position: relative;
     background-color: rgb(var(--color-panel-fill));
     border: 2px solid var(--nx-border);
-    height: 600px;
     max-height: 90vh;
     box-shadow: var(--sombra-2);
     animation: modal-entrada var(--duracion-corta) var(--curva-movimiento) forwards;

@@ -10,7 +10,7 @@ import { useId, useState } from 'react';
 import { connectorsApi } from '@/lib/access/connectors';
 import type { Platform } from '@/lib/types';
 import { AlertDialog } from '../alert-dialog';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import { describeConnectorDeleteError } from './connector-errors';
 
 export function ConnectorDeleteDialog({
@@ -28,6 +28,7 @@ export function ConnectorDeleteDialog({
   const [error, setError] = useState<string | null>(null);
   const efectoId = useId();
   const detalleId = useId();
+  const toast = useToast();
 
   async function confirmar() {
     if (sending) return;
@@ -39,6 +40,7 @@ export function ConnectorDeleteDialog({
     } catch (err) {
       const view = describeConnectorDeleteError(err);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al eliminar');
       setSending(false);
       if (view.stale) onStale();
     }
@@ -66,7 +68,7 @@ export function ConnectorDeleteDialog({
           aplicarse. No se borra el ítem del gestor de secretos. Si hay accesos vigentes, no se
           puede eliminar.
         </p>
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </div>
     </AlertDialog>
   );

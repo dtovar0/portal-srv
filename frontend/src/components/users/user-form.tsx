@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import type { Area, DirectoryUser, ManagedUser, Platform, UserInput } from '@/lib/types';
 import { Button, Checkbox, Field, Modal, TextInput } from '../form';
 import { Icono } from '../icono';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import { GrupoChips } from './grupo-chips';
 import { TagPicker } from './tag-picker';
 
@@ -53,16 +53,19 @@ export function UserForm({
   const [platformIds, setPlatformIds] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   async function save() {
     if (!user && !form.email?.trim()) {
       setError('El correo es obligatorio.');
+      toast.avisar('warning', 'El correo es obligatorio.', 'Datos incompletos');
       return;
     }
     // `POST /users` solo crea cuentas locales: dar de alta a alguien del
     // directorio así le daría una contraseña local. Espera a FNC-079.
     if (!user && prefill) {
       setError(DIRECTORY_IMPORT_PENDING);
+      toast.avisar('warning', DIRECTORY_IMPORT_PENDING, 'Directorio');
       return;
     }
     setSaving(true);
@@ -79,7 +82,9 @@ export function UserForm({
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo guardar');
+      const msg = err instanceof Error ? err.message : 'No se pudo guardar';
+      setError(msg);
+      toast.avisar('error', msg, 'Error al guardar');
     } finally {
       setSaving(false);
     }
@@ -103,7 +108,7 @@ export function UserForm({
         </>
       }
     >
-      {error ? <ErrorNote message={error} /> : null}
+      {error ? <div className="sr-only" role="alert">{error}</div> : null}
 
       {!user ? (
         <Field label="Correo">

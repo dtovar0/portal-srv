@@ -9,7 +9,7 @@ import { useId, useState } from 'react';
 import { requestsApi } from '@/lib/access/requests';
 import type { AccessRequest } from '@/lib/access/types';
 import { AlertDialog } from '../alert-dialog';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import { NIVELES } from './access-status-badge';
 import { describeDecisionError } from './request-errors';
 
@@ -40,6 +40,7 @@ export function ApproveDialog({
   const efectoId = useId();
   const detalleId = useId();
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   async function aprobar() {
     if (sending) return;
@@ -51,6 +52,7 @@ export function ApproveDialog({
     } catch (err) {
       const view = describeDecisionError(err);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al aprobar');
       if (view.stale) onStale();
       setSending(false);
     }
@@ -75,7 +77,7 @@ export function ApproveDialog({
           Área {request.area.name}. El acceso se aplicará en la plataforma y quedará en proceso hasta
           que termine.
         </p>
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </div>
     </AlertDialog>
   );
