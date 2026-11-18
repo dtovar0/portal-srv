@@ -207,9 +207,10 @@ def test_fallo_de_smtp_devuelve_error_generico_sin_excepcion(correo):
                          'message': 'Error interno enviando notificación.'}
 
 
-def test_inicia_sesion_en_smtp_si_la_autenticacion_esta_activa(correo):
-    _smtp_en_bd(auth_enabled=True, username=USUARIO_SMTP,
-                password=CONTRASENA_FICTICIA)
+def test_inicia_sesion_en_smtp_si_la_autenticacion_esta_activa(correo, monkeypatch):
+    """FNC-010: la contraseña sale de SMTP_PASSWORD aunque el resto esté en BD."""
+    monkeypatch.setenv('SMTP_PASSWORD', CONTRASENA_FICTICIA)
+    _smtp_en_bd(auth_enabled=True, username=USUARIO_SMTP)
     _plantilla()
 
     services.send_notification_by_slug(SLUG, DESTINO, CONTEXTO)

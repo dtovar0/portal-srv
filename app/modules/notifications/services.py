@@ -101,7 +101,8 @@ def resolve_smtp_settings():
             encryption=config.encryption,
             auth_enabled=config.auth_enabled,
             username=config.username,
-            password=config.password,
+            # La contraseña nunca sale de la BD: solo de SMTP_PASSWORD (FNC-010).
+            password=os.getenv('SMTP_PASSWORD') or None,
             sender_name=config.sender_name,
             source='db',
         )

@@ -29,8 +29,12 @@ def _sin_secretos(respuesta, clave):
 
 @pytest.fixture
 def smtp_en_bd(app):
-    db.session.add(SMTPConfig(server=HOST_SMTP_FICTICIO, username='cuenta',
-                              password=CLAVE_SMTP))
+    """BD previa a la migración 0013 (FNC-010): por SQL directo, el modelo ya
+    no permite escribir la contraseña."""
+    db.session.add(SMTPConfig(server=HOST_SMTP_FICTICIO, username='cuenta'))
+    db.session.commit()
+    db.session.execute(text('UPDATE smtp_config SET password = :clave'),
+                       {'clave': CLAVE_SMTP})
     db.session.commit()
 
 
@@ -63,12 +67,16 @@ def test_get_smtp_desde_entorno(app, cliente_admin, monkeypatch):
     assert respuesta.get_json()['source'] == 'env'
 
 
-def test_put_smtp_no_devuelve_la_clave(app, cliente_admin):
+def test_put_smtp_rechaza_la_clave_y_no_la_guarda(app, cliente_admin):
+    """FNC-010: la contraseña SMTP va en SMTP_PASSWORD, nunca en la BD."""
     respuesta = cliente_admin.put(f'{A}/smtp', json={
         'server': HOST_SMTP_FICTICIO, 'password': CLAVE_SMTP})
 
-    _sin_secretos(respuesta, CLAVE_SMTP)
-    assert SMTPConfig.query.one().password == CLAVE_SMTP
+    assert respuesta.status_code == 400
+    assert respuesta.get_json()['code'] == 'contrasena_en_entorno'
+    assert CLAVE_SMTP not in respuesta.get_data(as_text=True)
+    smtp = SMTPConfig.query.first()
+    assert smtp is None or not smtp.password
 
 
 def test_get_auth_config(ldap_en_bd, cliente_admin):
