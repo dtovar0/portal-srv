@@ -48,3 +48,8 @@ _Se completa al aprobar la tarea._
 | Fecha | Nota |
 |---|---|
 | 2026-10-13 | Creada como Propuesta desde el diagnóstico inicial |
+
+## Nota 2026-11-17
+- El dueño confirma que PSX5K ya no aplica: el token (`API_TOKEN` de `scratch/api_example.py`) y la contraseña de `migrate_portafolio.py` son de sistemas anteriores, no del portal. El código actual no los usa.
+- El repositorio nuevo `portal-srv` (público) se sube **sin historial** (un commit con el estado de `develop`): esos valores no se publican.
+- Siguen en el historial local y en el repositorio anterior (`mingob0t/user_permision_manager`). Rotarlos solo importa si esos sistemas siguen activos.

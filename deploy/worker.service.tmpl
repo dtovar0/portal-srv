@@ -3,7 +3,7 @@
 # BD y de Redis y escribe en OpenLDAP o en el conector de cada plataforma.
 # Compatible con systemd 239 (Rocky/RHEL 8; el9 trae 252): no usa directivas
 # más nuevas.
-# El marcador DB_SERVICE es el servicio de la BD local (mysqld, mariadb o mysql) que detecta
+# El marcador DB_SERVICE es el servicio de la BD local (mysqld, mariadb, mysql o postgresql) que detecta
 # install.sh; sin BD local, install.sh quita la dependencia (FNC-125).
 [Unit]
 Description=@APP_TITLE@ Worker de aprovisionamiento (RQ)
@@ -59,7 +59,7 @@ RestrictNamespaces=true
 RestrictRealtime=true
 LockPersonality=true
 SystemCallArchitectures=native
-# Solo red IP (MySQL, Redis, OpenLDAP, SMTP, conectores) y sockets locales.
+# Solo red IP (MySQL o PostgreSQL, Redis, OpenLDAP, SMTP, conectores) y sockets locales.
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 
 [Install]

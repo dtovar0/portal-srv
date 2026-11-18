@@ -1,25 +1,29 @@
 # shellcheck shell=bash
 #
-# Servicio systemd de la base de datos local (FNC-125). Lo cargan install.sh y
-# preflight.sh con `.`; no se ejecuta solo.
+# Servicio systemd de la base de datos local (FNC-125, FNC-146). Lo cargan
+# install.sh y preflight.sh con `.`; no se ejecuta solo.
 #
-# El nombre cambia según la distribución y el motor:
-#   mysqld.service   MySQL de Rocky/RHEL 8 o 9
-#   mariadb.service  MariaDB
-#   mysql.service    MySQL de paquetes de terceros (Oracle, otras distros)
+# El nombre cambia según la distribución y el motor (DB_ENGINE del .env):
+#   mysqld.service      MySQL de Rocky/RHEL 8 o 9
+#   mariadb.service     MariaDB
+#   mysql.service       MySQL de paquetes de terceros (Oracle, otras distros)
+#   postgresql.service  PostgreSQL de Rocky/RHEL (el de PGDG, p. ej.
+#                       postgresql-16.service, se indica con --db-service)
 # Las plantillas de las unidades llevan @DB_SERVICE@ en After= y Wants=.
 
-# Orden de preferencia de la detección.
-SERVICIOS_BD=(mysqld.service mariadb.service mysql.service)
+# Orden de preferencia de la detección, por motor.
+SERVICIOS_MYSQL=(mysqld.service mariadb.service mysql.service)
+SERVICIOS_POSTGRESQL=(postgresql.service)
 
-# Imprime el primer servicio de SERVICIOS_BD instalado en este servidor.
-# Salida 1, sin imprimir nada, si no hay ninguno (BD remota) o no hay systemd.
-# Los alias (MariaDB declara mysqld.service y mysql.service) no cuentan: se
-# devuelve el nombre real de la unidad.
+# Imprime el primer servicio instalado del motor ($1: mysql por defecto,
+# o postgresql). Salida 1, sin imprimir nada, si no hay ninguno (BD remota)
+# o no hay systemd. Los alias (MariaDB declara mysqld.service y
+# mysql.service) no cuentan: se devuelve el nombre real de la unidad.
 detectar_servicio_bd() {
     command -v systemctl >/dev/null 2>&1 || return 1
-    local candidato
-    for candidato in "${SERVICIOS_BD[@]}"; do
+    local candidato candidatos=("${SERVICIOS_MYSQL[@]}")
+    [[ "${1:-mysql}" == postgresql ]] && candidatos=("${SERVICIOS_POSTGRESQL[@]}")
+    for candidato in "${candidatos[@]}"; do
         if systemctl list-unit-files --no-legend --no-pager "$candidato" 2>/dev/null \
             | awk -v u="$candidato" '$1 == u && $2 != "alias" { f = 1 } END { exit !f }'; then
             printf '%s' "$candidato"
@@ -54,25 +58,36 @@ aplicar_servicio_bd() {
     fi
 }
 
-# Paquete del cliente `mysql` acorde al servidor: en el9 el paquete `mysql`
-# choca con el cliente de MariaDB. Sin BD local se asume MySQL (ADR-001).
-paquete_cliente_bd() {
-    [[ "$1" == mariadb.service ]] && printf 'mariadb' || printf 'mysql'
+# Comando del cliente según el motor ($1: mysql o postgresql).
+comando_cliente_bd() {
+    [[ "${1:-}" == postgresql ]] && printf 'psql' || printf 'mysql'
 }
 
-# Instala el cliente `mysql` (opcional: sirve para respaldar antes de migrar)
-# solo si no hay uno. Si dnf falla es un aviso, nunca detiene la instalación.
+# Paquete del cliente acorde al servidor ($1: servicio, $2: motor): en el9 el
+# paquete `mysql` choca con el cliente de MariaDB. Sin BD local se usa el
+# motor del .env (mysql por defecto, ADR-001).
+paquete_cliente_bd() {
+    if [[ "${2:-}" == postgresql ]]; then printf 'postgresql'
+    elif [[ "${1:-}" == mariadb.service ]]; then printf 'mariadb'
+    else printf 'mysql'
+    fi
+}
+
+# Instala el cliente del motor (opcional: sirve para respaldar antes de
+# migrar) solo si no hay uno. Si dnf falla es un aviso, nunca detiene la
+# instalación. $1: servicio de BD (puede ir vacío), $2: motor.
 instalar_cliente_bd() {
-    local paquete
-    if command -v mysql >/dev/null 2>&1; then
-        printf '    cliente mysql ya presente; no se instala otro\n'
+    local paquete comando
+    comando="$(comando_cliente_bd "${2:-}")"
+    if command -v "$comando" >/dev/null 2>&1; then
+        printf '    cliente %s ya presente; no se instala otro\n' "$comando"
         return 0
     fi
-    paquete="$(paquete_cliente_bd "$1")"
+    paquete="$(paquete_cliente_bd "${1:-}" "${2:-}")"
     if dnf -y install "$paquete"; then
-        printf '    cliente mysql instalado (paquete %s)\n' "$paquete"
+        printf '    cliente %s instalado (paquete %s)\n' "$comando" "$paquete"
     else
-        printf '    AVISO: no se pudo instalar el cliente mysql (opcional, para respaldos); instalar a mano con: dnf install %s\n' "$paquete"
+        printf '    AVISO: no se pudo instalar el cliente %s (opcional, para respaldos); instalar a mano con: dnf install %s\n' "$comando" "$paquete"
     fi
     return 0
 }

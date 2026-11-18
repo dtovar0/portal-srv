@@ -44,7 +44,7 @@ warnings=0
 # Revisión de VAULTWARDEN_* y del bind LDAP (FNC-068).
 # shellcheck source=deploy/secretos.sh
 . "$(dirname "${BASH_SOURCE[0]}")/secretos.sh"
-# Motor de BD: fuera de desarrollo debe ser MySQL (FNC-134).
+# Motor de BD: fuera de desarrollo debe ser MySQL o PostgreSQL (FNC-134, FNC-146).
 # shellcheck source=deploy/motor_bd.sh
 . "$(dirname "${BASH_SOURCE[0]}")/motor_bd.sh"
 # Servicio systemd de la BD local (FNC-125).
@@ -248,10 +248,14 @@ fi
 # --- 7. Servicios de datos ---------------------------------------------------
 head2 "Base de datos y Redis"
 
-if command -v mysql >/dev/null 2>&1; then
-    ok "cliente mysql presente"
+# Motor del .env (FNC-146): elige cliente, puerto por defecto y servicio.
+db_motor="$(motor_bd_de_env .env)"
+[[ "$db_motor" == postgresql ]] || db_motor=mysql
+cliente_bd="$(comando_cliente_bd "$db_motor")"
+if command -v "$cliente_bd" >/dev/null 2>&1; then
+    ok "cliente $cliente_bd presente"
 else
-    warn "cliente mysql ausente; útil para respaldar la base antes de migrar (el instalador intenta instalarlo: paquete mariadb o mysql según el servidor)"
+    warn "cliente $cliente_bd ausente; útil para respaldar la base antes de migrar (el instalador intenta instalarlo)"
 fi
 
 # Los valores del .env no son de confianza (el script corre como root): host y
@@ -266,7 +270,10 @@ if [[ -f .env ]]; then
     db_host=$(grep -E '^DB_HOST=' .env | cut -d= -f2- | tr -d '"'"'"' ')
     db_port=$(grep -E '^DB_PORT=' .env | cut -d= -f2- | tr -d '"'"'"' ')
     db_name=$(grep -E '^DB_NAME=' .env | cut -d= -f2- | tr -d '"'"'"' ')
-    : "${db_host:=localhost}"; : "${db_port:=3306}"
+    : "${db_host:=localhost}"
+    if [[ -z "$db_port" ]]; then
+        [[ "$db_motor" == postgresql ]] && db_port=5432 || db_port=3306
+    fi
     if ! host_valido "$db_host" || ! puerto_valido "$db_port"; then
         bad "DB_HOST/DB_PORT con formato no válido (host: letras, dígitos, '.' y '-'; puerto 1-65535)"
     elif probe_tcp "$db_host" "$db_port"; then
@@ -306,7 +313,7 @@ if [[ -f .env ]]; then
             *) bad "$texto" ;;
         esac
     done < <(revisar_vaultwarden .env)
-    # DB_ENGINE=mysql fuera de desarrollo (FNC-134); solo se lee esa clave.
+    # DB_ENGINE mysql o postgresql fuera de desarrollo (FNC-134, FNC-146); solo se lee esa clave.
     while read -r nivel texto; do
         case "$nivel" in
             OK) ok "$texto" ;;
@@ -319,10 +326,10 @@ fi
 
 # Las unidades arrancan después de este servicio (install.sh lo detecta igual;
 # --db-service lo fuerza).
-if servicio_bd="$(detectar_servicio_bd)"; then
+if servicio_bd="$(detectar_servicio_bd "$db_motor")"; then
     ok "servicio de BD local: $servicio_bd (las unidades arrancarán después)"
 else
-    printf "  sin servicio de BD local (mysqld, mariadb ni mysql): BD remota; las unidades no dependerán de ella\n"
+    printf "  sin servicio de BD local de $db_motor: BD remota; las unidades no dependerán de ella\n"
 fi
 
 # --- 8. Puertos --------------------------------------------------------------
