@@ -119,6 +119,7 @@ def _registrar_blueprints(app):
     from app.modules.areas.api import areas_api_bp
     from app.modules.settings.api import settings_api_bp
     from app.modules.settings.respaldo_api import respaldo_api_bp
+    from app.modules.bulk_import.api import bulk_import_api_bp
     from app.modules.notifications.api import notifications_api_bp
     from app.modules.directory.api import directory_api_bp
     from app.modules.platforms.api import platforms_api_bp
@@ -131,7 +132,7 @@ def _registrar_blueprints(app):
     from app.modules.home.api import home_api_bp
 
     for bp in (api_bp, preferences_api_bp, hygiene_api_bp, settings_api_bp,
-               notifications_api_bp, respaldo_api_bp, auth_api_bp,
+               notifications_api_bp, respaldo_api_bp, bulk_import_api_bp, auth_api_bp,
                users_api_bp, areas_api_bp, directory_api_bp,
                platforms_api_bp, audit_api_bp, access_requests_api_bp,
                access_api_bp, access_inventory_api_bp, provisioning_api_bp,
