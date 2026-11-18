@@ -32,14 +32,10 @@ def test_sin_token_csrf_responde_400_en_json(app_con_ruta_protegida):
                                     'message': 'Token CSRF ausente o no válido.'}
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-06 / FNC-008: la cookie de sesión '
-                   'no declara SameSite')
 def test_cookie_de_sesion_con_samesite(app):
     assert app.config.get('SESSION_COOKIE_SAMESITE') in ('Lax', 'Strict')
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-06 / FNC-008: la API está exenta '
-                   'de CSRF; un formulario de otro sitio importa un respaldo')
 def test_formulario_de_otro_sitio_no_importa_un_respaldo(cliente_admin):
     respuesta = cliente_admin.post(
         '/api/v1/backup', headers=CABECERAS_AJENAS,
@@ -51,8 +47,6 @@ def test_formulario_de_otro_sitio_no_importa_un_respaldo(cliente_admin):
         respuesta.status_code == 403
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-06 / FNC-008: un POST sin cuerpo '
-                   'desde otro sitio ejecuta la purga de cuentas')
 def test_post_de_otro_sitio_no_purga_cuentas(cliente_admin):
     usuarios_antes = User.query.count()
 
@@ -61,3 +55,43 @@ def test_post_de_otro_sitio_no_purga_cuentas(cliente_admin):
 
     assert respuesta.status_code in (400, 403)
     assert User.query.count() == usuarios_antes
+
+
+# --- FNC-008: verificación de origen (casos que deben pasar o fallar) -------
+
+def _purgar(cliente, **cabeceras):
+    return cliente.post('/api/v1/users/purge', headers=cabeceras)
+
+
+def test_mismo_origen_pasa(cliente_admin):
+    respuesta = _purgar(cliente_admin, Origin='http://localhost')
+    assert respuesta.status_code != 403
+
+
+def test_host_reenviado_por_el_proxy_pasa(cliente_admin):
+    """Next (dev) o nginx reenvían el host original en X-Forwarded-Host."""
+    respuesta = _purgar(cliente_admin, Origin='https://portal.pruebas.invalid',
+                        **{'X-Forwarded-Host': 'portal.pruebas.invalid'})
+    assert respuesta.status_code != 403
+
+
+def test_sin_origin_ni_referer_pasa(cliente_admin):
+    """Clientes que no son navegador (curl, scripts) no son vector de CSRF."""
+    assert _purgar(cliente_admin).status_code != 403
+
+
+@pytest.mark.parametrize('cabeceras', [
+    {'Origin': 'null'},
+    {'Referer': 'https://atacante.pruebas.invalid/pagina'},
+    {'Sec-Fetch-Site': 'cross-site'},
+])
+def test_origen_opaco_referer_ajeno_o_cross_site_da_403(cliente_admin, cabeceras):
+    usuarios_antes = User.query.count()
+    respuesta = _purgar(cliente_admin, **cabeceras)
+    assert respuesta.status_code == 403
+    assert respuesta.get_json()['code'] == 'csrf_invalido'
+    assert User.query.count() == usuarios_antes
+
+
+def test_lecturas_no_se_verifican(cliente_admin):
+    assert cliente_admin.get('/api/v1/me', headers={'Origin': ORIGEN_AJENO}).status_code == 200

@@ -339,9 +339,6 @@ def test_choque_simultaneo_responde_409_y_revierte(escena, cliente_como,
     _sin_cambios(acceso.id)
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-06 / FNC-008: sin token CSRF ni '
-                   'comprobación de Origin; la protección provisional solo '
-                   'mira Sec-Fetch-Site y el tipo JSON')
 def test_peticion_sin_token_y_origen_ajeno_no_revoca(escena, cliente_como,
                                                      cola_falsa):
     acceso = _acceso(escena['usuario'], escena['plataforma'])
