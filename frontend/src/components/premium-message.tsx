@@ -19,6 +19,13 @@ export interface PremiumEmptyStateProps {
    */
   variant?: 'card' | 'seamless';
   className?: string;
+  /**
+   * Rol del contenedor (DIS-085). Por defecto 'status' (se anuncia al aparecer); con `null` no
+   * lleva rol, para un vacío que ya está en la carga inicial o que otro aviso anuncia.
+   */
+  role?: 'status' | 'alert' | null;
+  /** Nivel del título (2 a 6, por defecto 3) para respetar la jerarquía de encabezados de la página. */
+  nivelTitulo?: 2 | 3 | 4 | 5 | 6;
 }
 
 /**
@@ -34,7 +41,10 @@ export function PremiumEmptyState({
   action,
   variant = 'card',
   className = '',
+  role = 'status',
+  nivelTitulo = 3,
 }: PremiumEmptyStateProps) {
+  const Titulo = `h${nivelTitulo}` as const;
   const estilosVariante =
     variant === 'seamless'
       ? 'border-0 bg-transparent shadow-none rounded-none'
@@ -42,7 +52,7 @@ export function PremiumEmptyState({
 
   return (
     <div
-      role="status"
+      role={role ?? undefined}
       className={`relative flex h-full w-full flex-1 flex-col items-center justify-center overflow-hidden p-6 sm:p-8 text-center ${estilosVariante} ${className}`}
     >
       {/* Halo de resplandor ambiental superior */}
@@ -70,9 +80,9 @@ export function PremiumEmptyState({
       {/* Bloque envoltorio del texto central con balance tipográfico */}
       <div className="mx-auto flex max-w-xs sm:max-w-sm flex-col items-center justify-center text-center">
         {title ? (
-          <h3 className="text-base sm:text-lg font-black tracking-tight text-body-text [text-wrap:balance]">
+          <Titulo className="text-base sm:text-lg font-black tracking-tight text-body-text [text-wrap:balance]">
             {title}
-          </h3>
+          </Titulo>
         ) : null}
         <p
           className={`text-sm leading-relaxed [text-wrap:balance] ${

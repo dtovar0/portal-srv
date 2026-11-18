@@ -121,6 +121,10 @@ describe('Barra lateral', () => {
     expect(actuales.map((a) => a.textContent)).toEqual(['Áreas']);
     expect(actuales[0].className).toContain('bg-activo-fondo');
     expect(actuales[0].className).toContain('text-activo-texto');
+    // DIS-085: marca no cromática (barra lateral), solo en el activo.
+    expect(actuales[0].querySelector('span[aria-hidden="true"].w-1')).not.toBeNull();
+    const otros = lateral().getAllByRole('link').filter((a) => a !== actuales[0]);
+    expect(otros.some((a) => a.querySelector('span[aria-hidden="true"].w-1'))).toBe(false);
   });
 
   it('colapsa y expande con el ☰ de la barra superior, sin perder el nombre accesible', async () => {

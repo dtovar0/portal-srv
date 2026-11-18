@@ -12,6 +12,23 @@ describe('PremiumEmptyState — Estandarización de Mensajes de Vacío Premium',
     expect(screen.getByText('No hay registros disponibles.')).toBeDefined();
   });
 
+  it('DIS-085: el rol es opcional y el título admite otro nivel', () => {
+    const { container } = render(
+      <PremiumEmptyState message="Nada aquí." title="Vacío" role={null} nivelTitulo={2} />,
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(container.querySelector('[role]')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Vacío' })).toBeDefined();
+  });
+
+  it('DIS-085: por defecto status y título de nivel 3; admite role alert', () => {
+    const { rerender } = render(<PremiumEmptyState message="Nada." title="T" />);
+    expect(screen.getByRole('status')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 3 })).toBeDefined();
+    rerender(<PremiumEmptyState message="Nada." role="alert" />);
+    expect(screen.getByRole('alert')).toBeDefined();
+  });
+
   it('soporta título destacado y badge superior', () => {
     render(
       <PremiumEmptyState

@@ -798,8 +798,8 @@ select::-ms-expand {
     z-index: 60;
 }
 
-[data-tooltip]:hover::after,
-[data-tooltip]:focus-visible::after {
+[data-tooltip]:not([data-tooltip-descartado='true']):hover::after,
+[data-tooltip]:not([data-tooltip-descartado='true']):focus-visible::after {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
 }
