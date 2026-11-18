@@ -13,6 +13,8 @@
  */
 
 :root, html.light {
+  /* Duración del toast: igual a `TOAST_MS` (toast.tsx); una prueba lo comprueba (DIS-093). */
+  --toast-duracion: 8s;
   /* ─────────────────────────────────────────────
      CAPA 1: PRIMITIVOS — Paleta tonal pura
      Solo se referencian por semánticos; nunca en componentes.

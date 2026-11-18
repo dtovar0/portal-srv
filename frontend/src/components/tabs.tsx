@@ -100,7 +100,7 @@ export function Tabs<T extends string = string>({
             onKeyDown={(event) => alPulsar(event, indice)}
             className={`group relative inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-5 py-2.5 text-sm outline-none transition-all duration-corta focus-visible:ring-2 focus-visible:ring-primary ${
               isSelected
-                ? 'border border-panel-border/80 border-b-2 border-b-primary bg-superficie font-bold text-primary-text shadow-1 scale-[1.01]'
+                ? 'border border-panel-border border-b-2 border-b-primary bg-superficie font-bold text-primary-text shadow-1 scale-[1.01]'
                 : 'border border-transparent text-label font-medium hover:border-panel-border/40 hover:bg-superficie/60 hover:text-body-text'
             } ${item.disabled ? 'estado-deshabilitado pointer-events-none' : ''}`}
           >
