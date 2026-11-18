@@ -18,6 +18,7 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Configuración: .env.example ya no publica el host interno de Authelia; usa auth.ejemplo.local (FNC-150, 2026-11-18).
 - Importación masiva (seguridad): valida igual que las altas normales (enlace solo https, ícono y color, nombres reservados), audita cada alta, sincroniza a los admins del área, no expone el detalle de un error 500 y acepta una lista vacía; la ruta del cliente ya no duplica `/api/v1` (FNC-149, DIS-090, 2026-11-18).
 - Accesos de varias cuentas: guardar áreas ya no borra las que no comparten todas, y un fallo al leer accesos se muestra en vez de suponer "sin accesos" (DIS-090, 2026-11-18).
 - Avisos: los resultados de guardar, probar, decidir o reintentar salen como toast y ya no empujan el diseño; el alta de usuario mostraba dos toasts (DIS-091, 2026-11-18).
