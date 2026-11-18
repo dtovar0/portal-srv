@@ -53,11 +53,12 @@ export function useToast(): ToastApi {
   return useContext(ToastContext);
 }
 
+/** Tono de la tarjeta: brillo de esquina (`nx-toast-<tono>`, components.css) y sombra teñida. */
 const CLASE_TONO: Record<ToastTone, string> = {
-  success: 'border-panel-border/80 border-l-4 border-l-success shadow-xl shadow-success/5',
-  error: 'border-panel-border/80 border-l-4 border-l-error shadow-xl shadow-error/5',
-  warning: 'border-panel-border/80 border-l-4 border-l-warning shadow-xl shadow-warning/5',
-  info: 'border-panel-border/80 border-l-4 border-l-primary shadow-xl shadow-primary/5',
+  success: 'nx-toast-success shadow-success/10',
+  error: 'nx-toast-error shadow-error/10',
+  warning: 'nx-toast-warning shadow-warning/10',
+  info: 'nx-toast-info shadow-primary/10',
 };
 
 const BARRA_TONO: Record<ToastTone, string> = {
@@ -68,26 +69,10 @@ const BARRA_TONO: Record<ToastTone, string> = {
 };
 
 const ICONO_TONO: Record<ToastTone, { icon: NombreIcono; badge: string; text: string }> = {
-  success: {
-    icon: 'exito',
-    badge: 'bg-gradient-to-br from-success/20 to-success/10 border-success/40 text-success-text shadow-xs ring-1 ring-success/20',
-    text: 'text-success-text',
-  },
-  error: {
-    icon: 'error',
-    badge: 'bg-gradient-to-br from-error/20 to-error/10 border-error/40 text-error-text shadow-xs ring-1 ring-error/20',
-    text: 'text-error-text',
-  },
-  warning: {
-    icon: 'aviso',
-    badge: 'bg-gradient-to-br from-warning/20 to-warning/10 border-warning/40 text-warning-text shadow-xs ring-1 ring-warning/20',
-    text: 'text-warning-text',
-  },
-  info: {
-    icon: 'info',
-    badge: 'bg-gradient-to-br from-primary/20 to-primary/10 border-primary/40 text-primary-text shadow-xs ring-1 ring-primary/20',
-    text: 'text-primary-text',
-  },
+  success: { icon: 'exito', badge: 'bg-success/15 text-success-text ring-success/30', text: 'text-success-text' },
+  error: { icon: 'error', badge: 'bg-error/15 text-error-text ring-error/30', text: 'text-error-text' },
+  warning: { icon: 'aviso', badge: 'bg-warning/15 text-warning-text ring-warning/30', text: 'text-warning-text' },
+  info: { icon: 'info', badge: 'bg-primary/15 text-primary-text ring-primary/30', text: 'text-primary-text' },
 };
 
 type PropsTarjeta = {
@@ -117,16 +102,16 @@ function Tarjeta({ aviso, onCerrar, onPausa, onReanudar }: PropsTarjeta) {
       onBlur={(evento) => {
         if (!evento.currentTarget.contains(evento.relatedTarget)) actualizar({ foco: false });
       }}
-      className={`nx-toast pointer-events-auto relative flex items-start gap-3 rounded-2xl border bg-panel-fill/95 p-3.5 pl-4 shadow-2xl backdrop-blur-xl transition-all duration-media hover:shadow-xl ${CLASE_TONO[aviso.tono]}`}
+      className={`nx-toast pointer-events-auto relative flex items-start gap-3.5 rounded-2xl border border-panel-border bg-panel-fill/95 p-4 pr-2 shadow-2xl backdrop-blur-xl transition-shadow duration-media ${CLASE_TONO[aviso.tono]}`}
     >
-      <span className={`flex size-9 shrink-0 items-center justify-center rounded-xl border mt-0.5 ${tonoConfig.badge}`} aria-hidden="true">
+      <span className={`relative flex size-10 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ${tonoConfig.badge}`} aria-hidden="true">
         <Icono nombre={tonoConfig.icon} tamano="sm" />
       </span>
-      <div className="flex-1 min-w-0 pr-1">
-        <h4 className={`text-xs font-black tracking-wide uppercase leading-tight ${tonoConfig.text}`}>
+      <div className="relative flex-1 min-w-0 pt-0.5">
+        <h4 className={`text-sm font-semibold leading-snug ${tonoConfig.text}`}>
           {aviso.titulo || TITULO_DEFECTO[aviso.tono]}
         </h4>
-        <p className="mt-0.5 text-xs font-medium text-body-text/80 leading-snug break-words">
+        <p className="mt-1 text-sm text-label leading-relaxed break-words">
           {aviso.texto}
         </p>
       </div>
@@ -134,15 +119,12 @@ function Tarjeta({ aviso, onCerrar, onPausa, onReanudar }: PropsTarjeta) {
         type="button"
         onClick={() => onCerrar(aviso.id)}
         aria-label="Cerrar aviso"
-        className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-label transition-all hover:bg-surface-container hover:text-body-text active:scale-95 focus-visible:ring-2 focus-visible:ring-primary -mr-2 -my-2"
+        className="relative inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full text-label transition-colors hover:bg-surface-container hover:text-body-text focus-visible:ring-2 focus-visible:ring-primary -my-2"
       >
         <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
         <span className="sr-only">Cerrar aviso</span>
       </button>
-      <span
-        className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden rounded-b-2xl bg-panel-border/30"
-        aria-hidden="true"
-      >
+      <span className="absolute inset-x-4 bottom-0 h-0.5 overflow-hidden rounded-full" aria-hidden="true">
         <span className={`block h-full w-full ${BARRA_TONO[aviso.tono]} nx-toast-progress`} />
       </span>
     </div>

@@ -8,6 +8,12 @@
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '@/components/toast';
+
+/** Con el proveedor de avisos: los resultados se anuncian con toast (DIS-091). */
+function renderConToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 import type { Connector } from '@/lib/access/types';
 import type { Platform } from '@/lib/types';
 
@@ -93,8 +99,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-async function abrir(nombre = 'Contabilidad') {
-  render(<ConnectorsAdmin />);
+async function abrir(nombre = 'Contabilidad', renderizar: (ui: React.ReactElement) => unknown = render) {
+  renderizar(<ConnectorsAdmin />);
   fireEvent.click(await screen.findByRole('button', { name: `Configurar el conector de ${nombre}` }));
   return screen.findByRole('region', { name: `Conector de ${nombre}` });
 }
@@ -233,7 +239,7 @@ describe('panel del conector', () => {
       status: 'success',
       connector: { ...CONECTOR, port: 8443, credential_status: 'sin_verificar', updated_at: '2026-10-21T10:00:00Z' },
     });
-    const panel = await abrir();
+    const panel = await abrir('Contabilidad', renderConToast);
     await within(panel).findByText('erp.ejemplo.local:443');
     const pedidas = mocks.platforms.mock.calls.length;
     fireEvent.change(within(panel).getByLabelText('Puerto *'), { target: { value: '8443' } });
@@ -243,7 +249,8 @@ describe('panel del conector', () => {
       params: PARAMS_API,
       credential_ref: 'pokemon/contabilidad-api', active: true,
     }));
-    expect(await within(panel).findByText(AVISO_SIN_VERIFICAR)).toBeTruthy();
+    // DIS-091: el resultado sale en un toast.
+    expect((await screen.findByText(AVISO_SIN_VERIFICAR)).closest('.nx-toast')).toBeTruthy();
     expect(within(panel).getByText('Credencial sin verificar')).toBeTruthy();
     // La lista se recarga (cambia `has_connector`).
     expect(mocks.platforms).toHaveBeenCalledTimes(pedidas + 1);
@@ -289,24 +296,23 @@ describe('panel del conector', () => {
 
   it('probar conexión muestra un texto propio y recarga el estado de la credencial', async () => {
     mocks.test.mockResolvedValueOnce({ status: 'success', result: 'ok', message: 'servidor' });
-    const panel = await abrir();
+    const panel = await abrir('Contabilidad', renderConToast);
     fireEvent.click(await within(panel).findByRole('button', { name: 'Probar conexión' }));
-    expect(await within(panel).findByText(PRUEBA_OK)).toBeTruthy();
-    expect(within(panel).getByText(PRUEBA_OK).closest('[role]')?.getAttribute('role')).toBe('status');
+    // DIS-091: el éxito sale en un toast de la región `status`; el fallo, en la de `alert`.
+    expect(await screen.findByText(PRUEBA_OK)).toBeTruthy();
+    expect(screen.getByText(PRUEBA_OK).closest('[role]')?.getAttribute('role')).toBe('status');
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
 
     mocks.test.mockResolvedValueOnce({ status: 'success', result: 'error', message: 'detalle interno' });
     fireEvent.click(within(panel).getByRole('button', { name: 'Probar conexión' }));
-    expect(await within(panel).findByText(PRUEBA_ERROR)).toBeTruthy();
-    // El fallo se anuncia como alerta; el éxito anterior ya no está.
-    expect(within(panel).getByText(PRUEBA_ERROR).closest('[role]')?.getAttribute('role')).toBe('alert');
-    expect(within(panel).queryByText(PRUEBA_OK)).toBeNull();
-    expect(within(panel).queryByText('detalle interno')).toBeNull();
+    expect(await screen.findByText(PRUEBA_ERROR)).toBeTruthy();
+    expect(screen.getByText(PRUEBA_ERROR).closest('[role]')?.getAttribute('role')).toBe('alert');
+    expect(screen.queryByText('detalle interno')).toBeNull();
   });
 
   it('eliminar pide confirmación, explica el efecto y muestra el 409 con accesos', async () => {
     mocks.remove.mockRejectedValueOnce(new ApiError(409, 'x', { code: 'plataforma_con_accesos' }));
-    const panel = await abrir();
+    const panel = await abrir('Contabilidad', renderConToast);
     fireEvent.click(await within(panel).findByRole('button', { name: 'Eliminar el conector de Contabilidad' }));
     const dialogo = screen.getByRole('alertdialog', { name: 'Eliminar conector' });
     expect(within(dialogo).getByText(/no podrán\s+aplicarse/)).toBeTruthy();
@@ -317,7 +323,7 @@ describe('panel del conector', () => {
 
     mocks.remove.mockResolvedValueOnce({ status: 'success' });
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Eliminar' }));
-    expect(await within(panel).findByText(AVISO_ELIMINADO)).toBeTruthy();
+    expect((await screen.findByText(AVISO_ELIMINADO)).closest('.nx-toast')).toBeTruthy();
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(within(panel).getByText(/aún no tiene conector/)).toBeTruthy();
   });

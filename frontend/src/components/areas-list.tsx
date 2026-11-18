@@ -14,6 +14,7 @@ import { useAsync } from '@/lib/use-async';
 import type { Area } from '@/lib/types';
 import { variablesCss } from '@/lib/variables-css';
 import { AreaAdminsPanel } from './areas/area-admins-panel';
+import { AreaUsersPanel } from './areas/area-users-panel';
 import { mensajeDeError } from './areas/area-errors';
 import { AreaForm } from './areas/area-form';
 import { DataTable, type DataColumn } from './data-table';
@@ -45,6 +46,7 @@ function AreasScreen() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<Area | null>(null);
+  const [managingUsersOf, setManagingUsersOf] = useState<Area | null>(null);
   // `/me` se pide una vez: las áreas creadas en esta visita aún no están en
   // `session.managed_areas`, pero el admin de área ya las administra.
   const [created, setCreated] = useState<number[]>([]);
@@ -362,6 +364,27 @@ function AreasScreen() {
               </Button>
             ) : null}
 
+            {/* Botón Accesos (Usuarios del área) */}
+            <Button
+              variant="fila"
+              disabled={!isSingleSelected || (!isAdmin && !managedIds.has(effectiveSelectedArea?.id ?? -1))}
+              onClick={() => effectiveSelectedArea && setManagingUsersOf(effectiveSelectedArea)}
+              aria-label={effectiveSelectedArea ? `Accesos de ${effectiveSelectedArea.name}` : 'Accesos'}
+              title={
+                isSingleSelected
+                  ? !isAdmin && !managedIds.has(effectiveSelectedArea?.id ?? -1)
+                    ? 'No tienes permisos para gestionar accesos de esta área'
+                    : `Accesos de ${effectiveSelectedArea?.name}`
+                  : activeSelectedIds.size > 1
+                  ? 'Solo se pueden gestionar accesos de 1 área a la vez'
+                  : 'Selecciona 1 área para gestionar accesos'
+              }
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="solicitudes" tamano="sm" ariaHidden={true} />
+              <span>Accesos</span>
+            </Button>
+
             {/* Botón Editar */}
             <Button
               variant="fila"
@@ -477,6 +500,14 @@ function AreasScreen() {
 
       {assigning ? (
         <AreaAdminsPanel area={assigning} onClose={() => setAssigning(null)} />
+      ) : null}
+
+      {managingUsersOf ? (
+        <AreaUsersPanel
+          area={managingUsersOf}
+          onClose={() => setManagingUsersOf(null)}
+          onSaved={reload}
+        />
       ) : null}
 
       {removing ? (

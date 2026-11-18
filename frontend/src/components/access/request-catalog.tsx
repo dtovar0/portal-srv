@@ -16,10 +16,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AccessRequest, CatalogItem } from '@/lib/access/types';
 import { useSession } from '../session-provider';
+import { useToast } from '../toast';
 import { NIVELES } from './access-status-badge';
 import { BUSCADOR_ID, CatalogFilters, filtrarCatalogo } from './catalog-filters';
 import { CatalogGrid } from './catalog-grid';
-import { CatalogNotice } from './catalog-notice';
 import { RequestFormModal } from './request-form-modal';
 import { useCatalogoSolicitable, type MisPlataformas } from './use-catalogo-solicitable';
 
@@ -36,9 +36,9 @@ export function RequestCatalog({ mias }: { mias?: MisPlataformas } = {}) {
   const [areaId, setAreaId] = useState<number | null>(null);
   const [term, setTerm] = useState('');
   const [abierta, setAbierta] = useState<CatalogItem | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const disparador = useRef<HTMLElement | null>(null);
-  const avisoRef = useRef<HTMLDivElement>(null);
+  const seccion = useRef<HTMLElement>(null);
+  const { avisar } = useToast();
 
   const { catalogo, items, areas, mias: abribles, marcarSolicitada } = useCatalogoSolicitable(mias);
   const shown = useMemo(() => filtrarCatalogo(items, areaId, term), [items, areaId, term]);
@@ -54,7 +54,6 @@ export function RequestCatalog({ mias }: { mias?: MisPlataformas } = {}) {
 
   function abrir(item: CatalogItem, trigger: HTMLButtonElement) {
     disparador.current = trigger;
-    setAviso(null);
     setAbierta(item);
   }
 
@@ -67,22 +66,20 @@ export function RequestCatalog({ mias }: { mias?: MisPlataformas } = {}) {
   function creada(request: AccessRequest) {
     if (!abierta) return;
     marcarSolicitada(abierta.platform.id, request.id);
-    setAviso(`Solicitud enviada: ${abierta.platform.name}, nivel ${NIVELES[request.level]}. Queda pendiente de aprobación.`);
+    avisar(
+      'success',
+      `${abierta.platform.name}, nivel ${NIVELES[request.level]}. Queda pendiente de aprobación.`,
+      'Solicitud enviada',
+    );
     setAbierta(null);
-    // El botón de la tarjeta desaparece: el foco va al aviso.
-    requestAnimationFrame(() => avisoRef.current?.focus());
-  }
-
-  /** Al quitar el aviso, el foco va al buscador (no cae en `body`). */
-  function cerrarAviso() {
-    setAviso(null);
-    document.getElementById(BUSCADOR_ID)?.focus();
+    // El botón de la tarjeta desaparece: el foco va al buscador de este catálogo (no cae en `body`).
+    requestAnimationFrame(() => seccion.current?.querySelector<HTMLElement>(`#${BUSCADOR_ID}`)?.focus());
   }
 
   const filtrando = Boolean(term.trim()) || areaId !== null;
 
   return (
-    <section aria-labelledby="catalogo-titulo" className="space-y-6">
+    <section ref={seccion} aria-labelledby="catalogo-titulo" className="space-y-6">
       <div>
         <h2 id="catalogo-titulo" className="text-xl font-semibold">Catálogo</h2>
         <p className="mt-1 text-sm text-label">
@@ -93,8 +90,6 @@ export function RequestCatalog({ mias }: { mias?: MisPlataformas } = {}) {
               : 'Solicita acceso a las plataformas de tus áreas.'}
         </p>
       </div>
-
-      <CatalogNotice aviso={aviso} onClose={cerrarAviso} regionRef={avisoRef} />
 
       <CatalogFilters
         term={term}

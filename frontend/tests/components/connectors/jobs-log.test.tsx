@@ -10,6 +10,12 @@
  */
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '@/components/toast';
+
+/** Con el proveedor de avisos: los resultados se anuncian con toast (DIS-091). */
+function renderConToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 import type { Job, JobDetail, Paginated } from '@/lib/access/types';
 
 vi.mock('@/lib/access/provisioning', () => ({
@@ -85,8 +91,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-async function lista() {
-  render(<JobsLog />);
+async function lista(renderizar: (ui: React.ReactElement) => unknown = render) {
+  renderizar(<JobsLog />);
   return screen.findByRole('list', { name: 'Bitácora de ejecuciones' });
 }
 
@@ -212,9 +218,9 @@ describe('reintentar', () => {
     expect(within(ul).queryByRole('button', { name: /Reintentar/ })).toBeNull();
   });
 
-  it('pide confirmación con el efecto, actualiza la fila y enfoca el aviso', async () => {
+  it('pide confirmación con el efecto, actualiza la fila y avisa con toast', async () => {
     retry.mockResolvedValue({ status: 'success', job: { ...DETALLE, status: 'pendiente' } });
-    const ul = await lista();
+    const ul = await lista(renderConToast);
     expect(within(ul).getAllByRole('button', { name: /^Reintentar/ })).toHaveLength(1);
     fireEvent.click(within(ul).getByRole('button', { name: 'Reintentar la ejecución n.º 301' }));
     const dialogo = screen.getByRole('alertdialog', { name: 'Reintentar ejecución' });
@@ -222,8 +228,11 @@ describe('reintentar', () => {
     expect(retry).not.toHaveBeenCalled();
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Reintentar' }));
     await waitFor(() => expect(retry).toHaveBeenCalledWith(301));
+    // DIS-091: el resultado sale en un toast; el foco vuelve a "Detalle" de la fila.
     const aviso = await screen.findByText(avisoReintento(FALLIDA));
-    await waitFor(() => expect(document.activeElement).toBe(aviso.closest('[role="status"]')));
+    expect(aviso.closest('.nx-toast')).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(
+      within(ul).getByRole('button', { name: 'Ver el detalle de la ejecución n.º 301' })));
     expect(within(ul).getByText('Pendiente')).toBeTruthy();
     expect(within(ul).queryByRole('button', { name: 'Reintentar la ejecución n.º 301' })).toBeNull();
   });

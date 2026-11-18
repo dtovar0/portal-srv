@@ -6,17 +6,15 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Button, FileInput } from '../form';
 import { Icono } from '../icono';
-import { Card, ErrorNote, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Card } from '../ui';
 
 export function BackupTab() {
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { avisar } = useToast();
 
   async function download() {
     setBusy(true);
-    setError(null);
-    setDone(null);
     try {
       const blob = await api.downloadBackup();
       const url = URL.createObjectURL(blob);
@@ -26,9 +24,9 @@ export function BackupTab() {
       link.download = `portal_backup_${stamp}.zip`;
       link.click();
       URL.revokeObjectURL(url);
-      setDone('Respaldo descargado.');
+      avisar('success', 'Respaldo descargado.', 'Respaldo');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo descargar');
+      avisar('error', err instanceof Error ? err.message : 'No se pudo descargar', 'Respaldo');
     } finally {
       setBusy(false);
     }
@@ -36,13 +34,11 @@ export function BackupTab() {
 
   async function restore(file: File) {
     setBusy(true);
-    setError(null);
-    setDone(null);
     try {
       const result = await api.uploadBackup(file);
-      setDone(`Restaurado: ${result.restored.join(', ') || 'nada'}.`);
+      avisar('success', `Restaurado: ${result.restored.join(', ') || 'nada'}.`, 'Respaldo restaurado');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo restaurar');
+      avisar('error', err instanceof Error ? err.message : 'No se pudo restaurar', 'Respaldo');
     } finally {
       setBusy(false);
     }
@@ -50,9 +46,6 @@ export function BackupTab() {
 
   return (
     <Card className="flex h-full w-full flex-1 min-h-0 flex-col space-y-5">
-      {error ? <ErrorNote message={error} /> : null}
-      {done ? <SuccessNote>{done}</SuccessNote> : null}
-
       <div>
         <h2 className="text-sm font-medium">Descargar respaldo</h2>
         <p className="mt-1 text-sm text-label">

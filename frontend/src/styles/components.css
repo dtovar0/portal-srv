@@ -445,6 +445,21 @@ html.dark .nx-toast::before {
     background: linear-gradient(135deg, rgb(var(--color-superficie) / 0.04) 0%, rgb(var(--color-superficie) / 0) 50%);
 }
 
+/* Brillo de esquina del tono (DIS-091): sutil, no afecta el contraste del texto. */
+.nx-toast-success { --toast-tono: var(--color-success); }
+.nx-toast-error   { --toast-tono: var(--color-error); }
+.nx-toast-warning { --toast-tono: var(--color-warning); }
+.nx-toast-info    { --toast-tono: var(--color-primary); }
+
+.nx-toast::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: radial-gradient(120% 90% at 0% 0%, rgb(var(--toast-tono) / 0.12) 0%, rgb(var(--toast-tono) / 0) 55%);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .nx-modal-glass,
     .nx-toast,

@@ -8,9 +8,8 @@
  * - Filtros por estado (`pendiente` por defecto, como el contrato) y área.
  * - Aprobar con confirmación; rechazar con motivo obligatorio.
  * - Tras decidir: la fila se actualiza con la respuesta del servidor (sin
- *   recargar) y el resultado se anuncia en una región `status` con el foco,
- *   como el aviso del catálogo (DIS-013). El siguiente refresco la saca de
- *   pendientes.
+ *   recargar) y el resultado se avisa con toast (DIS-091); el foco va al filtro
+ *   de estado. El siguiente refresco la saca de pendientes.
  * - Refresco con `usePolling` y el intervalo de la preferencia del usuario.
  */
 
@@ -24,7 +23,8 @@ import { useAsync } from '@/lib/use-async';
 import { usePolling } from '@/lib/use-polling';
 import { Button, Option, Select } from '../form';
 import { useSession } from '../session-provider';
-import { Card, EmptyNote, ErrorNote, Skeleton, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Card, EmptyNote, ErrorNote, Skeleton } from '../ui';
 import { AccessStatusBadge, NIVELES } from './access-status-badge';
 import { ApproveDialog } from './approve-dialog';
 import { formatearFecha } from './fecha';
@@ -170,9 +170,8 @@ export function ApprovalsInbox() {
   /** Solicitudes decididas aquí, con la respuesta del servidor (por `id`). */
   const [decididas, setDecididas] = useState<Record<number, AccessRequest>>({});
   const [decision, setDecision] = useState<Decision | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const disparador = useRef<HTMLElement | null>(null);
-  const avisoRef = useRef<HTMLDivElement>(null);
+  const { avisar } = useToast();
 
   const lista = usePolling(
     () => requestsApi.inbox({ status, area_id: areaId ?? undefined, page })
@@ -196,7 +195,6 @@ export function ApprovalsInbox() {
 
   function abrir(nueva: Decision, trigger: HTMLButtonElement) {
     disparador.current = trigger;
-    setAviso(null);
     setDecision(nueva);
   }
 
@@ -213,33 +211,16 @@ export function ApprovalsInbox() {
 
   function decidida(request: AccessRequest) {
     setDecididas((prev) => ({ ...prev, [request.id]: request }));
-    setAviso(avisoDecision(request));
+    avisar('success', avisoDecision(request), 'Solicitud decidida');
     setDecision(null);
-    // Los botones de la fila desaparecen: el foco va al aviso.
-    requestAnimationFrame(() => avisoRef.current?.focus());
-  }
-
-  /** Al quitar el aviso, el foco va al filtro (no cae en `body`). */
-  function cerrarAviso() {
-    setAviso(null);
-    document.getElementById(FILTRO_ESTADO_ID)?.focus();
+    // Los botones de la fila desaparecen: el foco va al filtro (no cae en `body`).
+    requestAnimationFrame(() => document.getElementById(FILTRO_ESTADO_ID)?.focus());
   }
 
   const data = lista.data;
 
   return (
     <div className="space-y-4">
-      <div role="status" ref={avisoRef} tabIndex={-1} className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        {aviso ? (
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <SuccessNote>{aviso}</SuccessNote>
-              <Button variant="secondary" onClick={cerrarAviso}>Cerrar aviso</Button>
-            </div>
-          </Card>
-        ) : null}
-      </div>
-
       <div className="grid gap-3 sm:grid-cols-2 lg:w-2/3">
         <Select
           id={FILTRO_ESTADO_ID}
