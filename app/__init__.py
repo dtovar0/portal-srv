@@ -149,6 +149,9 @@ def _registrar_cli_y_manejadores(app):
     # Datos demo para validar en local: `flask demo cargar` (FNC-131).
     from app.modules.demo.cli import demo_cli
     app.cli.add_command(demo_cli)
+    # Primer superadmin sin contraseña fija (FNC-003).
+    from app.modules.auth.cli import cuentas_cli
+    app.cli.add_command(cuentas_cli)
     # El resultado de cada trabajo actualiza el acceso otorgado (FNC-054).
     from app.modules.access.manejadores import registrar as registrar_accesos
     registrar_accesos()
@@ -169,13 +172,11 @@ def _crear_tablas(app):
     with app.app_context():
         try:
             db.create_all()
-            # Crear usuario inicial si no existe ninguno
+            # Sin cuenta automática con contraseña conocida (FNC-003): el
+            # primer superadmin se crea con `flask cuentas superadmin`.
             if not User.query.first():
-                admin = User(email='admin', nombre='admin', role='administrador')
-                admin.set_password('admin123')
-                db.session.add(admin)
-                db.session.commit()
-                print("👤 Usuario Maestro Creado: admin / admin123")
+                print('Sin cuentas: crea el superadmin con '
+                      '`flask --app run:app cuentas superadmin`.')
             print("🚀 Base de Datos Sincronizada Correctamente")
         except Exception as e:
             print(f"❌ Error al sincronizar base de datos: {e}")
