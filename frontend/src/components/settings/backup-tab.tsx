@@ -50,7 +50,7 @@ export function BackupTab() {
         <h2 className="text-sm font-medium">Descargar respaldo</h2>
         <p className="mt-1 text-sm text-label">
           Incluye la identidad del portal, el directorio, el correo, las
-          plantillas y las cuentas locales.
+          plantillas y las cuentas locales (sin contraseñas ni superadmins: tras restaurar, la cuenta de emergencia se crea con el comando del servidor).
         </p>
         <Button onClick={download} disabled={busy} className="mt-3">
           <Icono nombre="exportar" tamano="sm" ariaHidden={true} className="mr-1.5" />

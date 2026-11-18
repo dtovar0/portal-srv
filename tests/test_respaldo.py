@@ -32,7 +32,7 @@ def configuracion(app):
     db.session.add_all([
         SystemConfig(portal_name='Portal respaldado'),
         AuthConfig(ldap_host=HOST_LDAP_FICTICIO, ldap_base_dn='dc=pruebas'),
-        SMTPConfig(server=HOST_SMTP_FICTICIO, port=2525, password=CLAVE_SMTP),
+        SMTPConfig(server=HOST_SMTP_FICTICIO, port=2525),
         NotificationTemplate(slug='aviso', name='Aviso', subject='Asunto',
                              body='Cuerpo'),
     ])
@@ -41,6 +41,9 @@ def configuracion(app):
     # Por SQL directo: el modelo ya no permite escribirla.
     db.session.execute(text('UPDATE auth_config SET ldap_pass = :clave'),
                        {'clave': CLAVE_LDAP})
+    # Ídem SMTP antes de la migración 0013 (FNC-010).
+    db.session.execute(text('UPDATE smtp_config SET password = :clave'),
+                       {'clave': CLAVE_SMTP})
     db.session.commit()
     return fabricas.crear_usuario(ROLE_USER, email='local@pruebas.local',
                                   contrasena=CONTRASENA_FICTICIA)
@@ -104,8 +107,6 @@ def test_exportar_solo_incluye_cuentas_locales(configuracion, cliente_admin):
     assert 'directorio@pruebas.local' not in correos
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-17 / FNC-010: el respaldo '
-                   'incluye los password_hash de las cuentas locales')
 def test_exportar_no_incluye_hashes_de_contrasena(configuracion,
                                                   cliente_admin):
     usuarios = _leer_zip(cliente_admin.get(RUTA))['payload']['users']
@@ -135,8 +136,9 @@ def test_exportar_e_importar_restaura_la_configuracion(configuracion,
     assert SMTPConfig.query.one().port == 2525
     assert NotificationTemplate.query.filter_by(slug='aviso').one().body == \
         'Cuerpo'
+    # FNC-010: la cuenta vuelve sin contraseña (el respaldo ya no trae hashes).
     restaurada = User.query.filter_by(email='local@pruebas.local').one()
-    assert restaurada.check_password(CONTRASENA_FICTICIA)
+    assert not restaurada.password_hash
     assert AuditLog.query.filter_by(action='IMPORTAR CONFIGURACIÓN').count() == 1
 
 
@@ -173,8 +175,6 @@ def test_importar_no_sobrescribe_usuarios_existentes(configuracion,
     assert existente.check_password(CONTRASENA_FICTICIA)
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-17 / FNC-010: la importación '
-                   'restaura cuentas con rol administrador sin confirmación')
 def test_importar_no_crea_superadmins(app, cliente_admin):
     carga = {'payload': {'users': [{'email': 'nuevo-admin@pruebas.local',
                                     'role': ROLE_ADMIN}]}}
@@ -204,3 +204,22 @@ def test_sin_archivo_da_400(app, cliente_admin):
                                    content_type='multipart/form-data')
 
     assert respuesta.status_code == 400
+
+
+def test_importar_ignora_el_hash_de_un_respaldo_viejo(app, cliente_admin):
+    """Un respaldo anterior a FNC-010 traía hashes: no se restauran."""
+    carga = {'payload': {'users': [{'email': 'viejo@pruebas.local', 'role': 'usuario',
+                                    'password_hash': 'pbkdf2:sha256:hash-de-otro-servidor'}]}}
+
+    _importar(cliente_admin, _zip(json.dumps(carga)))
+
+    cuenta = User.query.filter_by(email='viejo@pruebas.local').one()
+    assert not cuenta.password_hash
+
+
+def test_importar_informa_los_superadmins_omitidos(app, cliente_admin):
+    carga = {'payload': {'users': [{'email': 'otro-admin@pruebas.local', 'role': ROLE_ADMIN}]}}
+
+    respuesta = _importar(cliente_admin, _zip(json.dumps(carga)))
+
+    assert '1 superadmin(s) omitido(s)' in respuesta.get_json()['restored']

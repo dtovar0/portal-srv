@@ -29,6 +29,11 @@ def _smtp_forced():
 # SMTP
 # --------------------------------------------------------------------------- #
 
+
+CONTRASENA_SMTP_EN_ENV = ('La contraseña SMTP se define en el .env del servidor '
+                          '(SMTP_PASSWORD), no en el portal.', 400,
+                          'contrasena_en_entorno')
+
 @notifications_api_bp.route('/smtp')
 @login_required
 @admin_required
@@ -100,9 +105,9 @@ def save_smtp():
             return error_response('Puerto no válido.')
     if 'auth_enabled' in data:
         config.auth_enabled = bool(data['auth_enabled'])
-    # Una contraseña vacía no borra la guardada.
+    # La contraseña no se guarda en la BD: va en SMTP_PASSWORD (FNC-010).
     if data.get('password'):
-        config.password = data['password']
+        return error_response(*CONTRASENA_SMTP_EN_ENV)
 
     db.session.commit()
     add_audit_log('ACTUALIZAR SMTP', module='Notificaciones', status='success')
@@ -137,7 +142,7 @@ def test_smtp():
             port=int(data.get('port') or config.port),
             encryption=data.get('encryption') or config.encryption,
             username=data.get('username') or config.username,
-            password=data.get('password') or config.password,
+            password=config.password,
             sender_name=data.get('sender_name') or config.sender_name,
             target_email=recipient,
         )

@@ -84,7 +84,7 @@
 | `SMTP_ENCRYPTION` | Cifrado | `starttls` / `ssl` / `none` | `starttls` | `starttls` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_AUTH` | Autenticar contra el SMTP | booleano | `true` si hay usuario y contraseña | `true` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_USER` | Usuario SMTP | texto | ninguno | `servicio@<dominio>` | No | No | Sí (vacío) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
-| `SMTP_PASSWORD` | Contraseña SMTP | texto | ninguna | — | No | **Sí** | Sí (vacía) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
+| `SMTP_PASSWORD` | Contraseña SMTP. **Único origen** (FNC-010): ya no se guarda en la BD ni se escribe desde Ajustes → Correo; la migración 0013 vació la guardada | texto | ninguna | — | Sí si el SMTP pide autenticación | **Sí** | Sí (vacía) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_SENDER_NAME` | Nombre del remitente | texto | `Nexus` | `Pokemon` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_SENDER_EMAIL` | Dirección del remitente | correo | `SMTP_USER` | `noreply@<dominio>` | No | No | Sí (vacío) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `ENABLE_NOTIFICATIONS` | Interruptor global de correo | `true` / `false` | `true` | `true` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
