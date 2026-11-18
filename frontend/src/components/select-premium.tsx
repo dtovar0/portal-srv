@@ -105,6 +105,13 @@ export function SelectPremium<T extends string | number = string | number>({
       } else {
         setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
       }
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+      } else if (options.length > 0) {
+        setHighlightedIndex(e.key === 'Home' ? 0 : options.length - 1);
+      }
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       if (!isOpen) {
@@ -128,12 +135,12 @@ export function SelectPremium<T extends string | number = string | number>({
       <button
         ref={triggerRef}
         id={id}
-        name={name}
         type="button"
         role="combobox"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        aria-controls={listboxId}
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-activedescendant={isOpen && highlightedIndex >= 0 ? `${id}-opt-${highlightedIndex}` : undefined}
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledby}
         aria-describedby={ariaDescribedby}
@@ -174,9 +181,8 @@ export function SelectPremium<T extends string | number = string | number>({
           id={listboxId}
           role="listbox"
           tabIndex={-1}
-          aria-activedescendant={
-            highlightedIndex >= 0 ? `${id}-opt-${highlightedIndex}` : undefined
-          }
+          aria-label={ariaLabelledby ? undefined : ariaLabel}
+          aria-labelledby={ariaLabelledby}
           className="absolute left-0 right-0 top-full mt-1.5 z-50 max-h-64 overflow-y-auto rounded-xl border border-panel-border bg-panel-fill p-1.5 shadow-2 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
         >
           {options.length === 0 ? (
@@ -238,6 +244,7 @@ export function SelectPremium<T extends string | number = string | number>({
 
       {/* Select nativo oculto para accesibilidad de formularios estándar y pruebas */}
       <select
+        name={name}
         tabIndex={-1}
         aria-hidden="true"
         disabled={disabled}
