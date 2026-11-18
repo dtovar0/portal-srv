@@ -7,8 +7,9 @@
 #   mysqld.service      MySQL de Rocky/RHEL 8 o 9
 #   mariadb.service     MariaDB
 #   mysql.service       MySQL de paquetes de terceros (Oracle, otras distros)
-#   postgresql.service  PostgreSQL de Rocky/RHEL (el de PGDG, p. ej.
-#                       postgresql-16.service, se indica con --db-service)
+#   postgresql.service  PostgreSQL de Rocky/RHEL
+#   postgresql-NN.service  PostgreSQL de PGDG (repositorio oficial); si hay
+#                       varias versiones se toma la mayor (FNC-148)
 # Las plantillas de las unidades llevan @DB_SERVICE@ en After= y Wants=.
 
 # Orden de preferencia de la detección, por motor.
@@ -30,7 +31,17 @@ detectar_servicio_bd() {
             return 0
         fi
     done
-    return 1
+    [[ "${1:-mysql}" == postgresql ]] && detectar_postgresql_pgdg
+}
+
+# PGDG nombra la unidad con la versión (postgresql-17.service). Imprime la de
+# versión mayor instalada (no alias); salida 1 si no hay ninguna.
+detectar_postgresql_pgdg() {
+    systemctl list-unit-files --no-legend --no-pager 'postgresql-*.service' 2>/dev/null \
+        | awk '$1 ~ /^postgresql-[0-9]+\.service$/ && $2 != "alias" {
+                   v = $1; sub(/^postgresql-/, "", v); sub(/\.service$/, "", v)
+                   if (v + 0 > max) { max = v + 0; u = $1 } }
+               END { if (u == "") exit 1; printf "%s", u }'
 }
 
 # Valida un nombre de servicio dado a mano (--db-service) e imprime su forma

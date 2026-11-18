@@ -309,3 +309,40 @@ def test_cliente_postgresql_presente_no_instala(tmp_path):
     assert r.returncode == 0, r.stderr
     assert llamadas == []
     assert 'cliente psql ya presente' in r.stdout
+
+
+# --- PostgreSQL de PGDG (FNC-148) ---------------------------------------------
+
+@pytest.mark.parametrize('unidades, esperado', [
+    ('postgresql-17.service enabled', 'postgresql-17.service'),
+    # Varias versiones: la mayor (comparación numérica, no de texto).
+    ('postgresql-9.service enabled\npostgresql-17.service disabled\n'
+     'postgresql-16.service enabled', 'postgresql-17.service'),
+    # La del sistema tiene preferencia sobre PGDG.
+    ('postgresql.service enabled\npostgresql-17.service enabled',
+     'postgresql.service'),
+])
+def test_detecta_postgresql_de_pgdg(tmp_path, unidades, esperado):
+    r = _bash('detectar_servicio_bd "$1"', 'postgresql',
+              entorno=_con_systemctl_falso(tmp_path, unidades))
+    assert r.returncode == 0
+    assert r.stdout == esperado
+
+
+@pytest.mark.parametrize('unidades', [
+    'postgresql-17.service alias',
+    'postgresql-17-extra.service enabled',
+    'postgresql-upgrade.service enabled',
+])
+def test_pgdg_ignora_alias_y_nombres_que_no_son_version(tmp_path, unidades):
+    r = _bash('detectar_servicio_bd "$1"', 'postgresql',
+              entorno=_con_systemctl_falso(tmp_path, unidades))
+    assert r.returncode == 1
+    assert r.stdout == ''
+
+
+def test_mysql_no_toma_postgresql_de_pgdg(tmp_path):
+    r = _bash('detectar_servicio_bd "$1"', 'mysql',
+              entorno=_con_systemctl_falso(tmp_path,
+                                           'postgresql-17.service enabled'))
+    assert r.returncode == 1
