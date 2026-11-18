@@ -551,7 +551,9 @@ Pendiente:
   1. Migraciones, si es una actualización (después reiniciar backend y worker):
        cd ${PREFIX} && venv/bin/alembic upgrade head   (BD existente de NEXUS: antes, una vez, alembic stamp 0001)
   2. Certificados y server_name en ${conf}
-  3. Comprobar:  curl -s localhost:${API_PORT}/api/v1/auth/context
+  3. Primer superadmin (instalación nueva) o cambiar la contraseña de \`admin\` (FNC-003):
+       cd ${PREFIX} && sudo -u ${SVC_USER} venv/bin/flask --app run:app cuentas superadmin [--restablecer]
+  4. Comprobar:  curl -s localhost:${API_PORT}/api/v1/auth/context
                  curl -s -o /dev/null -w '%{http_code}\\n' localhost:${WEB_PORT}/login
 
 Los puertos ${API_PORT} y ${WEB_PORT} escuchan solo en loopback a propósito: el backend
