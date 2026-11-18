@@ -228,7 +228,7 @@ export function PlatformAccessPanel({
                     value={searchSinAcceso}
                     onChange={(e) => setSearchSinAcceso(e.target.value)}
                     aria-label="Filtrar usuarios sin acceso"
-                    className="w-full h-10 rounded-xl border border-panel-border bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+                    className="w-full h-10 rounded-xl border border-panel-border bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
                   />
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
                     <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -301,7 +301,7 @@ export function PlatformAccessPanel({
                     value={searchConAcceso}
                     onChange={(e) => setSearchConAcceso(e.target.value)}
                     aria-label="Filtrar usuarios con acceso"
-                    className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+                    className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
                   />
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
                     <Icono nombre="buscar" tamano="xs" ariaHidden={true} />

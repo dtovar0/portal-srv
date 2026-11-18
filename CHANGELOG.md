@@ -20,6 +20,7 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Estilos: variables CSS inexistentes reemplazadas por tokens; vuelve a aplicarse el estilo de deshabilitado y las animaciones de entrada de modal y pestañas (DIS-095, 2026-11-18).
 - Pruebas: la del buscador global ya no falla bajo carga (esperaba al menú y no al buscador que escucha Ctrl K) (DIS-094, 2026-11-18).
 - Accesibilidad: bordes de tarjetas seleccionables y pestaña activa a 3:1; la barra del toast toma su duración de --toast-duracion (igual a TOAST_MS) (DIS-093, 2026-11-18).
 - Interfaz: la barra de progreso del toast se pausa con el cursor o el foco; el menú 'Log conectores' pasa a 'Ejecuciones'; los paneles de áreas avisan que quitar a alguien le retira sus accesos (DIS-092, 2026-11-18).
