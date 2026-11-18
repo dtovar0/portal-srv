@@ -11,8 +11,11 @@ escritura (`POST`, `PUT`, `PATCH`, `DELETE`) a `/api/` se rechaza con
   *preflight* CORS), o `Origin: null`.
 
 Sin `Origin` ni `Referer` (clientes que no son navegador: no son vector de
-CSRF) la petición pasa. La cookie de sesión va con `SameSite=Lax`.
+CSRF) la petición pasa. La cookie de sesión va con `SameSite=Lax` y, fuera
+de desarrollo, con `Secure` (solo viaja por HTTPS).
 """
+import os
+
 from urllib.parse import urlsplit
 
 from flask import request
@@ -56,10 +59,19 @@ def rechazo_por_origen():
     return None
 
 
+def _es_desarrollo():
+    return (os.getenv('APP_ENV') or '').strip().lower() == 'development'
+
+
 def registrar(app):
-    """Activa la verificación en todas las peticiones y `SameSite=Lax`."""
+    """Activa la verificación en todas las peticiones, `SameSite=Lax` y,
+    fuera de desarrollo, cookies `Secure`."""
     # Flask trae estas claves en `None`: se fijan salvo que ya tengan valor.
     for clave in ('SESSION_COOKIE_SAMESITE', 'REMEMBER_COOKIE_SAMESITE'):
         if not app.config.get(clave):
             app.config[clave] = 'Lax'
+    # En desarrollo se usa http://localhost: con Secure el navegador no la enviaría.
+    if not _es_desarrollo():
+        app.config['SESSION_COOKIE_SECURE'] = True
+        app.config['REMEMBER_COOKIE_SECURE'] = True
     app.before_request(rechazo_por_origen)

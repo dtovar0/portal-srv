@@ -95,3 +95,32 @@ def test_origen_opaco_referer_ajeno_o_cross_site_da_403(cliente_admin, cabeceras
 
 def test_lecturas_no_se_verifican(cliente_admin):
     assert cliente_admin.get('/api/v1/me', headers={'Origin': ORIGEN_AJENO}).status_code == 200
+
+
+# --- FNC-008: cookie Secure y sesión de cuentas desactivadas ----------------
+
+@pytest.mark.parametrize('entorno, segura', [('production', True), ('', True),
+                                             ('development', False)])
+def test_cookie_secure_fuera_de_desarrollo(monkeypatch, entorno, segura):
+    from flask import Flask
+    from app.modules.api.origen import registrar
+    monkeypatch.setenv('APP_ENV', entorno)
+    aplicacion = Flask(__name__)
+
+    registrar(aplicacion)
+
+    assert bool(aplicacion.config.get('SESSION_COOKIE_SECURE')) is segura
+    assert bool(aplicacion.config.get('REMEMBER_COOKIE_SECURE')) is segura
+
+
+def test_cuenta_desactivada_pierde_la_sesion_abierta(app, cliente_como, crear_usuario):
+    """Lo garantiza Flask-Login: `UserMixin.is_authenticated` devuelve `is_active`."""
+    from app import db
+    usuario = crear_usuario()
+    cliente = cliente_como(usuario)
+    assert cliente.get('/api/v1/me').status_code == 200
+
+    usuario.is_active = False
+    db.session.commit()
+
+    assert cliente.get('/api/v1/me').status_code == 401
