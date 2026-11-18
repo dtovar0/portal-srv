@@ -7,7 +7,7 @@
 | Consumidores | web (FNC-069; pantallas DIS-016, DIS-019) |
 | Solicitudes | — |
 
-Convenciones comunes: [README.md](README.md). Sin cambios: `GET /areas`, `GET /areas/<id>`, `PUT /areas/<id>/users`.
+Convenciones comunes: [README.md](README.md). Sin cambios: `GET /areas`, `GET /areas/<id>`. `PUT /areas/<id>/users` y `PUT /users/<id>/areas` cambian en FNC-152 (abajo).
 
 ## Endpoints
 
@@ -99,3 +99,8 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 | 1 | 2026-10-18 | Aditivo (FNC-045): `409 area_con_otros_admins` en `DELETE /areas/<id>` para el admin de área (decisión del orquestador, pendiente de validar en la PoC) |
 | 2 | 2026-10-19 | FNC-077 (decisión del dueño 2026-10-15: sin login local): `password` → `400 campo_no_permitido` en `POST /users` y en `PUT /users/<id>` salvo la cuenta de emergencia; excepción de desarrollo; `POST /users` crea cuentas `ldap` fuera de desarrollo. Cliente: DIS-018/DIS-019 (decisión del orquestador, pendiente de validar en la PoC) |
 | 2.1 | 2026-10-20 | Aditivo (FNC-055): efecto en los accesos automáticos de `PUT /users/<id>/managed-areas` y de degradar a `usuario`. Sin cambios de forma |
+
+## Salida de un área (FNC-152)
+- Quien deja de pertenecer a un área (`PUT /areas/<id>/users` o `PUT /users/<id>/areas`) pierde sus accesos por solicitud en las plataformas de esa área, en la misma petición.
+- Se revocan como el sistema con motivo `ya_no_pertenece_al_area`: `activo` → `revocando` (trabajo `revocar`); sin conector, `en_proceso`/`activo`/`fallido` → `revocado`.
+- Un acceso `en_proceso` con LDAP o conector no se toca (su trabajo `otorgar` sigue); los automáticos de admin de área los resincroniza `area_admin_sync`.

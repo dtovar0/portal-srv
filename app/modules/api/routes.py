@@ -199,8 +199,12 @@ def set_user_areas(user_id):
                         'rejected': rejected}), 403
 
     # Conserva las áreas del usuario que el solicitante no administra
+    antes = {a.id for a in (target.areas or [])}
     kept = [a for a in (target.areas or []) if a.id not in allowed]
     target.areas = kept + Area.query.filter(Area.id.in_(area_ids)).all()
+    # Las áreas que pierde se llevan sus accesos en esas plataformas (FNC-152).
+    from app.modules.access.salida_de_area import revocar_por_salida
+    revocar_por_salida(target.id, sorted(antes - {a.id for a in target.areas}))
     db.session.commit()
     return jsonify({'status': 'success',
                     'areas': [{'id': a.id, 'name': a.name} for a in target.areas]})
