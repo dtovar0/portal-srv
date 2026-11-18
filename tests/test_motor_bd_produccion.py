@@ -177,3 +177,38 @@ def test_motor_con_espacios_o_comillas_se_limpia_como_en_preflight(
         monkeypatch.setenv(clave, dato)
 
     assert construir_uri_bd().startswith('postgresql+psycopg2://')
+
+
+# --- TLS hacia la BD (FNC-151) ------------------------------------------------
+
+@pytest.mark.parametrize('motor, esperado', [
+    ('postgresql', {'sslmode': 'verify-full'}),
+    ('mysql', {'ssl_check_hostname': 'true'}),
+])
+def test_con_ca_exige_tls_verificado(monkeypatch, tmp_path, motor, esperado):
+    ca = tmp_path / 'ca.pem'
+    ca.write_text('certificado de prueba')
+    monkeypatch.setenv('APP_ENV', 'production')
+    for clave, valor in {**BD_MYSQL, 'DB_ENGINE': motor, 'DB_TLS_CA_FILE': str(ca)}.items():
+        monkeypatch.setenv(clave, valor)
+
+    consulta = dict(make_url(construir_uri_bd()).query)
+
+    for clave, valor in esperado.items():
+        assert consulta[clave] == valor
+    assert str(ca) in consulta.values()
+
+
+def test_sin_ca_no_agrega_parametros_tls(monkeypatch):
+    monkeypatch.setenv('APP_ENV', 'production')
+    for clave, valor in {**BD_MYSQL, 'DB_ENGINE': 'postgresql', 'DB_TLS_CA_FILE': ''}.items():
+        monkeypatch.setenv(clave, valor)
+    assert dict(make_url(construir_uri_bd()).query) == {}
+
+
+def test_ca_inexistente_no_arranca(monkeypatch, tmp_path):
+    monkeypatch.setenv('APP_ENV', 'production')
+    for clave, valor in {**BD_MYSQL, 'DB_TLS_CA_FILE': str(tmp_path / 'no-existe.pem')}.items():
+        monkeypatch.setenv(clave, valor)
+    with pytest.raises(ErrorConfiguracionBD, match='DB_TLS_CA_FILE'):
+        construir_uri_bd()
