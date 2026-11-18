@@ -267,7 +267,7 @@ export function DirectoryAccountForm({
           </div>
         </div>
 
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
 
         {/* PASO 1: Datos del usuario (sin textos de apoyo redundantes y con espacio de error reservado) */}
         {paso === 1 ? (

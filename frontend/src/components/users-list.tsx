@@ -417,7 +417,7 @@ export function UsersList() {
       ) : null}
 
       {problem ? (
-        <div className="sr-only" role="alert">
+        <div className="sr-only">
           {problem}
         </div>
       ) : users.error ? (

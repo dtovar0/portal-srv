@@ -60,11 +60,19 @@ const WIKI = entrada(5, 'Wiki', [1, 'TI'], {
   pending_request_id: 40, can_request: false, requestable_levels: [],
 });
 
-/** Texto de las alertas del diálogo (general y del campo justificación). */
+/**
+ * Texto de los errores del diálogo: el del campo justificación (`role="alert"`) y el general, que
+ * desde DIS-089 es texto `sr-only` sin rol (lo anuncia el toast; no se duplica).
+ */
+function textosDeError(dialogo: HTMLElement): string[] {
+  return [...dialogo.querySelectorAll('[role="alert"], form > .sr-only')]
+    .map((a) => a.textContent ?? '')
+    .filter(Boolean);
+}
+
 async function alertas(dialogo: HTMLElement) {
-  await waitFor(() => expect(within(dialogo).getAllByRole('alert')
-    .some((a) => (a.textContent ?? '') !== '')).toBe(true));
-  return within(dialogo).getAllByRole('alert').map((a) => a.textContent ?? '').filter(Boolean);
+  await waitFor(() => expect(textosDeError(dialogo).length).toBeGreaterThan(0));
+  return textosDeError(dialogo);
 }
 
 function tarjeta(nombre: string) {

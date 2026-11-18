@@ -74,7 +74,7 @@ export function JobRetryDialog({
           La ejecución n.º {job.id} vuelve a pendiente con nuevos intentos y el reintento queda en la
           auditoría.
         </p>
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </div>
     </AlertDialog>
   );
