@@ -334,6 +334,13 @@ distinto del previsto.
 - Las variables las pone una persona en `<carpeta>/.env` (640, `root:<grupo de servicio>`). Procedimiento completo, alta de ítems y rotación: [`docs/operacion/SECRETOS.md`](../docs/operacion/SECRETOS.md).
 - Prueba: `pytest tests/deploy/test_secretos_sh.py` (`.env` sintéticos).
 
+## Primer superadmin (FNC-003)
+
+- El portal ya no crea `admin`/`admin123` al arrancar con la base vacía.
+- Instalación nueva: `cd /opt/portal && sudo -u <usuario de servicio> venv/bin/flask --app run:app cuentas superadmin` (pide la contraseña dos veces; 16+ caracteres con mayúsculas, minúsculas, números y símbolos).
+- Instalación existente con `admin123`: el mismo comando con `--restablecer` cambia la contraseña de esa cuenta local.
+- No crea un segundo superadmin; `--correo` elige el identificador (por defecto `admin`).
+
 ## Base de datos (FNC-134, FNC-146)
 
 - Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) el `.env` debe tener `DB_ENGINE=mysql` (MySQL o MariaDB) o `DB_ENGINE=postgresql`; SQLite solo existe con `APP_ENV=development`.

@@ -42,6 +42,7 @@
 - Texto mínimo de 12 px: insignias, botones, cabeceras de tabla, contador del tour, marca de las casillas, ejes de las gráficas del Inicio e iniciales de Administrar plataformas pasan de 9–11 px a 12 px (token `--text-xs`); se retira el token `--text-2xs` (10 px) y una prueba impide volver a bajar de 12 px (DIS-007, DIS-032, 2026-10-26).
 
 ### Seguridad
+- Seguridad: el portal ya no crea admin/admin123 con la base vacía; el primer superadmin se crea con flask --app run:app cuentas superadmin y --restablecer cambia la contraseña de una instalación existente (FNC-003, 2026-11-18).
 - Seguridad: el login responde 429 tras 10 fallos por cuenta o 30 por IP en 15 minutos (configurable), sin probar la contraseña mientras dure (FNC-014, 2026-11-18).
 - Seguridad (CSRF): toda escritura a la API desde otro sitio (Origin/Referer ajeno, Origin null o Sec-Fetch-Site cross-site) responde 403 csrf_invalido; la cookie de sesión va con SameSite=Lax (FNC-008, 2026-11-18).
 - Despliegue: `install.sh` se detiene si `<prefijo>/.env` es un enlace simbólico, un directorio o tiene otro enlace duro, y aplica dueño y permisos sobre el archivo abierto sin seguir enlaces; `chown -R -h` del prefijo. Cierra la escalada a root con `ln -sf /etc/shadow <prefijo>/.env` desde la cuenta de servicio, abierta al conservar el `.env` en la copia (FNC-125, 2026-10-27).
