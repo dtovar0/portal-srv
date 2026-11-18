@@ -45,10 +45,22 @@ def _motor():
     return (os.getenv(VAR_MOTOR) or 'sqlite').strip().strip('"\'').strip()
 
 
+MOTOR_SQLITE = 'sqlite'
+
+
 def validar_motor_bd():
-    """Fuera de desarrollo exige `DB_ENGINE` = `mysql` o `postgresql`."""
-    if _es_desarrollo() or _motor() in MOTORES_SERVIDOR:
+    """Fuera de desarrollo exige `DB_ENGINE` = `mysql` o `postgresql`; en
+    desarrollo admite además `sqlite`, pero no un valor desconocido (antes
+    caía en silencio a SQLite, FNC-009)."""
+    motor = _motor()
+    if motor in MOTORES_SERVIDOR:
         return
+    if _es_desarrollo():
+        if motor == MOTOR_SQLITE:
+            return
+        raise ErrorConfiguracionBD(
+            f'{VAR_MOTOR} debe ser "{MOTOR_SQLITE}", "{MOTOR_MYSQL}" o '
+            f'"{MOTOR_POSTGRESQL}".')
     raise ErrorConfiguracionBD(
         f'{VAR_MOTOR} debe ser "{MOTOR_MYSQL}" o "{MOTOR_POSTGRESQL}" fuera '
         f'de desarrollo ({VAR_ENTORNO} distinto de "{ENTORNO_DESARROLLO}"): '
