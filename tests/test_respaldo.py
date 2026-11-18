@@ -32,7 +32,7 @@ def configuracion(app):
     db.session.add_all([
         SystemConfig(portal_name='Portal respaldado'),
         AuthConfig(ldap_host=HOST_LDAP_FICTICIO, ldap_base_dn='dc=pruebas'),
-        SMTPConfig(server=HOST_SMTP_FICTICIO, port=2525, password=CLAVE_SMTP),
+        SMTPConfig(server=HOST_SMTP_FICTICIO, port=2525),
         NotificationTemplate(slug='aviso', name='Aviso', subject='Asunto',
                              body='Cuerpo'),
     ])
@@ -41,6 +41,9 @@ def configuracion(app):
     # Por SQL directo: el modelo ya no permite escribirla.
     db.session.execute(text('UPDATE auth_config SET ldap_pass = :clave'),
                        {'clave': CLAVE_LDAP})
+    # Ídem SMTP antes de la migración 0013 (FNC-010).
+    db.session.execute(text('UPDATE smtp_config SET password = :clave'),
+                       {'clave': CLAVE_SMTP})
     db.session.commit()
     return fabricas.crear_usuario(ROLE_USER, email='local@pruebas.local',
                                   contrasena=CONTRASENA_FICTICIA)
