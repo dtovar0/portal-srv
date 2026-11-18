@@ -233,6 +233,9 @@ def create_app(config_overrides=None):
     _configurar(app, config_overrides)
     _validar_configuracion()
     _iniciar_extensiones(app)
+    # CSRF de la API por origen y cookie SameSite=Lax (FNC-008).
+    from app.modules.api.origen import registrar as registrar_origen
+    registrar_origen(app)
     _registrar_blueprints(app)
     _registrar_cli_y_manejadores(app)
     _crear_tablas(app)
