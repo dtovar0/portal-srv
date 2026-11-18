@@ -22,7 +22,7 @@ autenticación.
 - El nombre por defecto es el de la carpeta (`/opt/portal` → `portal`); `--name` lo cambia.
 - `--prefix` ya no existe: si se pasa, termina con código 2.
 - Antes de instalar, crear `.env` en la carpeta a partir de `.env.example` y rellenar las credenciales.
-- **Actualizar** = `sudo git -C /opt/<nombre> pull` + `sudo ./deploy/install.sh` (no hace falta `safe.directory`: el código es de root).
+- **Actualizar** = `sudo git -C /opt/<nombre> pull` + `sudo ./deploy/install.sh --actualizar` (FNC-153; no hace falta `safe.directory`: el código es de root).
 
 ```bash
 sudo git clone <url-del-repositorio> /opt/portal
@@ -30,10 +30,22 @@ cd /opt/portal
 ./deploy/preflight.sh                              # evaluación, no modifica nada
 sudo ./deploy/install.sh --domain portal.ejemplo.com
 
-# Actualizar
+# Actualizar (dependencias, frontend, migraciones y reinicio; no toca nginx ni unidades)
 sudo git -C /opt/portal pull
-sudo /opt/portal/deploy/install.sh
+sudo /opt/portal/deploy/install.sh --actualizar
 ```
+
+### Actualizar sin reinstalar (FNC-153)
+
+- `--actualizar`: `pip install -r requirements.txt`, `npm ci` + `next build`, `alembic upgrade head` y reinicio de backend, worker y frontend.
+- No toca paquetes, usuario, unidades systemd, `/etc/nginx/conf.d/<nombre>.conf`, firewall ni `.env`. Exige una instalación previa.
+- Sin `--actualizar` (instalación completa) los servicios también se reinician: antes un servicio ya activo seguía con el código anterior.
+
+### nginx editado a mano (FNC-153)
+
+- Si `<nombre>.conf` existe y es distinto de la plantilla, en una terminal se pregunta: **[C]onservar** (por defecto) o **[r]eemplazar**.
+- Sin terminal se conserva. `--nginx-conf conservar|reemplazar` fija la respuesta.
+- Reemplazar guarda `<nombre>.conf.bak-AAAAMMDD-HHMMSS`; conservar deja la plantilla en `<nombre>.conf.nuevo` para comparar (ninguno termina en `.conf`: nginx no los carga).
 
 ### Propiedad de la carpeta (FNC-129, SEG-1)
 
