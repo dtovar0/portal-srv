@@ -1,6 +1,6 @@
 # ADR-008 — Onboarding: contraseña inicial entregada con un Send de Vaultwarden
 
-- **Estatus:** Aceptada (2026-11-17: decisión principal del dueño; subdecisiones 3B, 4, 5A y 6A recomendadas por el orquestador y aceptadas por el dueño con «continua»; pendientes de validar en la prueba de concepto) · **Fecha:** 2026-11-17 · **Tareas:** FNC-135, FNC-136, FNC-137, FNC-138, FNC-139
+- **Estatus:** Aceptada (2026-11-17: decisión principal del dueño; 2026-11-18: el dueño **aprueba explícitamente** las subdecisiones 3 a 9 y fija la 10 y la 11) · **Fecha:** 2026-11-17 · **Tareas:** FNC-135, FNC-136, FNC-137, FNC-138, FNC-139
 - **Modifica:** P8 (2026-10-14, FNC-037/038), SEC-LDAP-09 y SEC-AUTHZ-06 (`docs/seguridad/LINEAMIENTOS.md`), ADR-005 (cliente de solo lectura) y la decisión del 2026-10-27 de desplegar sin Vaultwarden (FNC-128)
 
 ## Contexto
@@ -52,6 +52,8 @@
 | 7 | Sin campo «Confirmar contraseña» (mostrar u ocultar y generador) |
 | 8 | Sin correo configurado: credenciales «pendientes»; la contraseña nunca se muestra en pantalla |
 | 9 | Reenviar: solo el superadmin (SEC-AUTHZ-06 sin cambio) |
+| 10 | Cómo se crea el Send (dueño, 2026-11-18): **los dos modos**, elegibles con `VAULTWARDEN_SEND_MODO=api` (por defecto: API de Vaultwarden con la cuenta de servicio) o `=bw` (CLI `bw` del servidor con sesión desbloqueada) |
+| 11 | OpenLDAP **tiene `ppolicy`** (dueño, 2026-11-18): el portal valida la política y además traduce a mensaje propio el rechazo de ppolicy en Password Modify |
 
 ## Recomendación original
 - 3B, 4 (contraseña nueva por reintento), 5A, 6A.
