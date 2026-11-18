@@ -15,7 +15,7 @@ describe('menú por rol', () => {
     const admin = seccionesVisibles(permisos(false, true));
     expect(admin.map((s) => s.seccion)).toEqual(['General', 'Gestión', 'Sistema']);
     expect(admin[1].entradas.map((e) => e.label)).not.toContain('Aprobaciones');
-    expect(admin[2].entradas.map((e) => e.label)).toEqual(['Ajustes', 'Log conectores', 'Auditoría']);
+    expect(admin[2].entradas.map((e) => e.label)).toEqual(['Ajustes', 'Ejecuciones', 'Auditoría']);
   });
 
   it('el usuario solo ve lo común; el admin ve más', () => {
@@ -31,7 +31,7 @@ describe('menú por rol', () => {
 describe('entradaDeRuta', () => {
   it('coincide exacta o por prefijo más largo', () => {
     expect(entradaDeRuta('/')?.label).toBe('Dashboard');
-    expect(entradaDeRuta('/admin/jobs')?.label).toBe('Log conectores');
+    expect(entradaDeRuta('/admin/jobs')?.label).toBe('Ejecuciones');
     expect(entradaDeRuta('/audit/platforms/4')?.label).toBe('Auditoría');
     expect(entradaDeRuta('/desconocida')).toBeNull();
     expect(entradaDeRuta(null)).toBeNull();

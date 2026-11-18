@@ -87,8 +87,10 @@ export function UsersList() {
     if (mensaje) avisar('success', mensaje, titulo);
     users.reload();
     // Tras desmontar el diálogo, el foco vuelve al botón que lo abrió, si sigue en la página.
+    // Si la fila cambió y el botón ya no existe, al buscador (no a `body`).
     setTimeout(() => {
       if (disparadorAviso.current?.isConnected) disparadorAviso.current.focus();
+      else document.getElementById('buscar-usuarios')?.focus();
     }, 0);
   }
 

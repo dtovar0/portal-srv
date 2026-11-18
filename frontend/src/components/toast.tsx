@@ -8,9 +8,8 @@
  *   `avisar(tono, texto)` y `cerrar(id)`. Fuera del proveedor no hace nada.
  * - Dos regiones vivas siempre montadas: `role="status"` (éxito e info,
  *   cortés) y `role="alert"` (error, asertiva).
- * - Éxito e info se cierran solos tras `TOAST_MS`; el error se queda hasta que
- *   se cierra (no se pierde un fallo por tardar en leerlo). Todos tienen botón
- *   "Cerrar aviso" de 48 px.
+ * - Todos los avisos, también los de error, se cierran solos tras `TOAST_MS`
+ *   (8 s, decisión del dueño 2026-11-18). Todos tienen botón "Cerrar aviso" de 48 px.
  * - DIS-049: el temporizador se pausa mientras el cursor (ratón, no toque) o el foco están sobre
  *   el aviso y vuelve a correr completo al salir (WCAG 2.2.1).
  * - DIS-049: con un diálogo abierto, la región de avisos entra en el ciclo de
@@ -84,11 +83,20 @@ type PropsTarjeta = {
 
 function Tarjeta({ aviso, onCerrar, onPausa, onReanudar }: PropsTarjeta) {
   const encima = useRef({ cursor: false, foco: false });
+  // La barra se pausa (CSS) con el temporizador y vuelve a empezar con él al reanudar.
+  const [pausado, setPausado] = useState(false);
+  const [ciclo, setCiclo] = useState(0);
   const tonoConfig = ICONO_TONO[aviso.tono];
   const actualizar = (parte: Partial<typeof encima.current>) => {
     encima.current = { ...encima.current, ...parte };
-    if (encima.current.cursor || encima.current.foco) onPausa(aviso.id);
-    else onReanudar(aviso.id);
+    if (encima.current.cursor || encima.current.foco) {
+      onPausa(aviso.id);
+      setPausado(true);
+    } else {
+      onReanudar(aviso.id);
+      setPausado(false);
+      setCiclo((n) => n + 1);
+    }
   };
   return (
     <div
@@ -125,7 +133,10 @@ function Tarjeta({ aviso, onCerrar, onPausa, onReanudar }: PropsTarjeta) {
         <span className="sr-only">Cerrar aviso</span>
       </button>
       <span className="absolute inset-x-4 bottom-0 h-0.5 overflow-hidden rounded-full" aria-hidden="true">
-        <span className={`block h-full w-full ${BARRA_TONO[aviso.tono]} nx-toast-progress`} />
+        <span
+          key={ciclo}
+          className={`block h-full w-full ${BARRA_TONO[aviso.tono]} nx-toast-progress ${pausado ? 'nx-toast-progress-pausada' : ''}`}
+        />
       </span>
     </div>
   );
@@ -157,6 +168,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     (tono: ToastTone, texto: string, titulo?: string) => {
       const id = siguiente.current++;
       setAvisos((actuales) => [...actuales, { id, tono, texto, titulo }]);
+      // Todos los avisos, también los de error, se cierran solos (decisión del dueño, 2026-11-18).
       temporizadores.current.set(id, setTimeout(() => cerrar(id), TOAST_MS));
       return id;
     },

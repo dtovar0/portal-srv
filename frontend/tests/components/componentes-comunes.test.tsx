@@ -129,6 +129,16 @@ describe('Toast', () => {
     expect(screen.queryByText('Falló.')).toBeNull();
   });
 
+  it('la barra de progreso se pausa con el cursor y se reanuda al salir (DIS-092)', () => {
+    render(<ToastProvider><Disparador /></ToastProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'ok' }));
+    const tarjeta = screen.getByText('Guardado.').closest('.nx-toast') as HTMLElement;
+    fireEvent.pointerEnter(tarjeta, { pointerType: 'mouse' });
+    expect(tarjeta.querySelector('.nx-toast-progress-pausada')).toBeTruthy();
+    fireEvent.pointerLeave(tarjeta, { pointerType: 'mouse' });
+    expect(tarjeta.querySelector('.nx-toast-progress-pausada')).toBeNull();
+  });
+
   it('fuera del proveedor useToast no falla ni pinta nada', () => {
     render(<Disparador />);
     fireEvent.click(screen.getByRole('button', { name: 'mal' }));

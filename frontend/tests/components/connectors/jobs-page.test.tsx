@@ -75,7 +75,7 @@ describe('pantalla Ejecuciones por rol', () => {
     expect(within(ul).getByText('Fallida')).toBeTruthy();
     expect(within(ul).getByRole('button', { name: /Ver el detalle/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Reintentar la ejecución/ })).toBeNull();
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Log conectores');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ejecuciones');
   });
 
   it('superadmin: ve la bitácora con Reintentar en la fallida', async () => {
