@@ -18,12 +18,17 @@ Solo se aceptan los tipos autenticados (2: AES-256-CBC + HMAC-SHA256, y 3/4:
 RSA-OAEP); el tipo 0 (sin MAC) y los RSA con HMAC (5/6, obsoletos) se
 rechazan. El MAC se compara en tiempo constante antes de descifrar.
 
+Cifrado (FNC-136, Sends): `cifrar_simetrico` produce el mismo tipo 2 y
+`derivar_clave_send` la llave de un Send (16 bytes aleatorios → HKDF-SHA256 con
+sal `bitwarden-send` e info `send` → 64 bytes).
+
 Ninguna clave aparece en `repr` ni en el texto de los errores.
 """
 import base64
 import binascii
 import hashlib
 import hmac
+import os
 
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, padding
@@ -31,7 +36,7 @@ from cryptography.hazmat.primitives.asymmetric import padding as padding_rsa
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.argon2 import Argon2id
-from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF, HKDFExpand
 from cryptography.hazmat.primitives.serialization import load_der_private_key
 
 KDF_PBKDF2 = 0
@@ -55,6 +60,11 @@ LARGO_CLAVE_SIMETRICA = 64  # enc (32) + mac (32)
 LARGO_IV = 16
 LARGO_MAC = 32
 KIB_POR_MIB = 1024
+# Llave de un Send: material aleatorio de 16 bytes que viaja en el fragmento
+# del enlace y se expande con HKDF (misma derivación del cliente oficial).
+LARGO_MATERIAL_SEND = 16
+SAL_SEND = b'bitwarden-send'
+INFO_SEND = b'send'
 INFO_ENC = b'enc'
 INFO_MAC = b'mac'
 CODIFICACION = 'utf-8'
@@ -195,3 +205,35 @@ def descifrar_rsa(cifrado, llave_privada):
             label=None))
     except ValueError:
         raise ErrorDeCifrado('No se pudo descifrar.') from None
+
+
+def cifrar_simetrico(datos, clave):
+    """Valor tipo 2 (`2.iv|datos|mac`) de `datos` (bytes o texto) con `clave`.
+
+    IV aleatorio por llamada; AES-256-CBC con relleno PKCS7 y HMAC-SHA256 sobre
+    `iv + datos` (el inverso de `descifrar_simetrico`).
+    """
+    if isinstance(datos, str):
+        datos = datos.encode(CODIFICACION)
+    iv = os.urandom(LARGO_IV)
+    relleno = padding.PKCS7(algorithms.AES.block_size).padder()
+    plano = relleno.update(datos) + relleno.finalize()
+    cifrador = Cipher(algorithms.AES(clave._enc), modes.CBC(iv)).encryptor()
+    cifrado_ = cifrador.update(plano) + cifrador.finalize()
+    mac = hmac.new(clave._mac, iv + cifrado_, hashlib.sha256).digest()
+    return '2.' + '|'.join(base64.b64encode(parte).decode()
+                            for parte in (iv, cifrado_, mac))
+
+
+def material_de_send():
+    """16 bytes aleatorios: la llave de un Send nuevo."""
+    return os.urandom(LARGO_MATERIAL_SEND)
+
+
+def derivar_clave_send(material):
+    """`ClaveSimetrica` con la que se cifran el nombre y el texto del Send."""
+    if len(material) != LARGO_MATERIAL_SEND:
+        raise ErrorDeCifrado('Largo de llave de Send inválido.')
+    return ClaveSimetrica.desde_bytes(HKDF(
+        algorithm=hashes.SHA256(), length=LARGO_CLAVE_SIMETRICA,
+        salt=SAL_SEND, info=INFO_SEND).derive(material))

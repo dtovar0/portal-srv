@@ -1,4 +1,6 @@
-"""Cliente de Vaultwarden de solo lectura (FNC-068, ADR-005 alternativa A).
+"""Cliente de Vaultwarden (FNC-068, ADR-005 alternativa A): lee ítems de una
+colección y, desde FNC-136 (ADR-008), ofrece sesión y peticiones autenticadas
+para crear y borrar Sends (`sends.py`).
 
 Decisión (ficha FNC-068): API HTTP compatible con Bitwarden y descifrado del
 lado del cliente con `cryptography`; sin la CLI `bw` (sesión desbloqueada y
@@ -53,6 +55,7 @@ ESPACIO_DISPOSITIVO = uuid.UUID('6f1c2d3e-0a4b-4c5d-8e9f-a0b1c2d3e4f5')
 TIPO_ITEM_LOGIN = 1
 
 TAMANO_MAXIMO_RESPUESTA = 8 * 1024 * 1024  # bytes
+TAMANO_MAXIMO_ERROR = 16 * 1024  # bytes
 MARGEN_TOKEN_SEGUNDOS = 60
 VIDA_TOKEN_POR_DEFECTO = 3600
 VIDA_TOKEN_MAXIMA = 86400
@@ -129,8 +132,14 @@ class TransporteHttps:
             with self._abridor.open(peticion, timeout=self._tiempo) as resp:
                 return Respuesta(resp.status, _leer_acotado(resp))
         except urllib.error.HTTPError as exc:
+            # Cuerpo acotado: solo para clasificar el rechazo (p. ej. la
+            # política «Deshabilitar Send»); nunca se registra.
+            try:
+                cuerpo = exc.read(TAMANO_MAXIMO_ERROR)
+            except (OSError, http.client.HTTPException):
+                cuerpo = b''
             exc.close()
-            return Respuesta(exc.code, b'')
+            return Respuesta(exc.code, cuerpo)
         except (urllib.error.URLError, OSError, ValueError,
                 http.client.HTTPException) as exc:
             # `IncompleteRead`, `BadStatusLine`: conexión cortada (B1).
@@ -404,6 +413,37 @@ class ClienteVaultwarden:
         except cifrado.ErrorDeCifrado:
             return None
         return ItemSecreto(secreto=secreto, usuario=usuario or None)
+
+    # ----------------------------------------------------- Sends (FNC-136)
+
+    def sesion_de_usuario(self):
+        """Sesión vigente con la clave de usuario abierta (para cifrar Sends).
+
+        Si el token no trajo las claves, las toma del perfil de `sync`.
+        """
+        with self._candado:
+            sesion = self._sesion_vigente()
+            if sesion.clave_usuario is None:
+                sesion, datos = self._sincronizar()
+                self._abrir_claves(sesion, _campo(datos, 'profile') or {})
+            return sesion
+
+    def pedir_autenticado(self, metodo, ruta, cuerpo=None):
+        """`Respuesta` de una petición con la sesión; un 401 renueva la sesión
+        y reintenta una sola vez. El llamador interpreta el estado."""
+        for intento in range(2):
+            with self._candado:
+                token = self._sesion_vigente().token
+            cabeceras = {'Authorization': f'Bearer {token}',
+                         'Accept': 'application/json'}
+            if cuerpo is not None:
+                cabeceras['Content-Type'] = 'application/json'
+            respuesta = self._pedir(metodo, ruta, cabeceras, cuerpo)
+            if respuesta.estado == ESTADO_NO_AUTORIZADO and intento == 0:
+                self.reiniciar()
+                continue
+            return respuesta
+        raise GestorMalConfigurado('Vaultwarden: sesión rechazada.')
 
     def reiniciar(self):
         with self._candado:
