@@ -28,8 +28,8 @@
 # Usa el Python del sistema si es 3.11 o superior; solo instala uno si no hay.
 #
 # Las unidades arrancan después del servicio de la BD local, que se detecta
-# (mysqld, mariadb o mysql); --db-service lo fuerza. Sin BD local no dependen
-# de ninguno.
+# según DB_ENGINE (mysqld, mariadb o mysql; postgresql); --db-service lo
+# fuerza. Sin BD local no dependen de ninguno.
 #
 # --web-port y --api-port fijan los puertos de loopback del frontend y del
 # backend (por defecto 3000 y 5001; enteros de 1024 a 65535, distintos).
@@ -188,6 +188,12 @@ WORKER_UNIT="${APP_NAME}-worker"
 
 # shellcheck source=deploy/servicio_bd.sh
 . "$PREFIX/deploy/servicio_bd.sh"
+# shellcheck source=deploy/motor_bd.sh
+. "$PREFIX/deploy/motor_bd.sh"
+# Motor del .env (FNC-146): elige el servicio y el cliente de BD. Sin valor
+# válido se asume mysql (ADR-001); la validación estricta va más abajo.
+DB_MOTOR="$(motor_bd_de_env "$PREFIX/.env")"
+[[ "$DB_MOTOR" == postgresql ]] || DB_MOTOR=mysql
 # shellcheck source=deploy/env_seguro.sh
 . "$PREFIX/deploy/env_seguro.sh"
 # shellcheck source=deploy/puertos.sh
@@ -291,11 +297,11 @@ else
 fi
 
 # --- 0b. Servicio de la base de datos ----------------------------------------
-# Antes de los paquetes: decide el cliente mysql y las unidades systemd.
+# Antes de los paquetes: decide el cliente de BD y las unidades systemd.
 log "Servicio de la base de datos"
 if [[ -n "$DB_SERVICE" ]]; then
     note "servicio de BD: $DB_SERVICE (indicado)"
-elif DB_SERVICE="$(detectar_servicio_bd)"; then
+elif DB_SERVICE="$(detectar_servicio_bd "$DB_MOTOR")"; then
     note "servicio de BD local: $DB_SERVICE (las unidades arrancan después)"
 else
     DB_SERVICE=""
@@ -360,8 +366,8 @@ else
     note "cabeceras de compilación y nginx"
     dnf -y install gcc make openssl-devel libffi-devel nginx \
         || die "no se pudieron instalar los paquetes; revisar los repositorios"
-    # Cliente mysql: opcional y acorde al servidor (FNC-125).
-    instalar_cliente_bd "$DB_SERVICE"
+    # Cliente de BD: opcional y acorde al motor y al servidor (FNC-125, FNC-146).
+    instalar_cliente_bd "$DB_SERVICE" "$DB_MOTOR"
 fi
 
 # --- 2. Usuario de servicio --------------------------------------------------
@@ -409,12 +415,11 @@ if ! salida_vw="$(revisar_vaultwarden "$PREFIX/.env")"; then
     die "Corregir las variables de Vaultwarden del .env (ver deploy/README.md)."
 fi
 printf '%s\n' "$salida_vw" | sed 's/^/    /'
-# Fuera de desarrollo la BD debe ser MySQL (FNC-134); mismo criterio que preflight.
-# shellcheck source=deploy/motor_bd.sh
-. "$PREFIX/deploy/motor_bd.sh"
+# Fuera de desarrollo la BD debe ser MySQL o PostgreSQL (FNC-134, FNC-146);
+# mismo criterio que preflight.
 if ! salida_motor="$(revisar_motor_bd "$PREFIX/.env")"; then
     printf '%s\n' "$salida_motor" | sed 's/^/    /'
-    die "DB_ENGINE debe ser mysql fuera de desarrollo (ver deploy/README.md)."
+    die "DB_ENGINE debe ser mysql o postgresql fuera de desarrollo (ver deploy/README.md)."
 fi
 printf '%s\n' "$salida_motor" | sed 's/^/    /'
 # El código sigue de root (SEG-1): la cuenta solo recibe sus datos y registros.

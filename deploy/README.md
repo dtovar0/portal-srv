@@ -116,10 +116,10 @@ sudo ./deploy/install.sh --name portal --web-port 3100 …
 ### Servicio de la base de datos
 
 - Backend y worker arrancan después del servicio de BD local: `@DB_SERVICE@` en las plantillas (FNC-125).
-- Detección, en este orden: `mysqld.service`, `mariadb.service`, `mysql.service` (los alias no cuentan).
+- Detección según `DB_ENGINE` (FNC-146): con `mysql`, en este orden `mysqld.service`, `mariadb.service`, `mysql.service` (los alias no cuentan); con `postgresql`, `postgresql.service` (el de PGDG, p. ej. `postgresql-16`, con `--db-service`).
 - Sin ninguno (BD remota): la dependencia se quita de `After=`/`Wants=`.
 - Forzarlo: `--db-service mariadb` (o `DB_SERVICE=mariadb`); se valida como nombre de unidad.
-- Cliente `mysql` (opcional, para respaldos): solo si no hay uno; paquete `mariadb` con MariaDB y `mysql` en los demás casos (en el9 chocan). Si falla, es un aviso y sigue.
+- Cliente de BD (opcional, para respaldos): solo si no hay uno. Con `mysql`: paquete `mariadb` con MariaDB y `mysql` en los demás casos (en el9 chocan). Con `postgresql`: `psql` del paquete `postgresql`. Si falla, es un aviso y sigue.
 - Prueba: `pytest tests/deploy/test_servicio_bd_sh.py`.
 
 ### Nombre del despliegue
@@ -334,9 +334,11 @@ distinto del previsto.
 - Las variables las pone una persona en `<carpeta>/.env` (640, `root:<grupo de servicio>`). Procedimiento completo, alta de ítems y rotación: [`docs/operacion/SECRETOS.md`](../docs/operacion/SECRETOS.md).
 - Prueba: `pytest tests/deploy/test_secretos_sh.py` (`.env` sintéticos).
 
-## Base de datos (FNC-134)
+## Base de datos (FNC-134, FNC-146)
 
-- Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) el `.env` debe tener `DB_ENGINE=mysql`; SQLite solo existe con `APP_ENV=development`.
+- Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) el `.env` debe tener `DB_ENGINE=mysql` (MySQL o MariaDB) o `DB_ENGINE=postgresql`; SQLite solo existe con `APP_ENV=development`.
+- Con PostgreSQL: crear la base y el usuario dueño de ella (`CREATE DATABASE … OWNER …`), poner `DB_PORT=5432` (o vacío) y correr `alembic upgrade head` como en MySQL. El controlador (`psycopg2-binary`) ya está en `requirements.txt`.
+- Cambiar de motor no mueve los datos: una instalación con datos en MySQL necesita migrarlos aparte (p. ej. `pgloader`) con respaldo previo.
 - La app y Alembic no arrancan sin él; `preflight.sh` marca `FALTA` e `install.sh` se detiene (`deploy/motor_bd.sh`, solo lee `APP_ENV` y `DB_ENGINE`).
 
 ## Seguridad

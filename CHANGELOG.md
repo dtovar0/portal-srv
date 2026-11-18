@@ -6,6 +6,8 @@
 ## [Sin publicar]
 
 ### Agregado
+- Base de datos: `DB_ENGINE=postgresql` (psycopg2) además de `mysql`, a elección en el `.env`; la URI escapa usuario y contraseña y `DB_PORT` vacío usa el puerto del motor (FNC-146, ADR-010, 2026-11-17).
+- Despliegue: `install.sh` y `preflight.sh` eligen el servicio systemd (`postgresql.service`), el cliente (`psql`) y el puerto por defecto (5432) según `DB_ENGINE` (FNC-147, 2026-11-17).
 - Despliegue (seguridad): fuera de desarrollo la BD debe ser MySQL; sin `DB_ENGINE=mysql` la app y las migraciones no arrancan (mensaje claro, sin secretos) y `preflight.sh`/`install.sh` dan `FALTA` y se detienen; SQLite solo con `APP_ENV=development` (FNC-134, parte de FNC-009, 2026-10-28).
 - Desarrollo local: `flask --app run:app demo cargar` crea datos demo (2 áreas, 3 plataformas LDAP, 1 admin de área, 2 usuarios locales y 1 solicitud pendiente) solo con `APP_ENV=development`; idempotente, con contraseña por prompt, `--password-desde-stdin` o aleatoria impresa una vez (FNC-131, 2026-10-27).
 - Despliegue: `install.sh --force` (alias `--reinstall`) limpia una instalación previa del mismo nombre (unidades, `.conf` de nginx, `venv`, `node_modules`, `.next` y registros) tras mostrar la lista y confirmar escribiendo el nombre en una terminal; nunca toca `.env`, código, BD ni datos locales (FNC-129, 2026-10-27).

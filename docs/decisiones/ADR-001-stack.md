@@ -42,7 +42,7 @@ El proyecto es un clon de NEXUS (portal de catálogo de plataformas por área, m
 
 ### Base de datos
 
-- **MySQL es la BD objetivo** (decisión del dueño). El código ya la soporta con `DB_ENGINE=mysql` (PyMySQL) y las migraciones de `utils/migrations/` están escritas en SQL de MySQL.
+- **MySQL es la BD objetivo** (decisión del dueño; desde 2026-11-17 también PostgreSQL, ver [ADR-010](ADR-010-mysql-o-postgresql.md)). El código ya la soporta con `DB_ENGINE=mysql` (PyMySQL) y las migraciones de `utils/migrations/` están escritas en SQL de MySQL.
 - SQLite queda solo como respaldo implícito del código cuando `DB_ENGINE` no es `mysql`; no se usa en staging ni producción.
 - PostgreSQL **no** se adopta: no hay rama en `create_app()`, aunque `psycopg2-binary` siga en dependencias.
 

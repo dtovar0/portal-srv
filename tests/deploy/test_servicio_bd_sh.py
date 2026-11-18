@@ -258,3 +258,54 @@ def test_install_sin_paquetes_de_bd_ni_ldap():
                     'policycoreutils-python-utils'):
         assert paquete not in linea + ' ', paquete
     assert 'instalar_cliente_bd "$DB_SERVICE"' in texto
+
+
+# --- PostgreSQL (FNC-146) ----------------------------------------------------
+
+@pytest.mark.parametrize('unidades, motor, esperado', [
+    ('postgresql.service enabled', 'postgresql', 'postgresql.service'),
+    # Con los dos motores instalados manda DB_ENGINE.
+    ('mysqld.service enabled\npostgresql.service enabled', 'postgresql',
+     'postgresql.service'),
+    ('mysqld.service enabled\npostgresql.service enabled', 'mysql',
+     'mysqld.service'),
+])
+def test_detecta_el_servicio_del_motor(tmp_path, unidades, motor, esperado):
+    r = _bash('detectar_servicio_bd "$1"', motor,
+              entorno=_con_systemctl_falso(tmp_path, unidades))
+    assert r.returncode == 0
+    assert r.stdout == esperado
+
+
+def test_postgresql_sin_servicio_local_es_bd_remota(tmp_path):
+    r = _bash('detectar_servicio_bd "$1"', 'postgresql',
+              entorno=_con_systemctl_falso(tmp_path, 'mysqld.service enabled'))
+    assert r.returncode == 1
+    assert r.stdout == ''
+
+
+def _instalar_cliente_pg(tmp_path, con_psql=False):
+    entorno, registro = _con_dnf_falso(tmp_path)
+    if con_psql:
+        psql = Path(entorno['PATH']) / 'psql'
+        psql.write_text('#!/bin/bash\nexit 0\n')
+        psql.chmod(0o755)
+    r = subprocess.run(
+        ['/bin/bash', '-c',
+         f'set -Eeuo pipefail; . "{SCRIPT}"; instalar_cliente_bd "$1" "$2"',
+         '_', 'postgresql.service', 'postgresql'], capture_output=True,
+        text=True, timeout=10, env=entorno)
+    return r, registro.read_text().splitlines()
+
+
+def test_cliente_postgresql_instala_psql(tmp_path):
+    r, llamadas = _instalar_cliente_pg(tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert llamadas == ['-y install postgresql']
+
+
+def test_cliente_postgresql_presente_no_instala(tmp_path):
+    r, llamadas = _instalar_cliente_pg(tmp_path, con_psql=True)
+    assert r.returncode == 0, r.stderr
+    assert llamadas == []
+    assert 'cliente psql ya presente' in r.stdout
