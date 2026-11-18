@@ -7,6 +7,19 @@
 #                            [--proxy http://proxy:3128] [--no-proxy localhost,.intranet.example]
 #                            [--db-service mariadb]
 #                            [--web-port 3000] [--api-port 5001]
+#                            [--nginx-conf conservar|reemplazar]
+#   sudo ./deploy/install.sh --actualizar      # tras un git pull (FNC-153)
+#
+# --actualizar: solo dependencias (pip y npm), build del frontend, migraciones
+# (alembic upgrade head) y reinicio de backend, worker y frontend. No toca
+# paquetes, usuario, unidades systemd, nginx ni firewall. Exige una
+# instalación previa (las unidades ya existen).
+#
+# --nginx-conf: si /etc/nginx/conf.d/NOMBRE.conf existe y es distinto de la
+# plantilla (editado a mano), en una terminal se pregunta si conservarlo o
+# reemplazarlo; sin terminal se conserva. La opción fija la respuesta. Al
+# reemplazar queda una copia NOMBRE.conf.bak-FECHA; al conservar, la versión
+# de la plantilla queda en NOMBRE.conf.nuevo (FNC-153).
 #
 # Trabaja en sitio (FNC-129): el prefijo es la carpeta donde se clonó el
 # código (la que contiene deploy/); no se copia nada a otro lugar. Clonar el
@@ -36,7 +49,8 @@
 # Precedencia: opción > variable WEB_PORT/API_PORT > .env del prefijo > defecto.
 #
 # Ejecutar antes ./deploy/preflight.sh: este script asume que la evaluación pasó.
-# Es idempotente: se puede repetir para actualizar una instalación existente.
+# Es idempotente: se puede repetir para actualizar una instalación existente;
+# reinicia los servicios para que tomen el código nuevo.
 #
 # Qué hace, en orden:
 #   1. Paquetes del sistema (Python, Node, nginx, cabeceras de compilación)
@@ -46,7 +60,8 @@
 #   5. Unidades systemd (backend, frontend y worker de aprovisionamiento)
 #   6. nginx como reverse proxy, con SELinux y firewalld
 #
-# No toca la base de datos: las migraciones (Alembic) se aplican aparte.
+# No toca la base de datos: las migraciones (Alembic) se aplican aparte, salvo
+# con --actualizar, que corre `alembic upgrade head`.
 
 set -Eeuo pipefail
 # Lo que crea el instalador (venv, node_modules, .next) queda sin escritura de
@@ -90,6 +105,8 @@ NODE_MIN_MINOR=13              # menor mínima dentro de NODE_MAJOR
 NODE_NEXT_MAJOR=24             # primera mayor posterior que se acepta completa
 NODE_RANGO="^${NODE_MAJOR}.${NODE_MIN_MINOR}.0 || >=${NODE_NEXT_MAJOR}.0.0"
 SKIP_PKGS=0
+ACTUALIZAR=0
+NGINX_MODO="${NGINX_MODO:-}"
 # Servicio systemd de la BD local para After=/Wants= (FNC-125). Vacío: se
 # detecta; --db-service o DB_SERVICE lo fuerzan.
 DB_SERVICE="${DB_SERVICE:-}"
@@ -120,10 +137,20 @@ while [[ $# -gt 0 ]]; do
         --web-port) WEB_PORT="$2"; shift 2 ;;
         --api-port) API_PORT="$2"; shift 2 ;;
         --skip-packages) SKIP_PKGS=1; shift ;;
-        -h|--help) sed -n '2,49p' "$0"; exit 0 ;;
+        --actualizar) ACTUALIZAR=1; SKIP_PKGS=1; shift ;;
+        --nginx-conf) NGINX_MODO="$2"; shift 2 ;;
+        -h|--help) sed -n '2,63p' "$0"; exit 0 ;;
         *) echo "Opción desconocida: $1" >&2; exit 2 ;;
     esac
 done
+
+# --actualizar no reinstala: no se combina con --force (FNC-153).
+if (( ACTUALIZAR )) && (( FORCE )); then
+    echo "ERROR: --actualizar y --force no se combinan" >&2; exit 2
+fi
+if [[ -n "$NGINX_MODO" && "$NGINX_MODO" != conservar && "$NGINX_MODO" != reemplazar ]]; then
+    echo "ERROR: --nginx-conf debe ser conservar o reemplazar" >&2; exit 2
+fi
 
 # --- Código de root (FNC-129, SEG-1) -------------------------------------------
 # Antes de cargar ningún deploy/*.sh: si la cuenta de servicio pudiera editar
@@ -465,6 +492,30 @@ popd >/dev/null
 note "build en $PREFIX/frontend/.next/standalone"
 
 # --- 6. Servicios ------------------------------------------------------------
+if (( ACTUALIZAR )); then
+    log "Migraciones y reinicio (--actualizar)"
+    for unit in "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"; do
+        [[ -f "${SYSTEMD_DIR}/${unit}.service" ]] \
+            || die "no hay instalación previa (falta ${unit}.service): correr install.sh sin --actualizar"
+    done
+    ( cd "$PREFIX" && "$PREFIX/venv/bin/alembic" upgrade head ) \
+        || die "fallo en 'alembic upgrade head' (base existente de NEXUS: antes, una vez, alembic stamp 0001)"
+    note "migraciones al día"
+    systemctl reset-failed "$WORKER_UNIT" >/dev/null 2>&1 || true
+    systemctl restart "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"
+    sleep 3
+    for unit in "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"; do
+        systemctl is-active --quiet "$unit" \
+            && note "$unit activo" \
+            || { journalctl -u "$unit" -n 20 --no-pager; die "$unit no arrancó"; }
+    done
+    cat <<FIN
+
+Actualización terminada: dependencias, frontend, migraciones y servicios
+reiniciados. nginx, unidades systemd y .env no se tocaron.
+FIN
+    exit 0
+fi
 log "Servicios systemd"
 render() {
     # Sustituye los marcadores de una plantilla. '|' como separador, así que los
@@ -495,7 +546,10 @@ systemctl daemon-reload
 # Si una instalación previa agotó los reinicios del worker (StartLimitBurst),
 # se limpia ese estado para que vuelva a arrancar; sin efecto si no lo hay.
 systemctl reset-failed "$WORKER_UNIT" >/dev/null 2>&1 || true
-systemctl enable --now "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"
+systemctl enable "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"
+# restart y no solo `enable --now`: un servicio ya activo seguiría con el
+# código anterior (FNC-153).
+systemctl restart "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"
 sleep 3
 for unit in "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"; do
     systemctl is-active --quiet "$unit" \
@@ -506,11 +560,17 @@ done
 # --- 7. Reverse proxy --------------------------------------------------------
 log "nginx"
 conf="${NGINX_CONF_DIR}/${APP_NAME}.conf"
-render "$PREFIX/deploy/nginx.conf.tmpl" > "$conf"
-if [[ -n "$DOMAIN" ]]; then
-    note "configuración escrita en $conf para $DOMAIN"
-else
-    note "configuración escrita en $conf; falta ajustar server_name y certificados"
+# Un .conf editado a mano no se pierde: se pregunta o se conserva (FNC-153).
+# shellcheck source=deploy/nginx_conf.sh
+. "$PREFIX/deploy/nginx_conf.sh"
+conf_plantilla="$(mktemp)"
+render "$PREFIX/deploy/nginx.conf.tmpl" > "$conf_plantilla"
+accion_conf="$(decidir_conf_nginx "$conf" "$conf_plantilla" "$NGINX_MODO")"
+aplicar_conf_nginx "$conf" "$conf_plantilla" "$accion_conf" \
+    || { rm -f "$conf_plantilla"; die "no se pudo escribir $conf"; }
+rm -f "$conf_plantilla"
+if [[ "$accion_conf" != conservar && -z "$DOMAIN" ]]; then
+    note "falta ajustar server_name y certificados en $conf"
 fi
 
 if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce)" == "Enforcing" ]]; then
@@ -545,7 +605,7 @@ Instalación terminada.
   worker     ${WORKER_UNIT} (no escucha; journalctl -u ${WORKER_UNIT} -f)
   registros  ${LOGDIR}, journalctl -u ${BACKEND_UNIT} -f
 
-Actualizar más adelante:  sudo git -C ${PREFIX} pull && sudo ${PREFIX}/deploy/install.sh
+Actualizar más adelante:  sudo git -C ${PREFIX} pull && sudo ${PREFIX}/deploy/install.sh --actualizar
 
 Pendiente:
   1. Migraciones, si es una actualización (después reiniciar backend y worker):
