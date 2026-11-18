@@ -34,7 +34,7 @@
   - Tras crear: aviso de «credenciales enviadas» o «pendientes» según la respuesta; la contraseña se borra del estado al cerrar o enviar.
   - Insignia de estado de credenciales en la tarjeta o fila del usuario (`user-card.tsx`) y acción «Reenviar credenciales» con confirmación (`AlertDialog`), visible según rol y contrato.
   - Cliente: `lib/access/users.ts` (alta con `password`, política, reenvío), tipos (`credentials_status`), mocks.
-- **No incluye:** cambios de backend; rediseño visual del modal o de la tarjeta (los hace el dueño); campo «Confirmar» (ver pregunta; se retira si el dueño no lo pide); pantalla Ejecuciones.
+- **No incluye:** cambios de backend; rediseño visual del modal o de la tarjeta (los hace el dueño); campo «Confirmar» (ADR-008 7: no va; aprobado por el dueño el 2026-11-18); pantalla Ejecuciones.
 
 ## Archivos previstos
 - `frontend/src/components/users/directory-account-form.tsx`, `directory-account-errors.ts`, `user-card.tsx`

@@ -1,6 +1,6 @@
 # ADR-009 — Inicio de sesión con OIDC por Authelia
 
-- **Estatus:** Aceptada (2026-11-17: decisión principal del dueño; subdecisiones 3B, 4B, 5A y 6A recomendadas por el orquestador y aceptadas por el dueño con «continua»; pendientes de validar en la prueba de concepto) · **Fecha:** 2026-11-17 · **Tareas:** FNC-140, FNC-141, FNC-142, FNC-143
+- **Estatus:** Aceptada (2026-11-17: decisión principal del dueño; 2026-11-18: el dueño **aprueba explícitamente** las subdecisiones 3B, 4B, 5A y 6A). Versión de Authelia desconocida: se implementa para **4.38 o mayor** (OIDC estable) y la guía de despliegue indica cómo comprobarla (`authelia --version`) · **Fecha:** 2026-11-17 · **Tareas:** FNC-140, FNC-141, FNC-142, FNC-143
 - **Reemplaza:** el SSO por cabeceras `Remote-*` (forward-auth) y el login directo contra LDAP (FNC-042). **Deja sin objeto:** FNC-006 y SEC-AUTH-01/02 en lo que toca a `Remote-*`
 
 ## Contexto
