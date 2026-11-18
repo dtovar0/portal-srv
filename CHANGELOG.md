@@ -50,7 +50,7 @@
 ### Seguridad
 - Seguridad: el portal ya no crea admin/admin123 con la base vacía; el primer superadmin se crea con flask --app run:app cuentas superadmin y --restablecer cambia la contraseña de una instalación existente (FNC-003, 2026-11-18).
 - Seguridad: el login responde 429 tras 10 fallos por cuenta o 30 por IP en 15 minutos (configurable), sin probar la contraseña mientras dure (FNC-014, 2026-11-18).
-- Seguridad (CSRF): toda escritura a la API desde otro sitio (Origin/Referer ajeno, Origin null o Sec-Fetch-Site cross-site) responde 403 csrf_invalido; la cookie de sesión va con SameSite=Lax (FNC-008, 2026-11-18).
+- Seguridad (CSRF): toda escritura a la API desde otro sitio (Origin/Referer ajeno, Origin null o Sec-Fetch-Site cross-site) responde 403 csrf_invalido; la cookie de sesión va con SameSite=Lax y, fuera de desarrollo, Secure (FNC-008, 2026-11-18).
 - Despliegue: `install.sh` se detiene si `<prefijo>/.env` es un enlace simbólico, un directorio o tiene otro enlace duro, y aplica dueño y permisos sobre el archivo abierto sin seguir enlaces; `chown -R -h` del prefijo. Cierra la escalada a root con `ln -sf /etc/shadow <prefijo>/.env` desde la cuenta de servicio, abierta al conservar el `.env` en la copia (FNC-125, 2026-10-27).
 - Next.js: el rewrite de `/api` hacia Flask existe solo con `NODE_ENV=development` (`next build`/`next start` no generan ninguno), se retira el rewrite de `/auth` y `BACKEND_URL` se rechaza si es una IP; cierra la vía de Next hacia Flask con cabeceras `Remote-*` del cliente (FNC-005, FNC-118, 2026-10-26).
 

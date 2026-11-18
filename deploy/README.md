@@ -346,6 +346,11 @@ distinto del previsto.
 - Las variables las pone una persona en `<carpeta>/.env` (640, `root:<grupo de servicio>`). Procedimiento completo, alta de ítems y rotación: [`docs/operacion/SECRETOS.md`](../docs/operacion/SECRETOS.md).
 - Prueba: `pytest tests/deploy/test_secretos_sh.py` (`.env` sintéticos).
 
+## Sesión y CSRF (FNC-008)
+
+- Fuera de desarrollo la cookie de sesión es `Secure`: el portal debe servirse por **HTTPS** (con http el navegador no la envía y no se puede iniciar sesión).
+- Toda escritura a `/api/` desde otro sitio (`Origin`/`Referer` ajeno o `Sec-Fetch-Site: cross-site`) responde `403 csrf_invalido`; nginx debe reenviar el `Host` original (`proxy_set_header Host $host`).
+
 ## Primer superadmin (FNC-003)
 
 - El portal ya no crea `admin`/`admin123` al arrancar con la base vacía.
