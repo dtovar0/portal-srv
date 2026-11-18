@@ -428,7 +428,7 @@ select option:disabled,
 
 .nx-toast-progress {
     opacity: 0.6;
-    animation: toast-progress 8s linear forwards;
+    animation: toast-progress var(--toast-duracion) linear forwards;
 }
 .nx-toast-progress-pausada {
     animation-play-state: paused;
