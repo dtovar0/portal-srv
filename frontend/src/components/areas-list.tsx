@@ -28,6 +28,8 @@ import { Badge, EmptyNote, ErrorNote, Spinner } from './ui';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 
 /** Sin rol de administración muestra el estado "sin permiso" y no llama a la API. */
+const ID_MOTIVO_ELIMINAR = 'areas-eliminar-motivo';
+
 export function AreasList() {
   return (
     <RequireRole requires="any_admin">
@@ -164,6 +166,14 @@ function AreasScreen() {
     selectedAreas.length > 0 &&
     (isAdmin || selectedAreas.every((a) => managedIds.has(a.id)));
 
+  /** Por qué «Eliminar» está deshabilitado (DIS-089): también va en texto sr-only, no solo en `title`. */
+  const motivoEliminarDeshabilitado =
+    selectedAreas.length === 0
+      ? 'Selecciona al menos 1 área para eliminar'
+      : !canDeleteSelected
+        ? 'No tienes permisos para eliminar alguna de las áreas seleccionadas'
+        : null;
+
   const columnas = useMemo<DataColumn<Area>[]>(
     () => [
       {
@@ -291,7 +301,7 @@ function AreasScreen() {
       />
 
       {problem ? (
-        <div className="sr-only" role="alert">
+        <div className="sr-only">
           {problem}
         </div>
       ) : null}
@@ -316,7 +326,7 @@ function AreasScreen() {
                   setPage(1);
                 }}
                 placeholder="Buscar áreas…"
-                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               {busqueda ? (
                 <button
@@ -408,6 +418,7 @@ function AreasScreen() {
             <Button
               variant="fila-peligro"
               disabled={!canDeleteSelected}
+              aria-describedby={motivoEliminarDeshabilitado ? ID_MOTIVO_ELIMINAR : undefined}
               onClick={() => selectedAreas.length > 0 && setRemoving(selectedAreas)}
               aria-label={
                 selectedAreas.length === 1
@@ -430,6 +441,11 @@ function AreasScreen() {
               <Icono nombre="eliminar" tamano="sm" ariaHidden={true} />
               <span>Eliminar</span>
             </Button>
+            {motivoEliminarDeshabilitado ? (
+              <span id={ID_MOTIVO_ELIMINAR} className="sr-only">
+                {motivoEliminarDeshabilitado}
+              </span>
+            ) : null}
 
             {/* Línea de separación vertical a la izquierda del botón Nuevo */}
             <div className="h-6 w-px bg-panel-border/80 self-center mx-1 shrink-0" aria-hidden="true" />

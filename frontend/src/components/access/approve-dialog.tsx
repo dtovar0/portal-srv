@@ -77,7 +77,7 @@ export function ApproveDialog({
           Área {request.area.name}. El acceso se aplicará en la plataforma y quedará en proceso hasta
           que termine.
         </p>
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </div>
     </AlertDialog>
   );

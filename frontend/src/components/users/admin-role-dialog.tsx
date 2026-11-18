@@ -139,7 +139,7 @@ export function AdminAreasDialog({
             <p key={linea} className="text-sm text-body-text">{linea}</p>
           ))}
         </div>
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </div>
     </AlertDialog>
   );
@@ -202,7 +202,7 @@ export function RemoveAdminDialog({
           Se revocarán sus accesos automáticos de admin de área. Sus áreas de pertenencia y sus
           accesos solicitados no cambian.
         </p>
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </div>
     </AlertDialog>
   );

@@ -42,6 +42,16 @@ function Controlado({ inicial = [] as number[] }) {
   return <AreaDualPicklist areas={TRES} selected={sel} onChange={setSel} />;
 }
 
+describe('AreaDualPicklist: número de plataformas (DIS-085)', () => {
+  it('el botón conserva su nombre y describe cuántas plataformas vincula el área', () => {
+    render(<AreaDualPicklist areas={AREAS} selected={[]} onChange={() => {}} />);
+    const boton = screen.getByRole('button', { name: 'Asignar Sistemas Críticos' });
+    const id = boton.getAttribute('aria-describedby')!;
+    expect(document.getElementById(id)?.textContent).toContain('Contiene 3 plataformas vinculadas');
+    expect(screen.getByRole('button', { name: 'Asignar Operaciones' }).getAttribute('aria-describedby')).toBeNull();
+  });
+});
+
 describe('AreaDualPicklist: foco y anuncios (DIS-082)', () => {
   it('al asignar, el foco pasa al ítem vecino de la lista de disponibles y se anuncia', () => {
     render(<Controlado />);

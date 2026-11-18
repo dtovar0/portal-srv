@@ -228,7 +228,7 @@ export function PlatformAccessPanel({
                     value={searchSinAcceso}
                     onChange={(e) => setSearchSinAcceso(e.target.value)}
                     aria-label="Filtrar usuarios sin acceso"
-                    className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+                    className="w-full h-10 rounded-xl border border-panel-border bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
                   />
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
                     <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -239,7 +239,7 @@ export function PlatformAccessPanel({
                   ref={refLista('sin-acceso')}
                   tabIndex={-1}
                   aria-label={`Usuarios sin acceso a ${platform.name}`}
-                  className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
+                  className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border"
                 >
                   {sinAccesoVisibles.length === 0 ? (
                     <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -256,7 +256,7 @@ export function PlatformAccessPanel({
                           onClick={() => darAcceso(user)}
                           aria-label={`Otorgar acceso a ${user.name || user.email}`}
                           title={`Haz clic para otorgar acceso a ${user.name || user.email}`}
-                          className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border/60 bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
+                          className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="size-7 rounded-lg bg-surface-container group-hover:bg-primary/10 group-hover:text-primary-text flex items-center justify-center shrink-0 text-label font-bold text-xs transition-colors">

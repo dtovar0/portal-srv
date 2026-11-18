@@ -355,7 +355,7 @@ export function PlatformForm({
           </button>
         </nav>
 
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
 
         {/* PASO 1: Descripción (Nombre, Descripción, Enlace) */}
         {paso === 1 ? (

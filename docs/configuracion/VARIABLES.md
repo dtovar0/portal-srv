@@ -334,6 +334,9 @@ Definidos en `frontend/src/styles/tokens.css` bajo la arquitectura de 3 capas (A
 | `--color-aviso-fondo` / `--color-aviso-texto` | Fondo sólido y texto de aviso | `255 250 235` / `181 71 8` | `58 36 8` / `254 200 75` | `tokens.css` | DIS-076 (texto: valor nuevo) | Vigente |
 | `--color-exito-fondo` / `--color-exito-texto` | Fondo sólido y texto de éxito | `236 253 243` / `6 118 71` | `6 48 28` / `117 224 167` | `tokens.css` | DIS-076 (texto: valor nuevo) | Vigente |
 | `--color-peligro-fondo` / `--color-peligro-texto` | Fondo sólido y texto de error | `254 243 242` / `180 35 24` | `61 14 10` / `253 162 155` | `tokens.css` | DIS-076 (texto: valor nuevo) | Vigente |
+| `--icono-select-flecha`, `--icono-select-flecha-acento` | Flecha del `select` nativo (normal y hover/foco), data-URI con el trazo del tema | trazo `#64748b` / `#2563eb` | trazo `#94a3b8` / `#60a5fa` | `tokens.css` | DIS-084 | Vigente |
+| `--icono-check`, `--icono-check-indeterminado` | Marca y guion de `.nexus-checkbox` (data-URI) | trazo `#ffffff` | trazo `#ffffff` | `tokens.css` | DIS-084 | Vigente |
+| `--color-tooltip-fondo` / `--color-tooltip-texto` | Fondo y texto del tooltip `[data-tooltip]` | `17 22 33` / `248 250 252` | `38 43 54` / `248 250 252` | `tokens.css` | DIS-084 | Vigente |
 | `--p-gris-*`, `--p-noche-*`, `--p-activo-*`, `--p-ambar/verde/rojo-fondo/texto-claro/oscuro` | Primitivos de la paleta aprobada (capa 1, ADR-007) | gris 50–900; fondos y textos de estado | noche 50–950; fondos y textos de estado | `tokens.css` | DIS-076 | Vigente |
 | `--color-body-bg`, `--color-body-text`, `--color-input-text`, `--color-input-bg`, `--color-panel-header-bg`, `--color-secondary` (oscuro), `--badge-success/error/warning-*`, `--seleccionado-*`, `--solo-lectura-fondo`, `--deshabilitado-borde` | Alias heredados reapuntados a la paleta aprobada | ver `tokens.css` | ver `tokens.css` | `tokens.css` | DIS-076 | Vigente |
 

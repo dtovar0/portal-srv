@@ -68,7 +68,7 @@ export function ConnectorDeleteDialog({
           aplicarse. No se borra el ítem del gestor de secretos. Si hay accesos vigentes, no se
           puede eliminar.
         </p>
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </div>
     </AlertDialog>
   );

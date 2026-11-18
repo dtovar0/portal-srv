@@ -108,7 +108,7 @@ export function UserForm({
         </>
       }
     >
-      {error ? <div className="sr-only" role="alert">{error}</div> : null}
+      {error ? <div className="sr-only">{error}</div> : null}
 
       {!user ? (
         <Field label="Correo">

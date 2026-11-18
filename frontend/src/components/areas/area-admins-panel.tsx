@@ -109,7 +109,7 @@ export function AreaAdminsPanel({ area, onClose }: { area: Area; onClose: () => 
         </>
       }
     >
-      {problem ? <div className="sr-only" role="alert">{problem}</div> : null}
+      {problem ? <div className="sr-only">{problem}</div> : null}
       {/* Región siempre montada: los lectores de pantalla anuncian el cambio de texto. */}
       <div role="status" data-testid="estado-guardado">
         {saved ? <Badge tone="success">Cambios guardados</Badge> : null}

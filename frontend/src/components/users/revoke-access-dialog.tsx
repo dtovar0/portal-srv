@@ -116,7 +116,7 @@ export function RevokeAccessDialog({
 
         <p className="text-sm text-label">La persona verá este motivo en Mis accesos.</p>
 
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </form>
     </AlertDialog>
   );

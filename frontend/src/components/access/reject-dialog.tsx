@@ -115,7 +115,7 @@ export function RejectDialog({
 
         <p className="text-sm text-label">El solicitante verá este motivo.</p>
 
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </form>
     </AlertDialog>
   );

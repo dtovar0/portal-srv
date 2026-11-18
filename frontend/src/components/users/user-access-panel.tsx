@@ -528,7 +528,7 @@ export function UserAccessPanel({
                       ref={refLista('areas-sin-acceso')}
                       tabIndex={-1}
                       aria-label={isMulti ? `Áreas sin acceso para ${userList.length} usuarios` : `Áreas sin acceso para ${currentUser.name || currentUser.email}`}
-                      className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
+                      className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border"
                     >
                       {areasSinAccesoVisibles.length === 0 ? (
                         <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -545,7 +545,7 @@ export function UserAccessPanel({
                               onClick={() => darArea(a)}
                               aria-label={`Asignar área ${a.name}`}
                               title={`Haz clic para asignar el área ${a.name}`}
-                              className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border/60 bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
+                              className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <div className="size-7 rounded-lg bg-surface-container group-hover:bg-primary/10 group-hover:text-primary-text flex items-center justify-center shrink-0 text-label font-bold text-xs transition-colors">
@@ -709,7 +709,7 @@ export function UserAccessPanel({
                           ref={refLista('plataformas-sin-acceso')}
                           tabIndex={-1}
                           aria-label={isMulti ? `Plataformas sin acceso para ${userList.length} usuarios` : `Plataformas sin acceso para ${currentUser.name || currentUser.email}`}
-                          className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
+                          className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border"
                         >
                           {sinAccesoVisibles.length === 0 ? (
                             <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -726,7 +726,7 @@ export function UserAccessPanel({
                                   onClick={() => darAcceso(p)}
                                   aria-label={`Otorgar acceso a ${p.name}`}
                                   title={`Haz clic para otorgar acceso a ${p.name}`}
-                                  className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border/60 bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
+                                  className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
                                 >
                                   <div className="flex items-center gap-2.5 min-w-0">
                                     <div className="size-7 rounded-lg bg-surface-container group-hover:bg-primary/10 group-hover:text-primary-text flex items-center justify-center shrink-0 text-label font-bold text-xs transition-colors">

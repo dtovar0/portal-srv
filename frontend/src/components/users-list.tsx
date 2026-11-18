@@ -419,7 +419,7 @@ export function UsersList() {
       ) : null}
 
       {problem ? (
-        <div className="sr-only" role="alert">
+        <div className="sr-only">
           {problem}
         </div>
       ) : users.error ? (
@@ -449,7 +449,7 @@ export function UsersList() {
                   setPage(1);
                 }}
                 aria-label="Buscar usuarios"
-                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               {busqueda ? (
                 <button
