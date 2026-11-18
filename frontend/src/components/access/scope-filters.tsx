@@ -102,7 +102,7 @@ export function ScopeSelects({
                 (p) => p.id === platformId && (nueva === null || p.area_id === nueva));
               onChange({ areaId: nueva, platformId: sigue ? platformId : null });
             }}
-            className="h-12 !w-auto min-w-36 text-xs font-semibold rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="h-12 !w-auto min-w-36 text-xs font-semibold rounded-xl border border-panel-border bg-fondo px-3 py-2 text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <Option value="">{esSuperadmin ? 'Todas las áreas' : 'Todas mis áreas'}</Option>
             {areas.map((area) => (
@@ -118,7 +118,7 @@ export function ScopeSelects({
             value={platformId ?? ''}
             onChange={(event) =>
               onChange({ platformId: event.target.value ? Number(event.target.value) : null })}
-            className="h-12 !w-auto min-w-36 text-xs font-semibold rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="h-12 !w-auto min-w-36 text-xs font-semibold rounded-xl border border-panel-border bg-fondo px-3 py-2 text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <Option value="">Todas las plataformas</Option>
             {visibles.map((plataforma) => (

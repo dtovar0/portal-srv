@@ -189,7 +189,7 @@ export function DirectoryAccountForm({
                 type="button"
                 variant="secondary"
                 onClick={onClose}
-                className="min-h-12 px-5 border border-panel-border/90 bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text shadow-xs font-bold text-xs inline-flex items-center gap-2 transition-all"
+                className="min-h-12 px-5 border border-panel-border bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text shadow-xs font-bold text-xs inline-flex items-center gap-2 transition-all"
               >
                 <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
                 <span>Cancelar</span>
@@ -211,7 +211,7 @@ export function DirectoryAccountForm({
                 variant="secondary"
                 onClick={retrocederAlPaso1}
                 disabled={sending}
-                className="min-h-12 px-5 border border-panel-border/90 bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text shadow-xs font-bold text-xs inline-flex items-center gap-2 transition-all"
+                className="min-h-12 px-5 border border-panel-border bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text shadow-xs font-bold text-xs inline-flex items-center gap-2 transition-all"
               >
                 <Icono nombre="chevron-izq" tamano="sm" ariaHidden={true} />
                 <span>Atrás</span>
@@ -403,7 +403,7 @@ export function DirectoryAccountForm({
                       type="button"
                       onClick={() => setMostrarPassword((prev) => !prev)}
                       aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                      className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border/80 bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                     >
                       <Icono nombre="ver" tamano="xs" ariaHidden={true} className="text-label shrink-0" />
@@ -418,7 +418,7 @@ export function DirectoryAccountForm({
                         }
                       }}
                       aria-label="Copiar contraseña al portapapeles"
-                      className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border/80 bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title="Copiar contraseña al portapapeles"
                     >
                       <Icono nombre="documento" tamano="xs" ariaHidden={true} className="text-label shrink-0" />

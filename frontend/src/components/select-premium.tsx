@@ -142,7 +142,7 @@ export function SelectPremium<T extends string | number = string | number>({
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         onKeyDown={handleKeyDown}
         className={`nexus-select-premium flex h-12 w-full items-center justify-between gap-2 rounded-xl border bg-input-bg px-4 text-left text-sm font-semibold transition-all duration-rapida focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-          isInvalid ? 'border-error-text ring-1 ring-error-text' : 'border-panel-border/80 hover:border-primary/50'
+          isInvalid ? 'border-error-text ring-1 ring-error-text' : 'border-panel-border hover:border-primary/50'
         } ${
           disabled
             ? 'cursor-not-allowed bg-superficie-hundida text-label'

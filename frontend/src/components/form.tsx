@@ -55,7 +55,7 @@ const FIELD_BASE =
   'hover:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all ' +
   'aria-invalid:border-error-text aria-invalid:focus:ring-error/20 ' +
   'disabled:cursor-not-allowed disabled:bg-surface-container/20 disabled:text-label/50 ' +
-  'read-only:cursor-default read-only:bg-surface-container/10 read-only:border-panel-border/50';
+  'read-only:cursor-default read-only:bg-surface-container/10 read-only:border-panel-border';
 
 export const TextInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   function TextInput({ className = '', ...props }, ref) {
