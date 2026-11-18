@@ -8,15 +8,15 @@
 | **Fase** | 8 (propuesta) |
 | **Módulo / Área** | auth |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | En revisión |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
 | **Inicio** | |
 | **Finalizada** | |
-| **Estatus Git** | — |
+| **Estatus Git** | Rama `fnc/FNC-141-oidc-authelia` (commit local, sin push) |
 | **Rama** | `fnc/FNC-141-oidc-authelia` |
 | **Commits / PR** | |
-| **Requiere migración BD** | No (con ADR-009 3A y 5A) |
+| **Requiere migración BD** | Sí (0014: users.oidc_sub) |
 | **Requiere auditor-seguridad** | Sí (autenticación, sesión) |
 
 ## Contexto
@@ -98,6 +98,35 @@
 - Reversión: revertir la rama devuelve `/auth/sso` y el login LDAP; las variables `AUTHELIA_*` siguen en HISTORIAL.
 
 ## Verificación
+Comandos (laptop con carga limitada: no se corrió la batería completa; sí lo que toca la tarea). Nada se probó contra un Authelia real: el proveedor es simulado (`tests/oidc_simulado.py`, ID tokens RS256 firmados de verdad, sin red).
+
+| Comando | Resultado |
+|---|---|
+| `python -m pytest tests/test_oidc.py tests/test_login_local.py tests/test_sesion_y_logout.py tests/test_humo.py tests/test_notificaciones.py tests/test_cuerpo_validado.py tests/users/test_contrasenas_locales.py tests/test_guardia_rutas.py tests/audit/test_regresion_seg25.py tests/test_arranque.py tests/test_rutas_retiradas.py` | 301 passed, salida 0 |
+| `python -m pytest tests/test_oidc_configuracion.py tests/test_migracion_0014.py` | 34 passed |
+| `python -m pytest tests/test_proteccion_por_rol.py -k auth` | 45 passed (matriz de las 7 rutas `/auth`) |
+| `python -m pytest tests/test_migraciones.py tests/demo tests/test_secretos_en_respuestas.py tests/test_respaldo.py tests/test_csrf.py tests/test_guardia_rutas.py tests/test_linea_base_cubre_sql_heredadas.py tests/test_proteccion_por_rol.py::test_entrada_invalida_devuelve_400` | 85 passed |
+| `python -m pytest tests/test_motor_bd_produccion.py` | 33 passed |
+
+Pruebas retiradas y su reemplazo:
+| Retirada | Reemplazo |
+|---|---|
+| `tests/test_sso.py` (cabeceras `Remote-*`, `TRUSTED_PROXIES`, secreto del proxy) | `tests/test_oidc.py`: regresión SEG-04 (`Remote-Email` no autentica, `/auth/sso` 410, `AUTHELIA_ENABLED` ya no se lee), rol nunca del token, cuenta local/desactivada, enlace por `sub` y por correo |
+| `tests/test_login_directorio.py` (LDAP: filtro escapado, mapeo de grupos, usuario sombra) | Sin reemplazo: el login LDAP se retiró (ADR-009). El cliente del directorio conserva sus pruebas propias |
+| Casos SSO y `method=directory` de `test_notificaciones.py`, `test_cuerpo_validado.py`, `users/test_contrasenas_locales.py` | Reescritos con el fixture `oidc` (aviso de bienvenida tolerante a fallos, enlace a `/login`, vinculación de la cuenta dada de alta por correo) |
+
+Casos de aceptación cubiertos en `tests/test_oidc.py`: callback sin `state`, `state` distinto o repetido, `nonce` distinto o ausente, token vencido, `aud` ajeno, `iss` ajeno, firma inválida, sin ID token, `sub` de userinfo distinto, error del endpoint de token, `access_denied`; petición de autorización con `S256`, `state`, `nonce` y sin `code_verifier`; canje con el verificador del desafío; secreto, `code`, `state` y token ausentes de la auditoría y de las respuestas; logout con `OIDC_LOGOUT_URL`, con `end_session_endpoint` y sin ninguno, ignorando el `Host`; fuera de desarrollo la app no arranca sin `OIDC_*` válidas (`tests/test_oidc_configuracion.py`); migración 0014 sube y baja (`tests/test_migracion_0014.py`).
+
+No verificado: Authelia real (versión, claims reales de userinfo, `end_session_endpoint`, comportamiento de `rd`); PostgreSQL/MySQL con la migración 0014 (solo SQLite); suite completa (se evitó por carga). `auditor-seguridad` y `revisor`: se piden sobre la rama integrada (ver veredictos).
+
+Impacto (`impacto.py`, resumen de lo relevante; el resto de coincidencias son homónimos sin relación):
+| Elemento | Tipo | Usado en | Validado |
+|---|---|---|---|
+| `/api/v1/auth/*` (`api/auth.py`) | blueprint | `frontend/src/lib/api.ts`, `login-form.tsx`, `logout-view.tsx` (FNC-142); `tests/matriz_proteccion.py` | ☐ |
+| `User.oidc_sub` + migración 0014 | modelo | `auth/oidc_cuentas.py`; el respaldo no la exporta | ☐ |
+| `auth/services.py` (retiro de `authenticate_user_ldap`) | módulo | `auth/oidc_cuentas.py`, `acceso_local.py`, `users/directory_accounts.py` (constantes y reglas, sin cambio) | ☐ |
+| `tests/conftest.py` (`OIDC_` en prefijos, fixture `oidc`) | prueba | toda la suite | ☐ |
+| `tests/peticiones_auth.py` (`iniciar_sesion_api` a `/auth/local`, sin `metodo`) | prueba | `test_login_local`, `test_sesion_y_logout`, `test_contrasenas_locales`, `audit/test_regresion_seg25`, `demo/test_demo_cargar` | ☐ |
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -110,3 +139,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño B, 2026-11-17) |
+| 2026-11-18 | Implementada: OIDC con Authlib (PKCE S256), enlace por sub (migración 0014), /auth/local, 410 en /auth/sso y /auth/login, OIDC_* validadas al arrancar; pendiente validar contra un Authelia real |

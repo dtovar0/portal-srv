@@ -15,10 +15,10 @@ from app.modules.auth.models import User
 from app.modules.notifications import services
 from app.modules.notifications.models import (InAppNotification,
                                               NotificationTemplate, SMTPConfig)
-from tests.directorio_falso import instalar_directorio
-from tests.matriz_proteccion import (CONTRASENA_FICTICIA, CORREO_SSO_FICTICIO,
+from tests.matriz_proteccion import (CONTRASENA_FICTICIA,
                                      HOST_SMTP_FICTICIO)
-from tests.peticiones_auth import iniciar_sesion_api, usuario_en_sesion
+from tests.oidc_simulado import CORREO as CORREO_OIDC
+from tests.peticiones_auth import usuario_en_sesion
 from tests.smtp_falso import instalar_smtp
 
 A = '/api/v1'
@@ -233,41 +233,25 @@ def aviso_de_alta(correo, monkeypatch):
     return correo
 
 
-def test_sso_entra_aunque_falle_el_correo_de_bienvenida(client, aviso_de_alta,
-                                                        monkeypatch):
-    monkeypatch.setenv('AUTHELIA_ENABLED', 'true')
+def test_oidc_entra_aunque_falle_el_correo_de_bienvenida(client, oidc,
+                                                         aviso_de_alta):
+    respuesta = oidc.entrar(client)
 
-    respuesta = client.post(f'{A}/auth/sso',
-                            headers={'Remote-Email': CORREO_SSO_FICTICIO})
-
-    assert respuesta.status_code == 200
-    assert usuario_en_sesion(client) == CORREO_SSO_FICTICIO
+    assert respuesta.status_code == 302
+    assert respuesta.headers['Location'] == '/'
+    assert usuario_en_sesion(client) == CORREO_OIDC
 
 
-def test_sso_entra_aunque_el_servicio_de_correo_lance_excepcion(
-        client, aviso_de_alta, monkeypatch):
-    monkeypatch.setenv('AUTHELIA_ENABLED', 'true')
-
+def test_oidc_entra_aunque_el_servicio_de_correo_lance_excepcion(
+        client, oidc, aviso_de_alta, monkeypatch):
     def _explota(*args, **kwargs):
         raise RuntimeError('fallo inesperado')
     monkeypatch.setattr(services, 'send_notification_by_slug', _explota)
 
-    respuesta = client.post(f'{A}/auth/sso',
-                            headers={'Remote-Email': CORREO_SSO_FICTICIO})
+    respuesta = oidc.entrar(client)
 
-    assert respuesta.status_code == 200
-
-
-def test_directorio_entra_aunque_falle_el_correo_de_bienvenida(
-        client, aviso_de_alta, monkeypatch):
-    directorio = instalar_directorio(monkeypatch)
-    directorio.agregar('jperez', CONTRASENA_FICTICIA)
-
-    respuesta = iniciar_sesion_api(client, 'jperez', CONTRASENA_FICTICIA,
-                                   metodo='directory')
-
-    assert respuesta.status_code == 200
-    assert usuario_en_sesion(client) is not None
+    assert respuesta.headers['Location'] == '/'
+    assert usuario_en_sesion(client) == CORREO_OIDC
 
 
 # --------------------------------------------------------------------------- #

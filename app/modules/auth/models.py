@@ -30,7 +30,9 @@ class User(db.Model, UserMixin):
     nombre = db.Column(db.String(100), nullable=True) # Nombre visible del usuario
     password_hash = db.Column(db.String(255), nullable=True) # Nulo para usuarios LDAP
     role = db.Column(db.String(20), default='usuario') # administrador, admin_area, usuario
-    auth_source = db.Column(db.String(10), default='local') # local, ldap
+    auth_source = db.Column(db.String(10), default='local') # local, ldap, sso
+    # `sub` del token de Authelia (FNC-141, ADR-009 3B): enlace estable de la cuenta.
+    oidc_sub = db.Column(db.String(255), unique=True, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_login_at = db.Column(db.DateTime, nullable=True)

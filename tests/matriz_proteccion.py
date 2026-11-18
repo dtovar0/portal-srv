@@ -26,7 +26,6 @@ ROLES_MATRIZ = (ANONIMO, ROLE_USER, ROLE_AREA_ADMIN, ROLE_ADMIN)
 CONTRASENA_FICTICIA = 'clave-ficticia-de-prueba'
 HOST_SMTP_FICTICIO = 'smtp.pruebas.invalid'
 HOST_LDAP_FICTICIO = 'ldap.pruebas.invalid'
-CORREO_SSO_FICTICIO = 'sso@pruebas.local'
 
 # --------------------------------------------------------------------------- #
 # Códigos esperados por rol
@@ -149,12 +148,6 @@ def _con_acceso_activo(esc, monkeypatch):
     monkeypatch.setattr(queue, 'cola', lambda conexion=None, **_: falsa)
 
 
-def _con_sso_activo(esc, monkeypatch):
-    # El cliente de pruebas llega desde loopback, que es proxy de confianza
-    # por defecto. Las reglas del SSO se prueban en FNC-022.
-    monkeypatch.setenv('AUTHELIA_ENABLED', 'true')
-
-
 # --------------------------------------------------------------------------- #
 # Peticiones
 # --------------------------------------------------------------------------- #
@@ -178,11 +171,12 @@ def _zip_respaldo(esc):
 
 def _login_local(esc):
     return {'json': {'email': esc.cuenta_local_email,
-                     'password': CONTRASENA_FICTICIA, 'method': 'local'}}
+                     'password': CONTRASENA_FICTICIA}}
 
 
-def _cabecera_sso(esc):
-    return {'headers': {'Remote-Email': CORREO_SSO_FICTICIO}}
+def _cabecera_remota(esc):
+    # Las cabeceras Remote-* ya no autentican (FNC-141): el retirado responde 410.
+    return {'headers': {'Remote-Email': 'sso@pruebas.local'}}
 
 
 def _nuevo_usuario(esc):
@@ -323,10 +317,17 @@ A = '/api/v1'
 CASOS = (
     # ---- Autenticación (públicas, salvo logout) ----
     Caso('GET', f'{A}/auth/context', _fija(f'{A}/auth/context'), publica()),
-    Caso('POST', f'{A}/auth/sso', _fija(f'{A}/auth/sso'), publica(),
-         _cabecera_sso, _con_sso_activo),
-    Caso('POST', f'{A}/auth/login', _fija(f'{A}/auth/login'), publica(),
+    # Sin OIDC configurado en la matriz: vuelven a /login con un error (302).
+    Caso('GET', f'{A}/auth/oidc/login', _fija(f'{A}/auth/oidc/login'),
+         publica(302)),
+    Caso('GET', f'{A}/auth/oidc/callback', _fija(f'{A}/auth/oidc/callback'),
+         publica(302)),
+    Caso('POST', f'{A}/auth/local', _fija(f'{A}/auth/local'), publica(),
          _login_local),
+    Caso('POST', f'{A}/auth/sso', _fija(f'{A}/auth/sso'), publica(410),
+         _cabecera_remota, nota='Retirado (ADR-009)'),
+    Caso('POST', f'{A}/auth/login', _fija(f'{A}/auth/login'), publica(410),
+         _login_local, nota='Retirado (ADR-009): la emergencia usa /auth/local'),
     Caso('POST', f'{A}/auth/logout', _fija(f'{A}/auth/logout'), con_sesion()),
 
     # ---- Lectura (routes.py) ----
@@ -533,7 +534,7 @@ CASOS = (
 # Entradas inválidas: con un rol que pasa la protección, la validación
 # responde 400 con el formato estándar de error.
 CASOS_400 = (
-    ('POST', f'{A}/auth/login', _json({})),
+    ('POST', f'{A}/auth/local', _json({})),
     # POST y PUT /areas con datos inválidos: 422 `validacion` (FNC-045,
     # tests/areas/).
     # FNC-046: un campo vacío es `422 validacion`; el 400 es la lista blanca.
