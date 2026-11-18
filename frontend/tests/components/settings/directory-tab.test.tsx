@@ -9,6 +9,12 @@
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '@/components/toast';
+
+/** Con el proveedor de avisos: los resultados se anuncian con toast (DIS-091). */
+function renderConToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 import type { DirectoryConfig } from '@/lib/access/types';
 
 vi.mock('@/lib/access/directory', () => ({
@@ -136,24 +142,21 @@ describe('pestaña Directorio', () => {
     expect(await screen.findByText('Solo el superadmin consulta la configuración del directorio.')).toBeTruthy();
   });
 
-  it('prueba correcta: texto propio en status y foco en el aviso', async () => {
+  it('prueba correcta: texto propio en un toast de `status` (DIS-091)', async () => {
     mocks.test.mockResolvedValue({ status: 'success', message: TEXTO_SERVIDOR });
-    render(<DirectoryTab />);
+    renderConToast(<DirectoryTab />);
     await screen.findByText('Activo');
     fireEvent.click(boton());
     expect(mocks.test).toHaveBeenCalledWith();
-    const status = await waitFor(() => {
-      const region = screen.getAllByRole('status').find((el) => el.textContent === PRUEBA_OK);
-      expect(region).toBeTruthy();
-      return region!;
-    });
+    const aviso = await screen.findByText(PRUEBA_OK);
+    expect(aviso.closest('.nx-toast')).toBeTruthy();
+    expect(aviso.closest('[role]')?.getAttribute('role')).toBe('status');
     expect(screen.queryByText(TEXTO_SERVIDOR)).toBeNull();
-    await waitFor(() => expect(document.activeElement).toBe(status.parentElement));
   });
 
   it('prueba fallida (503): alerta propia sin el texto del servidor', async () => {
     mocks.test.mockRejectedValue(new ApiError(503, TEXTO_SERVIDOR, { code: 'directorio_no_disponible' }));
-    render(<DirectoryTab />);
+    renderConToast(<DirectoryTab />);
     await screen.findByText('Activo');
     fireEvent.click(boton());
     expect(await screen.findByText(ERROR_NO_DISPONIBLE)).toBeTruthy();
@@ -178,8 +181,8 @@ describe('pestañas de Ajustes (DIS-034)', () => {
     const lista = screen.getByRole('tablist', { name: 'Ajustes' });
     const pestanas = within(lista).getAllByRole('tab');
     expect(pestanas.map((p) => p.textContent)).toEqual(
-      ['Portal', 'Correo', 'Plantillas', 'Directorio', 'Respaldo', 'Mis preferencias']);
-    const [portal, , , , , preferencias] = pestanas;
+      ['Portal', 'Correo', 'Plantillas', 'Directorio', 'Respaldo', 'Importación masiva', 'Mis preferencias']);
+    const [portal, , , , , , preferencias] = pestanas;
     expect(portal.tabIndex).toBe(0);
     expect(pestanas[1].tabIndex).toBe(-1);
     fireEvent.keyDown(portal, { key: 'ArrowLeft' });

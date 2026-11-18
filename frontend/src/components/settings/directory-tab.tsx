@@ -7,27 +7,25 @@
  * - Solo lectura: la configuración efectiva sale de las variables `LDAP_*`
  *   (ADR-004); cada valor muestra su variable y si viene del entorno o es el
  *   valor por defecto. Sin campos de contraseña ni mapeos de rol.
- * - "Probar conexión" no envía cuerpo; el resultado es un texto propio (éxito
- *   en `status`, fallo en `alert`) y el aviso recibe el foco (patrón de DIS-022).
+ * - "Probar conexión" no envía cuerpo; el resultado es un texto propio y se
+ *   avisa con toast (DIS-091: sin avisos en línea que muevan el diseño).
  * - El botón se deshabilita con `aria-disabled` (sigue enfocable, DIS-021/022).
  */
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { directoryApi } from '@/lib/access/directory';
 import type { DirectoryConfig } from '@/lib/access/types';
 import { useAsync } from '@/lib/use-async';
 import { Dato } from '../audit/audit-detail-modal';
 import { Button } from '../form';
-import { Badge, Card, EmptyNote, ErrorNote, Spinner, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Badge, Card, EmptyNote, ErrorNote, Spinner } from '../ui';
 import {
   AVISO_FUENTE, CAMPOS_DIRECTORIO, ESTADOS_DIRECTORIO, ETIQUETA_CONTRASENA, MENSAJE_INVALIDA,
   MENSAJE_SIN_CONFIGURAR, PISTA_PRUEBA, PISTA_PRUEBA_NO_DISPONIBLE, TEXTO_CONTRASENA,
   estadoDirectorio, textoOrigen,
 } from './directory-catalog';
 import { PRUEBA_OK, describeDirectoryLoadError, describeDirectoryTestError } from './directory-errors';
-
-type Tono = 'exito' | 'error';
-interface Aviso { texto: string; tono: Tono }
 
 const PISTA_ID = 'directorio-prueba-pista';
 
@@ -42,8 +40,7 @@ async function cargar(): Promise<DirectoryConfig> {
 
 export function DirectoryTab() {
   const carga = useAsync(cargar, []);
-  const avisoRef = useRef<HTMLDivElement>(null);
-  const [aviso, setAviso] = useState<Aviso | null>(null);
+  const { avisar } = useToast();
   const [probando, setProbando] = useState(false);
 
   const datos = carga.data;
@@ -52,15 +49,13 @@ export function DirectoryTab() {
   const puedeProbar = estado === 'activo';
   const bloqueado = probando || !puedeProbar;
 
-  function anunciar(texto: string, tono: Tono) {
-    setAviso({ texto, tono });
-    requestAnimationFrame(() => avisoRef.current?.focus());
+  function anunciar(texto: string, tono: 'exito' | 'error') {
+    avisar(tono === 'exito' ? 'success' : 'error', texto, 'Prueba de conexión');
   }
 
   async function probar() {
     if (bloqueado) return;
     setProbando(true);
-    setAviso(null);
     try {
       await directoryApi.test();
       anunciar(PRUEBA_OK, 'exito');
@@ -77,28 +72,6 @@ export function DirectoryTab() {
     <div className="flex h-full w-full flex-1 min-h-0 flex-col space-y-4">
       <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 text-sm text-body-text">
         {AVISO_FUENTE}
-      </div>
-
-      {/* Dos regiones vivas fijas: el éxito se anuncia con `status` y el fallo con `alert`. */}
-      <div
-        ref={avisoRef}
-        tabIndex={-1}
-        className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      >
-        <div role="status">
-          {aviso?.tono === 'exito' ? (
-            <Card>
-              <SuccessNote>{aviso.texto}</SuccessNote>
-            </Card>
-          ) : null}
-        </div>
-        <div role="alert">
-          {aviso?.tono === 'error' ? (
-            <Card>
-              <p className="text-sm font-bold text-error-text">{aviso.texto}</p>
-            </Card>
-          ) : null}
-        </div>
       </div>
 
       {carga.loading && !datos ? <Spinner label="Cargando la configuración del directorio…" /> : null}

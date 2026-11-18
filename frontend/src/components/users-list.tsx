@@ -13,7 +13,7 @@ import { Icono } from './icono';
 import type { NombreIcono } from './icono-trazos';
 import { PageHeader } from './page-header';
 import { useSession } from './session-provider';
-import { Badge, Card, ErrorNote, RegionDeAviso, SuccessNote } from './ui';
+import { Badge, ErrorNote, RegionDeAviso } from './ui';
 import { AdminAreasDialog, RemoveAdminDialog } from './users/admin-role-dialog';
 import { DirectoryAccountForm } from './users/directory-account-form';
 import { DirectoryPicker } from './users/directory-picker';
@@ -50,22 +50,25 @@ export function UsersList() {
   const [prefill, setPrefill] = useState<DirectoryUser | null>(null);
   // DIS-018: accesos del usuario; al cerrar, el foco vuelve a su botón.
   const [accessOf, setAccessOf] = useState<ManagedUser | null>(null);
+  const [accessUsers, setAccessUsers] = useState<ManagedUser[]>([]);
+  const [accessTab, setAccessTab] = useState<'areas' | 'plataformas'>('plataformas');
   const accessTrigger = useRef<HTMLButtonElement | null>(null);
   // DIS-019: alta en el directorio y acciones de rol (solo superadmin); el
-  // resultado se anuncia en una región `status` que recibe el foco.
+  // resultado se avisa con toast (DIS-091).
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [roleOf, setRoleOf] = useState<{ user: ManagedUser; action: 'areas' | 'quitar' } | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
-  const avisoRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = session?.permissions.is_admin ?? false;
   // El superadmin asigna cualquier área; el admin de área, solo las suyas.
   const assignableAreas = isAdmin ? (areas.data ?? []) : (session?.managed_areas ?? []);
 
   const roleTrigger = useRef<HTMLButtonElement | null>(null);
+  /** Botón que abrió el alta o la acción de rol: recibe el foco tras el aviso. */
+  const disparadorAviso = useRef<HTMLButtonElement | null>(null);
 
   function abrirRol(trigger: HTMLButtonElement, user: ManagedUser, action: 'areas' | 'quitar') {
     roleTrigger.current = trigger;
+    disparadorAviso.current = trigger;
     setRoleOf({ user, action });
   }
 
@@ -77,17 +80,16 @@ export function UsersList() {
   }, []);
   const cerrarAlta = useCallback(() => setCreatingAccount(false), []);
 
+  /** Cierra el diálogo, recarga y devuelve el foco. `mensaje` vacío: el diálogo ya avisó. */
   function anunciar(mensaje: string, titulo = 'Usuario') {
     setCreatingAccount(false);
     setRoleOf(null);
-    setAviso(mensaje);
-    const textoToast = mensaje.startsWith('Se creó la cuenta de ')
-      ? `${mensaje.replace('Se creó la cuenta de ', '').replace(/\.$/, '')} se agregó al directorio.`
-      : mensaje;
-    avisar('success', textoToast, titulo);
+    if (mensaje) avisar('success', mensaje, titulo);
     users.reload();
-    // Tras desmontar el diálogo, el foco va al aviso.
-    setTimeout(() => avisoRef.current?.focus(), 0);
+    // Tras desmontar el diálogo, el foco vuelve al botón que lo abrió, si sigue en la página.
+    setTimeout(() => {
+      if (disparadorAviso.current?.isConnected) disparadorAviso.current.focus();
+    }, 0);
   }
 
   async function remove() {
@@ -160,6 +162,11 @@ export function UsersList() {
     if (!users.data || activeSelectedIds.size === 0) return [];
     return users.data.filter((u) => activeSelectedIds.has(u.id));
   }, [users.data, activeSelectedIds]);
+
+  const algunoSinAreas = useMemo(() => {
+    if (selectedUsers.length === 0) return false;
+    return selectedUsers.some((u) => u.role !== 'administrador' && (u.areas?.length ?? 0) === 0);
+  }, [selectedUsers]);
 
   const totalUsers = filteredUsers.length;
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
@@ -379,27 +386,33 @@ export function UsersList() {
     <div className="flex h-full w-full flex-col gap-4 min-h-0">
       <PageHeader title="Usuarios" className="sr-only" />
 
-      {aviso ? (
-        <div role="status" ref={avisoRef} tabIndex={-1} className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0">
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <SuccessNote>{aviso}</SuccessNote>
-              <Button variant="secondary" onClick={() => setAviso(null)}>Cerrar aviso</Button>
-            </div>
-          </Card>
-        </div>
-      ) : null}
-
       {showPurge ? <div className="shrink-0"><PurgePanel onDone={users.reload} /></div> : null}
 
-      {accessOf ? (
+      {accessUsers.length > 0 ? (
         <UserAccessPanel
-          key={accessOf.id}
-          user={accessOf}
+          key={accessUsers.map((u) => u.id).join('-')}
+          users={accessUsers}
+          user={accessUsers[0]}
+          initialTab={accessTab}
           onClose={() => {
+            setAccessUsers([]);
             setAccessOf(null);
             accessTrigger.current?.focus();
           }}
+          onSaved={users.reload}
+        />
+      ) : accessOf ? (
+        <UserAccessPanel
+          key={accessOf.id}
+          user={accessOf}
+          users={[accessOf]}
+          initialTab={accessTab}
+          onClose={() => {
+            setAccessOf(null);
+            setAccessUsers([]);
+            accessTrigger.current?.focus();
+          }}
+          onSaved={users.reload}
         />
       ) : null}
 
@@ -459,28 +472,59 @@ export function UsersList() {
             ) : null}
           </div>
 
-          {/* A LA DERECHA: Botones solicitados: accesos, editar, eliminar y nuevo */}
+          {/* A LA DERECHA: Botones solicitados: áreas, accesos, editar, eliminar y nuevo */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Botón Accesos: activo solo si se selecciona exactamente 1 fila */}
+            {/* Botón Áreas: activo si hay 1 o más usuarios seleccionados */}
             <Button
               variant="fila"
-              disabled={!isSingleSelected}
+              disabled={activeSelectedIds.size === 0}
               onClick={(event) => {
-                if (!effectiveSelectedUser) return;
+                if (selectedUsers.length === 0) return;
                 accessTrigger.current = event.currentTarget;
-                if (effectiveSelectedUser.role === 'administrador') {
+                setAccessTab('areas');
+                setAccessUsers(selectedUsers);
+                setAccessOf(selectedUsers[0] ?? null);
+              }}
+              aria-label={effectiveSelectedUser ? `Áreas de ${effectiveSelectedUser.name}` : 'Áreas'}
+              title={
+                activeSelectedIds.size === 0
+                  ? 'Selecciona al menos 1 usuario para ver áreas'
+                  : selectedUsers.length > 1
+                  ? `Asignar áreas a ${selectedUsers.length} usuarios seleccionados`
+                  : `Áreas de ${effectiveSelectedUser?.name}`
+              }
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="areas" tamano="sm" ariaHidden={true} />
+              <span>Áreas</span>
+            </Button>
+
+            {/* Botón Accesos: activo si hay 1 o más usuarios seleccionados y ninguno sin áreas (salvo superadmin) */}
+            <Button
+              variant="fila"
+              disabled={activeSelectedIds.size === 0 || algunoSinAreas}
+              onClick={(event) => {
+                if (selectedUsers.length === 0) return;
+                accessTrigger.current = event.currentTarget;
+                if (selectedUsers.length === 1 && effectiveSelectedUser?.role === 'administrador') {
                   avisar('info', 'Acceso total sin restricciones.', 'Superadmin');
                   return;
                 }
-                setAccessOf(effectiveSelectedUser);
+                setAccessTab('plataformas');
+                setAccessUsers(selectedUsers);
+                setAccessOf(selectedUsers[0] ?? null);
               }}
               aria-label={effectiveSelectedUser ? `Accesos de ${effectiveSelectedUser.name}` : 'Accesos'}
               title={
-                isSingleSelected
-                  ? `Accesos de ${effectiveSelectedUser?.name}`
-                  : activeSelectedIds.size > 1
-                  ? 'Solo se puede ver accesos de 1 usuario a la vez'
-                  : 'Selecciona 1 usuario para ver accesos'
+                activeSelectedIds.size === 0
+                  ? 'Selecciona al menos 1 usuario para ver accesos'
+                  : algunoSinAreas
+                  ? selectedUsers.length > 1
+                    ? 'Uno o más usuarios seleccionados no tienen áreas asignadas. Asigna al menos 1 área primero'
+                    : 'El usuario no tiene áreas asignadas. Asigna al menos 1 área primero'
+                  : selectedUsers.length > 1
+                  ? `Accesos de ${selectedUsers.length} usuarios seleccionados`
+                  : `Accesos de ${effectiveSelectedUser?.name}`
               }
               className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
             >
@@ -538,7 +582,10 @@ export function UsersList() {
             {/* Botón Nuevo: pegado a la derecha */}
             <Button
               variant="fila-primario"
-              onClick={() => setCreatingAccount(true)}
+              onClick={(evento) => {
+                disparadorAviso.current = evento.currentTarget;
+                setCreatingAccount(true);
+              }}
               aria-label="Nuevo usuario"
               title="Nuevo usuario"
               className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
@@ -591,7 +638,7 @@ export function UsersList() {
           areasError={isAdmin && areas.error ? 'No se pudieron cargar las áreas.' : null}
           areasRequired={!isAdmin}
           onClose={cerrarAlta}
-          onCreated={(created) => anunciar(`Se creó la cuenta de ${created.name || created.email}.`, 'Cuenta creada')}
+          onCreated={() => anunciar('')}
         />
       ) : null}
 

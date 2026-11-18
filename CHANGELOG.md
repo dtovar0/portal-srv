@@ -18,6 +18,9 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Importación masiva (seguridad): valida igual que las altas normales (enlace solo https, ícono y color, nombres reservados), audita cada alta, sincroniza a los admins del área, no expone el detalle de un error 500 y acepta una lista vacía; la ruta del cliente ya no duplica `/api/v1` (FNC-149, DIS-090, 2026-11-18).
+- Accesos de varias cuentas: guardar áreas ya no borra las que no comparten todas, y un fallo al leer accesos se muestra en vez de suponer "sin accesos" (DIS-090, 2026-11-18).
+- Avisos: los resultados de guardar, probar, decidir o reintentar salen como toast y ya no empujan el diseño; el alta de usuario mostraba dos toasts (DIS-091, 2026-11-18).
 - Plataformas (seguridad): eliminar una plataforma ya no borra accesos vigentes sin revocarlos en el sistema real; responde `409 plataforma_con_accesos`. Sin accesos vigentes retira solicitudes, accesos revocados y conector, conserva los trabajos desligados y audita los conteos (FNC-144, 2026-11-17).
 - Borrado en lote de usuarios, áreas y plataformas: si falla a medias informa cuántos se eliminaron, los quita de la selección y cierra el diálogo; el generador de contraseñas ya no recurre a `Math.random` sin Web Crypto y no tiene sesgo de módulo (FNC-145, 2026-11-17).
 - Accesos (plataforma sin conector): la asignación directa nace `activo` sin encolar un `otorgar` que el worker fallaba y dejaba el acceso en `fallido`; el retiro directo solo procede desde `en_proceso`, `activo` o `fallido` (comprobado en la BD), cancela los `otorgar` en espera y responde `409` si ya estaba revocado (antes sobrescribía quién y por qué). Regresión en `tests/access/test_platform_access_api.py` (DIS-082, 2026-11-17).

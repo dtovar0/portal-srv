@@ -7,7 +7,8 @@ import { api } from '@/lib/api';
 import { useAsync } from '@/lib/use-async';
 import { Button, Checkbox, Field, Option, Select, TextInput } from '../form';
 import { Icono } from '../icono';
-import { Card, ErrorNote, Spinner, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Card, ErrorNote, Spinner } from '../ui';
 
 export function SmtpTab() {
   const { data, loading, error, reload } = useAsync(() => api.smtp(), []);
@@ -17,6 +18,7 @@ export function SmtpTab() {
   const [state, setState] = useState<{ saving: boolean; saved: boolean; error: string | null; tested: string | null }>(
     { saving: false, saved: false, error: null, tested: null },
   );
+  const { avisar } = useToast();
 
   if (loading) return <Spinner />;
   if (error) return <ErrorNote message={error} />;
@@ -42,12 +44,12 @@ export function SmtpTab() {
       await api.saveSmtp({ ...value, ...(password ? { password } : {}) });
       setPassword('');
       setState({ saving: false, saved: true, error: null, tested: null });
+      avisar('success', 'La configuración de correo se guardó.', 'Guardado');
       reload();
     } catch (err) {
-      setState({
-        saving: false, saved: false, tested: null,
-        error: err instanceof Error ? err.message : 'No se pudo guardar',
-      });
+      const mensaje = err instanceof Error ? err.message : 'No se pudo guardar';
+      setState({ saving: false, saved: false, tested: null, error: mensaje });
+      avisar('error', mensaje, 'Error al guardar');
     }
   }
 
@@ -56,17 +58,16 @@ export function SmtpTab() {
     try {
       await api.testSmtp(target);
       setState({ ...state, tested: `Correo enviado a ${target}.`, error: null });
+      avisar('success', `Correo enviado a ${target}.`, 'Correo de prueba');
     } catch (err) {
-      setState({
-        ...state, tested: null,
-        error: err instanceof Error ? err.message : 'No se pudo enviar',
-      });
+      const mensaje = err instanceof Error ? err.message : 'No se pudo enviar';
+      setState({ ...state, tested: null, error: mensaje });
+      avisar('error', mensaje, 'Correo de prueba');
     }
   }
 
   return (
     <Card className="flex h-full w-full flex-1 min-h-0 flex-col space-y-4">
-      {state.error ? <ErrorNote message={state.error} /> : null}
       {data.warning ? <ErrorNote message={data.warning} /> : null}
 
       {locked ? (
@@ -145,7 +146,6 @@ export function SmtpTab() {
             <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
             {state.saving ? 'Guardando…' : 'Guardar'}
           </Button>
-          {state.saved ? <SuccessNote>Guardado.</SuccessNote> : null}
         </div>
       ) : null}
 
@@ -162,11 +162,6 @@ export function SmtpTab() {
             </Button>
           </div>
         </Field>
-        {state.tested ? (
-          <div className="mt-2">
-            <SuccessNote>{state.tested}</SuccessNote>
-          </div>
-        ) : null}
       </div>
     </Card>
   );

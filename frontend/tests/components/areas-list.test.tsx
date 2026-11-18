@@ -12,7 +12,14 @@ vi.mock('@/lib/api', async (importOriginal) => {
   const real = await importOriginal<typeof import('@/lib/api')>();
   return {
     ApiError: real.ApiError,
-    api: { areas: vi.fn(), users: vi.fn(), createArea: vi.fn(), updateArea: vi.fn(), deleteArea: vi.fn() },
+    api: {
+      areas: vi.fn(),
+      users: vi.fn(),
+      createArea: vi.fn(),
+      updateArea: vi.fn(),
+      deleteArea: vi.fn(),
+      setAreaUsers: vi.fn(),
+    },
   };
 });
 vi.mock('@/lib/access/users', () => ({ usersApi: { setManagedAreas: vi.fn() } }));
@@ -72,6 +79,7 @@ beforeEach(() => {
   vi.mocked(api.users).mockResolvedValue([LUIS, EVA, ANA]);
   vi.mocked(api.createArea).mockResolvedValue({ status: 'success', area: area(9, 'Compras') });
   vi.mocked(api.deleteArea).mockResolvedValue({ status: 'success' });
+  vi.mocked(api.setAreaUsers).mockResolvedValue({ status: 'success' });
   vi.mocked(usersApi.setManagedAreas).mockResolvedValue({ status: 'success', user: LUIS });
 });
 
@@ -369,5 +377,67 @@ describe('Accesibilidad (auditor-accesibilidad)', () => {
     fireEvent.click(dialogo().getByText('Guardar'));
     await waitFor(() => expect(estado.textContent).toBe('Cambios guardados'));
     expect(dialogo().getByTestId('estado-guardado')).toBe(estado);
+  });
+});
+
+describe('Accesos del área (gestión de usuarios)', () => {
+  it('el botón Accesos se habilita solo al seleccionar 1 área gestionable', async () => {
+    rolActual = 'admin_area';
+    render(<AreasList />);
+    await screen.findByText('Finanzas');
+
+    // Sin seleccionar área: botón Accesos deshabilitado
+    const botonAccesos = screen.getByRole('button', { name: 'Accesos' }) as HTMLButtonElement;
+    expect(botonAccesos.disabled).toBe(true);
+
+    // Selecciona Finanzas (área administrada): botón Accesos habilitado con aria-label contextual
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    const botonFinanzas = screen.getByRole('button', { name: 'Accesos de Finanzas' }) as HTMLButtonElement;
+    expect(botonFinanzas.disabled).toBe(false);
+
+    // Selecciona Sistemas (área no administrada por Luis): botón Accesos deshabilitado
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
+    const botonSistemas = screen.getByRole('button', { name: 'Accesos de Sistemas' }) as HTMLButtonElement;
+    expect(botonSistemas.disabled).toBe(true);
+  });
+
+  it('abre el panel de accesos con Dual Picklist y permite transferir y guardar usuarios', async () => {
+    // Definimos usuarios con y sin área Finanzas (id: 3)
+    const anaConFinanzas: ManagedUser = {
+      ...ANA,
+      areas: [{ id: 3, name: 'Finanzas' }],
+    };
+    const luisSinFinanzas: ManagedUser = {
+      ...LUIS,
+      areas: [],
+    };
+    vi.mocked(api.users).mockResolvedValue([anaConFinanzas, luisSinFinanzas]);
+
+    render(<AreasList />);
+    await screen.findByText('Finanzas');
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Accesos de Finanzas' }));
+
+    const modal = dialogo();
+    expect(await modal.findByText('Accesos — Finanzas')).toBeTruthy();
+
+    // Verificamos que Ana aparece en "Con acceso" y Luis en "Sin acceso"
+    expect(modal.getByLabelText('Agregar Luis al área')).toBeTruthy();
+    expect(modal.getByLabelText('Retirar a Ana del área')).toBeTruthy();
+
+    // Transferir a Luis a "Con acceso"
+    fireEvent.click(modal.getByLabelText('Agregar Luis al área'));
+
+    // Ahora Luis está en "Con acceso" (aparece el botón para retirarlo)
+    expect(modal.getByLabelText('Retirar a Luis del área')).toBeTruthy();
+
+    // Guardar los cambios
+    fireEvent.click(modal.getByText('Guardar'));
+
+    // Debe llamar a api.setAreaUsers con el ID del área (3) y los IDs de Ana y Luis ([8, 5])
+    await waitFor(() => {
+      expect(api.setAreaUsers).toHaveBeenCalledWith(3, expect.arrayContaining([8, 5]));
+    });
   });
 });

@@ -6,10 +6,12 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Button, Checkbox, Field, TextInput } from '../form';
 import { useSession } from '../session-provider';
-import { Card, ErrorNote, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Card } from '../ui';
 
 export function PreferencesTab() {
   const { session } = useSession();
+  const { avisar } = useToast();
   const [prefs, setPrefs] = useState(session?.preferences ?? null);
   const [state, setState] = useState<{ saving: boolean; saved: boolean; error: string | null }>(
     { saving: false, saved: false, error: null },
@@ -26,17 +28,16 @@ export function PreferencesTab() {
       const result = await api.savePreferences(sinTema);
       setPrefs(result.preferences);
       setState({ saving: false, saved: true, error: null });
+      avisar('success', 'Tus preferencias se guardaron.', 'Guardado');
     } catch (err) {
-      setState({
-        saving: false, saved: false,
-        error: err instanceof Error ? err.message : 'No se pudo guardar',
-      });
+      const mensaje = err instanceof Error ? err.message : 'No se pudo guardar';
+      setState({ saving: false, saved: false, error: mensaje });
+      avisar('error', mensaje, 'Error al guardar');
     }
   }
 
   return (
     <Card className="flex h-full w-full flex-1 min-h-0 flex-col space-y-4">
-      {state.error ? <ErrorNote message={state.error} /> : null}
 
       <Checkbox
         label="Recibir notificaciones en la aplicación"
@@ -68,7 +69,6 @@ export function PreferencesTab() {
         <Button onClick={save} disabled={state.saving}>
           {state.saving ? 'Guardando…' : 'Guardar'}
         </Button>
-        {state.saved ? <SuccessNote>Guardado.</SuccessNote> : null}
       </div>
     </Card>
   );

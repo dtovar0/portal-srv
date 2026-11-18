@@ -768,3 +768,121 @@ Afecta a [api.py](../app/modules/platforms/api.py), [consultas.py](../app/module
 
 ### Impacto
 Afecta a [baja.py](../app/modules/platforms/baja.py), [api.py](../app/modules/platforms/api.py), [eliminar-en-lote.ts](../frontend/src/lib/eliminar-en-lote.ts) y a [test_baja_plataforma.py](../tests/platforms/test_baja_plataforma.py).
+
+
+## Botón de Accesos en Áreas para Asignación de Usuarios
+
+## Áreas
+
+### Regla
+1. **Botón de Accesos en la Barra de Herramientas de Áreas**: En la pantalla de consulta y administración de Áreas (`/admin/areas`), la barra de herramientas incorpora un botón de acción estandarizado `ACCESOS` (`Icono nombre="solicitudes"`), disponible para superadministradores y administradores de área que gestionen el área en cuestión (`isAdmin || managedIds.has(area.id)`).
+2. **Reglas de Selección y Activación**:
+   - **0 áreas seleccionadas**: El botón permanece deshabilitado (`disabled={true}`), con `title="Selecciona 1 área para gestionar accesos"` y `aria-label="Accesos"`.
+   - **1 área seleccionada**: Se habilita (`disabled={false}` si se cuenta con permisos sobre dicha área), con `title="Accesos de {nombre_area}"` y `aria-label="Accesos de {nombre_area}"`.
+   - **Más de 1 área seleccionada**: Se deshabilita preventivamente (`disabled={true}`), con `title="Solo se pueden gestionar accesos de 1 área a la vez"`.
+3. **Panel Modal de Gestión de Usuarios del Área (`AreaUsersPanel`)**:
+   - Al pulsar el botón `ACCESOS`, se abre el diálogo modal "Accesos — {nombre_area}" con una lista de selección dual (*Dual Picklist*):
+     - **Columna izquierda (Sin acceso)**: Muestra los usuarios del sistema dentro del alcance del administrador que aún no pertenecen al área. Al hacer clic en un usuario, se transfiere a la columna derecha y se anuncia por lector de pantalla (`aria-live="polite"`).
+     - **Columna derecha (Con acceso)**: Muestra los usuarios que pertenecen al área. Los usuarios recientemente agregados se marcan con badge `Nuevo`; los existentes se muestran como `Miembro`. Al hacer clic en el botón de retiro, vuelven a la columna izquierda.
+   - Ambas columnas cuentan con filtros de búsqueda rápidos e independientes por nombre o correo electrónico.
+   - Al presionar **Guardar**, se envía `PUT /api/v1/areas/{id}/users` con los IDs de todos los usuarios asignados al área (`user_ids`), actualizando la relación atómicamente y emitiendo una notificación Toast de confirmación (`useToast`).
+   - Al vincular a los usuarios al área, quedan automáticamente habilitados para que se les pueda otorgar accesos en las plataformas pertenecientes a dicha área desde `PlatformAccessPanel`.
+
+### Ejemplo
+Un administrador de área necesita dar de alta a un usuario en una plataforma de Finanzas, pero el usuario no aparece en la lista de candidatos de la plataforma porque no pertenece al área "Finanzas". El administrador entra a `/admin/areas`, selecciona la fila de "Finanzas", hace clic en el botón **Accesos**, busca al usuario en la columna "Sin acceso" y hace clic sobre su nombre para moverlo a "Con acceso". Al hacer clic en **Guardar**, el usuario queda formalmente asignado a "Finanzas". Inmediatamente después, al gestionar los accesos de las plataformas de Finanzas, el usuario ya aparece como disponible para otorgarle acceso.
+
+### Impacto
+Afecta a [areas-list.tsx](../frontend/src/components/areas-list.tsx), [area-users-panel.tsx](../frontend/src/components/areas/area-users-panel.tsx), [api.py](../app/modules/areas/api.py), [api.ts](../frontend/src/lib/api.ts) y a las pruebas en [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
+
+
+## Botones de Áreas y Accesos a Plataformas en Usuarios
+
+## Usuarios
+
+### Regla
+1. **Doble Botón de Gestión en Barra de Herramientas de Usuarios**: En la pantalla de consulta y administración de Usuarios (`/admin/users`), la barra de herramientas expone acciones de acceso diferenciadas para el usuario seleccionado:
+   - **Botón `ÁREAS`** (`Icono nombre="areas"`): Permite gestionar las áreas organizativas a las que pertenece el usuario.
+   - **Botón `ACCESOS`** (`Icono nombre="solicitudes"`): Permite gestionar las plataformas a las que tiene acceso el usuario.
+2. **Reglas de Selección y Activación**:
+   - **0 usuarios seleccionados**: Ambos botones permanecen deshabilitados (`disabled={true}`), indicando en su `title` que se debe seleccionar 1 usuario.
+   - **1 usuario seleccionado**: Ambos botones se habilitan automáticamente (`disabled={false}`).
+     - Al pulsar `ÁREAS`, se abre el diálogo modal "Accesos — {nombre_usuario}" con la pestaña de **Áreas** activa por defecto.
+     - Al pulsar `ACCESOS`, se abre el diálogo modal "Accesos — {nombre_usuario}" con la pestaña de **Plataformas** activa por defecto (o aviso Toast si es superadmin por contar con acceso irrestricto).
+   - **Más de 1 usuario seleccionado**: Ambos botones se deshabilitan preventivamente (`disabled={true}`).
+3. **Modal Unificado con Pestañas y Dual Picklist (`UserAccessPanel`)**:
+   - Dentro del panel modal de accesos, el administrador puede alternar libremente entre las pestañas **Áreas** y **Plataformas** mediante botones de control segmentado con contadores en tiempo real.
+   - **Pestaña Áreas**: Dispone de un *Dual Picklist* para transferir áreas entre "Sin acceso" y "Con acceso". Al guardar, envía `PUT /api/v1/users/{id}/areas` con `area_ids`, actualizando de inmediato la pertenencia y habilitando la elegibilidad de plataformas de dichas áreas.
+   - **Pestaña Plataformas**: Dispone de un *Dual Picklist* para transferir plataformas entre "Sin acceso" y "Con acceso". Al guardar, invoca el aprovisionamiento o revocación correspondiente (`api.grantPlatformAccess` / `api.revokeAccess`).
+   - Ambas pestañas disponen de buscadores independientes, gestión accesible de foco (`useFocoTrasMover`) y notificaciones Toast al completar las modificaciones.
+
+### Ejemplo
+Un administrador de TI necesita asignar a un empleado al área "Finanzas" y posteriormente otorgarle acceso al sistema "Contabilidad". En la tabla de usuarios selecciona a dicho empleado y presiona el botón **Áreas**. En el modal que se abre, busca "Finanzas" en la columna de la izquierda y hace clic para transferirla a la derecha, guardando los cambios. Inmediatamente o desde la pestaña contigua **Plataformas**, "Contabilidad" ya aparece como elegible para otorgar el acceso sin necesidad de navegar a otros módulos.
+
+### Impacto
+Afecta a [users-list.tsx](../frontend/src/components/users-list.tsx), [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx), [user-access-panel.test.tsx](../frontend/tests/components/users/user-access-panel.test.tsx) y [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
+
+
+## Deshabilitación del Acceso a Plataformas para Usuarios sin Áreas Asignadas
+
+## Usuarios
+
+### Regla
+1. **Inhabilitación Estricta de Acceso a Plataformas sin Áreas**: Un usuario que no pertenezca al menos a un área organizativa (`user.areas.length === 0`) no puede tener habilitada la acción de concesión de plataformas:
+   - **En la barra de herramientas de Usuarios (`users-list.tsx`)**: El botón `ACCESOS` permanece deshabilitado (`disabled={true}`) para usuarios sin áreas asignadas, mostrando el tooltip y título explicativo: `"El usuario no tiene áreas asignadas. Asigna al menos 1 área primero"`. El botón `ÁREAS` permanece habilitado para permitirle al administrador otorgar las áreas requeridas.
+   - **En el panel modal de accesos (`user-access-panel.tsx`)**: La pestaña de `Plataformas` permanece inhabilitada (`disabled={true}`) mientras el usuario no cuente con áreas asignadas (`areasConAcceso.length === 0`), con tooltip explicativo. Si por alguna vía se visualiza la sección de plataformas, se despliega una nota de estado indicando: `"El usuario no tiene áreas asignadas. Ve a la pestaña de Áreas y asigna al menos una para poder otorgarle acceso a plataformas."`, impidiendo el envío de concesiones inválidas.
+2. **Coherencia con las Reglas de Negocio del Backend**: Esta restricción previene solicitudes y concesiones destinadas a fallar, dado que el backend (`rules.validar_otorgamiento`) exige estrictamente que la plataforma pertenezca a un área donde el usuario esté registrado (`plataforma.area_id in usuario.areas`).
+
+### Ejemplo
+Un administrador registra a un nuevo usuario pero aún no le asigna ningún área. Al seleccionarlo en la tabla de usuarios, observa que el botón **Accesos** se encuentra en gris deshabilitado y con el mensaje "El usuario no tiene áreas asignadas. Asigna al menos 1 área primero", mientras que el botón **Áreas** está activo. El administrador pulsa **Áreas**, le asigna el área "Sistemas" y guarda. Inmediatamente el botón **Accesos** se ilumina y se activa, permitiendo ahora otorgarle las plataformas correspondientes a Sistemas.
+
+### Impacto
+Afecta a [users-list.tsx](../frontend/src/components/users-list.tsx), [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx) y [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
+
+
+## Sección de Importación Masiva (Bulk Import) en Ajustes
+
+## Configuración y Ajustes
+
+### Regla
+1. **Acceso Exclusivo de Superadministrador**: La sección de **Importación masiva** se integra como una pestaña dedicada dentro del módulo de **Ajustes** (`/settings`, pestaña `bulk-import`), visible y ejecutable única y exclusivamente por usuarios con rol `administrador`. Los usuarios sin permisos de superadministración no visualizan la pestaña ni pueden invocar sus endpoints.
+2. **Entidades Soportadas y Plantillas**:
+   - Soporta la importación masiva de **Usuarios y Cuentas** (`users`), **Áreas** (`areas`) y **Plataformas** (`platforms`).
+   - Provee descarga de plantillas oficiales en formato CSV con cabeceras y ejemplos preconfigurados (`GET /api/v1/import/template/{entity}`).
+3. **Flujo de Carga, Parseo y Previsualización**:
+   - Permite la entrada de datos vía archivo (`.csv`, `.txt`, `.json`) o mediante texto pegado directamente.
+   - Analiza y previsualiza los registros utilizando `DataTable`, asignando dinámicamente un distintivo de validación fila por fila:
+     - **Válido**: Datos completos y sintácticamente correctos.
+     - **Error**: Detalle explícito de la discrepancia (ej. correo inválido, campos obligatorios vacíos, área inexistente).
+   - Muestra métricas consolidadas en tiempo real: Total de filas, Filas válidas y Filas con error.
+4. **Seguridad y Restricciones de Carga**:
+   - **Prohibición de Escalación de Privilegios**: Ningún registro en la importación masiva puede crearse con rol `administrador`. Las solicitudes de cuentas de superadministrador son rechazadas con error de seguridad. Solo se permite el aprovisionamiento de roles `usuario` y `admin_area`.
+   - **Saneamiento Automático**: Todos los nombres de usuario, áreas y plataformas son procesados mediante `sanitize_display_name` para evitar caracteres de control o inyecciones XSS.
+   - **Auditoría Transaccional**: Toda ejecución de importación masiva queda registrada en el módulo de auditoría del sistema con el detalle del número de altas efectuadas.
+
+### Ejemplo
+Un superadministrador desea incorporar 25 nuevos empleados al portal. Se dirige a **Ajustes**, hace clic en la pestaña **Importación masiva**, selecciona la entidad **Usuarios y Cuentas** y descarga la plantilla CSV. Rellena las filas con los nombres, correos y áreas correspondientes y arrastra el archivo al panel. La interfaz previsualiza los 25 registros en una tabla accesible, indicando que 24 son válidos y 1 tiene un correo mal formateado. El administrador presiona "Importar 24 registros válidos", el sistema procesa el lote en el backend, registra el evento en auditoría y muestra una confirmación Toast de éxito.
+
+### Impacto
+Afecta a [bulk_import_api.py](../app/modules/bulk_import/api.py), [services.py](../app/modules/bulk_import/services.py), [bulk-import-tab.tsx](../frontend/src/components/settings/bulk-import-tab.tsx), [settings-panel.tsx](../frontend/src/components/settings-panel.tsx), [settings-tabs.ts](../frontend/src/components/settings/settings-tabs.ts), [api.ts](../frontend/src/lib/api.ts) y [test_bulk_import.py](../tests/test_bulk_import.py).
+
+
+## Asignación Múltiple de Áreas y Accesos a Plataformas en Usuarios
+
+## Usuarios
+
+### Regla
+1. **Soporte de Selección Múltiple para Áreas y Accesos**:
+   - En la lista de usuarios (`UsersList`), tanto el botón `ÁREAS` como el botón `ACCESOS` permiten ser accionados cuando hay 1 o más usuarios seleccionados (`activeSelectedIds.size >= 1`).
+   - El botón `ÁREAS` permanece habilitado siempre que haya al menos 1 usuario seleccionado, permitiendo asignar o desasignar áreas organizativas en lote a todos los usuarios seleccionados simultáneamente.
+   - El botón `ACCESOS` está habilitado si hay al menos 1 usuario seleccionado **y ninguno** de los usuarios seleccionados carece de áreas asignadas (`algunoSinAreas === false`). Si uno o más usuarios seleccionados no tienen áreas asignadas, el botón se deshabilita con el mensaje: `"Uno o más usuarios seleccionados no tienen áreas asignadas. Asigna al menos 1 área primero"`.
+2. **Modal Multi-Usuario (`UserAccessPanel`)**:
+   - El modal adapta su título e indicadores: exhibe `"Accesos — {N} usuarios seleccionados"` y un bloque contextual que desglosa la selección múltiple.
+   - En la pestaña **Áreas**, la asignación o desvinculación se aplica a cada uno de los usuarios seleccionados mediante peticiones concurrentes a `PUT /api/v1/users/{id}/areas`.
+   - En la pestaña **Plataformas**, otorgar o revocar plataformas aplica la acción (`api.grantPlatformAccess` / `api.revokeAccess`) a través de todos los usuarios seleccionados, excluyendo automáticamente a los superadministradores que ya cuentan con acceso universal.
+   - Todas las operaciones multi-usuario informan el resultado a través de notificaciones Toast unificadas.
+
+### Ejemplo
+Un administrador selecciona 5 usuarios pertenecientes al departamento de Finanzas. Con los 5 seleccionados, presiona el botón **Accesos**. El modal de accesos se abre indicando "Accesos — 5 usuarios seleccionados". El administrador busca la plataforma "SAP Concur" en la columna de sin acceso, la transfiere a con acceso y presiona "Guardar". El sistema otorga el acceso a SAP Concur a los 5 usuarios de forma concurrente y notifica mediante un Toast: "Accesos actualizados para 5 usuarios".
+
+### Impacto
+Afecta a [users-list.tsx](../frontend/src/components/users-list.tsx), [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx), [user-access-panel.test.tsx](../frontend/tests/components/users/user-access-panel.test.tsx) y [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).

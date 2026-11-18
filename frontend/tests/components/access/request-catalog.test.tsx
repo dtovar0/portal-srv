@@ -7,6 +7,12 @@
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '@/components/toast';
+
+/** Con el proveedor de avisos: los resultados se anuncian con toast (DIS-091). */
+function renderConToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 import type { CatalogItem } from '@/lib/access/types';
 
 vi.mock('@/lib/access/requests', () => ({
@@ -65,8 +71,8 @@ function tarjeta(nombre: string) {
   return screen.getByRole('article', { name: nombre });
 }
 
-async function abrirSolicitud(nombre: string) {
-  render(<RequestCatalog />);
+async function abrirSolicitud(nombre: string, renderizar: (ui: React.ReactElement) => unknown = render) {
+  renderizar(<RequestCatalog />);
   const boton = await screen.findByRole('button', { name: `Solicitar acceso a ${nombre}` });
   fireEvent.click(boton);
   return { boton, dialogo: screen.getByRole('dialog', { name: `Solicitar acceso a ${nombre}` }) };
@@ -177,7 +183,7 @@ describe('tarjetas', () => {
 
 describe('envío de la solicitud', () => {
   it('sin justificación: envía solo nivel y plataforma, y la tarjeta pasa a pendiente', async () => {
-    const { dialogo } = await abrirSolicitud('Nómina');
+    const { dialogo } = await abrirSolicitud('Nómina', renderConToast);
     expect(within(dialogo).getByRole('radio', { name: /Usuario/ })).toHaveProperty('checked', true);
     fireEvent.click(within(dialogo).getByRole('radio', { name: /Admin/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
@@ -190,14 +196,12 @@ describe('envío de la solicitud', () => {
     expect(within(nomina).queryByRole('button')).toBeNull();
     expect(requestsApi.catalog).toHaveBeenCalledTimes(1);
 
-    const aviso = screen.getByRole('status');
-    expect(aviso.textContent).toContain('Solicitud enviada: Nómina');
-    await waitFor(() => expect(document.activeElement).toBe(aviso));
-
-    // Al cerrar el aviso el foco va al buscador, no a `body`.
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar aviso' }));
-    expect(aviso.textContent).toBe('');
-    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Buscar en el catálogo' }));
+    // DIS-091: el resultado sale en un toast; el foco va al buscador, no a `body`.
+    const aviso = screen.getByText(/^Nómina, nivel .+\. Queda pendiente de aprobación\.$/);
+    expect(aviso.closest('.nx-toast')).toBeTruthy();
+    expect(screen.getByText('Solicitud enviada')).toBeTruthy();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Buscar en el catálogo' })));
   });
 
   it('con justificación: la envía recortada y muestra el contador', async () => {

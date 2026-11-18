@@ -9,7 +9,7 @@
  * - Refresco con `usePolling` (ADR-006) solo mientras la página tenga
  *   ejecuciones transitorias (contrato, "Refresco"); "Recargar" siempre.
  * - Reintentar: superadmin y ejecución fallida, con confirmación; la fila se
- *   actualiza con la respuesta y el aviso (`status`) recibe el foco.
+ *   actualiza con la respuesta y el resultado se avisa con toast (DIS-091).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,7 +22,8 @@ import { useOpcionesAlcance } from '../access/scope-filters';
 import { Button } from '../form';
 import { Icono } from '../icono';
 import { useSession } from '../session-provider';
-import { Card, ErrorNote, PremiumEmptyState, Spinner, SuccessNote } from '../ui';
+import { useToast } from '../toast';
+import { Card, ErrorNote, PremiumEmptyState, Spinner } from '../ui';
 import { hayTransitorios } from './job-catalog';
 import { JobDetailModal } from './job-detail-modal';
 import { JobRetryDialog } from './job-retry-dialog';
@@ -54,9 +55,8 @@ export function JobsLog() {
   const [reintentadas, setReintentadas] = useState<Record<number, Job>>({});
   const [detalle, setDetalle] = useState<Job | null>(null);
   const [reintentando, setReintentando] = useState<Job | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const disparador = useRef<string | null>(null);
-  const avisoRef = useRef<HTMLDivElement>(null);
+  const { avisar } = useToast();
 
   const parametros = parametrosEjecuciones(filtros, page);
   const clave = JSON.stringify(parametros);
@@ -106,7 +106,6 @@ export function JobsLog() {
   function abrirReintento(job: Job) {
     // El botón "Reintentar" desaparece al reintentar: el foco vuelve a "Detalle".
     disparador.current = detalleId(job.id);
-    setAviso(null);
     setReintentando(job);
   }
 
@@ -114,13 +113,9 @@ export function JobsLog() {
     setReintentadas((prev) => ({ ...prev, [job.id]: job }));
     setReintentando(null);
     setTransitorios(true);
-    setAviso(avisoReintento(job));
-    requestAnimationFrame(() => avisoRef.current?.focus());
-  }
-
-  function cerrarAviso() {
-    setAviso(null);
-    document.getElementById(FILTRO_ESTADO_ID)?.focus();
+    avisar('success', avisoReintento(job), 'Reintento');
+    // "Reintentar" desaparece de la fila: el foco vuelve a "Detalle" (o al filtro).
+    requestAnimationFrame(devolverFoco);
   }
 
   const data = lista.data;
@@ -139,17 +134,6 @@ export function JobsLog() {
 
   return (
     <section aria-labelledby="ejecuciones-titulo" className="flex h-full w-full flex-col gap-4 min-h-0">
-      <div role="status" ref={avisoRef} tabIndex={-1} className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0">
-        {aviso ? (
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <SuccessNote>{aviso}</SuccessNote>
-              <Button variant="secondary" onClick={cerrarAviso}>Cerrar aviso</Button>
-            </div>
-          </Card>
-        ) : null}
-      </div>
-
       {/* Grid de 1 columna y 2 filas (10/90): Fila 1 contenedor con botones, Fila 2 tabla al 100% */}
       <div className="grid w-full flex-1 min-h-0 grid-cols-1 grid-rows-[auto_1fr] gap-4">
         {/* Fila 1 (N columnas, 1 fila): Barra de botones estandarizada */}
