@@ -8,13 +8,13 @@
 | **Fase** | 8 (propuesta: onboarding y OIDC) |
 | **Módulo / Área** | contratos (usuarios) |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | Hecha |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
-| **Inicio** | |
-| **Finalizada** | |
-| **Estatus Git** | — |
-| **Rama** | `fnc/FNC-135-contrato-onboarding` |
+| **Inicio** | 2026-11-18 |
+| **Finalizada** | 2026-11-18 |
+| **Estatus Git** | Rama local, sin merge ni push |
+| **Rama** | `fnc/FNC-135-send-contrasena-obligatoria` |
 | **Commits / PR** | |
 | **Requiere migración BD** | No |
 | **Requiere auditor-seguridad** | Sí (contraseñas) |
@@ -67,6 +67,10 @@
 - Contrato incompatible: el alta actual del cliente deja de funcionar sin `password` → FNC-138 y FNC-139 se integran juntas.
 
 ## Verificación
+- Tarea solo de documentación (`docs/contratos/`): sin código ni pruebas propias.
+- Contrato v2 revisado contra ADR-008 (decisiones 1 a 11) y contra la implementación de FNC-138 y FNC-139 de este mismo bloque (mismos nombres de campo, códigos y estados).
+- Aprobación del dueño: ADR-008 aprobado el 2026-11-18 (registrada en el encabezado del contrato).
+- Pendiente: revisión de `auditor-seguridad` (se hace sobre el bloque completo al cerrar FNC-138).
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -79,3 +83,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño A, 2026-11-17) |
+| 2026-11-18 | Implementada: contrato v2 con aprobación del dueño (ADR-008, 2026-11-18) |
