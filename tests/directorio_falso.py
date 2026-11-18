@@ -124,4 +124,23 @@ def instalar_directorio(monkeypatch, variables=None, **config):
     monkeypatch.setattr(ldap_client.ClienteDirectorio, '_servidor',
                         lambda self: directorio.servidor)
     monkeypatch.setattr(ldap_client, 'Connection', directorio.conexion())
+    simular_password_modify(monkeypatch)
     return directorio
+
+
+def cifrado_simulado(contrasena):
+    """Valor que deja el Password Modify simulado: cifrado, nunca el texto."""
+    import hashlib
+    return '{SIMULADO}' + hashlib.sha256(contrasena.encode()).hexdigest()
+
+
+def simular_password_modify(monkeypatch):
+    """`MOCK_SYNC` no implementa Password Modify (RFC 3062): se simula
+    guardando `userPassword` cifrado, como OpenLDAP (FNC-138)."""
+    from ldap3.extend import StandardExtendedOperations
+
+    def modify_password(self, user=None, old_password=None, new_password=None, **_):
+        return self._connection.modify(
+            user, {'userPassword': [(ldap3.MODIFY_REPLACE, [cifrado_simulado(new_password)])]})
+
+    monkeypatch.setattr(StandardExtendedOperations, 'modify_password', modify_password)

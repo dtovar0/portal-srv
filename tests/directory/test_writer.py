@@ -17,7 +17,8 @@ from app.modules.directory.errors import Resultado, clasificar_error
 from app.modules.directory.ldap_client import UsuarioDirectorio
 from app.modules.directory.writer import DatosCuenta, EscritorDirectorio
 from tests.directory.conftest import (BASE_DN, GRUPOS_BASE_DN,
-                                      USUARIOS_BASE_DN, dn_grupo, dn_persona)
+                                      USUARIOS_BASE_DN, cifrado_simulado,
+                                      dn_grupo, dn_persona)
 
 RELLENO = f'cn=sin-miembros,{BASE_DN}'
 
@@ -538,16 +539,31 @@ def test_operaciones_publicas_del_escritor():
 
 
 def test_alta_de_cuenta_con_contrasena(directorio, escritor, operaciones):
+    """FNC-138: la contraseña no va en el alta (OpenLDAP la guardaría en claro):
+    se fija después con Password Modify y el servidor la guarda cifrada."""
     datos = DatosCuenta('carlos', 'Carlos', 'Gomez', 'carlos@pruebas.local',
                         password='Password123!')
     resultado = escritor.create_user(datos)
 
     assert resultado.resultado is Resultado.HECHO
     assert resultado.exito is True
+    for nombre, _solo_lectura, args, kwargs in operaciones:
+        if nombre == 'add':
+            assert 'Password123!' not in str(args) + str(kwargs)
     entrada = _entrada(directorio, dn_persona('carlos'))
-    assert entrada is not None
-    assert 'userPassword' in entrada
-    assert entrada['userPassword'].value in (b'Password123!', 'Password123!')
+    assert entrada['userPassword'].value in (cifrado_simulado('Password123!'),
+                                             cifrado_simulado('Password123!').encode())
+
+
+def test_alta_sin_password_modify_aceptado_lo_informa(directorio, escritor, monkeypatch):
+    from ldap3.extend import StandardExtendedOperations
+    monkeypatch.setattr(StandardExtendedOperations, 'modify_password', lambda self, **_: False)
+    datos = DatosCuenta('luis', 'Luis', 'Paz', 'luis@pruebas.local', password='Password123!')
+
+    resultado = escritor.create_user(datos)
+
+    assert resultado.resultado is Resultado.ERROR_PERMANENTE
+    assert resultado.motivo == 'contrasena_no_aplicada'
 
 
 def test_borrar_cuenta_existente_por_objeto_o_identificador_o_dn(directorio, escritor):
@@ -596,13 +612,15 @@ def test_cambiar_contrasena_por_identificador_y_dn(directorio, escritor):
     res1 = escritor.change_password('ana', 'NuevaClave456!')
     assert res1.resultado is Resultado.HECHO
     entrada1 = _entrada(directorio, dn_persona('ana'))
-    assert entrada1['userPassword'].value in (b'NuevaClave456!', 'NuevaClave456!')
+    assert entrada1['userPassword'].value in (cifrado_simulado('NuevaClave456!'),
+                                              cifrado_simulado('NuevaClave456!').encode())
 
     # Cambiar por DN y usando set_password alias
     res2 = escritor.set_password(dn_persona('ana'), 'OtraClave789!')
     assert res2.resultado is Resultado.HECHO
     entrada2 = _entrada(directorio, dn_persona('ana'))
-    assert entrada2['userPassword'].value in (b'OtraClave789!', 'OtraClave789!')
+    assert entrada2['userPassword'].value in (cifrado_simulado('OtraClave789!'),
+                                              cifrado_simulado('OtraClave789!').encode())
 
 
 def test_cambiar_contrasena_datos_invalidos_o_inexistente(directorio, escritor):

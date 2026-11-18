@@ -13,7 +13,6 @@ import { Card, ErrorNote, Spinner } from '../ui';
 export function SmtpTab() {
   const { data, loading, error, reload } = useAsync(() => api.smtp(), []);
   const [form, setForm] = useState<Record<string, unknown> | null>(null);
-  const [password, setPassword] = useState('');
   const [target, setTarget] = useState('');
   const [state, setState] = useState<{ saving: boolean; saved: boolean; error: string | null; tested: string | null }>(
     { saving: false, saved: false, error: null, tested: null },
@@ -41,8 +40,7 @@ export function SmtpTab() {
     setState({ ...state, saving: true, saved: false, error: null });
     try {
       // Una contraseña vacía deja la guardada intacta.
-      await api.saveSmtp({ ...value, ...(password ? { password } : {}) });
-      setPassword('');
+      await api.saveSmtp(value);
       setState({ saving: false, saved: true, error: null, tested: null });
       avisar('success', 'La configuración de correo se guardó.', 'Guardado');
       reload();
@@ -116,12 +114,8 @@ export function SmtpTab() {
             onChange={(e) => setForm({ ...value, username: e.target.value })}
           />
         </Field>
-        <Field label="Contraseña" hint="Vacío conserva la actual.">
-          <TextInput
-            type="password" value={password} autoComplete="new-password"
-            disabled={locked}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+        <Field label="Contraseña" hint="Por seguridad no se guarda en el portal: se define en el .env del servidor (SMTP_PASSWORD).">
+          <TextInput type="password" value="" disabled readOnly aria-readonly="true" placeholder="Definida en el servidor" />
         </Field>
       </div>
 

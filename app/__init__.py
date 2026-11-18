@@ -26,7 +26,7 @@ csrf = CSRFProtect()
 def _configurar(app, config_overrides):
     """Configuración de base de datos, sesión y seguridad; luego los
     reemplazos (pruebas)."""
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'nexus-premium-secret-key')
+    app.config['SECRET_KEY'] = _secret_key()
     # La misma regla la usan las migraciones (migrations/env.py).
     from app.utils.uri_bd import construir_uri_bd
     app.config['SQLALCHEMY_DATABASE_URI'] = construir_uri_bd()
@@ -51,6 +51,27 @@ def _configurar(app, config_overrides):
 
     if config_overrides:
         app.config.update(config_overrides)
+
+
+# Clave por defecto que traía el código (FNC-009, SEG-07): es pública, así que
+# nunca se acepta.
+SECRET_KEY_PUBLICADA = 'nexus-premium-secret-key'
+
+
+class ErrorSecretKey(RuntimeError):
+    """`SECRET_KEY` falta o es la publicada (el texto nunca lleva la clave)."""
+
+
+def _secret_key():
+    """`SECRET_KEY` del entorno; sin ella o con la publicada no se arranca."""
+    clave = (os.getenv('SECRET_KEY') or '').strip()
+    if not clave:
+        raise ErrorSecretKey('Falta SECRET_KEY en el .env: genera una con '
+                             '`python3 -c "import secrets; print(secrets.token_urlsafe(64))"`.')
+    if clave == SECRET_KEY_PUBLICADA:
+        raise ErrorSecretKey('SECRET_KEY es la clave por defecto publicada en el código; '
+                             'genera una propia.')
+    return clave
 
 
 def _validar_configuracion():

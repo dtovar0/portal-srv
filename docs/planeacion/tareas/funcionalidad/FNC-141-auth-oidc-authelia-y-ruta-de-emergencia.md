@@ -29,7 +29,7 @@
 ## Alcance
 - **Incluye:**
   - Cliente OIDC con Authlib: descubrimiento del emisor, código de autorización con PKCE S256, `state` y `nonce` en la sesión del servidor; validación del ID token (firma, `iss`, `aud`, `exp`, `nonce`); claims de userinfo (`email`, `name`; exigir `email_verified` si Authelia lo publica).
-  - Enlace de cuenta por correo con `motivo_de_bloqueo` (cuenta local o desactivada → rechazo auditado); cuenta nueva como `usuario`, `auth_source='sso'`; rol nunca del token (SEG-10, SEC-AUTH-07); `avisar_usuario_creado` como hoy.
+  - Enlace de cuenta por `sub` del token (ADR-009 3B: columna nueva con migración; la primera vez se vincula por correo) con `motivo_de_bloqueo` (cuenta local o desactivada → rechazo auditado); cuenta nueva como `usuario`, `auth_source='sso'`; rol nunca del token (SEG-10, SEC-AUTH-07); `avisar_usuario_creado` como hoy.
   - `session.clear()` antes de `login_user` (SEC-SES-03), conservando solo lo necesario.
   - `POST /auth/local`: solo `motivo_rechazo_login_local` (emergencia; y la bandera de desarrollo); respuesta única.
   - `POST /auth/logout`: `logout_user`, `session.clear()` y URL de cierre de Authelia desde configuración (SEC-AUTH-13).

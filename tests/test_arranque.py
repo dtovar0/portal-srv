@@ -78,8 +78,6 @@ def test_la_sesion_dura_siete_dias_y_tiene_nombre_propio(instancia):
 # Configuración faltante o inválida: debe fallar con un mensaje claro
 # --------------------------------------------------------------------------- #
 
-@pytest.mark.xfail(strict=True, reason='SEG-07 / FNC-009: sin SECRET_KEY '
-                   'arranca con una clave por defecto que está en el código')
 def test_sin_secret_key_no_arranca(instancia, monkeypatch):
     monkeypatch.delenv('SECRET_KEY')
 
@@ -87,8 +85,6 @@ def test_sin_secret_key_no_arranca(instancia, monkeypatch):
         instancia()
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-07 / FNC-009: acepta como '
-                   'SECRET_KEY el valor por defecto publicado en el repo')
 def test_secret_key_conocida_no_arranca(instancia, monkeypatch):
     monkeypatch.setenv('SECRET_KEY', CLAVE_POR_DEFECTO)
 
@@ -96,9 +92,7 @@ def test_secret_key_conocida_no_arranca(instancia, monkeypatch):
         instancia()
 
 
-@pytest.mark.xfail(strict=True, reason='FNC-009: un DB_ENGINE desconocido '
-                   'cae en silencio a SQLite (deuda 10 de docs/backend)')
-@pytest.mark.parametrize('motor', ['postgresql', 'MySQL', 'otro'])
+@pytest.mark.parametrize('motor', ['postgres', 'MySQL', 'otro'])
 def test_db_engine_invalido_no_arranca(instancia, monkeypatch, motor):
     monkeypatch.setenv('DB_ENGINE', motor)
 

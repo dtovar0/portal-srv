@@ -1,5 +1,6 @@
 from app import db
 from datetime import datetime
+from sqlalchemy.orm import validates
 
 class SMTPConfig(db.Model):
     __tablename__ = 'smtp_config'
@@ -10,9 +11,19 @@ class SMTPConfig(db.Model):
     encryption = db.Column(db.String(20), default='starttls')
     auth_enabled = db.Column(db.Boolean, default=True)
     username = db.Column(db.String(100), nullable=True)
-    password = db.Column(db.String(100), nullable=True) # Should be encrypted in production
+    # Obsoleta (FNC-010, SEG-17): la migración 0013 la vacía y no se escribe
+    # más; la contraseña SMTP es `SMTP_PASSWORD` del entorno.
+    password = db.Column(db.String(100), nullable=True)
     sender_name = db.Column(db.String(100), default='Portal de accesos')
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    @validates('password')
+    def _sin_contrasena_en_bd(self, clave, valor):
+        """La contraseña SMTP nunca vuelve a la BD (FNC-010, SEC-CFG-03)."""
+        if valor:
+            raise ValueError('smtp_config.password es obsoleta: la contraseña '
+                             'SMTP va en SMTP_PASSWORD.')
+        return None
 
     def to_dict(self):
         return {

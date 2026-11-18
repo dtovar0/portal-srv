@@ -48,10 +48,11 @@ def export_backup():
             'auth_config': auth.to_dict() if auth else {},
             'smtp_config': smtp.to_dict() if smtp else {},
             # Solo cuentas locales: las de LDAP y SSO las provee el directorio.
+            # Sin `password_hash` (FNC-010, SEG-17): el respaldo puede salir
+            # del servidor y un hash se puede atacar sin conexión.
             'users': [{
                 'email': u.email,
                 'nombre': u.nombre,
-                'password_hash': u.password_hash,
                 'role': u.role,
                 'auth_source': u.auth_source,
                 'is_active': u.is_active,
@@ -153,17 +154,23 @@ def import_backup():
         template.is_html = bool(item.get('is_html', template.is_html))
 
     from app.modules.auth.models import User
+    from app.modules.users.roles import rol_asignable
     users_added = 0
+    omitidas = 0
     for item in payload.get('users') or []:
         email = (item.get('email') or '').strip().lower()
         if not email or User.query.filter(db.func.lower(User.email) == email).first():
             continue
-        # Se conserva el hash: el respaldo no contiene contraseñas en claro.
+        rol = item.get('role') or 'usuario'
+        # FNC-010 (SEG-17): un respaldo no crea superadmins (se crean con
+        # `flask cuentas superadmin`) ni trae contraseñas: el hash se ignora.
+        if not rol_asignable(rol):
+            omitidas += 1
+            continue
         db.session.add(User(
             email=email,
             nombre=item.get('nombre'),
-            password_hash=item.get('password_hash'),
-            role=item.get('role') or 'usuario',
+            role=rol,
             auth_source=item.get('auth_source') or 'local',
             is_active=bool(item.get('is_active', True)),
         ))
@@ -171,7 +178,9 @@ def import_backup():
 
     db.session.commit()
     if users_added:
-        restored.append(f'{users_added} usuario(s)')
+        restored.append(f'{users_added} usuario(s) sin contraseña')
+    if omitidas:
+        restored.append(f'{omitidas} superadmin(s) omitido(s)')
 
     add_audit_log('IMPORTAR CONFIGURACIÓN', module='Ajustes', status='success',
                   detail=f"Restaurado: {', '.join(restored) or 'nada'}")

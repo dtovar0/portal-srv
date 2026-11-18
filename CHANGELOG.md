@@ -20,6 +20,7 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Pruebas: la del buscador global ya no falla bajo carga (esperaba al menú y no al buscador que escucha Ctrl K) (DIS-094, 2026-11-18).
 - Accesibilidad: bordes de tarjetas seleccionables y pestaña activa a 3:1; la barra del toast toma su duración de --toast-duracion (igual a TOAST_MS) (DIS-093, 2026-11-18).
 - Interfaz: la barra de progreso del toast se pausa con el cursor o el foco; el menú 'Log conectores' pasa a 'Ejecuciones'; los paneles de áreas avisan que quitar a alguien le retira sus accesos (DIS-092, 2026-11-18).
 - Accesos: quitar a alguien de un área revoca sus accesos en las plataformas de esa área (motivo ya_no_pertenece_al_area) (FNC-152, 2026-11-18).
@@ -48,9 +49,12 @@
 - Texto mínimo de 12 px: insignias, botones, cabeceras de tabla, contador del tour, marca de las casillas, ejes de las gráficas del Inicio e iniciales de Administrar plataformas pasan de 9–11 px a 12 px (token `--text-xs`); se retira el token `--text-2xs` (10 px) y una prueba impide volver a bajar de 12 px (DIS-007, DIS-032, 2026-10-26).
 
 ### Seguridad
+- Seguridad (LDAP): la contraseña inicial y los cambios se fijan con Password Modify (RFC 3062): OpenLDAP la guarda cifrada en lugar de en texto claro (FNC-138, 2026-11-18).
+- Seguridad (respaldo): ya no exporta los hash de contraseñas; al importar ignora hashes de respaldos viejos y no crea superadmins (los omite e informa); la contraseña SMTP sale solo de SMTP_PASSWORD y la migración 0013 vacía la guardada en la BD (FNC-010, 2026-11-18).
+- Seguridad: la app no arranca sin SECRET_KEY ni con la clave publicada en el código; un DB_ENGINE desconocido detiene el arranque en vez de caer a SQLite; `python run.py` escucha solo en 127.0.0.1 y activa el depurador solo en desarrollo (FNC-009, 2026-11-18).
 - Seguridad: el portal ya no crea admin/admin123 con la base vacía; el primer superadmin se crea con flask --app run:app cuentas superadmin y --restablecer cambia la contraseña de una instalación existente (FNC-003, 2026-11-18).
 - Seguridad: el login responde 429 tras 10 fallos por cuenta o 30 por IP en 15 minutos (configurable), sin probar la contraseña mientras dure (FNC-014, 2026-11-18).
-- Seguridad (CSRF): toda escritura a la API desde otro sitio (Origin/Referer ajeno, Origin null o Sec-Fetch-Site cross-site) responde 403 csrf_invalido; la cookie de sesión va con SameSite=Lax (FNC-008, 2026-11-18).
+- Seguridad (CSRF): toda escritura a la API desde otro sitio (Origin/Referer ajeno, Origin null o Sec-Fetch-Site cross-site) responde 403 csrf_invalido; la cookie de sesión va con SameSite=Lax y, fuera de desarrollo, Secure (FNC-008, 2026-11-18).
 - Despliegue: `install.sh` se detiene si `<prefijo>/.env` es un enlace simbólico, un directorio o tiene otro enlace duro, y aplica dueño y permisos sobre el archivo abierto sin seguir enlaces; `chown -R -h` del prefijo. Cierra la escalada a root con `ln -sf /etc/shadow <prefijo>/.env` desde la cuenta de servicio, abierta al conservar el `.env` en la copia (FNC-125, 2026-10-27).
 - Next.js: el rewrite de `/api` hacia Flask existe solo con `NODE_ENV=development` (`next build`/`next start` no generan ninguno), se retira el rewrite de `/auth` y `BACKEND_URL` se rechaza si es una IP; cierra la vía de Next hacia Flask con cabeceras `Remote-*` del cliente (FNC-005, FNC-118, 2026-10-26).
 

@@ -10,7 +10,7 @@
 
 | Variable | Propósito | Tipo / valores | Por defecto en código | Ejemplo (sin secretos) | Obligatoria | Sensible | En `.env.example` | Dónde se usa | Alta | Estado |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `SECRET_KEY` | Firma de la cookie de sesión y CSRF | texto aleatorio largo | `nexus-premium-secret-key` (inseguro) | — | Sí | **Sí** | Sí (marcador) | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
+| `SECRET_KEY` | Firma de la cookie de sesión y CSRF. **Sin ella o con la clave publicada `nexus-premium-secret-key` la app no arranca** (FNC-009) | texto aleatorio largo | ninguno (obligatoria) | — | Sí | **Sí** | Sí (marcador) | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
 | `DB_ENGINE` | Motor de BD. `mysql` usa PyMySQL; `postgresql` usa psycopg2 (FNC-146). **Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) debe ser `mysql` o `postgresql`: sin él la app y Alembic no arrancan y `preflight.sh`/`install.sh` dan `FALTA`.** También elige el servicio systemd y el cliente que instala `install.sh`. SQLite `nexus.db` solo con `APP_ENV=development` | `mysql` / `postgresql` (uno obligatorio fuera de dev) / `sqlite` (solo dev) | `sqlite` (solo dev) | `mysql` | Sí (fuera de dev) | No | Sí | `app/utils/uri_bd.py` (app y Alembic, FNC-039), `deploy/motor_bd.sh` | FNC-001, 2026-10-13; FNC-134, 2026-10-28 | Vigente |
 | `DB_HOST` | Host de la BD | nombre de host | — (sin valor: URI inválida) | `localhost` | Sí con mysql | No | Sí | `app/utils/uri_bd.py` (app y Alembic, FNC-039), `deploy/preflight.sh` | FNC-001, 2026-10-13 | Vigente |
 | `DB_PORT` | Puerto de la BD; vacío = el del motor (FNC-146); no numérico detiene el arranque | entero | — en código (puerto del controlador); `3306` o `5432` en preflight según `DB_ENGINE` | `3306` | Sí con mysql | No | Sí | `app/utils/uri_bd.py` (app y Alembic, FNC-039), `deploy/preflight.sh` | FNC-001, 2026-10-13 | Vigente |
@@ -84,7 +84,7 @@
 | `SMTP_ENCRYPTION` | Cifrado | `starttls` / `ssl` / `none` | `starttls` | `starttls` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_AUTH` | Autenticar contra el SMTP | booleano | `true` si hay usuario y contraseña | `true` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_USER` | Usuario SMTP | texto | ninguno | `servicio@<dominio>` | No | No | Sí (vacío) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
-| `SMTP_PASSWORD` | Contraseña SMTP | texto | ninguna | — | No | **Sí** | Sí (vacía) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
+| `SMTP_PASSWORD` | Contraseña SMTP. **Único origen** (FNC-010): ya no se guarda en la BD ni se escribe desde Ajustes → Correo; la migración 0013 vació la guardada | texto | ninguna | — | Sí si el SMTP pide autenticación | **Sí** | Sí (vacía) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_SENDER_NAME` | Nombre del remitente | texto | `Nexus` | `Pokemon` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `SMTP_SENDER_EMAIL` | Dirección del remitente | correo | `SMTP_USER` | `noreply@<dominio>` | No | No | Sí (vacío) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `ENABLE_NOTIFICATIONS` | Interruptor global de correo | `true` / `false` | `true` | `true` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
