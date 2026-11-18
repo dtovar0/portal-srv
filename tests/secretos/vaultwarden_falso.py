@@ -101,6 +101,8 @@ class VaultwardenFalso:
         self.org_key = cifrar_rsa(self.clave_org._enc + self.clave_org._mac,
                                   _llave_rsa().public_key())
         self.ciphers = []
+        self.sends = {}            # id → cuerpo recibido (FNC-136)
+        self.cuerpo_forzado = {}   # ruta → cuerpo de la respuesta forzada
 
     # ------------------------------------------------------------ bóveda
 
@@ -143,7 +145,8 @@ class VaultwardenFalso:
             excepcion, self.excepcion = self.excepcion, None
             raise excepcion
         if ruta in self.estado_forzado:
-            return Respuesta(self.estado_forzado[ruta], b'{}')
+            return Respuesta(self.estado_forzado[ruta],
+                             self.cuerpo_forzado.get(ruta, b'{}'))
         if metodo == 'POST' and ruta == RUTA_TOKEN:
             return self._token(cuerpo)
         if metodo == 'POST' and ruta == RUTA_PRELOGIN:
@@ -151,10 +154,27 @@ class VaultwardenFalso:
             return self._json({'kdf': kdf, 'kdfIterations': iteraciones,
                                'kdfMemory': memoria,
                                'kdfParallelism': paralelismo})
+        if ruta.startswith('/api/sends'):
+            return self._sends(metodo, ruta, cabeceras, cuerpo)
         if metodo == 'GET' and ruta == RUTA_SYNC:
             if cabeceras.get('Authorization') != f'Bearer {self.token_vigente}':
                 return Respuesta(401, b'')
             return self._json(self._sync())
+        return Respuesta(404, b'')
+
+    def _sends(self, metodo, ruta, cabeceras, cuerpo):
+        if cabeceras.get('Authorization') != f'Bearer {self.token_vigente}':
+            return Respuesta(401, b'')
+        if metodo == 'POST' and ruta == '/api/sends':
+            datos = json.loads(cuerpo)
+            send_id = f'{len(self.sends):08x}-0000-4000-8000-000000000000'
+            self.sends[send_id] = datos
+            return self._json({'id': send_id, 'accessId': f'acc{len(self.sends)}'})
+        if metodo == 'DELETE' and ruta.startswith('/api/sends/'):
+            send_id = ruta.rsplit('/', 1)[1]
+            if self.sends.pop(send_id, None) is None:
+                return Respuesta(404, b'')
+            return Respuesta(200, b'')
         return Respuesta(404, b'')
 
     def _token(self, cuerpo):

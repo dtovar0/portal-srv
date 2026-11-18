@@ -37,7 +37,7 @@ app/
     ├── access/        # Accesos otorgados: models, tipos, rules, services (otorgar/revocar), manejadores (resultado del ejecutor), consultas (FNC-054); api.py y serializacion.py (FNC-058); inventario e inventario_api (FNC-059)
     ├── provisioning/  # Ejecutor de aprovisionamiento: models, queue (encolar), ejecucion, worker, providers, ldap_provider, cli (FNC-049); api, consultas, serializacion y reintento (FNC-062)
     ├── demo/          # `flask demo cargar` (FNC-131): datos (qué se crea), carga (servicios y modelos, idempotente) y cli (solo `APP_ENV=development`; contraseñas del prompt, stdin o aleatorias)
-    ├── secretos/      # Vaultwarden (FNC-068): configuracion (VAULTWARDEN_*), cifrado (Bitwarden del lado del cliente), vaultwarden (cliente de solo lectura)
+    ├── secretos/      # Vaultwarden (FNC-068): configuracion (VAULTWARDEN_*), cifrado (Bitwarden del lado del cliente), vaultwarden (cliente: lectura y sesión), sends (Sends de texto, FNC-136)
     ├── connectors/    # Conectores (FNC-050): base (interfaz), registry (tipos), models (platform_connectors), validacion, credenciales (fuente y caché), provider (proveedor `conector`), consultas, noop (solo dev/pruebas), configuracion (CONNECTOR_*); api y prueba (FNC-061)
     ├── platforms/     # api.py (escritura de plataformas), validacion.py, grupos.py (DN), tipos.py, estado.py (puntos de extensión; `tiene_conector` desde FNC-050) (FNC-046)
     ├── audit/         # Modelo AuditLog y add_audit_log(); api.py (consulta e historiales), queries.py (alcance y filtros), parametros.py (FNC-060)
@@ -357,6 +357,7 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - `configuracion.py`: `VAULTWARDEN_*`; fuera de dev y con alguna definida se valida todo en `create_app()` (sin conectar).
 - `cifrado.py`: descifrado Bitwarden del lado del cliente (PBKDF2/Argon2id con `LIMITES_KDF`, HKDF, tipo 2 AES-CBC+HMAC, tipos 3/4 RSA-OAEP); rechaza el tipo 0 y los 5/6.
 - `vaultwarden.py`: `ClienteVaultwarden.leer(referencia)` → `ItemSecreto`; sesión por llave de API, `sync` y búsqueda por nombre en `VAULTWARDEN_COLLECTION_ID`. Errores `SecretoNoEncontrado`/`SecretoAmbiguo`/`GestorCaido`/`GestorMalConfigurado`, sin valores. `transporte` inyectable (pruebas: `tests/secretos/vaultwarden_falso.py`).
+- `sends.py` (FNC-136, ADR-008): `crear_send_texto(nombre, texto)` → `SendCreado(id, enlace)` y `borrar_send(id)` (idempotente). Modo `api` (`ClienteVaultwarden.sesion_de_usuario` y `pedir_autenticado`; cifrado del lado del cliente con `cifrado.cifrar_simetrico` y `derivar_clave_send`) o `bw` (CLI por stdin, entorno mínimo), con `VAULTWARDEN_SEND_MODO`; valores de `ONBOARDING_SEND_*`. Transitorio → `GestorCaido`; permanente → `GestorMalConfigurado`/`SendRechazado` (`motivo`: `send_deshabilitado` o `rechazado`). Ningún valor en `repr`, errores ni logs.
 - Bind LDAP: con `LDAP_BIND_PASSWORD_REF` (solo fuera de dev; reservada para conectores: `credenciales.referencia_reservada`, en `validacion.py` y `provider.py`), `ClienteDirectorio._contrasena_bind()` la pide al conectar; gestor caído → `ErrorDirectorio` transitorio (`LDAPCommunicationError`).
 - Operación: `docs/operacion/SECRETOS.md`.
 
