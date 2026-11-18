@@ -128,6 +128,13 @@ def login():
         return jsonify({'status': 'error',
                         'message': 'Indica usuario y contraseña.'}), 400
 
+    # Fuerza bruta (FNC-014): sin probar credenciales mientras dure el bloqueo.
+    from app.modules.auth.limite_intentos import MENSAJE_BLOQUEO, bloqueado
+    if bloqueado(email):
+        add_audit_log('ACCESO BLOQUEADO', status='warning', target=email,
+                      detail='Límite de intentos fallidos')
+        return jsonify({'status': 'error', 'message': MENSAJE_BLOQUEO}), 429
+
     if method == 'directory':
         from app.modules.auth.services import authenticate_user_ldap
         result = authenticate_user_ldap(email, password)
