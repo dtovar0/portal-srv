@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Agregado
+- Base de datos: DB_TLS_CA_FILE opcional exige TLS verificado hacia una BD remota (FNC-151, 2026-11-18).
 - Despliegue: `install.sh` y `preflight.sh` detectan PostgreSQL de PGDG (`postgresql-NN.service`, la versión mayor) sin `--db-service` (FNC-148, 2026-11-17).
 - Base de datos: `DB_ENGINE=postgresql` (psycopg2) además de `mysql`, a elección en el `.env`; la URI escapa usuario y contraseña y `DB_PORT` vacío usa el puerto del motor (FNC-146, ADR-010, 2026-11-17).
 - Despliegue: `install.sh` y `preflight.sh` eligen el servicio systemd (`postgresql.service`), el cliente (`psql`) y el puerto por defecto (5432) según `DB_ENGINE` (FNC-147, 2026-11-17).
