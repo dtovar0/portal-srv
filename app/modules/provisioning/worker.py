@@ -8,6 +8,9 @@
 - `SimpleWorker` (sin *fork*): el trabajo corre en este proceso, con el
   contexto de la app y su conexión a la BD. El tiempo de espera por intento lo
   aplica RQ (`job_timeout`).
+- El barrido recorre los **tipos de trabajo registrados**
+  (`tipos_de_trabajo`): el de accesos y, desde FNC-137, los que registren otros
+  módulos (entrega de credenciales, ADR-008 3B).
 - Mensajes repetidos son inocuos: la reserva atómica deja ejecutar uno.
 - Apagado ordenado: `SIGTERM`/`SIGINT` terminan el intento en curso y salen;
   una segunda señal corta en frío (comportamiento de RQ).
@@ -26,6 +29,8 @@ from app.modules.provisioning.models import ProvisioningJob
 from app.modules.provisioning.queue import (FUNCION_TRABAJO,
                                             SERIALIZADOR_RQ, enviar)
 from app.modules.provisioning.reloj import ahora
+from app.modules.provisioning.tipos_de_trabajo import (
+    funciones_permitidas, registrar_tipo_de_trabajo, tipos_registrados)
 from app.modules.provisioning.tipos import (ESTADO_EN_EJECUCION,
                                             ESTADOS_EN_ESPERA)
 
@@ -59,13 +64,14 @@ ATRIBUTOS_CALLBACK = ('_success_callback_name', '_failure_callback_name',
 
 
 def mensaje_valido(job):
-    """`True` solo si el mensaje pide `ejecutar_trabajo(<id entero>)` y no
-    trae *callbacks* (re-auditoría)."""
+    """`True` solo si el mensaje pide una función **registrada**
+    (`tipos_de_trabajo`) con un único id entero, sin kwargs ni *callbacks*
+    (re-auditoría)."""
     try:
         args, kwargs = tuple(job.args or ()), job.kwargs or {}
         sin_callbacks = not any(getattr(job, atributo, None)
                                 for atributo in ATRIBUTOS_CALLBACK)
-        return (job.func_name == FUNCION_TRABAJO and not kwargs
+        return (job.func_name in funciones_permitidas() and not kwargs
                 and sin_callbacks
                 and len(args) == 1 and type(args[0]) is int)
     except Exception:  # datos ilegibles o con otra forma
@@ -75,8 +81,8 @@ def mensaje_valido(job):
 class WorkerAprovisionamiento(SimpleWorker):
     """Worker RQ que también avisa el apagado al bucle del barrido.
 
-    Rechaza sin ejecutar todo mensaje que no sea `ejecutar_trabajo(<int>)`
-    (Redis no es de confianza: auditor-seguridad, FNC-049).
+    Rechaza sin ejecutar todo mensaje que no sea una función registrada con un
+    `<int>` (Redis no es de confianza: auditor-seguridad, FNC-049).
     """
 
     def execute_job(self, job, queue):
@@ -122,13 +128,26 @@ def vencidos(cfg, momento=None, limite=LOTE_BARRIDO):
     return [fila.id for fila in consulta]
 
 
+# Tipo de trabajo de otorgar y revocar accesos (el de siempre).
+registrar_tipo_de_trabajo(FUNCION_TRABAJO, vencidos)
+
+
 def barrer(cola_rq, cfg, momento=None):
-    """Envía a la cola los trabajos vencidos; devuelve cuántos."""
-    ids = vencidos(cfg, momento)
-    db.session.rollback()  # no dejar la transacción de lectura abierta
-    for trabajo_id in ids:
-        enviar(cola_rq, trabajo_id)
-    return len(ids)
+    """Envía a la cola los trabajos vencidos de cada tipo registrado;
+    devuelve cuántos. Un tipo que falla no impide barrer los demás."""
+    total = 0
+    for tipo in tipos_registrados():
+        try:
+            ids = tipo.vencidos(cfg, momento)
+        except Exception as exc:
+            logger.error('Aprovisionamiento: no se pudo barrer %s (%s).',
+                         tipo.funcion, type(exc).__name__)
+            ids = []
+        db.session.rollback()  # no dejar la transacción de lectura abierta
+        for trabajo_id in ids:
+            enviar(cola_rq, trabajo_id, tipo.funcion)
+        total += len(ids)
+    return total
 
 
 def instalar_senales(control):

@@ -26,6 +26,7 @@ from app.modules.provisioning.configuracion import (
     configuracion_redis)
 from app.modules.provisioning.models import ProvisioningJob
 from app.modules.provisioning.reloj import ahora
+from app.modules.provisioning.tipos_de_trabajo import funciones_permitidas
 from app.modules.provisioning.tipos import (ESTADO_CANCELADO,
                                             ESTADO_PENDIENTE,
                                             ESTADOS_EN_ESPERA,
@@ -81,10 +82,17 @@ def cola(conexion=None, tiempo_espera=TIEMPO_ESPERA_REDIS_SEGUNDOS):
                  serializer=SERIALIZADOR_RQ)
 
 
-def enviar(cola_rq, trabajo_id):
-    """Mensaje RQ que despierta al worker para `trabajo_id`."""
+def enviar(cola_rq, trabajo_id, funcion=FUNCION_TRABAJO):
+    """Mensaje RQ que despierta al worker para `trabajo_id`.
+
+    `funcion` es la del trabajo de accesos o un tipo registrado en
+    `tipos_de_trabajo` (FNC-137); otra cosa no se envía (el worker la
+    rechazaría de todos modos).
+    """
+    if funcion != FUNCION_TRABAJO and funcion not in funciones_permitidas():
+        raise DatosDeTrabajoInvalidos('Tipo de trabajo no registrado.')
     cfg = cargar_configuracion()
-    return cola_rq.enqueue(FUNCION_TRABAJO, trabajo_id,
+    return cola_rq.enqueue(funcion, trabajo_id,
                            job_timeout=cfg.tiempo_intento,
                            result_ttl=TTL_RESULTADO_RQ)
 
