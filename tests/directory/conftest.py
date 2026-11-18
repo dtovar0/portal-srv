@@ -13,6 +13,7 @@ from app.modules.directory.configuracion import cargar_configuracion
 from tests.directorio_falso import (BASE_DN, CUENTA_SERVICIO,  # noqa: F401
                                     ENTORNO_VALIDO, GRUPOS_BASE_DN,
                                     USUARIOS_BASE_DN, ServidorSimulado,
+                                    cifrado_simulado, simular_password_modify,
                                     dn_grupo, dn_persona)
 
 # Las constantes y los `dn_*` viven en `tests/directorio_falso.py` (FNC-074);
@@ -48,6 +49,7 @@ class DirectorioMock(ServidorSimulado):
 
 @pytest.fixture
 def directorio(monkeypatch):
+    simular_password_modify(monkeypatch)
     return DirectorioMock(monkeypatch)
 
 

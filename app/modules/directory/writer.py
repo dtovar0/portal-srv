@@ -26,7 +26,7 @@ import logging
 import re
 from dataclasses import dataclass
 
-from ldap3 import BASE, MODIFY_ADD, MODIFY_DELETE, MODIFY_REPLACE, SUBTREE
+from ldap3 import BASE, MODIFY_ADD, MODIFY_DELETE, SUBTREE
 from ldap3.core.exceptions import (LDAPAttributeOrValueExistsResult,
                                    LDAPEntryAlreadyExistsResult,
                                    LDAPException, LDAPNoSuchAttributeResult,
@@ -99,6 +99,16 @@ def _existe(conexion, dn):
     except LDAPNoSuchObjectResult:
         return False
     return bool(conexion.entries)
+
+
+# Motivo cuando el servidor no aceptó Password Modify (sin la contraseña).
+MOTIVO_CONTRASENA_NO_APLICADA = 'contrasena_no_aplicada'
+
+
+def _fijar_contrasena(conexion, dn, contrasena):
+    """Password Modify (RFC 3062): el servidor cifra la contraseña con su
+    esquema (`olcPasswordHash`). `True` si la aceptó."""
+    return bool(conexion.extend.standard.modify_password(user=dn, new_password=contrasena))
 
 
 class EscritorDirectorio:
@@ -245,7 +255,8 @@ class EscritorDirectorio:
     # ------------------------------------------------------------------ #
 
     def create_user(self, datos):
-        """Crea la cuenta en `LDAP_USERS_BASE_DN`, sin contraseña."""
+        """Crea la cuenta en `LDAP_USERS_BASE_DN`; con `datos.password`, la fija
+        después con Password Modify (cifrada por el servidor, FNC-138)."""
         cfg = self.configuracion
         if not all(str(campo or '').strip() for campo in (
                 datos.identificador, datos.nombre, datos.apellido,
@@ -267,8 +278,9 @@ class EscritorDirectorio:
             ATRIBUTO_CORREO: datos.correo,
             cfg.atributo_usuario: datos.identificador,
         }
-        if datos.password:
-            atributos['userPassword'] = datos.password
+        # Sin `userPassword` en el alta: OpenLDAP lo guardaría tal cual (texto
+        # claro). La contraseña va después con Password Modify, que el servidor
+        # cifra (RFC 3062, ADR-008 5A, FNC-138).
         filtro = (f'({cfg.atributo_usuario}='
                   f'{escapar_filtro(datos.identificador)})')
 
@@ -285,6 +297,9 @@ class EscritorDirectorio:
                 conexion.add(dn, list(cfg.clases_usuario), atributos)
             except LDAPEntryAlreadyExistsResult:
                 return ResultadoEscritura(Resultado.YA_ESTABA, dn)
+            if datos.password and not _fijar_contrasena(conexion, dn, datos.password):
+                return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
+                                          MOTIVO_CONTRASENA_NO_APLICADA)
             return ResultadoEscritura(Resultado.HECHO, dn)
 
         return self._ejecutar('alta de cuenta', dn, alta_cuenta)
@@ -324,7 +339,8 @@ class EscritorDirectorio:
     # ------------------------------------------------------------------ #
 
     def change_password(self, user, new_password, old_password=None):
-        """Cambia la contraseña (`userPassword`) de una cuenta en `LDAP_USERS_BASE_DN`."""
+        """Cambia la contraseña de una cuenta en `LDAP_USERS_BASE_DN` con
+        Password Modify (el servidor la cifra; nunca `userPassword` en claro)."""
         if not new_password or not isinstance(new_password, str):
             return ResultadoEscritura(Resultado.ERROR_PERMANENTE, '',
                                       MOTIVO_DATOS_INVALIDOS)
@@ -348,10 +364,13 @@ class EscritorDirectorio:
                     return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
                                               MOTIVO_DATOS_INVALIDOS)
             try:
-                conexion.modify(dn, {'userPassword': [(MODIFY_REPLACE, [new_password])]})
+                aplicada = _fijar_contrasena(conexion, dn, new_password)
             except LDAPNoSuchObjectResult:
                 return ResultadoEscritura(Resultado.NO_EXISTE, dn,
                                           MOTIVO_USUARIO_INEXISTENTE)
+            if not aplicada:
+                return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
+                                          MOTIVO_CONTRASENA_NO_APLICADA)
             return ResultadoEscritura(Resultado.HECHO, dn)
 
         return self._ejecutar('cambio de contraseña', dn, modificar_clave)
