@@ -24,6 +24,9 @@ import { useToast } from '../toast';
 import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
 import { mensajeDeError } from './area-errors';
 
+/** FNC-152: salir del área revoca sus accesos en las plataformas del área. */
+export const AVISO_SALIDA_DE_AREA = 'Quitar a alguien del área le retira sus accesos en las plataformas de esa área.';
+
 function coincideUsuario(user: ManagedUser, query: string): boolean {
   const q = query.trim().toLowerCase();
   return !q || user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
@@ -165,6 +168,7 @@ export function AreaUsersPanel({
             <p className="text-xs text-label truncate">
               {area.description || 'Gestión de usuarios y membresía del área.'}
             </p>
+            <p className="text-xs text-label">{AVISO_SALIDA_DE_AREA}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/10 text-primary-text">
@@ -215,7 +219,7 @@ export function AreaUsersPanel({
                   ref={refLista('sin-acceso')}
                   tabIndex={-1}
                   aria-label={`Usuarios sin acceso al área ${area.name}`}
-                  className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
+                  className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-72 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border"
                 >
                   {sinAccesoVisibles.length === 0 ? (
                     <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -232,7 +236,7 @@ export function AreaUsersPanel({
                           onClick={() => darAcceso(user)}
                           aria-label={`Agregar ${user.name || user.email} al área`}
                           title={`Haz clic para agregar a ${user.name || user.email} al área`}
-                          className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border/60 bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
+                          className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="size-7 rounded-lg bg-surface-container group-hover:bg-primary/10 group-hover:text-primary-text flex items-center justify-center shrink-0 text-label font-bold text-xs transition-colors">

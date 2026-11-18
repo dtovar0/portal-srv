@@ -243,7 +243,7 @@ export function ConnectorForm({
         onChange={(event) => cambiar('active', event.target.checked)}
       />
 
-      {error ? <div className="sr-only" role="alert">{error}</div> : null}
+      {error ? <div className="sr-only">{error}</div> : null}
 
       <div className="flex flex-wrap justify-end gap-3">
         <Button

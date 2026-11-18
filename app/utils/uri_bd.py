@@ -9,6 +9,10 @@ para que ambas apunten siempre a la misma BD sin repetir la regla.
   SQLite solo existe en desarrollo.
 - La URI se arma con `URL.create`: usuario y contraseña con caracteres como
   `@`, `:` o `/` quedan escapados.
+- `DB_TLS_CA_FILE` (opcional, FNC-151): con una ruta, la conexión exige TLS y
+  verifica el certificado del servidor contra esa CA (`sslmode=verify-full`
+  en PostgreSQL, `ssl_ca` y verificación de host en MySQL). Si el archivo no
+  existe, no se arranca. Vacía: sin TLS, como antes.
 """
 import os
 
@@ -23,6 +27,7 @@ CONTROLADORES = {MOTOR_MYSQL: 'mysql+pymysql',
                  MOTOR_POSTGRESQL: 'postgresql+psycopg2'}
 MOTORES_SERVIDOR = tuple(CONTROLADORES)
 VAR_MOTOR = 'DB_ENGINE'
+VAR_TLS_CA = 'DB_TLS_CA_FILE'
 VAR_ENTORNO = 'APP_ENV'
 ENTORNO_DESARROLLO = 'development'
 
@@ -60,6 +65,18 @@ def _puerto():
     return int(valor)
 
 
+def _parametros_tls(motor):
+    """Parámetros de la URI para TLS verificado, o `{}` sin `DB_TLS_CA_FILE`."""
+    ca = (os.getenv(VAR_TLS_CA) or '').strip()
+    if not ca:
+        return {}
+    if not os.path.isfile(ca):
+        raise ErrorConfiguracionBD(f'{VAR_TLS_CA} no apunta a un archivo legible.')
+    if motor == MOTOR_POSTGRESQL:
+        return {'sslmode': 'verify-full', 'sslrootcert': ca}
+    return {'ssl_ca': ca, 'ssl_check_hostname': 'true'}
+
+
 def construir_uri_bd():
     """URI de SQLAlchemy según `DB_ENGINE` (mysql, postgresql o SQLite en dev)."""
     validar_motor_bd()
@@ -70,4 +87,5 @@ def construir_uri_bd():
         controlador, username=os.getenv('DB_USER'),
         password=os.getenv('DB_PASS'), host=os.getenv('DB_HOST'),
         port=_puerto(), database=os.getenv('DB_NAME'),
+        query=_parametros_tls(_motor()),
     ).render_as_string(hide_password=False)

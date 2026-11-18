@@ -3,7 +3,8 @@
 /**
  * Lista de navegación con secciones, iconos y contador (DIS-078). La usan la barra lateral
  * (expandida o colapsada) y el cajón móvil (DIS-025). Colapsada: solo iconos, con el nombre en
- * `aria-label` y `title`; el activo se marca con `aria-current` y los tokens `--color-activo-*`.
+ * `aria-label` y `title`; el activo se marca con `aria-current`, los tokens `--color-activo-*` y una barra lateral (DIS-085:
+ * no depende solo del color).
  */
 
 import Link from 'next/link';
@@ -77,6 +78,12 @@ export function NavPrincipal({
                       : 'font-medium text-navegacion hover:bg-surface-container hover:text-body-text active:bg-surface-container'
                 }`}
               >
+                {activo ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-y-2 left-0 w-1 rounded-pastilla bg-activo-texto"
+                  />
+                ) : null}
                 <Icono nombre={item.icono} />
                 <span className={colapsada ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{item.label}</span>
                 {contador > 0 ? (

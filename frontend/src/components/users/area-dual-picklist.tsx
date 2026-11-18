@@ -88,6 +88,13 @@ export function AreaDualPicklist({
     return (area as Area).platforms_count ?? 0;
   }
 
+  /** Texto de la insignia de plataformas (describe el botón sin cambiar su nombre accesible). */
+  function textoPlataformas(area: AreaRef | Area): string {
+    const n = plataformasCount(area);
+    if (n <= 0) return 'Contiene plataformas vinculadas';
+    return `Contiene ${n} ${n === 1 ? 'plataforma vinculada' : 'plataformas vinculadas'}`;
+  }
+
   function transferirArea(area: AreaRef | Area, origen?: HTMLElement) {
     origenRef.current = origen ?? null;
     if (tienePlataformas(area)) {
@@ -191,7 +198,7 @@ export function AreaDualPicklist({
                 setCaptchaError(null);
               }}
               placeholder={`Escribe ${captchaWord}...`}
-              className="w-full h-11 rounded-xl border border-panel-border/80 bg-fondo px-4 text-xs font-mono font-bold text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary shadow-inner-soft transition-colors"
+              className="w-full h-11 rounded-xl border border-panel-border bg-fondo px-4 text-xs font-mono font-bold text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary shadow-inner-soft transition-colors"
               autoFocus
             />
             {captchaError ? (
@@ -241,7 +248,7 @@ export function AreaDualPicklist({
               value={searchAvailable}
               onChange={(e) => setSearchAvailable(e.target.value)}
               aria-label="Filtrar áreas disponibles"
-              className="w-full h-10 rounded-xl border border-panel-border/60 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+              className="w-full h-10 rounded-xl border border-panel-border bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
             />
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
               <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -252,7 +259,7 @@ export function AreaDualPicklist({
             ref={refLista('disponibles')}
             tabIndex={-1}
             aria-label="Áreas disponibles"
-            className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-60 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border/40"
+            className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-60 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border"
           >
             {availableAreas.length === 0 ? (
               <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
@@ -271,8 +278,9 @@ export function AreaDualPicklist({
                       data-item-id={area.id}
                       onClick={(e) => transferirArea(area, e.currentTarget)}
                       aria-label={`Asignar ${area.name}`}
+                      aria-describedby={hasPlat ? `area-plat-${area.id}` : undefined}
                       title={`Haz clic para asignar ${area.name}`}
-                      className="w-full min-h-12 min-w-12 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-panel-border/60 bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-[0.98] transition-all cursor-pointer select-none text-left shadow-2xs group"
+                      className="w-full min-h-12 min-w-12 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-panel-border bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-[0.98] transition-all cursor-pointer select-none text-left shadow-2xs group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="size-7 rounded-lg bg-surface-container group-hover:bg-primary/10 group-hover:text-primary-text flex items-center justify-center shrink-0 text-label transition-colors">
@@ -286,11 +294,13 @@ export function AreaDualPicklist({
                       <div className="flex items-center gap-1.5 shrink-0">
                         {hasPlat ? (
                           <span
-                            title={`Contiene ${plataformasCount(area)} plataformas vinculadas`}
+                            id={`area-plat-${area.id}`}
+                            title={textoPlataformas(area)}
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold bg-warning/15 text-warning-text border border-warning/30"
                           >
                             <Icono nombre="escudo" tamano="xs" ariaHidden={true} />
-                            <span>{plataformasCount(area) || ''}</span>
+                            <span aria-hidden="true">{plataformasCount(area) || ''}</span>
+                            <span className="sr-only">{textoPlataformas(area)}</span>
                           </span>
                         ) : null}
 
@@ -354,6 +364,7 @@ export function AreaDualPicklist({
                       data-item-id={area.id}
                       onClick={() => quitarArea(area)}
                       aria-label={`Quitar ${area.name}`}
+                      aria-describedby={hasPlat ? `area-plat-asignada-${area.id}` : undefined}
                       title={`Haz clic para quitar ${area.name}`}
                       className="w-full min-h-12 min-w-12 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-primary/30 bg-superficie hover:border-error/60 hover:bg-error/5 active:scale-[0.98] transition-all cursor-pointer select-none text-left shadow-2xs group"
                     >
@@ -369,10 +380,12 @@ export function AreaDualPicklist({
                       <div className="flex items-center gap-1.5 shrink-0">
                         {hasPlat ? (
                           <span
+                            id={`area-plat-asignada-${area.id}`}
                             title="Acceso confirmado a plataformas"
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold bg-warning/15 text-warning-text border border-warning/30"
                           >
                             <Icono nombre="escudo" tamano="xs" ariaHidden={true} />
+                            <span className="sr-only">Acceso confirmado a plataformas</span>
                           </span>
                         ) : null}
 

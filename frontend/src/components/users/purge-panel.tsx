@@ -60,7 +60,7 @@ export function PurgePanel({ onDone }: { onDone: () => void }) {
         </p>
       </div>
 
-      {error ? <div className="sr-only" role="alert">{error}</div> : null}
+      {error ? <div className="sr-only">{error}</div> : null}
 
       <div className="flex flex-wrap items-end gap-2">
         <Field label="Días sin actividad">

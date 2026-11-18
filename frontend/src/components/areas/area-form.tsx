@@ -210,7 +210,7 @@ export function AreaForm({
           </button>
         </nav>
 
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
 
         {/* PASO 1: Descripción (Nombre y Descripción) */}
         {paso === 1 ? (

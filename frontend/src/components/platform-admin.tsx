@@ -499,7 +499,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                     setPageAreas(1);
                   }}
                   aria-label="Buscar áreas"
-                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 {busquedaAreas ? (
                   <button
@@ -535,7 +535,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                       ? 'border-primary bg-primary/10 text-primary-text ring-2 ring-primary/20 shadow-1'
                       : filtroEstado !== 'todos'
                       ? 'border-primary/60 bg-superficie text-primary-text hover:border-primary hover:bg-superficie/80 hover:shadow-1'
-                      : 'border-panel-border/80 bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:shadow-1'
+                      : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:shadow-1'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -651,7 +651,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                   className={`inline-flex h-12 min-h-12 w-48 min-w-48 items-center justify-between gap-2 rounded-xl border px-3.5 text-xs font-semibold shadow-xs transition-all duration-rapida cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     menuGridAbierto
                       ? 'border-primary bg-primary/10 text-primary-text ring-2 ring-primary/20 shadow-1'
-                      : 'border-panel-border/80 bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:shadow-1'
+                      : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:shadow-1'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -844,7 +844,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                         className={`group relative flex flex-col justify-between rounded-xl border p-5 shadow-1 transition-all duration-corta cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-36 h-full text-left select-none ${
                           isInactiva
                             ? 'border-warning/40 bg-superficie hover:border-warning/70 hover:shadow-2 hover:-translate-y-0.5'
-                            : 'border-panel-border/80 bg-panel-fill hover:border-primary/60 hover:shadow-2 hover:-translate-y-0.5'
+                            : 'border-panel-border bg-panel-fill hover:border-primary/60 hover:shadow-2 hover:-translate-y-0.5'
                         }`}
                       >
                         {/* Cabecera de la card: Icono de área y Badges (Estado + Plataformas) */}
@@ -999,7 +999,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                     setPagePlataformas(1);
                   }}
                   aria-label={`Buscar plataformas en ${selectedArea.name}`}
-                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border/80 bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 {busquedaPlataformas ? (
                   <button

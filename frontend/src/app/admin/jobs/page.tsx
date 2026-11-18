@@ -10,7 +10,7 @@ export default function Page() {
       <RequireRole requires="any_admin">
         <div className="flex h-full w-full flex-col gap-4 min-h-0">
           <PageHeader
-            title="Log conectores"
+            title="Ejecuciones"
             className="shrink-0"
           />
           <JobsLog />

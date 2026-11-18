@@ -13,6 +13,8 @@
  */
 
 :root, html.light {
+  /* Duración del toast: igual a `TOAST_MS` (toast.tsx); una prueba lo comprueba (DIS-093). */
+  --toast-duracion: 8s;
   /* ─────────────────────────────────────────────
      CAPA 1: PRIMITIVOS — Paleta tonal pura
      Solo se referencian por semánticos; nunca en componentes.
@@ -328,6 +330,14 @@
   --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
+  /* DIS-084: iconos del select y del check (los valores literales solo viven aquí) y tooltip. */
+  --icono-select-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-select-flecha-acento: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232563eb' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-check: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='3.5 8.5 6.5 11.5 12.5 5.5'/%3C/svg%3E");
+  --icono-check-indeterminado: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='4' y1='8' x2='12' y2='8'/%3C/svg%3E");
+  --color-tooltip-fondo: var(--p-noche-900);
+  --color-tooltip-texto: var(--p-gris-50);
+
   /* ─────────────────────────────────────────────
      ESCALA TIPOGRÁFICA — Sistema armónico 8pt
   ───────────────────────────────────────────── */
@@ -541,6 +551,14 @@
     --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
     --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
 
+    /* DIS-084: iconos del select y del check (los valores literales solo viven aquí) y tooltip. */
+    --icono-select-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    --icono-select-flecha-acento: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    --icono-check: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='3.5 8.5 6.5 11.5 12.5 5.5'/%3C/svg%3E");
+    --icono-check-indeterminado: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='4' y1='8' x2='12' y2='8'/%3C/svg%3E");
+    --color-tooltip-fondo: var(--p-noche-700);
+    --color-tooltip-texto: var(--p-gris-50);
+
     /* Simetría y Rejilla — 8pt (DIS-072) */
     --espacio-1: 4px;
     --espacio-2: 8px;
@@ -735,6 +753,14 @@ html.dark {
   --sombra-1: 0 1px 2px 0 rgb(0 0 0 / 0.35);
   --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
   --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+
+  /* DIS-084: iconos del select y del check (los valores literales solo viven aquí) y tooltip. */
+  --icono-select-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-select-flecha-acento: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-check: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='3.5 8.5 6.5 11.5 12.5 5.5'/%3C/svg%3E");
+  --icono-check-indeterminado: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='4' y1='8' x2='12' y2='8'/%3C/svg%3E");
+  --color-tooltip-fondo: var(--p-noche-700);
+  --color-tooltip-texto: var(--p-gris-50);
 
   /* Simetría y Rejilla — 8pt (DIS-072) */
   --espacio-1: 4px;

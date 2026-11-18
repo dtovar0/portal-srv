@@ -163,7 +163,7 @@ export function RequestFormModal({
           <FieldErrorNote id={JUSTIFICACION_ERROR_ID} message={errorJustificacion} />
         </div>
 
-        {error ? <div className="sr-only" role="alert">{error}</div> : null}
+        {error ? <div className="sr-only">{error}</div> : null}
       </form>
     </Modal>
   );

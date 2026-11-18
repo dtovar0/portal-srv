@@ -122,6 +122,14 @@ describe('AreasList por rol', () => {
     fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
     expect((screen.getByRole('button', { name: 'Editar Sistemas' }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole('button', { name: 'Eliminar Sistemas' }) as HTMLButtonElement).disabled).toBe(true);
+
+    // DIS-089: el motivo del botón deshabilitado es texto accesible (describedby), el nombre no cambia
+    const eliminar = screen.getByRole('button', { name: 'Eliminar Sistemas' });
+    const motivo = document.getElementById(eliminar.getAttribute('aria-describedby')!);
+    expect(motivo?.textContent).toBe('No tienes permisos para eliminar alguna de las áreas seleccionadas');
+    fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
+    expect(screen.getByRole('button', { name: 'Eliminar' }).getAttribute('aria-describedby')).toBeTruthy();
+    expect(document.getElementById('areas-eliminar-motivo')?.textContent).toBe('Selecciona al menos 1 área para eliminar');
   });
 
   it('admin de área: el alta no envía color y el área nueva queda gestionable', async () => {

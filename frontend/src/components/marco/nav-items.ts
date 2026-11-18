@@ -36,7 +36,7 @@ export const NAV: readonly NavItem[] = [
   { href: '/admin/connectors', label: 'Conectores', icono: 'marca', seccion: 'Gestión', requires: 'admin' },
   { href: '/inventory', label: 'Auditoría usuarios', icono: 'inventario', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/settings', label: 'Ajustes', icono: 'ajustes', seccion: 'Sistema' },
-  { href: '/admin/jobs', label: 'Log conectores', icono: 'ejecuciones', seccion: 'Sistema', requires: 'any_admin' },
+  { href: '/admin/jobs', label: 'Ejecuciones', icono: 'ejecuciones', seccion: 'Sistema', requires: 'any_admin' },
   { href: '/audit', label: 'Auditoría', icono: 'auditoria', seccion: 'Sistema' },
 ];
 

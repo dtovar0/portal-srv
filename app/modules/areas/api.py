@@ -184,6 +184,11 @@ def set_area_users(area_id):
     # Conserva a quien esté fuera del alcance (p. ej. un superadmin).
     keep = [u for u in current if u.id not in allowed]
     area.area_users = keep + User.query.filter(User.id.in_(user_ids)).all()
+    # Quien sale del área pierde sus accesos en las plataformas del área (FNC-152).
+    from app.modules.access.salida_de_area import revocar_por_salida
+    nuevos = {u.id for u in area.area_users}
+    for saliente in (u for u in current if u.id not in nuevos):
+        revocar_por_salida(saliente.id, [area.id])
     db.session.commit()
     add_audit_log(f"ACTUALIZAR USUARIOS DE ÁREA: {area.name}", module='Áreas',
                   target=area.name, status='success')

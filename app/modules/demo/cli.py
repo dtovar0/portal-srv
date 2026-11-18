@@ -78,7 +78,7 @@ def _imprimir(informe, contrasenas, generadas):
         click.echo('\nLas cuentas nuevas usan la contraseña que indicaste.')
     else:
         click.echo('\nNo hubo cuentas nuevas: las contraseñas no cambian.')
-    click.echo('La cuenta semilla `admin` (superadmin) sigue como estaba.')
+    click.echo('El superadmin no lo crea este comando: `flask --app run:app cuentas superadmin`.')
 
 
 @demo_cli.command('cargar')

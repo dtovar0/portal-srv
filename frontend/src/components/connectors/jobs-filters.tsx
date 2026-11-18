@@ -71,7 +71,7 @@ export function JobsFilters({
           aria-label="Estado"
           value={filtros.status ?? ''}
           onChange={(event) => onChange({ status: (event.target.value || null) as JobStatus | null })}
-          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <Option value="">Todos los estados</Option>
           {opciones(TEXTO_ESTADOS)}
@@ -85,7 +85,7 @@ export function JobsFilters({
           aria-label="Operación"
           value={filtros.operation ?? ''}
           onChange={(event) => onChange({ operation: (event.target.value || null) as JobOperation | null })}
-          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <Option value="">Todas las operaciones</Option>
           {opciones(OPERACIONES)}
@@ -99,7 +99,7 @@ export function JobsFilters({
           aria-label="Proveedor"
           value={filtros.provider ?? ''}
           onChange={(event) => onChange({ provider: (event.target.value || null) as Job['provider'] | null })}
-          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border/80 bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border bg-fondo px-3 py-2 text-xs font-semibold text-body-text shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <Option value="">Todos los proveedores</Option>
           {opciones(PROVEEDORES)}

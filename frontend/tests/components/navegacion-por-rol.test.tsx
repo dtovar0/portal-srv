@@ -48,11 +48,11 @@ const ESPERADO: Record<Rol, string[]> = {
   usuario: [...COMUNES, 'Mis solicitudes'],
   admin_area: [
     ...COMUNES, 'Plataformas', 'Mis solicitudes', 'Áreas', 'Usuarios',
-    'Auditoría usuarios', 'Log conectores',
+    'Auditoría usuarios', 'Ejecuciones',
   ],
   administrador: [
     ...COMUNES, 'Plataformas', 'Conectores', 'Áreas', 'Usuarios',
-    'Auditoría usuarios', 'Log conectores',
+    'Auditoría usuarios', 'Ejecuciones',
   ],
 };
 

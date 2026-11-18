@@ -147,8 +147,6 @@ def test_cuenta_no_local_no_entra_por_login_local(client, crear_usuario,
     assert usuario_en_sesion(client) is None
 
 
-@pytest.mark.xfail(strict=True, reason='SEG-11 / FNC-014: sin límite de '
-                   'intentos en el login')
 def test_limite_de_intentos_responde_429(client, crear_usuario):
     usuario = crear_usuario(contrasena=CONTRASENA_FICTICIA)
 
@@ -157,3 +155,32 @@ def test_limite_de_intentos_responde_429(client, crear_usuario):
     respuesta = iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA)
 
     assert respuesta.status_code == 429
+
+
+def test_tras_el_limite_no_se_prueba_la_contrasena(client, crear_usuario):
+    """Ni la contraseña correcta entra durante el bloqueo (FNC-014)."""
+    usuario = crear_usuario(contrasena=CONTRASENA_FICTICIA)
+    for _ in range(INTENTOS_ANTES_DEL_LIMITE):
+        iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA)
+
+    respuesta = iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA)
+
+    assert respuesta.status_code == 429
+    assert usuario_en_sesion(client) is None
+
+
+def test_el_limite_es_configurable(client, crear_usuario, monkeypatch):
+    monkeypatch.setenv('LOGIN_MAX_INTENTOS_CUENTA', '2')
+    usuario = crear_usuario(contrasena=CONTRASENA_FICTICIA)
+    for _ in range(2):
+        assert iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA).status_code == 401
+
+    assert iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA).status_code == 429
+
+
+def test_pocos_fallos_no_bloquean(client, crear_usuario):
+    usuario = crear_usuario(contrasena=CONTRASENA_FICTICIA)
+    for _ in range(3):
+        iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA)
+
+    assert iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA).status_code != 429
