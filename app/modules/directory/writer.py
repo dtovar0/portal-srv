@@ -15,9 +15,13 @@
   el resultado es `ERROR_PERMANENTE` (`ultimo_miembro`). Al agregar un miembro
   real se quita el relleno en la misma operación (decisión del dueño,
   2026-10-15).
-- Alta de cuentas sin contraseña (P8: la maneja Authelia); identificador y
-  correo validados, y el identificador se escapa al formar el DN
-  (SEC-LDAP-06). No hay borrado de cuentas en v1.
+- Alta de cuentas: identificador y correo validados, y el identificador se
+  escapa al formar el DN (SEC-LDAP-06). La contraseña inicial (P8 modificada,
+  ADR-008) se fija después del alta con Password Modify (RFC 3062), nunca como
+  `userPassword` en claro; si el servidor la rechaza (`ppolicy`) o falla, la
+  entrada recién creada se retira para no dejar una cuenta sin contraseña.
+  El rechazo de `ppolicy` es el motivo `contrasena_rechazada`, sin el texto
+  del servidor. No hay borrado de cuentas en v1 (salvo esa limpieza).
 - Nunca lanza por fallos del directorio: devuelve `ResultadoEscritura`. El
   log de un fallo de escritura lleva solo el código de resultado, sin el DN
   ni el mensaje del servidor (pueden nombrar a la persona).
@@ -28,10 +32,12 @@ from dataclasses import dataclass
 
 from ldap3 import BASE, MODIFY_ADD, MODIFY_DELETE, SUBTREE
 from ldap3.core.exceptions import (LDAPAttributeOrValueExistsResult,
+                                   LDAPConstraintViolationResult,
                                    LDAPEntryAlreadyExistsResult,
                                    LDAPException, LDAPNoSuchAttributeResult,
                                    LDAPNoSuchObjectResult,
-                                   LDAPSizeLimitExceededResult)
+                                   LDAPSizeLimitExceededResult,
+                                   LDAPUnwillingToPerformResult)
 
 from app.modules.directory.dn import bajo_base, mismo_dn
 from app.modules.directory.errors import (MOTIVO_DATOS_INCOMPLETOS,
@@ -101,14 +107,29 @@ def _existe(conexion, dn):
     return bool(conexion.entries)
 
 
-# Motivo cuando el servidor no aceptó Password Modify (sin la contraseña).
+# Motivos cuando la contraseña no quedó fijada (sin la contraseña ni el texto
+# del servidor): el servidor no aceptó Password Modify, o su `ppolicy` la
+# rechazó (calidad, longitud, historial).
 MOTIVO_CONTRASENA_NO_APLICADA = 'contrasena_no_aplicada'
+MOTIVO_CONTRASENA_RECHAZADA = 'contrasena_rechazada'
+# Resultados con los que `ppolicy` rechaza una contraseña.
+RECHAZOS_DE_POLITICA = (LDAPConstraintViolationResult,
+                        LDAPUnwillingToPerformResult)
 
 
 def _fijar_contrasena(conexion, dn, contrasena):
     """Password Modify (RFC 3062): el servidor cifra la contraseña con su
-    esquema (`olcPasswordHash`). `True` si la aceptó."""
-    return bool(conexion.extend.standard.modify_password(user=dn, new_password=contrasena))
+    esquema (`olcPasswordHash`) y aplica su `ppolicy`.
+
+    `None` si la aceptó; si no, el motivo (`MOTIVO_CONTRASENA_*`). Otros
+    fallos (red, permisos) se propagan como `LDAPException`.
+    """
+    try:
+        aceptada = conexion.extend.standard.modify_password(
+            user=dn, new_password=contrasena)
+    except RECHAZOS_DE_POLITICA:
+        return MOTIVO_CONTRASENA_RECHAZADA
+    return None if aceptada else MOTIVO_CONTRASENA_NO_APLICADA
 
 
 class EscritorDirectorio:
@@ -297,12 +318,31 @@ class EscritorDirectorio:
                 conexion.add(dn, list(cfg.clases_usuario), atributos)
             except LDAPEntryAlreadyExistsResult:
                 return ResultadoEscritura(Resultado.YA_ESTABA, dn)
-            if datos.password and not _fijar_contrasena(conexion, dn, datos.password):
-                return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
-                                          MOTIVO_CONTRASENA_NO_APLICADA)
+            if datos.password:
+                try:
+                    motivo = _fijar_contrasena(conexion, dn, datos.password)
+                except LDAPException:
+                    self._retirar_entrada(conexion, dn)
+                    raise
+                if motivo:
+                    self._retirar_entrada(conexion, dn)
+                    return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
+                                              motivo)
             return ResultadoEscritura(Resultado.HECHO, dn)
 
         return self._ejecutar('alta de cuenta', dn, alta_cuenta)
+
+    @staticmethod
+    def _retirar_entrada(conexion, dn):
+        """Quita la entrada recién creada cuya contraseña no se pudo fijar
+        (no queda una cuenta sin contraseña). Si tampoco se puede, queda para
+        revisión; el log no lleva el DN (puede nombrar a la persona)."""
+        try:
+            conexion.delete(dn)
+        except LDAPException:
+            logger.error('Directorio: una cuenta recién creada quedó sin '
+                         'contraseña y no se pudo retirar; revisar en el '
+                         'directorio.')
 
     # ------------------------------------------------------------------ #
     # Baja de cuentas
@@ -364,13 +404,13 @@ class EscritorDirectorio:
                     return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
                                               MOTIVO_DATOS_INVALIDOS)
             try:
-                aplicada = _fijar_contrasena(conexion, dn, new_password)
+                motivo = _fijar_contrasena(conexion, dn, new_password)
             except LDAPNoSuchObjectResult:
                 return ResultadoEscritura(Resultado.NO_EXISTE, dn,
                                           MOTIVO_USUARIO_INEXISTENTE)
-            if not aplicada:
+            if motivo:
                 return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn,
-                                          MOTIVO_CONTRASENA_NO_APLICADA)
+                                          motivo)
             return ResultadoEscritura(Resultado.HECHO, dn)
 
         return self._ejecutar('cambio de contraseña', dn, modificar_clave)
