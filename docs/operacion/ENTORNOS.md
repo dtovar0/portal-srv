@@ -21,8 +21,8 @@ cliente ──HTTPS 443──> nginx ──(auth_request)──> Authelia (exist
 ```
 
 - Ambos servicios bajo **el mismo dominio**: la cookie de sesión de Flask llega al frontend sin CORS.
-- Los dos puertos escuchan **solo en loopback**. El backend solo acepta las cabeceras `Remote-*` desde `TRUSTED_PROXIES`, y nginx las borra si las manda el cliente.
-- El bloque `auth_request` de Authelia viene **comentado** en `nginx.conf.tmpl`; hay que activarlo al conectar Authelia. Los certificados TLS también vienen comentados.
+- Los dos puertos escuchan **solo en loopback**. El backend ya no lee las cabeceras `Remote-*` (el acceso es OIDC con Authelia) y nginx las borra si las manda el cliente; `TRUSTED_PROXIES` solo fija la IP real del cliente.
+- Authelia se conecta por OIDC desde la app (sin `auth_request` en nginx): ver [AUTHELIA-OIDC.md](AUTHELIA-OIDC.md). Los certificados TLS vienen comentados en `nginx.conf.tmpl`.
 
 ## Sistema operativo y requisitos
 
@@ -81,9 +81,9 @@ Qué variables cambian por entorno. El valor de cada una está en `docs/configur
 | `FRONTEND_URL` | URL del frontend local (puerto 3000) | vacía (mismo dominio) |
 | `BASE_URL` | URL local | `https://<dominio del entorno>` |
 | `BACKEND_URL` (frontend) | backend local | no se usa (enruta nginx) |
-| `AUTHELIA_ENABLED` | normalmente `false` | `true` al conectar Authelia |
+| `OIDC_*` (FNC-141) | vacías (entra por `/acceso-emergencia`) o las del Authelia de pruebas | obligatorias: `OIDC_ISSUER_URL`, `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI` (https, nombre de host); secreto solo en el `.env`. Ver [AUTHELIA-OIDC.md](AUTHELIA-OIDC.md) |
 | `APP_ENV` (FNC-077) | `development` | `staging` / `production` (o vacía) |
-| `LOGIN_LOCAL_TODAS_LAS_CUENTAS` (FNC-077) | `false`; `true` solo para la PoC sin Authelia | `false` (se ignora: `APP_ENV` no es `development`) |
+| `LOGIN_LOCAL_TODAS_LAS_CUENTAS` (FNC-077) | `false`; `true` solo para trabajar sin Authelia (entra por `/acceso-emergencia`) | `false` (se ignora: `APP_ENV` no es `development`) |
 | `DB_*`, `SECRET_KEY`, `SMTP_*` | `.env` local | `.env` del servidor con secretos de Vaultwarden |
 | `LDAP_*` (FNC-040) | `.env` local; vacío = directorio inactivo; `LDAP_BIND_PASSWORD_REF` no se admite | `.env` del servidor; contraseña de bind con `LDAP_BIND_PASSWORD_REF` (ítem de Vaultwarden, FNC-068) o, como alternativa, `LDAP_BIND_PASSWORD` inyectada (nunca las dos). Con CA interna: copiar su PEM al servidor y apuntar `LDAP_CA_CERT_FILE` (si no, la app no conecta: el certificado se valida) |
 | `VAULTWARDEN_*` (FNC-068) | no se usan (`APP_ENV=development`: credenciales de conectores en `CONNECTOR_CREDENTIAL_*`) | `.env` del servidor (600): llave de API y contraseña maestra de la cuenta de servicio, solo lectura de una colección; las pone una persona. Ver [SECRETOS.md](SECRETOS.md) |
