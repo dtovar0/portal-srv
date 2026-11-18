@@ -116,7 +116,7 @@ sudo ./deploy/install.sh --name portal --web-port 3100 …
 ### Servicio de la base de datos
 
 - Backend y worker arrancan después del servicio de BD local: `@DB_SERVICE@` en las plantillas (FNC-125).
-- Detección según `DB_ENGINE` (FNC-146): con `mysql`, en este orden `mysqld.service`, `mariadb.service`, `mysql.service` (los alias no cuentan); con `postgresql`, `postgresql.service` (el de PGDG, p. ej. `postgresql-16`, con `--db-service`).
+- Detección según `DB_ENGINE` (FNC-146): con `mysql`, en este orden `mysqld.service`, `mariadb.service`, `mysql.service` (los alias no cuentan); con `postgresql`, `postgresql.service` y, si no está, el de PGDG de versión mayor (`postgresql-17.service`, FNC-148).
 - Sin ninguno (BD remota): la dependencia se quita de `After=`/`Wants=`.
 - Forzarlo: `--db-service mariadb` (o `DB_SERVICE=mariadb`); se valida como nombre de unidad.
 - Cliente de BD (opcional, para respaldos): solo si no hay uno. Con `mysql`: paquete `mariadb` con MariaDB y `mysql` en los demás casos (en el9 chocan). Con `postgresql`: `psql` del paquete `postgresql`. Si falla, es un aviso y sigue.
