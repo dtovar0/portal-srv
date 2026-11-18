@@ -18,5 +18,7 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     restoreMocks: true,
     unstubGlobals: true,
+    // Espera de findBy/waitFor más holgada bajo carga (DIS-094).
+    setupFiles: ['tests/preparacion.ts'],
   },
 });

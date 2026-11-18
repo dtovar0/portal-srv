@@ -57,6 +57,9 @@ async function montar(rol: Rol = 'administrador') {
   sesionSimulada.mockResolvedValue(sesion(rol));
   render(<AppShell>contenido</AppShell>, { container: crearRaiz() });
   await screen.findByRole('navigation', { name: 'Principal' });
+  // El atajo Ctrl K lo escucha el buscador de la barra superior: bajo carga se
+  // monta después del menú y un atajo pulsado antes se perdía (DIS-094).
+  await screen.findByRole('button', { name: 'Buscar' });
 }
 
 const lateral = () => within(document.querySelector('aside')!);
