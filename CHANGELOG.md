@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Agregado
+- Despliegue: `install.sh` y `preflight.sh` detectan PostgreSQL de PGDG (`postgresql-NN.service`, la versión mayor) sin `--db-service` (FNC-148, 2026-11-17).
 - Base de datos: `DB_ENGINE=postgresql` (psycopg2) además de `mysql`, a elección en el `.env`; la URI escapa usuario y contraseña y `DB_PORT` vacío usa el puerto del motor (FNC-146, ADR-010, 2026-11-17).
 - Despliegue: `install.sh` y `preflight.sh` eligen el servicio systemd (`postgresql.service`), el cliente (`psql`) y el puerto por defecto (5432) según `DB_ENGINE` (FNC-147, 2026-11-17).
 - Despliegue (seguridad): fuera de desarrollo la BD debe ser MySQL; sin `DB_ENGINE=mysql` la app y las migraciones no arrancan (mensaje claro, sin secretos) y `preflight.sh`/`install.sh` dan `FALTA` y se detienen; SQLite solo con `APP_ENV=development` (FNC-134, parte de FNC-009, 2026-10-28).
