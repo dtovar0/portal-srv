@@ -8,12 +8,12 @@
 | **Fase** | 8 (propuesta) |
 | **Módulo / Área** | contratos (auth) |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | En revisión |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
 | **Inicio** | |
 | **Finalizada** | |
-| **Estatus Git** | — |
+| **Estatus Git** | Rama `fnc/FNC-140-contrato-autenticacion` (commit local, sin push) |
 | **Rama** | `fnc/FNC-140-contrato-autenticacion` |
 | **Commits / PR** | |
 | **Requiere migración BD** | No |
@@ -66,6 +66,7 @@
 - Contrato incompatible con la pantalla de login actual: FNC-141 y FNC-142 se integran juntas.
 
 ## Verificación
+- Solo documentación: `docs/contratos/autenticacion.md` v1 y su fila en el README de contratos; sin código ni pruebas. Se implementa y prueba en FNC-141 (backend) y FNC-142 (web). Sin Authelia real.
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -78,3 +79,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño B, 2026-11-17) |
+| 2026-11-18 | Contrato v1 escrito; códigos de error del callback, 410 para /auth/sso y /auth/login |
