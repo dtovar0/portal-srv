@@ -1,0 +1,98 @@
+# @APP_TITLE@ tras Authelia.
+#
+# Reparto: Next.js sirve toda la interfaz; Flask es solo API. Ambos van bajo el
+# mismo dominio para que la cookie de sesión que emite Flask llegue al frontend
+# sin CORS.
+#
+# Los puertos de ambos upstream deben escuchar solo en loopback: el backend
+# deduce la identidad SSO de cabeceras que únicamente este proxy debe poder
+# inyectar.
+
+upstream @APP_NAME@_api {
+    server 127.0.0.1:@API_PORT@;
+    keepalive 16;
+}
+
+upstream @APP_NAME@_web {
+    server 127.0.0.1:@WEB_PORT@;
+    keepalive 16;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name @DOMAIN@;
+
+    # ssl_certificate     /etc/ssl/certs/@APP_NAME@.crt;
+    # ssl_certificate_key /etc/ssl/private/@APP_NAME@.key;
+
+    client_max_body_size 64m;
+
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # --- SSO: cabeceras de identidad ------------------------------------
+    # CRÍTICO. El backend deduce quién eres de estas cabeceras, así que solo
+    # pueden venir de Authelia. Las tres líneas siguientes las borran si las
+    # envía el cliente: sin esto, cualquiera podría mandar
+    # `Remote-Email: admin@empresa.com` y entrar como administrador.
+    proxy_set_header Remote-Email  "";
+    proxy_set_header Remote-Name   "";
+    proxy_set_header Remote-Groups "";
+
+    # Authelia valida la petición y devuelve la identidad, que se reinyecta
+    # aquí. Descomentar al conectar Authelia y ajustar la URL interna.
+    #
+    # auth_request /authelia;
+    # auth_request_set $target_user   $upstream_http_remote_user;
+    # auth_request_set $target_email  $upstream_http_remote_email;
+    # auth_request_set $target_name   $upstream_http_remote_name;
+    # auth_request_set $target_groups $upstream_http_remote_groups;
+    # proxy_set_header Remote-Email  $target_email;
+    # proxy_set_header Remote-Name   $target_name;
+    # proxy_set_header Remote-Groups $target_groups;
+    #
+    # location = /authelia {
+    #     internal;
+    #     proxy_pass http://authelia:9091/api/verify;
+    #     proxy_pass_request_body off;
+    #     proxy_set_header Content-Length "";
+    #     proxy_set_header X-Original-URL $scheme://$host$request_uri;
+    # }
+
+    # --- Backend Flask -----------------------------------------------------
+    # La API (incluida la autenticación en `/api/v1/auth`). La cookie de sesión
+    # se emite aquí, y como todo se sirve bajo el mismo dominio, el frontend la
+    # envía sin CORS.
+    location /api/ {
+        proxy_pass http://@APP_NAME@_api;
+        proxy_http_version 1.1;
+    }
+
+    # --- Frontend Next.js --------------------------------------------------
+    location /_next/static/ {
+        proxy_pass http://@APP_NAME@_web;
+        proxy_http_version 1.1;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        proxy_pass http://@APP_NAME@_web;
+        proxy_http_version 1.1;
+        # Al definir `proxy_set_header` aquí, Nginx NO hereda los del nivel
+        # `server`: se repiten, sobre todo el borrado de `Remote-*` (FNC-004),
+        # porque Next reenvía `/auth/*` al backend desde loopback (proxy de
+        # confianza). La prueba `tests/deploy/test_nginx_cabeceras.py` lo exige.
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Remote-Email  "";
+        proxy_set_header Remote-Name   "";
+        proxy_set_header Remote-Groups "";
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

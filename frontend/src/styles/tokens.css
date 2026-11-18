@@ -1,0 +1,770 @@
+/*
+ * ╔══════════════════════════════════════════════════════════════╗
+ * ║         NEXUS DESIGN TOKENS — v3.1 (Fase 7B: DIS-076)        ║
+ * ║                                                              ║
+ * ║  Arquitectura por capas (ADR-007):                           ║
+ * ║  1. Primitivos: paleta tonal neutra y de acentos (R G B).    ║
+ * ║  2. Semánticos: rol asignado (superficie, texto, borde,       ║
+ * ║     acción y estado) en canales R G B para modo claro/oscuro. ║
+ * ║  3. Alias heredados: compatibilidad transitoria hasta DIS-067║
+ * ║                                                              ║
+ * ║  Filosofía: 2 temas (claro y oscuro), contraste WCAG AA.     ║
+ * ╚══════════════════════════════════════════════════════════════╝
+ */
+
+:root, html.light {
+  /* ─────────────────────────────────────────────
+     CAPA 1: PRIMITIVOS — Paleta tonal pura
+     Solo se referencian por semánticos; nunca en componentes.
+  ───────────────────────────────────────────── */
+
+  /* Neutros fríos (Slate) */
+  --p-neutro-50:  248 250 252;
+  --p-neutro-100: 241 245 249;
+  --p-neutro-200: 226 232 240;
+  --p-neutro-300: 203 213 225;
+  --p-neutro-400: 148 163 184;
+  --p-neutro-500: 100 116 139;
+  --p-neutro-600: 71 85 105;
+  --p-neutro-700: 51 65 85;
+  --p-neutro-800: 30 41 59;
+  --p-neutro-900: 15 23 42;
+  --p-neutro-950: 2 6 23;
+  --p-blanco:     255 255 255;
+  --p-negro:      0 0 0;
+
+  /* Marca (Azul Zafiro / Blue) */
+  --p-marca-50:  239 246 255;
+  --p-marca-100: 219 234 254;
+  --p-marca-200: 191 219 254;
+  --p-marca-300: 147 197 253;
+  --p-marca-400: 96 165 250;
+  --p-marca-500: 59 130 246;
+  --p-marca-600: 37 99 235;
+  --p-marca-700: 29 78 216;
+  --p-marca-800: 30 64 175;
+  --p-marca-900: 30 58 138;
+
+  /* Rojo (Peligro / Error) */
+  --p-rojo-500: 239 68 68;
+  --p-rojo-600: 220 38 38;
+  --p-rojo-700: 185 28 28;
+  --p-rojo-800: 153 27 27;
+
+  /* Verde (Éxito / Success) */
+  --p-verde-500: 16 185 129;
+  --p-verde-600: 5 150 105;
+  --p-verde-700: 4 120 87;
+
+  /* Ámbar (Aviso / Warning) */
+  --p-ambar-500: 245 158 11;
+  --p-ambar-600: 217 119 6;
+  --p-ambar-700: 180 83 9;
+  --p-ambar-800: 146 64 14;
+
+  /* Azul (Info) */
+  --p-azul-500: 59 130 246;
+  --p-azul-600: 37 99 235;
+  --p-azul-700: 29 78 216;
+
+  /* Violeta y Cian (Acentos complementarios) */
+  --p-violeta-500: 139 92 246;
+  --p-violeta-600: 124 58 237;
+  --p-violeta-700: 109 40 217;
+  --p-cian-500:    6 182 212;
+  --p-cian-700:    14 116 144;
+
+  /* Paleta del diseño aprobado (DIS-076, 2026-10-28) */
+  /* Gris del tema claro */
+  --p-gris-50:  249 250 251;
+  --p-gris-100: 245 246 248;
+  --p-gris-200: 228 231 236;
+  --p-gris-300: 208 213 221;
+  --p-gris-400: 152 162 179;
+  --p-gris-500: 130 138 154;
+  --p-gris-600: 97 108 128;
+  --p-gris-700: 71 84 103;
+  --p-gris-800: 52 64 84;
+  --p-gris-900: 16 24 40;
+
+  /* Noche (neutros del tema oscuro) */
+  --p-noche-50:  245 245 246;
+  --p-noche-200: 206 207 210;
+  --p-noche-300: 148 150 156;
+  --p-noche-500: 107 114 128;
+  --p-noche-700: 38 43 54;
+  --p-noche-800: 28 34 46;
+  --p-noche-850: 22 27 38;
+  --p-noche-900: 17 22 33;
+  --p-noche-950: 12 17 29;
+  /* DIS-082: placeholder opaco = label-text al 85% (AA >= 4.5:1 sobre superficie y fondo). */
+  --p-placeholder-claro:  97 108 128;
+  --p-placeholder-oscuro: 129 132 138;
+
+  /* Activo (selección de navegación) y estados, claro y oscuro */
+  --p-activo-fondo-claro:  239 244 255;
+  --p-activo-fondo-oscuro: 26 37 71;
+  --p-activo-texto-oscuro: 164 194 255;
+  --p-ambar-fondo-claro:  255 250 235;
+  --p-ambar-texto-claro:  181 71 8;
+  --p-ambar-fondo-oscuro: 58 36 8;
+  --p-ambar-texto-oscuro: 254 200 75;
+  --p-verde-fondo-claro:  236 253 243;
+  --p-verde-texto-claro:  6 118 71;
+  --p-verde-fondo-oscuro: 6 48 28;
+  --p-verde-texto-oscuro: 117 224 167;
+  --p-rojo-fondo-claro:  254 243 242;
+  --p-rojo-texto-claro:  180 35 24;
+  --p-rojo-fondo-oscuro: 61 14 10;
+  --p-rojo-texto-oscuro: 253 162 155;
+
+
+  /* ─────────────────────────────────────────────
+     CAPA 2: SEMÁNTICOS (MODO CLARO)
+     Tokens por rol funcional con contraste medido.
+  ───────────────────────────────────────────── */
+
+  /* Superficie */
+  --color-fondo: var(--p-gris-100);
+  --color-superficie: var(--p-blanco);
+  --color-superficie-elevada: var(--p-blanco);
+  --color-superficie-hundida: var(--p-gris-50);
+  --color-barra-lateral: var(--p-noche-900);
+  --color-barra-lateral-borde: var(--p-noche-500);
+  --color-barra-lateral-texto: var(--p-noche-50);
+  --color-barra-lateral-secundario: var(--p-noche-300);
+  --color-barra-lateral-nav: var(--p-noche-200);
+  --color-barra-lateral-hover: 255 255 255 / 0.08;
+  --color-barra-lateral-presionado: 255 255 255 / 0.14;
+  --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
+  --color-entrada-fondo: var(--p-gris-50);
+  --color-tabla-encabezado: var(--p-gris-50);
+  --color-velo: 0 0 0 / 0.6;
+
+  /* Texto */
+  --color-texto: var(--p-gris-900);
+  --color-texto-secundario: var(--p-gris-700);
+  --color-texto-tenue: var(--p-gris-600);
+  --color-texto-sobre-accion: 255 255 255;
+  --color-texto-sobre-peligro: 255 255 255;
+  --color-texto-enlace: var(--p-marca-700);
+  --color-navegacion: var(--p-gris-800);
+  --color-activo-fondo: var(--p-activo-fondo-oscuro);
+  --color-activo-texto: var(--p-activo-texto-oscuro);
+
+  /* Borde */
+  --color-borde: var(--p-gris-500);
+  --color-borde-sutil: var(--p-gris-200);
+  --color-borde-fuerte: var(--p-gris-600);
+
+  /* Acción / Primario */
+  --color-accion: var(--p-marca-700);
+  --color-accion-hover: var(--p-marca-800);
+  --color-accion-presionada: var(--p-marca-900);
+  --color-accion-tenue: 29 78 216 / 0.1;
+  --color-accion-texto: var(--p-marca-700);
+
+  /* Estado: Éxito */
+  --color-exito-relleno: 5 150 105;
+  --color-exito-tenue: 5 150 105 / 0.1;
+  --color-exito-borde: 5 150 105 / 0.25;
+  --color-exito-texto: var(--p-verde-texto-claro);
+  --color-exito-fondo: var(--p-verde-fondo-claro);
+
+  /* Estado: Aviso */
+  --color-aviso-relleno: 245 158 11;
+  --color-aviso-tenue: 217 119 6 / 0.1;
+  --color-aviso-borde: 217 119 6 / 0.25;
+  --color-aviso-texto: var(--p-ambar-texto-claro);
+  --color-aviso-fondo: var(--p-ambar-fondo-claro);
+
+  /* Estado: Peligro / Error */
+  --color-peligro-relleno: 220 38 38;
+  --color-peligro-tenue: 225 29 72 / 0.1;
+  --color-peligro-borde: 220 38 38 / 0.25;
+  --color-peligro-texto: var(--p-rojo-texto-claro);
+  --color-peligro-fondo: var(--p-rojo-fondo-claro);
+
+  /* Estado: Info */
+  --color-info-relleno: 59 130 246;
+  --color-info-tenue: 37 99 235 / 0.1;
+  --color-info-borde: 37 99 235 / 0.25;
+  --color-info-texto: 29 78 216;
+
+  /* Estado: Neutro */
+  --color-neutro-relleno: 100 116 139;
+  --color-neutro-tenue: 71 85 105 / 0.1;
+  --color-neutro-borde: 71 85 105 / 0.25;
+  --color-neutro-texto: 51 65 85;
+
+
+  /* ─────────────────────────────────────────────
+     CAPA 3: ALIAS HEREDADOS (MODO CLARO)
+     Para compatibilidad de código existente hasta DIS-067.
+  ───────────────────────────────────────────── */
+
+  --color-primary: var(--color-accion);
+  --color-brand: 67 56 202;
+  --color-accent-sky: 6 182 212;
+  --color-accent-violet: 124 58 237;
+  --color-accent-peach: var(--color-aviso-relleno);
+  --color-success: var(--color-exito-relleno);
+  --color-warning: var(--color-aviso-relleno);
+  --color-error: 239 68 68;
+  --color-info: var(--color-info-relleno);
+  --color-secondary: 100 116 139;
+  --color-accent: 124 58 237;
+
+  --color-primary-text: var(--color-accion-texto);
+  --color-brand-text: 67 56 202;
+  --color-accent-text: 124 58 237;
+  --color-accent-sky-text: 14 116 144;
+  --color-accent-peach-text: 180 83 9;
+
+  --color-success-text: var(--color-exito-texto);
+  --color-error-text: var(--color-peligro-texto);
+  --color-warning-text: var(--color-aviso-texto);
+  --color-info-text: var(--color-info-texto);
+
+  --color-primary-solid: var(--color-accion);
+  --color-on-primary: var(--color-texto-sobre-accion);
+  --color-error-solid: var(--color-peligro-relleno);
+  --color-on-error: var(--color-texto-sobre-peligro);
+
+  --color-body-bg: #f5f6f8;
+  --color-body-text: #101828;
+  --color-header-bg: var(--color-superficie);
+  --color-header-text: var(--color-texto);
+
+  --badge-primary-bg: var(--color-accion-tenue);
+  --badge-primary-text: var(--color-accion-texto);
+  --badge-success-bg: var(--color-exito-fondo);
+  --badge-success-text: var(--color-exito-texto);
+  --badge-error-bg: var(--color-peligro-fondo);
+  --badge-error-text: var(--color-peligro-texto);
+  --badge-warning-bg: var(--color-aviso-fondo);
+  --badge-warning-text: var(--color-aviso-texto);
+  --badge-violet-bg: 124 58 237 / 0.1;
+  --badge-violet-text: 109 40 217;
+  --badge-sky-bg: 14 165 233 / 0.1;
+  --badge-sky-text: 3 105 161;
+  --badge-slate-bg: var(--color-neutro-tenue);
+  --badge-slate-text: var(--color-neutro-texto);
+  --badge-cyan-bg: 8 145 178 / 0.1;
+  --badge-cyan-text: 21 94 117;
+
+  --color-panel-header-bg: var(--color-tabla-encabezado);
+  --color-panel-header-text: 30 58 138;
+  --color-panel-fill: var(--color-superficie);
+  --color-overlay: var(--color-velo);
+  --color-panel-border: var(--color-borde);
+
+  --color-surface-container-bg: var(--color-superficie-hundida);
+  --color-surface-container-border: var(--color-borde-sutil);
+  --color-audit-body: var(--color-superficie-hundida);
+
+  --color-button-bg: var(--color-accion);
+  --color-button-text: var(--color-texto-sobre-accion);
+  --color-button-disabled-bg: 203 213 225;
+  --color-button-disabled-text: 148 163 184;
+
+  --color-tab-bar-bg: 226 232 240;
+  --color-tab-active-bg: var(--color-accion);
+  --color-tab-active-text: var(--color-texto-sobre-accion);
+  --color-tab-inactive-bg: 203 213 225;
+  --color-tab-inactive-text: 30 64 175;
+
+  --color-bi-card-logistics: 71 85 105;
+  --color-bi-ring-bg: 239 246 255;
+  --color-bi-text-main: 15 23 42;
+  --color-bi-text-muted: var(--color-texto-tenue);
+  --color-kpi-highlight: var(--color-aviso-relleno);
+
+  --color-input-bg: var(--color-entrada-fondo);
+  --color-input-text: #101828;
+  --color-input-border: var(--color-borde);
+  --color-input-focus: var(--color-accion);
+  --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-claro);
+
+  --color-texto-sobre-fondo-oscuro: 255 255 255;
+  --color-texto-sobre-fondo-claro: 0 0 0;
+
+  --radius-base: 8px;
+  --radius-panel: 10px;
+
+  /* Interacción y Estados (DIS-056) */
+  --foco-anillo: 29 78 216;
+  --foco-ancho: 2px;
+  --foco-separacion: 2px;
+  --hover-capa: 0 0 0 / 0.05;
+  --presionado-capa: 0 0 0 / 0.1;
+  --seleccionado-fondo: 29 78 216 / 0.12;
+  --seleccionado-borde: 29 78 216;
+  --deshabilitado-fondo: var(--p-gris-100);
+  --deshabilitado-texto: var(--p-gris-400);
+  --deshabilitado-borde: var(--p-gris-300);
+  --invalido-borde: 220 38 38;
+  --solo-lectura-fondo: var(--p-gris-50);
+  --duracion-corta: 150ms;
+  --duracion-media: 250ms;
+  --curva: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ─────────────────────────────────────────────
+     ESCALAS — Tipografía, Radios, Bordes y Sombras (DIS-057)
+  ───────────────────────────────────────────── */
+  --fuente-texto: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fuente-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --radio-control: 8px;
+  --radio-tarjeta: 12px;
+  --radio-dialogo: 16px;
+  --radio-pastilla: 9999px;
+
+  --borde-ancho: 1px;
+
+  --sombra-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* ─────────────────────────────────────────────
+     ESCALA TIPOGRÁFICA — Sistema armónico 8pt
+  ───────────────────────────────────────────── */
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-md:   17px;
+  --text-lg:   18px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+
+  /* ─────────────────────────────────────────────
+     SIMETRÍA Y REJILLA — 8pt (DIS-072)
+  ───────────────────────────────────────────── */
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+
+  --control-alto: 48px;
+  --marco-lateral-ancho: 264px;
+  --marco-lateral-colapsada: 76px;
+  --marco-superior-alto: 64px;
+  --marco-buscador-max: 520px;
+  --contenido-max: 1280px;
+  --formulario-max: 640px;
+  --dialogo-max: 560px;
+
+  --rejilla-columnas: 12;
+  --rejilla-canal: 16px;
+
+  --icono-sm: 16px;
+  --icono-md: 20px;
+  --icono-lg: 24px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   MODO OSCURO — "Midnight Ocean" (Fase 7: DIS-054 y DIS-055)
+   Semánticos y alias adaptados para profundidad real y WCAG AA.
+   Idéntico en @media y en html.dark (ADR-007; test tokens-so-oscuro).
+══════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    /* Semánticos (Modo Oscuro) */
+    --color-fondo: var(--p-noche-950);
+    --color-superficie: var(--p-noche-850);
+    --color-superficie-elevada: var(--p-noche-800);
+    --color-superficie-hundida: var(--p-noche-900);
+    --color-barra-lateral: var(--p-noche-900);
+    --color-barra-lateral-borde: var(--p-noche-500);
+    --color-barra-lateral-texto: var(--p-noche-50);
+    --color-barra-lateral-secundario: var(--p-noche-300);
+    --color-barra-lateral-nav: var(--p-noche-200);
+    --color-barra-lateral-hover: 255 255 255 / 0.08;
+    --color-barra-lateral-presionado: 255 255 255 / 0.14;
+    --color-barra-lateral-elemento: 255 255 255 / 0.05;
+    --color-barra-lateral-foco: var(--p-noche-50);
+    --color-entrada-fondo: var(--p-noche-950);
+    --color-tabla-encabezado: var(--p-noche-900);
+    --color-velo: 0 0 0 / 0.6;
+
+    --color-texto: var(--p-noche-50);
+    --color-texto-secundario: var(--p-noche-300);
+    --color-texto-tenue: var(--p-noche-300);
+    --color-texto-sobre-accion: 255 255 255;
+    --color-texto-sobre-peligro: 255 255 255;
+    --color-texto-enlace: 96 165 250;
+    --color-navegacion: var(--p-noche-200);
+    --color-activo-fondo: var(--p-activo-fondo-oscuro);
+    --color-activo-texto: var(--p-activo-texto-oscuro);
+
+    --color-borde: var(--p-noche-500);
+    --color-borde-sutil: var(--p-noche-700);
+    --color-borde-fuerte: var(--p-noche-300);
+
+    --color-accion: var(--p-marca-600);
+    --color-accion-hover: 96 165 250;
+    --color-accion-presionada: 29 78 216;
+    --color-accion-tenue: 37 99 235 / 0.15;
+    --color-accion-texto: 96 165 250;
+
+    --color-exito-relleno: 16 185 129;
+    --color-exito-tenue: 16 185 129 / 0.15;
+    --color-exito-borde: 16 185 129 / 0.3;
+    --color-exito-texto: var(--p-verde-texto-oscuro);
+    --color-exito-fondo: var(--p-verde-fondo-oscuro);
+
+    --color-aviso-relleno: 245 158 11;
+    --color-aviso-tenue: 245 158 11 / 0.15;
+    --color-aviso-borde: 245 158 11 / 0.3;
+    --color-aviso-texto: var(--p-ambar-texto-oscuro);
+    --color-aviso-fondo: var(--p-ambar-fondo-oscuro);
+
+    --color-peligro-relleno: 220 38 38;
+    --color-peligro-tenue: 244 63 94 / 0.15;
+    --color-peligro-borde: 220 38 38 / 0.3;
+    --color-peligro-texto: var(--p-rojo-texto-oscuro);
+    --color-peligro-fondo: var(--p-rojo-fondo-oscuro);
+
+    --color-info-relleno: 59 130 246;
+    --color-info-tenue: 59 130 246 / 0.15;
+    --color-info-borde: 59 130 246 / 0.3;
+    --color-info-texto: 147 197 253;
+
+    --color-neutro-relleno: 100 116 139;
+    --color-neutro-tenue: 148 163 184 / 0.15;
+    --color-neutro-borde: 148 163 184 / 0.3;
+    --color-neutro-texto: 203 213 225;
+
+    /* Alias heredados (Modo Oscuro) */
+    --color-body-bg: #0c111d;
+    --color-body-text: #f5f5f6;
+    --color-error-solid: var(--color-peligro-relleno);
+    --color-on-error: var(--color-texto-sobre-peligro);
+    --color-secondary: var(--p-noche-300);
+
+    --badge-primary-bg: var(--color-accion-tenue);
+    --badge-primary-text: var(--color-accion-texto);
+    --badge-success-bg: var(--color-exito-fondo);
+    --badge-success-text: var(--color-exito-texto);
+    --badge-error-bg: var(--color-peligro-fondo);
+    --badge-error-text: var(--color-peligro-texto);
+    --badge-warning-bg: var(--color-aviso-fondo);
+    --badge-warning-text: var(--color-aviso-texto);
+    --badge-violet-bg: 139 92 246 / 0.15;
+    --badge-violet-text: 167 139 250;
+    --badge-sky-bg: 56 189 248 / 0.15;
+    --badge-sky-text: 125 211 252;
+    --badge-slate-bg: 148 163 184 / 0.15;
+    --badge-slate-text: 203 213 225;
+    --badge-cyan-bg: 34 211 238 / 0.15;
+    --badge-cyan-text: 103 232 249;
+
+    --color-header-bg: var(--color-barra-lateral);
+    --color-header-text: var(--color-texto);
+    --color-panel-header-bg: var(--color-tabla-encabezado);
+    --color-panel-header-text: 96 165 250;
+
+    --color-primary-text: var(--color-accion-texto);
+    --color-brand-text: 129 140 248;
+    --color-accent-text: 167 139 250;
+    --color-accent-sky-text: 6 182 212;
+    --color-accent-peach-text: 245 158 11;
+    --color-success-text: var(--color-exito-texto);
+    --color-error-text: var(--color-peligro-texto);
+    --color-warning-text: var(--color-aviso-texto);
+    --color-info-text: var(--color-info-texto);
+
+    --color-panel-fill: var(--color-superficie);
+    --color-overlay: var(--color-velo);
+    --color-panel-border: var(--color-borde);
+
+    --color-surface-container-bg: var(--color-superficie-hundida);
+    --color-surface-container-border: var(--color-borde-sutil);
+
+    --color-audit-body: var(--color-superficie);
+
+    --color-tab-bar-bg: var(--color-superficie);
+    --color-tab-inactive-bg: var(--color-superficie-hundida);
+    --color-tab-inactive-text: 148 163 184;
+
+    --color-bi-card-logistics: 100 116 139;
+    --color-bi-ring-bg: var(--color-superficie);
+    --color-bi-text-main: 226 232 240;
+    --color-bi-text-muted: var(--color-texto-tenue);
+
+    --color-input-bg: var(--color-entrada-fondo);
+    --color-input-text: #f5f5f6;
+    --color-input-border: var(--color-borde);
+    --color-label-text: var(--color-texto-secundario);
+    --color-placeholder: var(--p-placeholder-oscuro);
+
+    --color-texto-sobre-fondo-oscuro: 255 255 255;
+    --color-texto-sobre-fondo-claro: 0 0 0;
+
+    /* Interacción y Estados (DIS-056) */
+    --foco-anillo: 96 165 250;
+    --foco-ancho: 2px;
+    --foco-separacion: 2px;
+    --hover-capa: 255 255 255 / 0.06;
+    --presionado-capa: 255 255 255 / 0.12;
+    --seleccionado-fondo: 37 99 235 / 0.25;
+    --seleccionado-borde: 96 165 250;
+    --deshabilitado-fondo: var(--p-noche-900);
+    --deshabilitado-texto: 100 116 139;
+    --deshabilitado-borde: var(--p-noche-700);
+    --invalido-borde: 252 165 165;
+    --solo-lectura-fondo: var(--p-noche-950);
+    --duracion-corta: 150ms;
+    --duracion-media: 250ms;
+    --curva: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Escalas en Modo Oscuro (DIS-057) */
+    --fuente-texto: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --fuente-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    --radio-control: 8px;
+    --radio-tarjeta: 12px;
+    --radio-dialogo: 16px;
+    --radio-pastilla: 9999px;
+
+    --borde-ancho: 1px;
+
+    --sombra-1: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+    --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+    --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+
+    /* Simetría y Rejilla — 8pt (DIS-072) */
+    --espacio-1: 4px;
+    --espacio-2: 8px;
+    --espacio-3: 12px;
+    --espacio-4: 16px;
+    --espacio-6: 24px;
+    --espacio-8: 32px;
+    --espacio-12: 48px;
+
+    --control-alto: 48px;
+    --marco-lateral-ancho: 264px;
+    --marco-lateral-colapsada: 76px;
+    --marco-superior-alto: 64px;
+    --marco-buscador-max: 520px;
+    --contenido-max: 1280px;
+    --formulario-max: 640px;
+    --dialogo-max: 560px;
+
+    --rejilla-columnas: 12;
+    --rejilla-canal: 16px;
+
+    --icono-sm: 16px;
+    --icono-md: 20px;
+    --icono-lg: 24px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CLASE .dark — Espejo exacto del bloque anterior
+══════════════════════════════════════════════════════════════ */
+html.dark {
+  /* Semánticos (Modo Oscuro) */
+  --color-fondo: var(--p-noche-950);
+  --color-superficie: var(--p-noche-850);
+  --color-superficie-elevada: var(--p-noche-800);
+  --color-superficie-hundida: var(--p-noche-900);
+  --color-barra-lateral: var(--p-noche-900);
+  --color-barra-lateral-borde: var(--p-noche-500);
+  --color-barra-lateral-texto: var(--p-noche-50);
+  --color-barra-lateral-secundario: var(--p-noche-300);
+  --color-barra-lateral-nav: var(--p-noche-200);
+  --color-barra-lateral-hover: 255 255 255 / 0.08;
+  --color-barra-lateral-presionado: 255 255 255 / 0.14;
+  --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
+  --color-entrada-fondo: var(--p-noche-950);
+  --color-tabla-encabezado: var(--p-noche-900);
+  --color-velo: 0 0 0 / 0.6;
+
+  --color-texto: var(--p-noche-50);
+  --color-texto-secundario: var(--p-noche-300);
+  --color-texto-tenue: var(--p-noche-300);
+  --color-texto-sobre-accion: 255 255 255;
+  --color-texto-sobre-peligro: 255 255 255;
+  --color-texto-enlace: 96 165 250;
+  --color-navegacion: var(--p-noche-200);
+  --color-activo-fondo: var(--p-activo-fondo-oscuro);
+  --color-activo-texto: var(--p-activo-texto-oscuro);
+
+  --color-borde: var(--p-noche-500);
+  --color-borde-sutil: var(--p-noche-700);
+  --color-borde-fuerte: var(--p-noche-300);
+
+  --color-accion: var(--p-marca-600);
+  --color-accion-hover: 96 165 250;
+  --color-accion-presionada: 29 78 216;
+  --color-accion-tenue: 37 99 235 / 0.15;
+  --color-accion-texto: 96 165 250;
+
+  --color-exito-relleno: 16 185 129;
+  --color-exito-tenue: 16 185 129 / 0.15;
+  --color-exito-borde: 16 185 129 / 0.3;
+  --color-exito-texto: var(--p-verde-texto-oscuro);
+  --color-exito-fondo: var(--p-verde-fondo-oscuro);
+
+  --color-aviso-relleno: 245 158 11;
+  --color-aviso-tenue: 245 158 11 / 0.15;
+  --color-aviso-borde: 245 158 11 / 0.3;
+  --color-aviso-texto: var(--p-ambar-texto-oscuro);
+  --color-aviso-fondo: var(--p-ambar-fondo-oscuro);
+
+  --color-peligro-relleno: 220 38 38;
+  --color-peligro-tenue: 244 63 94 / 0.15;
+  --color-peligro-borde: 220 38 38 / 0.3;
+  --color-peligro-texto: var(--p-rojo-texto-oscuro);
+  --color-peligro-fondo: var(--p-rojo-fondo-oscuro);
+
+  --color-info-relleno: 59 130 246;
+  --color-info-tenue: 59 130 246 / 0.15;
+  --color-info-borde: 59 130 246 / 0.3;
+  --color-info-texto: 147 197 253;
+
+  --color-neutro-relleno: 100 116 139;
+  --color-neutro-tenue: 148 163 184 / 0.15;
+  --color-neutro-borde: 148 163 184 / 0.3;
+  --color-neutro-texto: 203 213 225;
+
+  /* Alias heredados (Modo Oscuro) */
+  --color-body-bg: #0c111d;
+  --color-body-text: #f5f5f6;
+  --color-error-solid: var(--color-peligro-relleno);
+  --color-on-error: var(--color-texto-sobre-peligro);
+  --color-secondary: var(--p-noche-300);
+
+  --badge-primary-bg: var(--color-accion-tenue);
+  --badge-primary-text: var(--color-accion-texto);
+  --badge-success-bg: var(--color-exito-fondo);
+  --badge-success-text: var(--color-exito-texto);
+  --badge-error-bg: var(--color-peligro-fondo);
+  --badge-error-text: var(--color-peligro-texto);
+  --badge-warning-bg: var(--color-aviso-fondo);
+  --badge-warning-text: var(--color-aviso-texto);
+  --badge-violet-bg: 139 92 246 / 0.15;
+  --badge-violet-text: 167 139 250;
+  --badge-sky-bg: 56 189 248 / 0.15;
+  --badge-sky-text: 125 211 252;
+  --badge-slate-bg: 148 163 184 / 0.15;
+  --badge-slate-text: 203 213 225;
+  --badge-cyan-bg: 34 211 238 / 0.15;
+  --badge-cyan-text: 103 232 249;
+
+  --color-header-bg: var(--color-barra-lateral);
+  --color-header-text: var(--color-texto);
+  --color-panel-header-bg: var(--color-tabla-encabezado);
+  --color-panel-header-text: 96 165 250;
+
+  --color-primary-text: var(--color-accion-texto);
+  --color-brand-text: 129 140 248;
+  --color-accent-text: 167 139 250;
+  --color-accent-sky-text: 6 182 212;
+  --color-accent-peach-text: 245 158 11;
+  --color-success-text: var(--color-exito-texto);
+  --color-error-text: var(--color-peligro-texto);
+  --color-warning-text: var(--color-aviso-texto);
+  --color-info-text: var(--color-info-texto);
+
+  --color-panel-fill: var(--color-superficie);
+  --color-overlay: var(--color-velo);
+  --color-panel-border: var(--color-borde);
+
+  --color-surface-container-bg: var(--color-superficie-hundida);
+  --color-surface-container-border: var(--color-borde-sutil);
+
+  --color-audit-body: var(--color-superficie);
+
+  --color-tab-bar-bg: var(--color-superficie);
+  --color-tab-inactive-bg: var(--color-superficie-hundida);
+  --color-tab-inactive-text: 148 163 184;
+
+  --color-bi-card-logistics: 100 116 139;
+  --color-bi-ring-bg: var(--color-superficie);
+  --color-bi-text-main: 226 232 240;
+  --color-bi-text-muted: var(--color-texto-tenue);
+
+  --color-input-bg: var(--color-entrada-fondo);
+  --color-input-text: #f5f5f6;
+  --color-input-border: var(--color-borde);
+  --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-oscuro);
+
+  --color-texto-sobre-fondo-oscuro: 255 255 255;
+  --color-texto-sobre-fondo-claro: 0 0 0;
+
+  /* Interacción y Estados (DIS-056) */
+  --foco-anillo: 96 165 250;
+  --foco-ancho: 2px;
+  --foco-separacion: 2px;
+  --hover-capa: 255 255 255 / 0.06;
+  --presionado-capa: 255 255 255 / 0.12;
+  --seleccionado-fondo: 37 99 235 / 0.25;
+  --seleccionado-borde: 96 165 250;
+  --deshabilitado-fondo: var(--p-noche-900);
+  --deshabilitado-texto: 100 116 139;
+  --deshabilitado-borde: var(--p-noche-700);
+  --invalido-borde: 252 165 165;
+  --solo-lectura-fondo: var(--p-noche-950);
+  --duracion-corta: 150ms;
+  --duracion-media: 250ms;
+  --curva: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Escalas en Modo Oscuro (DIS-057) */
+  --fuente-texto: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fuente-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --radio-control: 8px;
+  --radio-tarjeta: 12px;
+  --radio-dialogo: 16px;
+  --radio-pastilla: 9999px;
+
+  --borde-ancho: 1px;
+
+  --sombra-1: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+
+  /* Simetría y Rejilla — 8pt (DIS-072) */
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+
+  --control-alto: 48px;
+  --marco-lateral-ancho: 264px;
+  --marco-lateral-colapsada: 76px;
+  --marco-superior-alto: 64px;
+  --marco-buscador-max: 520px;
+  --contenido-max: 1280px;
+  --formulario-max: 640px;
+  --dialogo-max: 560px;
+
+  --rejilla-columnas: 12;
+  --rejilla-canal: 16px;
+
+  --icono-sm: 16px;
+  --icono-md: 20px;
+  --icono-lg: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root, html.dark {
+    --duracion-corta: 0ms;
+    --duracion-media: 0ms;
+  }
+}

@@ -1,0 +1,134 @@
+import os
+import logging
+from datetime import datetime
+from app.authz import ROLE_USER
+from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
+                                                 directorio_activo)
+from app.modules.directory.ldap_client import ClienteDirectorio, ErrorDirectorio
+from app.modules.notifications.services import avisar_usuario_creado
+
+logger = logging.getLogger(__name__)
+
+# Respuesta única de login fallido (directorio y cuenta local): no distingue
+# usuario inexistente, contraseña incorrecta ni fallo del directorio (SEG-12).
+MENSAJE_CREDENCIALES = 'Credenciales incorrectas.'
+
+# Origen de las cuentas creadas por el login de directorio.
+ORIGEN_DIRECTORIO = 'ldap'
+
+# Orígenes de cuentas del directorio (login LDAP o SSO de Authelia, que usa el
+# mismo directorio). Una cuenta con otro origen o con contraseña local no se
+# vincula sola (decisión del dueño 2026-10-15: bloquear y avisar).
+ORIGENES_VINCULADOS = frozenset({'ldap', 'sso'})
+MOTIVO_CONFLICTO = 'cuenta_local_en_conflicto'
+MOTIVO_DESACTIVADA = 'cuenta_desactivada'
+
+
+def normalizar_correo(correo):
+    """Correo sin espacios y en minúsculas, como en `crud` y `admin`."""
+    return (correo or '').strip().lower()
+
+
+def motivo_de_bloqueo(cuenta):
+    """Por qué no se abre sesión con una cuenta existente, o `None`.
+
+    - Cuenta local (o con contraseña local): conflicto; nunca se toma ni se
+      convierte, sea cual sea su rol.
+    - Cuenta desactivada: no entra ni se modifica.
+    """
+    if cuenta.auth_source not in ORIGENES_VINCULADOS or cuenta.password_hash:
+        return MOTIVO_CONFLICTO
+    if not cuenta.is_active:
+        return MOTIVO_DESACTIVADA
+    return None
+
+
+def avisar_bloqueo(cuenta, via, motivo):
+    """Audita (aviso) un acceso rechazado por el estado de la cuenta."""
+    from app.modules.audit.services import add_audit_log
+    add_audit_log('ACCESO BLOQUEADO', status='warning', target=cuenta.email,
+                  target_user_id=cuenta.id,
+                  detail=f'{via}: {motivo}; la cuenta no se modificó')
+
+
+def _fallo(motivo):
+    """Resultado de un login fallido; `motivo` es solo para la auditoría."""
+    return {"status": "error", "message": MENSAJE_CREDENCIALES, "motivo": motivo}
+
+
+def authenticate_user_ldap(identificador, password):
+    """
+    Autentica contra OpenLDAP con el cliente centralizado y sincroniza el perfil.
+
+    - Busca por `LDAP_USER_ATTR` (filtro escapado) y valida la contraseña con
+      un bind de la persona sobre TLS validado (FNC-040).
+    - La cuenta local se busca solo por el `mail` del directorio, nunca por
+      lo escrito; sin `mail` no hay acceso. Una cuenta `local`, con
+      contraseña local o desactivada no se toma ni se modifica.
+    - Todo fallo devuelve `MENSAJE_CREDENCIALES`; el detalle va en `motivo`.
+    - Un intento nunca borra cuentas locales (SEG-01, SEC-AUTH-08).
+    - El directorio no asigna rol: una cuenta nueva entra como `usuario` y una
+      existente conserva el rol del portal (RF-04, SEG-10, SEC-AUTH-07).
+    """
+    if not directorio_activo():
+        return _fallo('directorio no configurado')
+    if not identificador or not password:
+        return _fallo('usuario o contraseña vacíos')
+    try:
+        cliente = ClienteDirectorio()
+        persona = cliente.buscar_usuario(identificador)
+        if persona is None:
+            return _fallo('usuario no encontrado en el directorio')
+        if not cliente.verificar_contrasena(persona, password):
+            return _fallo('contraseña incorrecta')
+        if not normalizar_correo(persona.atributos.get('mail')):
+            # La cuenta local se identifica por correo; sin `mail` no se
+            # enlaza por el uid, que podría coincidir con una cuenta local.
+            return _fallo('la persona no tiene correo en el directorio')
+    except (ErrorDirectorio, ErrorConfiguracionDirectorio) as exc:
+        return _fallo(f'directorio: {exc}')
+    except Exception:
+        logger.exception('Login de directorio: error inesperado')
+        return _fallo('error inesperado del directorio')
+    return _sincronizar_cuenta(persona)
+
+
+def _sincronizar_cuenta(persona):
+    """Crea o actualiza la cuenta local de una persona autenticada."""
+    from app.modules.auth.models import User
+    from app.modules.audit.services import add_audit_log
+    from app import db
+
+    correo = normalizar_correo(persona.atributos['mail'])
+    nombre = (persona.atributos.get('displayName')
+              or persona.atributos.get('cn') or correo)
+    try:
+        cuenta = User.query.filter(db.func.lower(User.email) == correo).first()
+        es_nueva = cuenta is None
+        if es_nueva:
+            cuenta = User(email=correo, nombre=nombre, role=ROLE_USER,
+                          auth_source=ORIGEN_DIRECTORIO, is_active=True)
+            cuenta.password_hash = None
+            db.session.add(cuenta)
+        else:
+            motivo = motivo_de_bloqueo(cuenta)
+            if motivo:
+                avisar_bloqueo(cuenta, 'Directorio', motivo)
+                return _fallo(motivo)
+            # Ni el rol ni el origen se tocan: el rol lo asigna el superadmin.
+            cuenta.nombre = nombre
+        cuenta.last_login_at = datetime.now()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception('Login de directorio: fallo al registrar la cuenta')
+        return _fallo('error al registrar la cuenta local')
+
+    if es_nueva:
+        add_audit_log("usuario creado", status="success", target=correo,
+                      target_user_id=cuenta.id,
+                      detail="Alta por login de directorio con rol usuario")
+        base_url = os.getenv('BASE_URL', '').rstrip('/')
+        avisar_usuario_creado(correo, nombre, base_url,
+                              f"{base_url}/login")
+    return {"status": "success", "user": cuenta}

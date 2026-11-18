@@ -1,0 +1,232 @@
+'use client';
+
+/**
+ * Resumen de inicio por rol (DIS-024, `GET /home/summary`, contrato `inicio.md`).
+ *
+ * - Usuario (`propio`): mis solicitudes y mis accesos.
+ * - Admin de área (`areas`): pendientes y resumen de sus áreas, más lo propio.
+ * - Superadmin (`global`): pendientes y resumen global.
+ * - Cada contador es un enlace (`StatTile` dentro de `Link`) a su pantalla con el
+ *   filtro del contador en la URL (`?status=…`, `?tab=accesos`; DIS-036).
+ * - Refresco con `usePolling` y el intervalo de la preferencia del usuario.
+ */
+
+import Link from 'next/link';
+import { useEffect } from 'react';
+import { homeApi } from '@/lib/access/home';
+import type { HomeSummary } from '@/lib/access/types';
+import { usePolling } from '@/lib/use-polling';
+import { RUTA_AUDITORIA } from '../audit/audit-routes';
+import { formatearFecha } from '../access/fecha';
+import { rutaConFiltro } from '../access/filtro-url';
+import { listLoadError } from '../access/request-errors';
+import { Button, ButtonLink } from '../form';
+import type { NombreIcono } from '../icono';
+import { useSession } from '../session-provider';
+import { EmptyNote, ErrorNote, Skeleton, StatTile, type TonoCaja } from '../ui';
+
+/** Pantallas a las que lleva cada contador. */
+export const RUTAS_INICIO = {
+  solicitudes: '/requests',
+  aprobaciones: '/approvals',
+  inventario: '/inventory',
+  areas: '/areas',
+  plataformas: '/admin/platforms',
+  catalogo: '/platforms',
+} as const;
+
+const NOMBRE_RESUMEN = 'los datos del resumen';
+const TITULO_ID = 'resumen-inicio-titulo';
+
+export const TITULOS: Record<HomeSummary['scope'], string> = {
+  propio: 'Tu resumen',
+  areas: 'Resumen de tus áreas',
+  global: 'Resumen global',
+};
+
+export const MENSAJES_VACIO: Record<HomeSummary['scope'], string> = {
+  propio: 'Todavía no tienes solicitudes ni accesos. Puedes pedir uno desde el catálogo.',
+  areas: 'Todavía no hay solicitudes, accesos ni plataformas en tus áreas.',
+  global: 'Todavía no hay áreas, plataformas ni solicitudes en el sistema.',
+};
+
+export interface Contador {
+  etiqueta: string;
+  valor: number;
+  ruta: string;
+  /** Nombre de la pantalla destino, para el nombre accesible del enlace. */
+  destino: string;
+  /** Icono y color del estado del indicador (DIS-079). */
+  icono: NombreIcono;
+  tono: TonoCaja;
+  /** Nota bajo el número, solo con datos reales de la API. */
+  nota?: string;
+  notaTono?: 'warning' | 'error';
+}
+
+export interface GrupoResumen {
+  id: string;
+  titulo: string;
+  contadores: Contador[];
+}
+
+/** Grupos de contadores según los campos que el contrato envía al rol. */
+export function gruposDelResumen(resumen: HomeSummary): GrupoResumen[] {
+  const grupos: GrupoResumen[] = [];
+  if (resumen.pending_approvals !== undefined || resumen.failed_access !== undefined) {
+    grupos.push({
+      id: 'pendientes',
+      titulo: 'Pendientes',
+      contadores: [
+        { etiqueta: 'Por aprobar', valor: resumen.pending_approvals ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.aprobaciones, { status: 'pendiente' }), destino: 'Aprobaciones', icono: 'reloj', tono: 'warning', ...(resumen.oldest_pending_at && (resumen.pending_approvals ?? 0) > 0 ? { nota: `La más antigua: ${formatearFecha(resumen.oldest_pending_at)}`, notaTono: 'warning' as const } : {}) },
+        { etiqueta: 'Accesos con falla', valor: resumen.failed_access ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.inventario, { status: 'fallido' }), destino: 'Inventario', icono: 'aviso', tono: (resumen.failed_access ?? 0) > 0 ? 'error' : 'neutro', ...((resumen.failed_access ?? 0) > 0 ? { nota: 'Requieren atención', notaTono: 'error' as const } : {}) },
+      ],
+    });
+  }
+  if (resumen.totals) {
+    grupos.push({
+      id: 'totales',
+      titulo: resumen.scope === 'global' ? 'Todo el sistema' : 'Tus áreas',
+      contadores: [
+        { etiqueta: 'Áreas', valor: resumen.totals.areas, ruta: RUTAS_INICIO.areas, destino: 'Áreas', icono: 'areas', tono: 'activo' },
+        { etiqueta: 'Plataformas', valor: resumen.totals.platforms, ruta: RUTAS_INICIO.plataformas, destino: 'Administrar plataformas', icono: 'plataformas', tono: 'activo' },
+        { etiqueta: 'Accesos activos', valor: resumen.totals.active_access, ruta: rutaConFiltro(RUTAS_INICIO.inventario, { status: 'activo' }), destino: 'Inventario', icono: 'escudo-ok', tono: 'success' },
+      ],
+    });
+  }
+  if (resumen.my_requests) {
+    grupos.push({
+      id: 'mis-solicitudes',
+      titulo: 'Mis solicitudes',
+      contadores: [
+        { etiqueta: 'Pendientes', valor: resumen.my_requests.pendiente, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'pendiente' }), destino: 'Mis solicitudes', icono: 'reloj', tono: 'warning' },
+        { etiqueta: 'Aprobadas', valor: resumen.my_requests.aprobada, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'aprobada' }), destino: 'Mis solicitudes', icono: 'aprobar', tono: 'success' },
+        { etiqueta: 'Rechazadas', valor: resumen.my_requests.rechazada, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { status: 'rechazada' }), destino: 'Mis solicitudes', icono: 'rechazar', tono: 'error' },
+      ],
+    });
+  }
+  if (resumen.my_access) {
+    grupos.push({
+      id: 'mis-accesos',
+      titulo: 'Mis accesos',
+      contadores: [
+        { etiqueta: 'Con acceso', valor: resumen.my_access.activo, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'activo' }), destino: 'Mis accesos', icono: 'escudo-ok', tono: 'success' },
+        { etiqueta: 'En proceso', valor: resumen.my_access.en_proceso, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'en_proceso' }), destino: 'Mis accesos', icono: 'reloj', tono: 'warning' },
+        { etiqueta: 'Fallidos', valor: resumen.my_access.fallido, ruta: rutaConFiltro(RUTAS_INICIO.solicitudes, { tab: 'accesos', status: 'fallido' }), destino: 'Mis accesos', icono: 'aviso', tono: 'error' },
+      ],
+    });
+  }
+  return grupos;
+}
+
+/** Sin ningún contador mayor que cero. */
+export function resumenVacio(grupos: GrupoResumen[]): boolean {
+  return grupos.every((grupo) => grupo.contadores.every((c) => c.valor === 0));
+}
+
+function ContadorEnlace({ contador }: { contador: Contador }) {
+  return (
+    <Link
+      href={contador.ruta}
+      aria-label={`${contador.etiqueta}: ${contador.valor}. ${contador.nota ? `${contador.nota}. ` : ''}Ir a ${contador.destino}`}
+      className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary [&:hover>div]:border-primary"
+    >
+      <StatTile
+        label={contador.etiqueta}
+        value={contador.valor}
+        icon={contador.icono}
+        tone={contador.tono}
+        hint={contador.nota}
+        hintTone={contador.notaTono}
+      />
+    </Link>
+  );
+}
+
+function Grupo({ grupo }: { grupo: GrupoResumen }) {
+  const tituloId = `resumen-${grupo.id}`;
+  return (
+    <section aria-labelledby={tituloId} className="space-y-3">
+      <h3 id={tituloId} className="text-sm font-semibold">{grupo.titulo}</h3>
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {grupo.contadores.map((contador) => (
+          <li key={contador.etiqueta}>
+            <ContadorEnlace contador={contador} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Contenido({ resumen }: { resumen: HomeSummary }) {
+  const grupos = gruposDelResumen(resumen);
+
+  if (resumenVacio(grupos)) {
+    return (
+      <div role="status" className="space-y-3">
+        <EmptyNote message={MENSAJES_VACIO[resumen.scope]} />
+        {resumen.scope === 'propio' ? (
+          <ButtonLink href={RUTAS_INICIO.catalogo} variant="primary">
+            Ir al catálogo
+          </ButtonLink>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {resumen.oldest_pending_at ? (
+        <p className="text-sm text-label">
+          La solicitud pendiente más antigua es del {formatearFecha(resumen.oldest_pending_at)}.
+        </p>
+      ) : null}
+      {grupos.map((grupo) => (
+        <Grupo key={grupo.id} grupo={grupo} />
+      ))}
+    </div>
+  );
+}
+
+/** `onFallo` avisa si el resumen no se pudo cargar (DIS-037: respaldo del Panel). */
+export function RoleSummary({ onFallo }: { onFallo?: (fallo: boolean) => void }) {
+  const { session } = useSession();
+  const resumen = usePolling(
+    () => homeApi.summary().catch((err: unknown) => {
+      throw listLoadError(err, NOMBRE_RESUMEN);
+    }),
+    { intervalSeconds: session?.preferences.refresh_interval },
+  );
+  const data = resumen.data;
+  const fallo = Boolean(resumen.error) && !data;
+  useEffect(() => {
+    onFallo?.(fallo);
+  }, [fallo, onFallo]);
+
+  return (
+    <section aria-labelledby={TITULO_ID} className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id={TITULO_ID} className="text-lg font-semibold">
+          {data ? TITULOS[data.scope] : 'Resumen'}
+        </h2>
+        <ButtonLink href={RUTA_AUDITORIA} variant="secondary">
+          Ver auditoría
+        </ButtonLink>
+      </div>
+
+      {resumen.loading && !data ? (
+        <Skeleton variant="contador" count={3} ariaLabel="Cargando el resumen…" />
+      ) : null}
+
+      {resumen.error ? (
+        <div className="space-y-3">
+          <ErrorNote message={resumen.error} />
+          <Button variant="secondary" onClick={resumen.refresh}>Reintentar</Button>
+        </div>
+      ) : null}
+
+      {data ? <Contenido resumen={data} /> : null}
+    </section>
+  );
+}

@@ -1,0 +1,102 @@
+html, body {
+    color: var(--color-body-text);
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    background-color: var(--color-body-bg);
+    overflow: hidden;
+    height: 100%;
+    height: 100dvh; /* Dynamic viewport — fixes mobile browser chrome push */
+}
+
+body {
+    font-family: var(--fuente-texto);
+    background-color: var(--color-body-bg);
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+/* DIS-038/DIS-044/DIS-073: bloqueo del desplazamiento del fondo con Modal o el menú
+   móvil abiertos. `scrollbar-gutter: stable` en contenedores desplazables para
+   evitar que al alternar `overflow: hidden` el contenido salte su ancho (CLS = 0). */
+[data-desplazable] {
+    scrollbar-gutter: stable;
+}
+
+.scroll-bloqueado[data-desplazable],
+.scroll-bloqueado [data-desplazable] {
+    overflow: hidden;
+}
+
+/* === VIEW TRANSITIONS (Eliminate flickering) === */
+@view-transition {
+    navigation: auto;
+}
+
+/* Smooth fade for the whole page */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.25s;
+}
+
+/* GLOBAL SELECT STYLING */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+@supports (appearance: base-select) {
+    select {
+        appearance: base-select;
+        -webkit-appearance: base-select;
+    }
+}
+select::-ms-expand {
+    display: none !important;
+}
+
+/* FIX: Chrome Autofill Yellow Background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 50px rgb(var(--color-input-bg)) inset !important;
+    -webkit-text-fill-color: var(--color-input-text) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* FNC-032: `color-scheme` por tema, para que los controles nativos (lista del
+   `select`, barras) coincidan con él. Va aquí y no en `tokens.css`, que solo
+   declara variables (DIS-047). Sin clase de tema, `light dark` sigue la
+   preferencia del sistema (igual que los tokens). */
+:root { color-scheme: light dark; }
+html.light { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+/* === MODERN MINIMAL SCROLLBARS === */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-panel-border)) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-panel-border));
+    border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-primary) / 0.4);
+}
+
