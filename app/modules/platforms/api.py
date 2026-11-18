@@ -31,9 +31,10 @@ from app.modules.api.helpers import (NO_ENCONTRADO, REEMPLAZO_ASIGNACION,
                                      leer_cuerpo, validation_error)
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
+from app.modules.connectors.credenciales import limpiar_cache
 from app.modules.core.models import Area, Platform
 from app.modules.directory.dn import mismo_dn
-from app.modules.platforms import grupos
+from app.modules.platforms import baja, grupos
 from app.modules.platforms.estado import (accesos_que_impiden_mover,
                                           accesos_vigentes)
 from app.modules.platforms.tipos import (CAMPOS_DN, GRUPOS_SIN_VERIFICAR,
@@ -317,10 +318,16 @@ def update_platform(platform_id):
 def delete_platform(platform_id):
     platform = Platform.query.get_or_404(platform_id)
     name = platform.name
+    conflicto = baja.conflicto_de_baja(platform)
+    if conflicto is not None:
+        return error_response(*conflicto)
+    conteos = baja.limpiar_historial(platform)
+    add_audit_log(f"ELIMINAR PLATAFORMA: {name}", module='Plataformas',
+                  target=name, status='warning', area_id=platform.area_id,
+                  before=conteos, commit=False)
     db.session.delete(platform)
     db.session.commit()
-    add_audit_log(f"ELIMINAR PLATAFORMA: {name}", module='Plataformas',
-                  target=name, status='warning')
+    limpiar_cache()
     return jsonify({'status': 'success'})
 
 

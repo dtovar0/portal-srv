@@ -7,7 +7,7 @@
 | Consumidores | web (FNC-069; pantalla DIS-017) |
 | Solicitudes | — |
 
-Convenciones comunes: [README.md](README.md). Cambia `POST /platforms`, `PUT /platforms/<id>` y la forma de `Platform`. Sin cambios: `DELETE /platforms/<id>`, visitas y favoritos.
+Convenciones comunes: [README.md](README.md). Cambia `POST /platforms`, `PUT /platforms/<id>` y la forma de `Platform`. `DELETE /platforms/<id>` cambia en 1.2 (FNC-144, sección propia). Sin cambios: visitas y favoritos.
 
 ## Endpoints
 
@@ -85,6 +85,12 @@ En la misma transacción:
 
 - Directorio sin respuesta al verificar: no es error; se guarda con `groups_status: "sin_verificar"` y aviso `directorio_no_disponible`.
 
+## `DELETE /platforms/<id>` (1.2, FNC-144)
+- Quién: quien administra la plataforma (`platform_manage_required`).
+- `409 plataforma_con_accesos` si tiene accesos vigentes (`en_proceso`, `activo`, `fallido`, `revocando`, `fallo_revocacion`): primero se retiran.
+- Sin accesos vigentes: borra la plataforma, sus solicitudes (también las pendientes), sus accesos `revocado` y su conector; los trabajos se conservan con `platform_id` y `access_id` en NULL.
+- Auditoría `ELIMINAR PLATAFORMA: <nombre>` con `before`: `solicitudes_pendientes`, `solicitudes_retiradas`, `accesos_revocados_retirados`, `trabajos_desligados`.
+
 ## Refresco
 - Sin polling; recarga tras cada escritura propia.
 
@@ -101,3 +107,4 @@ En la misma transacción:
 | 1 | 2026-10-14 | Versión inicial (FNC-038) |
 | 1 | 2026-10-19 | Aditivo (FNC-046): nota de plataformas heredadas (0005), URL guardadas no válidas como `null`, `409 grupo_en_uso`; cambiar `integration_type` en `PUT` solo superadmin (`403 dn_solo_superadmin`) |
 | 1.1 | 2026-10-20 | FNC-055: cambiar `area_id` ya no da 409 por accesos `admin_de_area` (se resincronizan); sin acceso automático para admins inactivos ni plataformas `ldap` sin grupo (decisión del orquestador, pendiente de validar en la PoC). Sin cambios de forma |
+| 1.2 | 2026-11-17 | FNC-144: `DELETE /platforms/<id>` con `409 plataforma_con_accesos` y limpieza del historial cerrado |
