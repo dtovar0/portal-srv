@@ -19,6 +19,7 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Interfaz: la barra de progreso del toast se pausa con el cursor o el foco; el menú 'Log conectores' pasa a 'Ejecuciones'; los paneles de áreas avisan que quitar a alguien le retira sus accesos (DIS-092, 2026-11-18).
 - Accesos: quitar a alguien de un área revoca sus accesos en las plataformas de esa área (motivo ya_no_pertenece_al_area) (FNC-152, 2026-11-18).
 - Configuración: .env.example ya no publica el host interno de Authelia; usa auth.ejemplo.local (FNC-150, 2026-11-18).
 - Importación masiva (seguridad): valida igual que las altas normales (enlace solo https, ícono y color, nombres reservados), audita cada alta, sincroniza a los admins del área, no expone el detalle de un error 500 y acepta una lista vacía; la ruta del cliente ya no duplica `/api/v1` (FNC-149, DIS-090, 2026-11-18).

@@ -24,6 +24,9 @@ import { useToast } from '../toast';
 import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
 import { mensajeDeError } from './area-errors';
 
+/** FNC-152: salir del área revoca sus accesos en las plataformas del área. */
+export const AVISO_SALIDA_DE_AREA = 'Quitar a alguien del área le retira sus accesos en las plataformas de esa área.';
+
 function coincideUsuario(user: ManagedUser, query: string): boolean {
   const q = query.trim().toLowerCase();
   return !q || user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
@@ -165,6 +168,7 @@ export function AreaUsersPanel({
             <p className="text-xs text-label truncate">
               {area.description || 'Gestión de usuarios y membresía del área.'}
             </p>
+            <p className="text-xs text-label">{AVISO_SALIDA_DE_AREA}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/10 text-primary-text">

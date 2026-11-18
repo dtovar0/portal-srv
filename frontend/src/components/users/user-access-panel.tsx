@@ -19,6 +19,7 @@ import { useAsync } from '@/lib/use-async';
 import { useFocoTrasMover } from '@/lib/use-foco-tras-mover';
 import { Button, Modal } from '../form';
 import { Icono, type NombreIcono } from '../icono';
+import { AVISO_SALIDA_DE_AREA } from '../areas/area-users-panel';
 import { RegionDeAnuncios } from '../region-de-anuncios';
 import { useToast } from '../toast';
 import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
@@ -487,6 +488,7 @@ export function UserAccessPanel({
         {/* CONTENIDO PESTAÑA ÁREAS */}
         {tab === 'areas' ? (
           <>
+            <p className="text-xs text-label">{AVISO_SALIDA_DE_AREA}</p>
             {loading && !areasAsync.data ? <Spinner /> : null}
             {error ? <ErrorNote message={error} /> : null}
 

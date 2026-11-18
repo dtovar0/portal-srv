@@ -431,6 +431,9 @@ select option:disabled,
     opacity: 0.6;
     animation: toast-progress 8s linear forwards;
 }
+.nx-toast-progress-pausada {
+    animation-play-state: paused;
+}
 
 .nx-toast::before {
     content: '';
