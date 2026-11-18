@@ -15,6 +15,7 @@ import type { Area, ManagedUser } from '@/lib/types';
 import { Button, Checkbox, ConfirmDialog, Field, Modal, TextInput } from '../form';
 import { Icono } from '../icono';
 import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
+import { useToast } from '../toast';
 import { mensajeDeError } from './area-errors';
 
 function administra(user: ManagedUser, areaId: number): boolean {
@@ -40,6 +41,7 @@ export function AreaAdminsPanel({ area, onClose }: { area: Area; onClose: () => 
   const [problem, setProblem] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const toast = useToast();
 
   const admins = (data ?? []).filter((u) => u.role === 'admin_area');
   const visibles = admins.filter((u) => coincide(u, query));
@@ -64,7 +66,9 @@ export function AreaAdminsPanel({ area, onClose }: { area: Area; onClose: () => 
       setSaved(true);
     } catch (err) {
       // Lo guardado antes del error queda aplicado: se recarga el estado real.
-      setProblem(`${mensajeDeError(err, 'No se pudieron guardar los cambios')} Se muestran los datos actuales.`);
+      const msg = `${mensajeDeError(err, 'No se pudieron guardar los cambios')} Se muestran los datos actuales.`;
+      setProblem(msg);
+      toast.avisar('error', msg, 'Error al guardar');
     } finally {
       setCambios({});
       setSaving(false);
@@ -105,7 +109,7 @@ export function AreaAdminsPanel({ area, onClose }: { area: Area; onClose: () => 
         </>
       }
     >
-      {problem ? <ErrorNote message={problem} /> : null}
+      {problem ? <div className="sr-only" role="alert">{problem}</div> : null}
       {/* Región siempre montada: los lectores de pantalla anuncian el cambio de texto. */}
       <div role="status" data-testid="estado-guardado">
         {saved ? <Badge tone="success">Cambios guardados</Badge> : null}

@@ -263,6 +263,31 @@ describe('Errores del formulario y de la baja', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.queryByRole('alertdialog')).toBeNull();
   });
+
+  it('permite eliminar múltiples áreas seleccionadas si tiene permisos', async () => {
+    rolActual = 'administrador';
+    vi.mocked(api.deleteArea).mockResolvedValue({ ok: true } as any);
+    render(<AreasList />);
+    await screen.findByText('Finanzas');
+    await screen.findByText('Sistemas');
+
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
+
+    const btnEliminar = screen.getByRole('button', { name: 'Eliminar 2 áreas seleccionadas' });
+    expect((btnEliminar as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(btnEliminar);
+    const dialog = await screen.findByRole('alertdialog', { name: 'Eliminar áreas' });
+    expect(dialog).toBeTruthy();
+    expect(within(dialog).getByText(/Se eliminarán las 2 áreas seleccionadas/)).toBeTruthy();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
+    await waitFor(() => {
+      expect(api.deleteArea).toHaveBeenCalledWith(3);
+      expect(api.deleteArea).toHaveBeenCalledWith(7);
+    });
+  });
 });
 
 describe('Estados de la lista', () => {
@@ -307,8 +332,8 @@ describe('Accesibilidad (auditor-accesibilidad)', () => {
     fireEvent.click(await screen.findByText('Nueva área'));
 
     // Paso 1: Descripción
-    expect(dialogo().getByText('1. Descripción')).toBeTruthy();
-    expect(dialogo().getByText('2. Estilo')).toBeTruthy();
+    expect(dialogo().getByRole('button', { name: /Descripción/i })).toBeTruthy();
+    expect(dialogo().getByRole('button', { name: /Estilo/i })).toBeTruthy();
     expect(dialogo().getByLabelText('Nombre')).toBeTruthy();
     expect(dialogo().getByLabelText('Descripción')).toBeTruthy();
     expect(dialogo().queryByLabelText('Color del área')).toBeNull();

@@ -12,7 +12,7 @@ import { api } from '@/lib/api';
 import { usersApi } from '@/lib/access/users';
 import type { AreaRef, ManagedUser } from '@/lib/types';
 import { AlertDialog } from '../alert-dialog';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import { AreaChecklist } from './area-checklist';
 import { MENSAJE_SIN_AREAS, describeRoleError } from './admin-role-errors';
 
@@ -72,12 +72,14 @@ export function AdminAreasDialog({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorAreas, setErrorAreas] = useState<string | undefined>();
+  const toast = useToast();
   const quien = user.name || user.email;
 
   async function guardar() {
     if (sending) return;
     if (ids.length === 0) {
       setErrorAreas(MENSAJE_SIN_AREAS);
+      toast.avisar('warning', MENSAJE_SIN_AREAS, 'Área requerida');
       if (areas[0]) document.getElementById(`${AREAS_ID}-${areas[0].id}`)?.focus();
       return;
     }
@@ -96,9 +98,11 @@ export function AdminAreasDialog({
         : `Se actualizaron las áreas que administra ${quien}.`);
     } catch (err) {
       const view = describeRoleError(err);
-      setError(rolAplicado
+      const msg = rolAplicado
         ? `${quien} ya es admin de área, pero no se asignaron sus áreas. ${view.message}`
-        : view.message);
+        : view.message;
+      setError(msg);
+      toast.avisar('error', msg, 'Error al asignar');
       if (view.stale || rolAplicado) onStale();
       setSending(false);
     }
@@ -135,7 +139,7 @@ export function AdminAreasDialog({
             <p key={linea} className="text-sm text-body-text">{linea}</p>
           ))}
         </div>
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </div>
     </AlertDialog>
   );
@@ -154,6 +158,7 @@ export function RemoveAdminDialog({
 }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
   const quien = user.name || user.email;
   const areas = user.managed_areas.map((a) => a.name).join(', ');
   const efectoId = useId();
@@ -169,6 +174,7 @@ export function RemoveAdminDialog({
     } catch (err) {
       const view = describeRoleError(err);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al retirar');
       if (view.stale) onStale();
       setSending(false);
     }
@@ -196,7 +202,7 @@ export function RemoveAdminDialog({
           Se revocarán sus accesos automáticos de admin de área. Sus áreas de pertenencia y sus
           accesos solicitados no cambian.
         </p>
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </div>
     </AlertDialog>
   );

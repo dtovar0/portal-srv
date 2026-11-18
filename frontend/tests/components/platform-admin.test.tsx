@@ -89,14 +89,16 @@ async function abrirAlta() {
 }
 
 function avanzarYGuardar(modal: ReturnType<typeof dialogo>) {
-  fireEvent.click(modal.getByText('Siguiente'));
+  while (modal.queryByText('Guardar') === null && modal.queryByText('Siguiente') !== null) {
+    fireEvent.click(modal.getByText('Siguiente'));
+  }
   fireEvent.click(modal.getByText('Guardar'));
 }
 
 describe('PlatformAdmin: alta por rol', () => {
-  it('asistente de 2 pasos: Paso 1 (Descripción sin área ni conector) y Paso 2 (Estilo con vista previa)', async () => {
+  it('asistente de 3 pasos: Paso 1 (Descripción), Paso 2 (Diseño) y Paso 3 (Vista previa con toggle de activa)', async () => {
     const modal = await abrirAlta();
-    // Paso 1: muestra controles de descripción y no los de estilo, sin área ni conector
+    // Paso 1: muestra controles de descripción y no los de diseño, sin área ni conector
     expect(modal.getByLabelText(/^Nombre/)).toBeTruthy();
     expect(modal.getByLabelText(/^Descripción/)).toBeTruthy();
     expect(modal.getByLabelText(/^Enlace/)).toBeTruthy();
@@ -104,14 +106,23 @@ describe('PlatformAdmin: alta por rol', () => {
     expect(modal.queryByLabelText(/^Tipo de integración/)).toBeNull();
     expect(modal.queryByLabelText('Color de fondo')).toBeNull();
 
-    // Avanzar a Paso 2
+    // Avanzar a Paso 2: Diseño
     fireEvent.click(modal.getByText('Siguiente'));
-
-    // Paso 2: Estilo
+    expect(modal.getByText('Diseño')).toBeTruthy();
     expect(await modal.findByLabelText('Color de fondo')).toBeTruthy();
-    expect(modal.getByLabelText('Color de texto')).toBeTruthy();
+    expect(modal.getByLabelText(/Color del icono|Color de texto/i)).toBeTruthy();
+    expect(modal.getByText('Elegir icono')).toBeTruthy();
+    expect(modal.getByText('Subir imagen')).toBeTruthy();
+
+    // Avanzar a Paso 3: Vista previa
+    fireEvent.click(modal.getByText('Siguiente'));
     expect(modal.getByText('Vista previa')).toBeTruthy();
-    expect(modal.getByLabelText('Activa')).toBeTruthy();
+    expect(modal.getByText('Vista previa de la plataforma')).toBeTruthy();
+    expect(modal.getByRole('switch', { name: /activa/i })).toBeTruthy();
+
+    // Retroceder a Paso 2: Diseño
+    fireEvent.click(modal.getByText('Atrás'));
+    expect(modal.getByText('Diseño')).toBeTruthy();
 
     // Retroceder a Paso 1
     fireEvent.click(modal.getByText('Atrás'));
@@ -544,6 +555,36 @@ describe('PlatformAdmin: accesibilidad (revisión de DIS-017)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar Contabilidad' }));
     fireEvent.click(within(screen.queryByRole('alertdialog') ?? screen.getByRole('dialog')).getByText('Eliminar'));
     expect(await screen.findByText(mensaje)).toBeTruthy();
+  });
+
+  it('permite eliminar múltiples plataformas seleccionadas en el área activa', async () => {
+    const plat2 = {
+      id: 15, name: 'Facturación', description: 'Módulo de facturas', area_id: 3, area_name: 'Finanzas',
+      direct_link: 'https://facturas.ejemplo.local', bg_color: '', text_color: '', status: 'Activo',
+    } as Platform;
+    vi.mocked(api.platforms).mockResolvedValue([PLATAFORMA, plat2]);
+    vi.mocked(api.deletePlatform).mockResolvedValue({ ok: true } as any);
+
+    render(<PlatformAdmin initialAreaId={3} />);
+    await screen.findByText('Contabilidad');
+    await screen.findByText('Facturación');
+
+    fireEvent.click(screen.getByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Facturación'));
+
+    const btnEliminar = screen.getByRole('button', { name: 'Eliminar 2 plataformas seleccionadas' });
+    expect((btnEliminar as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(btnEliminar);
+    const dialog = await screen.findByRole('alertdialog', { name: 'Eliminar plataformas' });
+    expect(dialog).toBeTruthy();
+    expect(within(dialog).getByText(/Se eliminarán las 2 plataformas seleccionadas/)).toBeTruthy();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
+    await waitFor(() => {
+      expect(api.deletePlatform).toHaveBeenCalledWith(12);
+      expect(api.deletePlatform).toHaveBeenCalledWith(15);
+    });
   });
 });
 

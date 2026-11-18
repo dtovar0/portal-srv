@@ -17,7 +17,8 @@ import { variablesCss } from '@/lib/variables-css';
 import { Button, Checkbox, ColorInput, Field, FieldErrorNote, Modal, TextArea, TextInput } from '../form';
 import { Icono } from '../icono';
 import type { NombreIcono } from '../icono-trazos';
-import { Badge, ErrorNote } from '../ui';
+import { Badge } from '../ui';
+import { useToast } from '../toast';
 import { erroresDeCampo, mensajeDeError } from './area-errors';
 
 const ICONOS_AREA: { id: NombreIcono; label: string }[] = [
@@ -76,11 +77,13 @@ export function AreaForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
+  const toast = useToast();
 
   function avanzarAlPaso2() {
     if (!form.name?.trim()) {
       setError(null);
       setFields({ name: 'El nombre es obligatorio.' });
+      toast.avisar('warning', 'El nombre es obligatorio.', 'Datos incompletos');
       enfocarNombre();
       return;
     }
@@ -99,6 +102,7 @@ export function AreaForm({
     if (!form.name?.trim()) {
       setError(null);
       setFields({ name: 'El nombre es obligatorio.' });
+      toast.avisar('warning', 'El nombre es obligatorio.', 'Datos incompletos');
       setPaso(1);
       setTimeout(enfocarNombre, 50);
       return;
@@ -110,7 +114,9 @@ export function AreaForm({
       const result = area ? await api.updateArea(area.id, form) : await api.createArea(form);
       onSaved(result.area);
     } catch (err) {
-      setError(mensajeDeError(err, 'No se pudo guardar'));
+      const msg = mensajeDeError(err, 'No se pudo guardar');
+      setError(msg);
+      toast.avisar('error', msg, 'Error al guardar');
       const errores = erroresDeCampo(err);
       setFields(errores);
       if (errores.name || errores.description) {
@@ -177,7 +183,7 @@ export function AreaForm({
               {paso === 2 ? '✓' : '1'}
             </span>
             <span className={`text-xs font-bold ${paso === 1 ? 'text-body-text' : 'text-label'}`}>
-              1. Descripción
+              Descripción
             </span>
           </button>
 
@@ -199,12 +205,12 @@ export function AreaForm({
               2
             </span>
             <span className={`text-xs font-bold ${paso === 2 ? 'text-body-text' : 'text-label'}`}>
-              2. Estilo
+              Estilo
             </span>
           </button>
         </nav>
 
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
 
         {/* PASO 1: Descripción (Nombre y Descripción) */}
         {paso === 1 ? (

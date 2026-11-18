@@ -154,6 +154,64 @@ export function Radio({ className = '', ...props }: React.InputHTMLAttributes<HT
   );
 }
 
+/** Conmutador accesible (Toggle / Switch) (DIS-008). */
+export function Toggle({
+  id,
+  label,
+  description,
+  checked,
+  onChange,
+  disabled,
+  'aria-label': ariaLabel,
+}: {
+  id?: string;
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  'aria-label'?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 p-3 rounded-xl border border-panel-border/80 bg-surface-container/40">
+      <div className="min-w-0">
+        <label
+          htmlFor={id}
+          className="text-sm font-bold text-body-text cursor-pointer select-none block"
+        >
+          {label}
+        </label>
+        {description ? (
+          <p className="text-xs text-label mt-0.5 select-none">{description}</p>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        id={id}
+        role="switch"
+        aria-checked={checked}
+        aria-label={ariaLabel || label}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className="min-h-12 min-w-12 inline-flex items-center justify-center p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <span
+          className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${
+            checked ? 'bg-primary border-transparent' : 'bg-surface-container border-panel-border'
+          }`}
+        >
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none inline-block size-5 transform rounded-full bg-superficie shadow-md ring-0 transition duration-200 ease-in-out ${
+              checked ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </span>
+      </button>
+    </div>
+  );
+}
+
 export { FieldErrorNote, FieldHint, describedBy, focusFirstError } from './platforms/field-notes';
 
 export { Button, type ButtonProps, type ButtonVariant } from './button';

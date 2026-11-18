@@ -10,7 +10,7 @@ import { useId, useState } from 'react';
 import { provisioningApi } from '@/lib/access/provisioning';
 import type { Job, JobDetail } from '@/lib/access/types';
 import { AlertDialog } from '../alert-dialog';
-import { ErrorNote } from '../ui';
+import { useToast } from '../toast';
 import { describeRetryError } from './job-errors';
 
 /** Qué pasará al reintentar, según la operación. */
@@ -35,6 +35,7 @@ export function JobRetryDialog({
 }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
   const efectoId = useId();
   const detalleId = useId();
 
@@ -48,6 +49,7 @@ export function JobRetryDialog({
     } catch (err) {
       const view = describeRetryError(err);
       setError(view.message);
+      toast.avisar('error', view.message, 'Error al reintentar');
       setSending(false);
       if (view.stale) onStale();
     }
@@ -72,7 +74,7 @@ export function JobRetryDialog({
           La ejecución n.º {job.id} vuelve a pendiente con nuevos intentos y el reintento queda en la
           auditoría.
         </p>
-        {error ? <ErrorNote message={error} /> : null}
+        {error ? <div className="sr-only" role="alert">{error}</div> : null}
       </div>
     </AlertDialog>
   );

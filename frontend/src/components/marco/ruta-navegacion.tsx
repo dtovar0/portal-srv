@@ -11,6 +11,11 @@ import { entradaDeRuta } from './nav-items';
 function obtenerAreaDeUrl(): string | null {
   if (typeof window === 'undefined') return null;
   try {
+    const state = window.history.state as { areaName?: string; area_name?: string } | null;
+    if (state?.areaName) return state.areaName;
+    if (state?.area_name) return state.area_name;
+    const ses = window.sessionStorage?.getItem('portal_selected_area_name');
+    if (ses) return ses;
     const sp = new URLSearchParams(window.location.search);
     return sp.get('area_name');
   } catch {
@@ -45,10 +50,11 @@ export function RutaNavegacion() {
           href={pathname}
           onClick={() => {
             if (typeof window !== 'undefined') {
-              const url = new URL(window.location.href);
-              url.searchParams.delete('area');
-              url.searchParams.delete('area_name');
-              window.history.pushState({}, '', url.pathname);
+              try {
+                sessionStorage.removeItem('portal_selected_area_id');
+                sessionStorage.removeItem('portal_selected_area_name');
+              } catch {}
+              window.history.pushState({ areaId: null, areaName: null }, '', pathname);
               window.dispatchEvent(new Event('popstate'));
             }
           }}

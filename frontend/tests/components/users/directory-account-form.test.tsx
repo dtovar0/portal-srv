@@ -97,8 +97,8 @@ describe('DirectoryAccountForm - Flujo de 2 pasos', () => {
     expect(screen.getByLabelText('Correo')).toBeTruthy();
     expect(screen.getByLabelText('Contraseña')).toBeTruthy();
     expect(screen.getByLabelText('Confirmar contraseña')).toBeTruthy();
-    expect(screen.getByText('1. Datos de usuario')).toBeTruthy();
-    expect(screen.getByText('2. Accesos y áreas')).toBeTruthy();
+    expect(screen.getByText('Datos de usuario')).toBeTruthy();
+    expect(screen.getByText('Accesos y áreas')).toBeTruthy();
   });
 
   it('Paso 1: valida campos obligatorios y contraseñas coincidentes', () => {
@@ -111,6 +111,35 @@ describe('DirectoryAccountForm - Flujo de 2 pasos', () => {
     llenarPaso1({ password: 'Password123!', confirmPassword: 'OtraPassword' });
     avanzarAlPaso2();
     expect(screen.getByText('Las contraseñas no coinciden.')).toBeTruthy();
+  });
+
+  it('el generador de contraseñas genera una contraseña segura alfanumérica con símbolos de mínimo 16 caracteres y la asigna a ambos campos', () => {
+    montar();
+    const btnGenerar = screen.getByRole('button', { name: /generar contraseña/i });
+    expect(btnGenerar).toBeTruthy();
+
+    fireEvent.click(btnGenerar);
+
+    const inputPass = screen.getByLabelText('Contraseña') as HTMLInputElement;
+    const inputConf = screen.getByLabelText('Confirmar contraseña') as HTMLInputElement;
+
+    expect(inputPass.value.length).toBeGreaterThanOrEqual(16);
+    expect(inputPass.value).toBe(inputConf.value);
+    expect(/[A-Z]/.test(inputPass.value)).toBe(true);
+    expect(/[a-z]/.test(inputPass.value)).toBe(true);
+    expect(/[0-9]/.test(inputPass.value)).toBe(true);
+    expect(/[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(inputPass.value)).toBe(true);
+
+    // Los campos son mostrados como texto visible para verificación
+    expect(inputPass.type).toBe('text');
+    expect(inputConf.type).toBe('text');
+
+    // Botón de alternar visibilidad
+    const btnOcultar = screen.getByRole('button', { name: /ocultar contraseña/i });
+    expect(btnOcultar).toBeTruthy();
+    fireEvent.click(btnOcultar);
+    expect(inputPass.type).toBe('password');
+    expect(inputConf.type).toBe('password');
   });
 
   it('Paso 1 a Paso 2: avanza cuando los datos son válidos y muestra Dual Picklist', () => {
