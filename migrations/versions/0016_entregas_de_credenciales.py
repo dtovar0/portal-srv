@@ -77,7 +77,24 @@ def _plantillas():
     )
 
 
+def _quitar_tabla_vacia_creada_al_arrancar():
+    """FNC-160: si la app arrancó con este código antes de migrar, `create_all`
+    ya creó la tabla (vacía) y `create_table` fallaba con DuplicateTable. Vacía:
+    se quita y se crea abajo con su esquema completo. Con filas: se detiene."""
+    conexion = op.get_bind()
+    if not sa.inspect(conexion).has_table(TABLA):
+        return
+    filas = conexion.execute(sa.select(sa.func.count()).select_from(
+        sa.table(TABLA))).scalar()
+    if filas:
+        raise RuntimeError(
+            f'La tabla {TABLA} ya existe con {filas} filas antes de la migración '
+            '0016; revísala a mano (no se borra nada).')
+    op.drop_table(TABLA)
+
+
 def upgrade() -> None:
+    _quitar_tabla_vacia_creada_al_arrancar()
     op.create_table(
         TABLA,
         sa.Column('id', sa.Integer(), primary_key=True),

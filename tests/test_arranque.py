@@ -108,3 +108,27 @@ def test_sin_db_engine_no_arranca(instancia, monkeypatch):
     with pytest.raises(Exception):
         instancia()
 
+
+
+# FNC-160: fuera de desarrollo el esquema lo crean SOLO las migraciones. Un
+# `create_all` al arrancar con código nuevo antes de migrar creó una tabla que
+# la migración luego no pudo crear (DuplicateTable en PostgreSQL).
+def test_fuera_de_desarrollo_no_crea_tablas_al_arrancar(instancia, monkeypatch):
+    llamadas = []
+    monkeypatch.setattr(db, 'create_all', lambda *a, **k: llamadas.append(1))
+    for clave, valor in {**BD_MYSQL, 'APP_ENV': 'production',
+                         'OIDC_HABILITADO': 'false'}.items():
+        monkeypatch.setenv(clave, valor)
+
+    instancia()
+
+    assert llamadas == []
+
+
+def test_en_desarrollo_si_crea_tablas_al_arrancar(instancia, monkeypatch):
+    llamadas = []
+    monkeypatch.setattr(db, 'create_all', lambda *a, **k: llamadas.append(1))
+
+    instancia()
+
+    assert llamadas == [1]
