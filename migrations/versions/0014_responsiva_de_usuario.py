@@ -28,7 +28,7 @@ TABLA = 'users'
 def upgrade() -> None:
     with op.batch_alter_table(TABLA) as lote:
         lote.add_column(sa.Column('responsiva_firmada', sa.Boolean(), nullable=False,
-                                  server_default=sa.text('1')))
+                                  server_default=sa.true()))
         lote.add_column(sa.Column('responsiva_firmada_at', sa.DateTime(), nullable=True))
         lote.add_column(sa.Column('responsiva_version', sa.String(length=20), nullable=False,
                                   server_default='1.0'))
