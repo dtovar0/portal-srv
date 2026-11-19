@@ -2,8 +2,8 @@
 
 /**
  * Marco de administración con sesión (DIS-078): barra lateral colapsable, barra superior y área
- * de contenido. Junta el estado compartido (menú colapsado, tema, indicadores, comandos del
- * buscador) y lo reparte; cada pieza vive en su archivo.
+ * de contenido. Junta el estado compartido (menú colapsado, tema, indicadores) y lo reparte;
+ * cada pieza vive en su archivo. Sin buscador global (DIS-101, pedido del dueño).
  */
 
 import { usePathname } from 'next/navigation';
@@ -14,9 +14,7 @@ import { useMenuColapsado } from '@/lib/use-menu-colapsado';
 import type { Session } from '@/lib/types';
 import { BarraLateral } from './barra-lateral';
 import { BarraSuperior } from './barra-superior';
-import { comandosDePantallas, type Comando } from './comandos';
 import { MenuUsuario } from './menu-usuario';
-import { entradasVisibles } from './nav-items';
 import { NavPrincipal } from './nav-principal';
 import { useIndicadores } from './use-indicadores';
 
@@ -27,13 +25,6 @@ export function Marco({ session, children }: { session: Session; children: React
   const esAdmin = session.permissions.is_admin || session.permissions.is_area_admin;
   const { noLeidas, pendientes } = useIndicadores({ esAdmin, ruta: pathname });
   const contadores = useMemo(() => ({ '/approvals': pendientes }), [pendientes]);
-
-  const comandos = useMemo<Comando[]>(() => [
-    ...comandosDePantallas(entradasVisibles(session.permissions)),
-    { id: 'accion:tema', etiqueta: oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro', tipo: 'Acción', icono: oscuro ? 'sol' : 'luna', palabras: 'tema claro oscuro', accion: () => { void alternarTema(); } },
-    { id: 'accion:menu', etiqueta: colapsada ? 'Expandir menú lateral' : 'Colapsar menú lateral', tipo: 'Acción', icono: 'colapsar', palabras: 'barra lateral', accion: alternar },
-    { id: 'accion:salir', etiqueta: 'Cerrar sesión', tipo: 'Acción', icono: 'cerrar', palabras: 'salir', href: '/logout' },
-  ], [session.permissions, oscuro, colapsada, alternarTema, alternar]);
 
   return (
     // DIS-044: el marco ocupa la ventana; se desplazan el `<main>` y, si no cabe, la barra lateral.
@@ -70,7 +61,6 @@ export function Marco({ session, children }: { session: Session; children: React
           }
           colapsada={colapsada}
           onAlternarMenu={alternar}
-          comandos={comandos}
           oscuro={oscuro}
           onAlternarTema={() => { void alternarTema(); }}
           noLeidas={noLeidas}
