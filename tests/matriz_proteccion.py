@@ -331,6 +331,10 @@ CASOS = (
 
     # ---- Lectura (routes.py) ----
     Caso('GET', f'{A}/me', _fija(f'{A}/me'), con_sesion()),
+    # Responsiva de usuario (FNC-155): cualquier sesión.
+    Caso('GET', f'{A}/responsiva', _fija(f'{A}/responsiva'), con_sesion()),
+    Caso('POST', f'{A}/me/firmar-responsiva', _fija(f'{A}/me/firmar-responsiva'),
+         con_sesion()),
     Caso('GET', f'{A}/areas', _fija(f'{A}/areas'), con_sesion()),
     Caso('GET', f'{A}/areas/<int:area_id>', _area(), administradores()),
     Caso('GET', f'{A}/platforms', _fija(f'{A}/platforms'), con_sesion()),

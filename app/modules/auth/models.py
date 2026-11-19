@@ -50,6 +50,11 @@ class User(db.Model, UserMixin):
     # Tema de la interfaz (FNC-122); lista en `users/temas.py`.
     pref_theme = db.Column(db.String(20), nullable=False, default='sistema',
                            server_default='sistema')
+
+    # Carta responsiva de uso de plataformas y activos de TI
+    responsiva_firmada = db.Column(db.Boolean, default=False, nullable=False)
+    responsiva_firmada_at = db.Column(db.DateTime, nullable=True)
+    responsiva_version = db.Column(db.String(20), default='1.0', nullable=False)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

@@ -16,12 +16,16 @@ interface SessionState {
   session: Session | null;
   loading: boolean;
   error: string | null;
+  actualizarSesion?: (nueva: Session) => void;
+  recargarSesion?: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionState>({
   session: null,
   loading: true,
   error: null,
+  actualizarSesion: () => {},
+  recargarSesion: async () => {},
 });
 
 /** Pantalla de acceso. Flask sigue emitiendo la sesión, pero la interfaz
@@ -41,6 +45,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     loading: !cachedSession,
     error: null,
   }));
+
+  function actualizarSesion(nueva: Session) {
+    cachedSession = nueva;
+    setState((prev) => ({ ...prev, session: nueva }));
+  }
+
+  async function recargarSesion() {
+    try {
+      const session = await api.session();
+      cachedSession = session;
+      setState({ session, loading: false, error: null });
+    } catch {
+      // ignore
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -69,7 +88,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SessionContext.Provider value={state}>{children}</SessionContext.Provider>
+    <SessionContext.Provider value={{ ...state, actualizarSesion, recargarSesion }}>
+      {children}
+    </SessionContext.Provider>
   );
 }
 

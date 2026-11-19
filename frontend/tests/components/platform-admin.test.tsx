@@ -6,7 +6,7 @@ import { cleanup, fireEvent, render as rtlRender, screen, waitFor, within } from
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@/components/toast';
 import { ApiError } from '@/lib/api';
-import type { Area, Platform } from '@/lib/types';
+import type { Area, ManagedUser, Platform } from '@/lib/types';
 
 function render(ui: React.ReactElement, options?: Parameters<typeof rtlRender>[1]) {
   return rtlRender(<ToastProvider>{ui}</ToastProvider>, options);
@@ -96,7 +96,7 @@ function avanzarYGuardar(modal: ReturnType<typeof dialogo>) {
 }
 
 describe('PlatformAdmin: alta por rol', () => {
-  it('asistente de 3 pasos: Paso 1 (Descripción), Paso 2 (Diseño) y Paso 3 (Vista previa con toggle de activa)', async () => {
+  it('asistente de 3 pasos: Paso 1 (Descripción), Paso 2 (Diseño con vista previa y activación) y Paso 3 (Accesos con Dual Picklist)', async () => {
     const modal = await abrirAlta();
     // Paso 1: muestra controles de descripción y no los de diseño, sin área ni conector
     expect(modal.getByLabelText(/^Nombre/)).toBeTruthy();
@@ -106,28 +106,63 @@ describe('PlatformAdmin: alta por rol', () => {
     expect(modal.queryByLabelText(/^Tipo de integración/)).toBeNull();
     expect(modal.queryByLabelText('Color de fondo')).toBeNull();
 
-    // Avanzar a Paso 2: Diseño
+    // Avanzar a Paso 2: Diseño (con vista previa y toggle de activa)
     fireEvent.click(modal.getByText('Siguiente'));
     expect(modal.getByText('Diseño')).toBeTruthy();
     expect(await modal.findByLabelText('Color de fondo')).toBeTruthy();
     expect(modal.getByLabelText(/Color del icono|Color de texto/i)).toBeTruthy();
     expect(modal.getByText('Elegir icono')).toBeTruthy();
     expect(modal.getByText('Subir imagen')).toBeTruthy();
-
-    // Avanzar a Paso 3: Vista previa
-    fireEvent.click(modal.getByText('Siguiente'));
-    expect(modal.getByText('Vista previa')).toBeTruthy();
     expect(modal.getByText('Vista previa de la plataforma')).toBeTruthy();
     expect(modal.getByRole('switch', { name: /activa/i })).toBeTruthy();
+
+    // Avanzar a Paso 3: Accesos con Dual Picklist
+    fireEvent.click(modal.getByText('Siguiente'));
+    expect(modal.getByText('Accesos')).toBeTruthy();
+    expect(modal.getByText('Sin acceso')).toBeTruthy();
+    expect(modal.getByText('Con acceso')).toBeTruthy();
 
     // Retroceder a Paso 2: Diseño
     fireEvent.click(modal.getByText('Atrás'));
     expect(modal.getByText('Diseño')).toBeTruthy();
+    expect(modal.getByText('Vista previa de la plataforma')).toBeTruthy();
 
     // Retroceder a Paso 1
     fireEvent.click(modal.getByText('Atrás'));
     expect(modal.getByLabelText(/^Nombre/)).toBeTruthy();
     expect((modal.getByLabelText(/^Nombre/) as HTMLInputElement).value).toBe('Nueva');
+  });
+
+  it('Paso 3 Dual Picklist: permite asignar accesos a usuarios del área y llama a grantPlatformAccess al guardar', async () => {
+    const usuarioFinanzas = {
+      id: 88,
+      name: 'Carlos Finanzas',
+      email: 'carlos@ejemplo.local',
+      role: 'usuario',
+      areas: [{ id: 3, name: 'Finanzas' }],
+      platforms: [],
+    } as unknown as ManagedUser;
+    vi.mocked(api.users).mockResolvedValue([usuarioFinanzas]);
+    vi.mocked(api.platformAccess).mockResolvedValue({ items: [], total: 0 });
+
+    const modal = await abrirAlta();
+    // Paso 1 -> Paso 2
+    fireEvent.click(modal.getByText('Siguiente'));
+    // Paso 2 -> Paso 3
+    fireEvent.click(modal.getByText('Siguiente'));
+    expect(modal.getByText('Accesos')).toBeTruthy();
+
+    // El usuario debe aparecer en la columna "Sin acceso"
+    expect(await modal.findByText('Carlos Finanzas')).toBeTruthy();
+
+    // Click en el usuario para pasarlo a "Con acceso"
+    fireEvent.click(modal.getByRole('button', { name: /Otorgar acceso a Carlos Finanzas/i }));
+
+    // Click en Guardar
+    fireEvent.click(modal.getByText('Guardar'));
+
+    await waitFor(() => expect(api.createPlatform).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(api.grantPlatformAccess).toHaveBeenCalledWith(PLATAFORMA.id, 88, 'usuario'));
   });
 
   it('alta simplificada: crea la plataforma en el área seleccionada con conector por omisión', async () => {

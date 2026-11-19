@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Agregado
+- Responsiva de usuario: el usuario firma la carta responsiva en su primer ingreso antes de usar el sistema; las áreas muestran sus administradores (FNC-155, 2026-11-18).
 - Despliegue: install.sh --actualizar actualiza sin reinstalar; un nginx .conf editado a mano ya no se sobrescribe (pregunta o se conserva, con copia al reemplazar), y los servicios se reinician para tomar el código nuevo (FNC-153, 2026-11-18).
 - Base de datos: DB_TLS_CA_FILE opcional exige TLS verificado hacia una BD remota (FNC-151, 2026-11-18).
 - Despliegue: `install.sh` y `preflight.sh` detectan PostgreSQL de PGDG (`postgresql-NN.service`, la versión mayor) sin `--db-service` (FNC-148, 2026-11-17).

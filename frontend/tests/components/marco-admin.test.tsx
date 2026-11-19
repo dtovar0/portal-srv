@@ -107,14 +107,14 @@ describe('Barra lateral', () => {
   it('al usuario común no se le muestra «Gestión»: no tiene entradas de administración', async () => {
     await montar('usuario');
     expect(lateral().queryByText('Gestión')).toBeNull();
-    expect(lateral().getByRole('link', { name: 'Auditoría' })).toBeTruthy();
+    expect(lateral().getByRole('link', { name: 'Plataformas' })).toBeTruthy();
   });
 
   it('el usuario no ve la sección Gestión con entradas de administración', async () => {
     await montar('usuario');
     expect(lateral().queryByRole('link', { name: 'Aprobaciones' })).toBeNull();
     expect(lateral().queryByRole('link', { name: 'Usuarios' })).toBeNull();
-    expect(lateral().getByRole('link', { name: 'Mis solicitudes' })).toBeTruthy();
+    expect(lateral().getByRole('link', { name: 'Plataformas' })).toBeTruthy();
   });
 
   it('marca la pantalla actual con aria-current y los tokens de activo', async () => {
@@ -186,7 +186,7 @@ describe('Barra lateral', () => {
   it('sin pendientes o sin ser admin no hay contador ni se pide el resumen', async () => {
     await montar('usuario');
     expect(resumen).not.toHaveBeenCalled();
-    expect(lateral().getByRole('link', { name: 'Dashboard' }).textContent).toBe('Dashboard');
+    expect(lateral().getByRole('link', { name: 'Plataformas' }).textContent).toBe('Plataformas');
   });
 });
 
@@ -515,7 +515,7 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
     const vivo = () => dialogo.querySelector('[aria-live="polite"]')!;
     expect(vivo().textContent).toMatch(/^\d+ resultados$/);
     expect(campo.getAttribute('aria-expanded')).toBe('true');
-    fireEvent.change(campo, { target: { value: 'auditoria' } });
+    fireEvent.change(campo, { target: { value: 'plataforma' } });
     expect(vivo().textContent).toBe('1 resultado');
     fireEvent.change(campo, { target: { value: 'zzzz' } });
     expect(vivo().textContent).toBe('Sin resultados');
