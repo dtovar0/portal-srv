@@ -186,6 +186,31 @@ def test_pocos_fallos_no_bloquean(client, crear_usuario):
     assert iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA).status_code != 429
 
 
+def test_la_cuenta_de_emergencia_no_se_bloquea_por_fallos_de_cuenta(client, crear_usuario):
+    """Regresión FNC-154: 10 fallos de un tercero la dejaban en 429 15 min."""
+    usuario = crear_usuario(ROLE_ADMIN, contrasena=CONTRASENA_FICTICIA)
+    for _ in range(INTENTOS_ANTES_DEL_LIMITE):
+        assert iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA).status_code == 401
+
+    respuesta = iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA)
+
+    assert respuesta.status_code == 200
+    assert usuario_en_sesion(client) == usuario.email
+
+
+def test_la_cuenta_de_emergencia_si_se_bloquea_por_ip(client, crear_usuario, monkeypatch):
+    """FNC-154: el atacante queda bloqueado por su IP, aun con la contraseña correcta."""
+    monkeypatch.setenv('LOGIN_MAX_INTENTOS_IP', '3')
+    usuario = crear_usuario(ROLE_ADMIN, contrasena=CONTRASENA_FICTICIA)
+    for _ in range(3):
+        assert iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA).status_code == 401
+
+    respuesta = iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA)
+
+    assert respuesta.status_code == 429
+    assert usuario_en_sesion(client) is None
+
+
 @pytest.mark.parametrize('cuerpo', [{}, {'email': 'a@pruebas.invalid'},
                                     {'password': 'x'},
                                     {'email': '', 'password': ''}])
