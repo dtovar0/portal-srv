@@ -730,9 +730,6 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
 
                     {/* Combinaciones (filas × columnas) */}
                     <div>
-                      <span className="block text-xs font-bold text-label mb-1.5">
-                        Combinaciones
-                      </span>
                       <div className="grid grid-cols-3 gap-1.5">
                         {CUADRICULAS.map((x) => ({ ...x, l: `${x.f}×${x.c}` })).map((p) => (
                           <button
