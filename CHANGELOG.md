@@ -12,6 +12,7 @@
 - Web: la tarjeta de área de Admin › Plataformas se rediseña (icono a la izquierda con degradado del color del área, cifras de personas y plataformas, logos de las primeras 3 plataformas y «Ver plataformas»); ya no se estira al alto de la rejilla (DIS-102, 2026-11-19).
 
 ### Corregido
+- Web: el menú de cuadrícula de áreas ya no muestra el texto «Combinaciones» (DIS-109, 2026-11-19).
 - Web: en un área inactiva, los logos de sus plataformas en la tarjeta se ven grises y atenuados (DIS-108, 2026-11-19).
 - Web: `npm run lint` queda sin advertencias: se quitan imports, constantes y props sin usar (`segunSistema` del menú de usuario, `isEdit` de `validate`) y se documentan los hooks y las `<img>` de la vista previa del logo; sin cambio de comportamiento (DIS-106, 2026-11-19).
 - Web: la tarjeta de área es simétrica: borde del color del área igual en los cuatro lados (más intenso al pasar el ratón) y resplandor centrado arriba, en lugar del borde en diagonal y la mancha en una esquina (DIS-107, 2026-11-19).

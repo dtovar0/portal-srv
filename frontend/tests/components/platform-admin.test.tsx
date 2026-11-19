@@ -382,6 +382,8 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
       expect(screen.queryByRole('button', { name: quitada })).toBeNull();
     }
 
+    // DIS-109: sin el texto «Combinaciones» (pedido del dueño)
+    expect(screen.queryByText('Combinaciones')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '3×2' }));
     expect(huecos()).toHaveLength(5);
 
