@@ -2,11 +2,15 @@
 
 /** Modal de alta y edición de un usuario (áreas y plataformas por chips). */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { PasswordPolicy } from '@/lib/access/types';
+import { usersApi } from '@/lib/access/users';
 import { api } from '@/lib/api';
+import { descripcionPolitica } from '@/lib/contrasena';
 import type { Area, DirectoryUser, ManagedUser, Platform, UserInput } from '@/lib/types';
 import { Button, Checkbox, Field, Modal, TextInput } from '../form';
 import { Icono } from '../icono';
+import { useSession } from '../session-provider';
 import { useToast } from '../toast';
 import { GrupoChips } from './grupo-chips';
 import { TagPicker } from './tag-picker';
@@ -33,9 +37,15 @@ export function UserForm({
   onSaved: () => void;
 }) {
   // DIS-019: el rol y las áreas administradas ya no se editan aquí (acciones
-  // "Hacer admin" / "Quitar admin" del superadmin). La contraseña solo se
-  // ofrece para la cuenta de emergencia (superadmin local, contrato v2).
-  const conContrasena = user?.role === 'administrador' && user.auth_source === 'local';
+  // "Hacer admin" / "Quitar admin" del superadmin). FNC-161: la contraseña se
+  // ofrece en cuentas locales (se guarda en el portal) y del directorio (se
+  // cambia en LDAP, solo el superadmin); el backend decide y vuelve a validar.
+  const { session } = useSession();
+  const esLocal = user?.auth_source === 'local';
+  const esDirectorio = user?.auth_source === 'ldap' && Boolean(session?.permissions.is_admin);
+  const conContrasena = esLocal || esDirectorio;
+  // Política vigente del backend; solo se necesita para la cuenta del directorio.
+  const [politica, setPolitica] = useState<PasswordPolicy | null>(null);
   const [form, setForm] = useState<UserInput>(
     user
       ? { name: user.name, is_active: user.is_active }
@@ -55,6 +65,16 @@ export function UserForm({
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
+  useEffect(() => {
+    if (!esDirectorio) return undefined;
+    let vigente = true;
+    usersApi.passwordPolicy().then(
+      (res) => { if (vigente) setPolitica(res.policy); },
+      () => { /* sin política visible el servidor sigue validando y avisa */ },
+    );
+    return () => { vigente = false; };
+  }, [esDirectorio]);
+
   async function save() {
     if (!user && !form.email?.trim()) {
       setError('El correo es obligatorio.');
@@ -72,7 +92,9 @@ export function UserForm({
     setError(null);
     try {
       if (user) {
-        await api.updateUser(user.id, form);
+        const { password, ...resto } = form;
+        // Vacío conserva la contraseña actual: no se envía.
+        await api.updateUser(user.id, password ? { ...resto, password } : resto);
         await api.setUserAreas(user.id, areaIds);
         if (platformIds.length > 0) {
           await api.setUserPlatforms(user.id, platformIds);
@@ -128,16 +150,23 @@ export function UserForm({
       </Field>
 
       {conContrasena ? (
-        <Field
-          label="Contraseña"
-          hint="Solo la cuenta de emergencia tiene contraseña en el portal. Vacío conserva la actual."
-        >
-          <TextInput
-            type="password" autoComplete="new-password"
-            value={form.password ?? ''}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
-        </Field>
+        <div className="space-y-1.5">
+          <Field label="Contraseña">
+            <TextInput
+              type="password" autoComplete="new-password"
+              value={form.password ?? ''}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              aria-describedby="usuario-contrasena-ayuda"
+            />
+          </Field>
+          {/* Fuera del <label>: no forma parte del nombre del campo. */}
+          <p id="usuario-contrasena-ayuda" className="text-xs text-label">
+            {esLocal
+              ? 'Se guarda en el portal. Vacío conserva la actual.'
+              : 'Se cambia en el directorio LDAP. Vacío conserva la actual.'}
+            {esDirectorio && politica ? ` ${descripcionPolitica(politica)}` : ''}
+          </p>
+        </div>
       ) : null}
 
       <GrupoChips legend="Áreas a las que pertenece">

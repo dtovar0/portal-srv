@@ -466,7 +466,7 @@ def test_directorio_caido_en_el_reintento_queda_pendiente(
 
 
 # --------------------------------------------------------------------------- #
-# Reenviar credenciales
+# Reenvío retirado (FNC-161)
 # --------------------------------------------------------------------------- #
 
 def _cuenta_con_entrega(escena, directorio, cliente_como):
@@ -474,111 +474,20 @@ def _cuenta_con_entrega(escena, directorio, cliente_como):
     return User.query.filter_by(email=CORREO).one()
 
 
-def _reenviar(cliente, cuenta_id, **cuerpo):
-    return cliente.post(f'/api/v1/users/{cuenta_id}/credentials', json=cuerpo)
-
-
-def test_reenviar_genera_contrasena_y_send_nuevos_y_borra_el_anterior(
-        escena, directorio, cliente_como, entrega):
+def test_el_reenvio_de_credenciales_esta_retirado(escena, directorio,
+                                                  cliente_como, entrega):
+    """FNC-161: la contraseña se cambia desde «Editar usuario»; la ruta
+    responde 410 y no crea ni envía nada."""
     cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
-    send_anterior = entrega.sends[0]['id']
+    enviados = len(entrega.sends)
 
-    r = _reenviar(cliente_como(escena['super']), cuenta.id)
+    r = cliente_como(escena['super']).post(
+        f'/api/v1/users/{cuenta.id}/credentials', json={})
 
-    assert r.status_code == 200, r.get_data(as_text=True)
-    assert r.get_json()['user']['credentials_status'] == 'enviadas'
-    assert len(entrega.sends) == 2 and len(entrega.correos) == 2
-    nueva = entrega.contrasenas[1]
-    assert nueva != CONTRASENA
-    assert _clave_ldap() == [directorio_falso.cifrado_simulado(nueva)]
-    assert entrega.borrados == [send_anterior]
-    assert _entrega().send_id == entrega.sends[1]['id']
-    [reenviada] = _eventos('credenciales_reenviadas')
-    assert reenviada.actor_id == escena['super'].id
-    assert nueva not in repr([reenviada.detail, reenviada.after_state])
-    assert nueva not in _volcado_de_la_bd()
-
-
-def test_reenviar_con_vaultwarden_caido_responde_202_y_deja_el_reintento(
-        escena, directorio, cliente_como, entrega):
-    cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
-    entrega.error_send = GestorCaido('caído')
-
-    r = _reenviar(cliente_como(escena['super']), cuenta.id)
-
-    assert r.status_code == 202, r.get_data(as_text=True)
-    assert r.get_json()['user']['credentials_status'] == 'pendientes'
-    fila = _entrega()
-    assert fila.status == 'pendientes' and fila.next_attempt_at > ahora()
-    assert fila.attempts_count == 1
-    assert entrega.borrados == []          # el Send anterior sigue hasta el éxito
-    assert len(_eventos('credenciales_pendientes')) == 1
-
-
-def test_reenviar_tras_agotar_los_intentos_vuelve_a_abrirlos(
-        escena, directorio, cliente_como, entrega):
-    cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
-    fila = _entrega()
-    fila.status, fila.attempts_count, fila.max_attempts = 'pendientes', 5, 5
-    db.session.commit()
-
-    assert _reenviar(cliente_como(escena['super']),
-                     cuenta.id).status_code == 200
-    assert _entrega().attempts_count == 0
-
-
-def test_reenviar_con_el_directorio_caido_da_503_sin_crear_el_send(
-        escena, directorio, cliente_como, entrega):
-    cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
-    envios = len(entrega.sends)
-    directorio.error = RuntimeError('ldap caído')
-
-    r = _reenviar(cliente_como(escena['super']), cuenta.id)
-
-    assert r.status_code == 503
-    assert r.get_json()['code'] == 'directorio_no_disponible'
-    assert len(entrega.sends) == envios
-
-
-def test_reenviar_es_solo_del_superadmin(escena, directorio, cliente_como,
-                                         entrega, client):
-    cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
-    assert _reenviar(cliente_como(escena['admin']),
-                     cuenta.id).status_code == 403
-    usuario = fabricas.crear_usuario(ROLE_USER)
-    assert _reenviar(cliente_como(usuario), cuenta.id).status_code == 403
-    g.pop('_login_user', None)
-    assert _reenviar(client, cuenta.id).status_code == 401
-    assert len(entrega.sends) == 1
-
-
-def test_reenviar_a_una_cuenta_inexistente_da_404(escena, cliente_como):
-    r = _reenviar(cliente_como(escena['super']), 9999)
-    assert r.status_code == 404
-
-
-@pytest.mark.parametrize('origen', ['local', 'sso', 'ldap'])
-def test_reenviar_a_una_cuenta_sin_onboarding_del_portal_da_409(
-        escena, cliente_como, entrega, origen):
-    cuenta = fabricas.crear_usuario(ROLE_USER)
-    cuenta.auth_source = origen
-    db.session.commit()
-
-    r = _reenviar(cliente_como(escena['super']), cuenta.id)
-
-    assert r.status_code == 409
-    assert r.get_json()['code'] == 'credenciales_no_aplicables'
-    assert entrega.sends == []
-
-
-def test_reenviar_no_acepta_campos_en_el_cuerpo(escena, directorio,
-                                                cliente_como, entrega):
-    cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
-    r = _reenviar(cliente_como(escena['super']), cuenta.id,
-                  password=CENTINELA)
-    assert r.status_code == 400
-    assert r.get_json()['code'] == 'campo_no_permitido'
-    assert len(entrega.sends) == 1
+    assert r.status_code == 410
+    assert r.get_json()['code'] == 'endpoint_retirado'
+    assert r.get_json()['use'] == 'PUT /users/<id>'
+    assert len(entrega.sends) == enviados
 
 
 # --------------------------------------------------------------------------- #
@@ -602,23 +511,6 @@ def test_borrar_la_cuenta_borra_su_entrega(escena, directorio, cliente_como,
 
 
 # --- Revisión de seguridad (FNC-138) -----------------------------------------
-
-def test_reenviar_con_una_entrega_en_curso_responde_409_sin_tocar_nada(
-        escena, directorio, cliente_como, entrega):
-    """Si el worker está entregando, Reenviar no compite (dos contraseñas y dos
-    Sends confundirían el onboarding)."""
-    cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
-    fila = _entrega()
-    fila.locked_at, fila.locked_by = ahora(), 'worker-1'
-    db.session.commit()
-    sends_antes = len(entrega.sends)
-
-    r = _reenviar(cliente_como(escena['super']), cuenta.id)
-
-    assert r.status_code == 409
-    assert r.get_json()['code'] == 'entrega_en_curso'
-    assert len(entrega.sends) == sends_antes
-
 
 def test_si_falla_el_registro_en_el_portal_la_entrada_huerfana_no_conserva_la_contrasena(
         escena, directorio, cliente_como, entrega, monkeypatch):

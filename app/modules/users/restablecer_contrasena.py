@@ -1,0 +1,105 @@
+"""Cambio de contraseña desde «Editar usuario» (`PUT /users/<id>`, FNC-161).
+
+El destino depende del origen de la cuenta (`auth_source`):
+
+- `local`: hash en la BD del portal (`set_password`), como hasta ahora, para
+  cualquier cuenta local que quien edita pueda gestionar.
+- `ldap`: Password Modify en el directorio (nunca hay hash en la BD); la
+  contraseña debe cumplir la política `PASSWORD_POLICY_*` y solo la cambia el
+  superadmin.
+- cualquier otro origen (`sso`, `oidc`): se rechaza como campo no permitido.
+
+La contraseña nunca se registra, se audita ni se devuelve. Las funciones
+devuelven `None` si salió bien o la tupla `(mensaje, HTTP, code)` del contrato.
+"""
+import logging
+
+from flask_login import current_user
+
+from app.authz import is_admin
+from app.modules.auth.acceso_local import es_origen_local
+from app.modules.auth.services import ORIGEN_DIRECTORIO
+from app.modules.directory.configuracion import directorio_activo
+from app.modules.directory.ldap_client import ClienteDirectorio, ErrorDirectorio
+from app.modules.users.entrega_credenciales import (
+    CODIGO_CONTRASENA_RECHAZADA, fijar_contrasena_en_directorio)
+from app.modules.users.politica_contrasena import (MENSAJE_RECHAZO_DIRECTORIO,
+                                                   mensaje_de_incumplimiento)
+
+logger = logging.getLogger(__name__)
+
+NO_PERMITIDO = ('Hay campos que no se pueden enviar.', 400,
+                'campo_no_permitido')
+SOLO_SUPERADMIN = ('Solo el superadmin puede cambiar la contraseña de una '
+                   'cuenta del directorio.', 403, 'solo_superadmin')
+SIN_CUENTA_EN_DIRECTORIO = ('No se encontró la cuenta en el directorio.', 409,
+                            'cuenta_no_encontrada_en_directorio')
+DIRECTORIO_NO_DISPONIBLE = ('No se pudo actualizar la contraseña en el '
+                            'directorio.', 503, 'directorio_no_disponible')
+CONTRASENA_INVALIDA = 'La contraseña no es válida.'
+
+
+def es_cuenta_del_directorio(cuenta):
+    return (cuenta.auth_source or '') == ORIGEN_DIRECTORIO
+
+
+def _uid_en_directorio(cuenta):
+    """`uid` de la cuenta: el de su entrega de credenciales o, si no hay,
+    el que tenga en el directorio el correo de la cuenta.
+
+    Devuelve `(uid, error)`: sin `uid` y sin `error` la cuenta no está en el
+    directorio; con `error`, el directorio no respondió o es ambiguo."""
+    entrega = cuenta.credential_delivery
+    if entrega is not None and entrega.uid:
+        return entrega.uid, None
+    try:
+        persona = ClienteDirectorio().buscar_por_correo(cuenta.email)
+    except ErrorDirectorio as exc:  # incluye PersonaAmbigua; sin el correo
+        logger.error('Contraseña: búsqueda en el directorio fallida (%s).',
+                     type(exc).__name__)
+        return None, DIRECTORIO_NO_DISPONIBLE
+    except Exception as exc:  # configuración inválida u otro: solo el tipo
+        logger.error('Contraseña: fallo inesperado del directorio (%s).',
+                     type(exc).__name__)
+        return None, DIRECTORIO_NO_DISPONIBLE
+    return (persona.identificador if persona else None), None
+
+
+def validar_cambio(cuenta, contrasena):
+    """Rechazos que no necesitan el directorio (antes de tocar nada)."""
+    if not isinstance(contrasena, str) or not contrasena:
+        return (CONTRASENA_INVALIDA, 400, 'contrasena_invalida')
+    if es_origen_local(cuenta):
+        return None
+    if not es_cuenta_del_directorio(cuenta):
+        return NO_PERMITIDO
+    if not is_admin(current_user):
+        return SOLO_SUPERADMIN
+    mensaje = mensaje_de_incumplimiento(contrasena)
+    if mensaje:
+        return (mensaje, 400, 'contrasena_invalida')
+    return None
+
+
+def aplicar_cambio(cuenta, contrasena):
+    """Guarda la contraseña donde corresponde. Llamar tras `validar_cambio`.
+
+    Local: deja el hash en la sesión (la petición hace el commit). LDAP:
+    Password Modify inmediato; no toca la BD.
+    """
+    if es_origen_local(cuenta):
+        cuenta.set_password(contrasena)
+        return None
+    if not directorio_activo():
+        return DIRECTORIO_NO_DISPONIBLE
+    uid, error = _uid_en_directorio(cuenta)
+    if error:
+        return error
+    if not uid:
+        return SIN_CUENTA_EN_DIRECTORIO
+    codigo = fijar_contrasena_en_directorio(uid, contrasena)
+    if codigo == CODIGO_CONTRASENA_RECHAZADA:
+        return (MENSAJE_RECHAZO_DIRECTORIO, 400, 'contrasena_rechazada')
+    if codigo:
+        return DIRECTORIO_NO_DISPONIBLE
+    return None

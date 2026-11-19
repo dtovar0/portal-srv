@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 2.1 (2026-10-20) |
-| Proveedor | backend (FNC-044, FNC-045, FNC-055) |
+| Versión | 3 (2026-11-19) |
+| Proveedor | backend (FNC-044, FNC-045, FNC-055, FNC-161) |
 | Consumidores | web (FNC-069; pantallas DIS-016, DIS-019) |
 | Solicitudes | — |
 
@@ -65,8 +65,12 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 - Degradar `admin_area` → `usuario` borra sus áreas administradas en la misma transacción; auditoría `rol_cambiado` con antes y después; sus accesos automáticos se revocan como al quitarle las áreas (FNC-055).
 - Un admin de área solo gestiona cuentas `usuario` de sus áreas (SEC-AUTHZ-06); sobre otro admin o el superadmin → 404.
 - Nadie cambia su propio rol (SEC-AUTHZ-08) → 403 `operacion_propia`.
-- `password` (v2, FNC-077): el portal no fija contraseñas locales. En `POST /users` → `400 campo_no_permitido` (vacía = ausente; la cuenta nace sin clave). En `PUT /users/<id>` solo para la cuenta de emergencia (superadmin local); cualquier otra cuenta → `400 campo_no_permitido`; sin rol de admin → `403 sin_permiso`.
-- Solo desarrollo (`APP_ENV=development` y `LOGIN_LOCAL_TODAS_LAS_CUENTAS=true`): `password` se acepta en cuentas locales del alcance, como en v1. Nunca en cuentas `ldap` o `sso`.
+- `password` en `POST /users` (v2, FNC-077): el portal no fija contraseñas locales → `400 campo_no_permitido` (vacía = ausente; la cuenta nace sin clave); solo se acepta en desarrollo con la bandera. En `PUT /users/<id>` rige la regla de v3 (abajo); sin rol de admin → `403 sin_permiso`.
+- **`PUT /users/<id>` con `password` según el origen (v3, FNC-161; sustituye a las dos reglas de `PUT` anteriores):**
+  - `local`: hash en la BD, para cualquier cuenta local que quien edita pueda gestionar (cuenta de emergencia incluida). Solo se exige que sea texto no vacío (`400 contrasena_invalida`).
+  - `ldap`: solo el superadmin (admin de área → `403 solo_superadmin`). Debe cumplir la política `PASSWORD_POLICY_*` (`400 contrasena_invalida` con la regla incumplida) y se cambia en OpenLDAP con Password Modify; **nunca** se guarda hash en la BD. La cuenta se ubica por el `uid` de su entrega de credenciales o, si no hay, por su correo en el directorio. Si el directorio la rechaza por su `ppolicy` → `400 contrasena_rechazada` (sin el texto del servidor); directorio inactivo, caído o ambiguo → `503 directorio_no_disponible`; sin cuenta en el directorio → `409 cuenta_no_encontrada_en_directorio`. Si falla, no se aplica ningún otro campo del mismo `PUT`.
+  - `sso` / `oidc`: `400 campo_no_permitido`.
+  - La contraseña nunca se registra, audita ni devuelve. «Reenviar credenciales» (`POST /users/<id>/credentials`) se retiró (`410`, [usuarios-directorio.md](usuarios-directorio.md) v3).
 - Origen en `POST /users` (v2, FNC-077): fuera de desarrollo la cuenta nace `auth_source=ldap` sin contraseña y se vincula cuando la persona entra por directorio o SSO con ese correo; con la bandera de desarrollo, `local`. El rol sigue las reglas de arriba.
 
 ## Errores
@@ -80,6 +84,11 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 | 403 | `rol_reservado` | Ese rol no se puede asignar. |
 | 400 | `campo_no_permitido` | Hay campos que no se pueden enviar. |
 | 403 | `operacion_propia` | No puedes cambiar tu propio rol. |
+| 403 | `solo_superadmin` | Solo el superadmin puede cambiar la contraseña de una cuenta del directorio. (FNC-161) |
+| 400 | `contrasena_invalida` | La regla de la política que incumple, o «La contraseña no es válida.» (FNC-161) |
+| 400 | `contrasena_rechazada` | El directorio rechazó la contraseña por su política de seguridad. (FNC-161) |
+| 409 | `cuenta_no_encontrada_en_directorio` | No se encontró la cuenta en el directorio. (FNC-161) |
+| 503 | `directorio_no_disponible` | No se pudo actualizar la contraseña en el directorio. (FNC-161) |
 | 403 | `sin_permiso` | Rol insuficiente (común, README). |
 | 422 | `validacion` | Revisa los campos marcados. |
 
@@ -99,6 +108,7 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 | 1 | 2026-10-18 | Aditivo (FNC-045): `409 area_con_otros_admins` en `DELETE /areas/<id>` para el admin de área (decisión del orquestador, pendiente de validar en la PoC) |
 | 2 | 2026-10-19 | FNC-077 (decisión del dueño 2026-10-15: sin login local): `password` → `400 campo_no_permitido` en `POST /users` y en `PUT /users/<id>` salvo la cuenta de emergencia; excepción de desarrollo; `POST /users` crea cuentas `ldap` fuera de desarrollo. Cliente: DIS-018/DIS-019 (decisión del orquestador, pendiente de validar en la PoC) |
 | 2.1 | 2026-10-20 | Aditivo (FNC-055): efecto en los accesos automáticos de `PUT /users/<id>/managed-areas` y de degradar a `usuario`. Sin cambios de forma |
+| 3 | 2026-11-19 | FNC-161 (pedido del dueño): `password` en `PUT /users/<id>` según `auth_source`: `local` guarda hash para toda cuenta gestionable (antes solo emergencia: **más permisivo**); `ldap` cambia en OpenLDAP, solo superadmin, con la política (antes `400 campo_no_permitido`); `sso`/`oidc` sin cambio. Códigos nuevos `solo_superadmin`, `contrasena_invalida`, `contrasena_rechazada`, `cuenta_no_encontrada_en_directorio`. Decisión del orquestador (pendiente de validar). Cliente: `user-form.tsx` |
 
 ## Salida de un área (FNC-152)
 - Quien deja de pertenecer a un área (`PUT /areas/<id>/users` o `PUT /users/<id>/areas`) pierde sus accesos por solicitud en las plataformas de esa área, en la misma petición.

@@ -8,8 +8,8 @@
   `docs/contratos/usuarios-directorio.md` v2); la lógica vive en
   `directory_accounts.py` y la entrega por Send en `entrega_credenciales.py`.
 - `GET /api/v1/users/password-policy`: política de la contraseña inicial.
-- `POST /api/v1/users/<id>/credentials`: «Reenviar credenciales» (solo el
-  superadmin; contraseña y Send nuevos).
+- `POST /api/v1/users/<id>/credentials`: retirado (FNC-161, `410`); la
+  contraseña se cambia con `PUT /users/<id>`.
 - Alta, edición y baja de cuentas y el endpoint retirado de plataformas
   (FNC-029, movidos de `api/crud.py`).
 """
@@ -22,6 +22,7 @@ from app.authz import (ROLE_AREA_ADMIN, admin_required, any_admin_required,
                        can_manage_user, normalized_role, scoped_areas)
 from app.modules.api.helpers import (CAMPO_NO_PERMITIDO, NO_ENCONTRADO,
                                      OPERACION_PROPIA, REEMPLAZO_ASIGNACION,
+                                     REEMPLAZO_CONTRASENA,
                                      ROL_NO_ADMIN, ROL_RESERVADO,
                                      campos_prohibidos, endpoint_retirado,
                                      error_response, json_object, leer_cuerpo,
@@ -38,9 +39,9 @@ from app.modules.users.directory_accounts import (CAMPO_CONTRASENA,
                                                   CAMPOS_PERMITIDOS,
                                                   crear_cuenta_directorio,
                                                   validar_alta)
-from app.modules.users.entrega_credenciales import (ESTADO_ENVIADAS,
-                                                    reenviar_credenciales)
 from app.modules.users.politica_contrasena import cargar_politica
+from app.modules.users.restablecer_contrasena import (aplicar_cambio,
+                                                      validar_cambio)
 from app.modules.users.roles import (CAMPOS_NO_PERMITIDOS, RESERVED_NAMES,
                                      cambiar_rol, es_el_mismo_rol,
                                      rol_asignable)
@@ -112,19 +113,8 @@ def password_policy():
 @login_required
 @admin_required
 def resend_credentials(user_id):
-    """Contraseña nueva y Send nuevo; `200` enviadas o `202` pendientes."""
-    _, error = leer_cuerpo()
-    if error is not None:
-        return error
-    cuenta = db.session.get(User, user_id)
-    if cuenta is None:
-        return error_response(*NO_ENCONTRADO)
-    estado, error = reenviar_credenciales(cuenta)
-    if error:
-        return error_response(*error)
-    return jsonify({'status': 'success',
-                    'user': usuario_gestionado(cuenta)}), \
-        200 if estado == ESTADO_ENVIADAS else 202
+    """Retirado (FNC-161): la contraseña se cambia desde «Editar usuario»."""
+    return endpoint_retirado(REEMPLAZO_CONTRASENA)
 
 
 @users_api_bp.route('/users', methods=['POST'])
@@ -203,12 +193,13 @@ def update_user(user_id):
         if not rol_asignable(new_role):
             return error_response(*ROL_RESERVADO)
 
-    # Contraseña: solo la cuenta de emergencia (superadmin local) o, en
-    # desarrollo con LOGIN_LOCAL_TODAS_LAS_CUENTAS, una cuenta local del
-    # alcance (can_manage_user). Nunca del directorio o del SSO (SEG-05, P8,
-    # FNC-077).
-    if data.get('password') and not contrasena_local_permitida(target):
-        return error_response(*CAMPO_NO_PERMITIDO)
+    # Contraseña (FNC-161): según el origen de la cuenta, en la BD (local) o
+    # en el directorio (ldap, solo superadmin); nunca del SSO (SEG-05).
+    contrasena = data.get('password')
+    if contrasena:
+        error = validar_cambio(target, contrasena)
+        if error:
+            return error_response(*error)
 
     if change_role:
         cambiar_rol(target, new_role)
@@ -216,8 +207,11 @@ def update_user(user_id):
         target.nombre = sanitize_display_name(data['name'], fallback=target.email)
     if 'is_active' in data:
         target.is_active = bool(data['is_active'])
-    if data.get('password'):
-        target.set_password(data['password'])
+    if contrasena:
+        error = aplicar_cambio(target, contrasena)
+        if error:
+            db.session.rollback()
+            return error_response(*error)
 
     db.session.commit()
     add_audit_log(f"EDITAR USUARIO: {target.email}", module='Usuarios',

@@ -5,11 +5,15 @@
 
 ## [Sin publicar]
 
+### Eliminado
+- Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
+
 ### Corregido
 - Despliegue: `OIDC_HABILITADO=false` permite instalar y arrancar sin Authelia (solo entra la cuenta de emergencia por `/acceso-emergencia`); `preflight.sh`/`install.sh` lo muestran como AVISO en vez de FALTA (FNC-157, 2026-11-19).
 - Migración 0014 (responsiva de usuario): el valor por defecto de `responsiva_firmada` era `DEFAULT 1`, que PostgreSQL rechaza y detenía `alembic upgrade`; ahora `DEFAULT true`. Prueba nueva que genera el SQL de PostgreSQL de la migración (FNC-155, 2026-11-18).
 
 ### Agregado
+- Usuarios: «Editar usuario» cambia la contraseña según el origen de la cuenta: `local` guarda el hash en la base (cualquier cuenta local gestionable) y `ldap` la cambia en el directorio con Password Modify y la política `PASSWORD_POLICY_*` (solo superadmin; nunca queda hash en la base); `sso` se rechaza. El formulario muestra el campo con su ayuda y la política. Contrato `areas-y-roles` v3 (FNC-161, 2026-11-19).
 - Web: el botón de confirmar de `ConfirmDialog` es de peligro solo en acciones destructivas (`type` aviso o error); «Reenviar credenciales» pasa a primario; `variant` opcional para forzarlo (DIS-097, 2026-11-18).
 - Web: los botones deshabilitados de las barras de Áreas, Usuarios, Plataformas y Conectores quedan `aria-disabled` (enfocables) con el motivo asociado por `aria-describedby`, visible al foco y descartable con Esc; `Button` acepta `motivoDeshabilitado` (DIS-096, 2026-11-18).
 - Responsiva en accesos: modal sobre el portal; un acceso otorgado sin responsiva firmada no se aprovisiona hasta que el usuario firma; `RESPONSIVA_MODO` `global` (firma única) o `por_plataforma`; migración 0017 (FNC-156, 2026-11-18).

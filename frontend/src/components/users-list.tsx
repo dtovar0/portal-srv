@@ -16,7 +16,7 @@ import { PageHeader } from './page-header';
 import { useSession } from './session-provider';
 import { Badge, ErrorNote, RegionDeAviso } from './ui';
 import { AdminAreasDialog, RemoveAdminDialog } from './users/admin-role-dialog';
-import { avisoDeCredenciales, describeResendError, ETIQUETA_CREDENCIALES } from './users/estado-entrega';
+import { ETIQUETA_CREDENCIALES } from './users/estado-entrega';
 import { DirectoryAccountForm } from './users/directory-account-form';
 import { DirectoryPicker } from './users/directory-picker';
 import { PurgePanel } from './users/purge-panel';
@@ -59,9 +59,6 @@ export function UsersList() {
   // resultado se avisa con toast (DIS-091).
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [roleOf, setRoleOf] = useState<{ user: ManagedUser; action: 'areas' | 'quitar' } | null>(null);
-  // «Reenviar credenciales» (FNC-139, solo superadmin): confirmación y envío.
-  const [resendOf, setResendOf] = useState<ManagedUser | null>(null);
-  const [resending, setResending] = useState(false);
 
   const isAdmin = session?.permissions.is_admin ?? false;
   // El superadmin asigna cualquier área; el admin de área, solo las suyas.
@@ -97,22 +94,6 @@ export function UsersList() {
       if (disparadorAviso.current?.isConnected) disparadorAviso.current.focus();
       else document.getElementById('buscar-usuarios')?.focus();
     }, 0);
-  }
-
-  async function resendCredentials() {
-    if (!resendOf || resending) return;
-    setResending(true);
-    try {
-      const res = await usersApi.resendCredentials(resendOf.id);
-      const aviso = avisoDeCredenciales(res.user.credentials_status);
-      avisar(aviso.tipo, aviso.mensaje, 'Credenciales reenviadas');
-    } catch (err) {
-      avisar('error', describeResendError(err), 'Error al reenviar');
-    } finally {
-      setResending(false);
-      setResendOf(null);
-      users.reload();
-    }
   }
 
   async function remove() {
@@ -599,29 +580,6 @@ export function UsersList() {
               <span>Editar</span>
             </Button>
 
-            {/* Reenviar credenciales: solo superadmin, 1 usuario con onboarding del portal */}
-            {isAdmin ? (
-              <Button
-                variant="fila"
-                disabled={!isSingleSelected || !effectiveSelectedUser?.credentials_status}
-                motivoDeshabilitado="Selecciona 1 usuario dado de alta desde el portal para reenviar sus credenciales"
-                onClick={() => effectiveSelectedUser && setResendOf(effectiveSelectedUser)}
-                aria-label={
-                  effectiveSelectedUser ? `Reenviar credenciales a ${effectiveSelectedUser.name}` : 'Reenviar credenciales'
-                }
-                title={
-                  isSingleSelected && effectiveSelectedUser?.credentials_status
-                    ? `Reenviar credenciales a ${effectiveSelectedUser.name}`
-                    : 'Selecciona 1 usuario dado de alta desde el portal para reenviar sus credenciales'
-                }
-                className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
-              >
-                <Icono nombre="exportar" tamano="sm" ariaHidden={true} />
-                {/* Texto corto: no cabe en el ancho fijo de la barra; el nombre accesible dice «credenciales». */}
-                <span>Reenviar</span>
-              </Button>
-            ) : null}
-
             {/* Botón Eliminar: activo si hay 1 o más filas seleccionadas */}
             <Button
               variant="fila-peligro"
@@ -753,18 +711,6 @@ export function UsersList() {
           user={editing} areas={areas.data ?? []} platforms={platforms.data ?? []}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); users.reload(); }}
-        />
-      ) : null}
-
-      {resendOf ? (
-        <ConfirmDialog
-          title="Reenviar credenciales"
-          message={`Se generará una contraseña nueva para ${resendOf.email}, se actualizará en el directorio y se enviará por correo un enlace nuevo. El enlace anterior dejará de servir.`}
-          confirmLabel="Reenviar"
-          type="pregunta"
-          onConfirm={resendCredentials}
-          onCancel={() => setResendOf(null)}
-          busy={resending}
         />
       ) : null}
 
