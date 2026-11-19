@@ -57,6 +57,18 @@ revisar_oidc() {
         _oidc_tiene_valor "$env" "$var" && alguna=1
     done
 
+    # OIDC_HABILITADO=false (FNC-157): instalar sin Authelia; solo emergencia.
+    valor="$(_oidc_valor "$env" OIDC_HABILITADO | tr '[:upper:]' '[:lower:]')"
+    case "$valor" in
+        false|0|no)
+            echo "AVISO OIDC_HABILITADO=false: Authelia apagado; solo entra la cuenta de emergencia por /acceso-emergencia"
+            return 0 ;;
+        ""|true|1|si|sí|yes) ;;
+        *)
+            echo "FALTA OIDC_HABILITADO debe ser true o false"
+            return 1 ;;
+    esac
+
     if [[ "$app_env" == "development" && "$alguna" == 0 ]]; then
         echo "OK APP_ENV=development sin OIDC_*: se entra por /acceso-emergencia"
         return 0
