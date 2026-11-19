@@ -194,3 +194,80 @@ def test_preflight_modo_actualizar_acepta_puertos_de_sus_servicios():
     texto = PREFLIGHT.read_text()
     assert 'MODO_ACTUALIZAR' in texto
     assert 'no hay instalación previa' in texto
+
+
+# --- --actualizar-frontend (FNC-162) ------------------------------------------
+# Solo el frontend: validar → detener frontend → build → arrancar frontend.
+# Backend y worker no se tocan; no hay migraciones.
+
+PASOS_FRONTEND = '''
+actualizar_frontend_validar() {
+    echo validar >> "$REG"
+    if [[ -n "${FALLA_VALIDAR:-}" ]]; then return 1; fi
+}
+actualizar_frontend_construir() {
+    echo construir >> "$REG"
+    if [[ -n "${FALLA_BUILD:-}" ]]; then echo "next build falló" >&2; return 1; fi
+}
+'''
+
+
+def _actualizar_frontend(e, **fallas):
+    env = {**os.environ, 'PATH': f'{e["bin"]}:{os.environ["PATH"]}',
+           'REG': str(e['reg']), 'EST': str(e['est']), **fallas}
+    codigo = (f'set -Eeuo pipefail; . "{SCRIPT}"; {PASOS_FRONTEND}\n'
+              'trap actualizar_aviso_salida EXIT\n'
+              'actualizar_frontend_despliegue "$1"\n')
+    return subprocess.run(['bash', '-c', codigo, '_', FRONTEND],
+                          capture_output=True, text=True, timeout=20, env=env)
+
+
+def test_frontend_orden_y_solo_su_unidad(entorno):
+    r = _actualizar_frontend(entorno)
+    assert r.returncode == 0, r.stderr
+    reg = _registro(entorno)
+    orden = [_indice(reg, p) for p in ('validar', 'systemctl stop', 'construir', 'systemctl start')]
+    assert orden == sorted(orden), reg
+    tocadas = [l for l in reg if l.startswith(('systemctl stop', 'systemctl start'))]
+    assert all(BACKEND not in l and WORKER not in l for l in tocadas), tocadas
+    assert not any(l.startswith('migrar') for l in reg)
+    assert _activas(entorno) >= {BACKEND, WORKER, FRONTEND}
+
+
+def test_frontend_si_falla_la_validacion_no_detiene_nada(entorno):
+    r = _actualizar_frontend(entorno, FALLA_VALIDAR='1')
+    assert r.returncode != 0
+    assert not any(l.startswith('systemctl stop') for l in _registro(entorno))
+    assert FRONTEND in _activas(entorno)
+
+
+def test_frontend_si_falla_el_build_queda_detenido_y_dice_como_reintentar(entorno):
+    r = _actualizar_frontend(entorno, FALLA_BUILD='1')
+    assert r.returncode != 0
+    assert FRONTEND not in _activas(entorno)
+    assert {BACKEND, WORKER} <= _activas(entorno)
+    assert '--actualizar-frontend' in r.stderr
+
+
+def test_frontend_que_no_arranca_muestra_su_journal(entorno):
+    r = _actualizar_frontend(entorno, FALLA_ARRANQUE=FRONTEND)
+    assert r.returncode != 0
+    assert f'journalctl -u {FRONTEND}' in '\n'.join(_registro(entorno))
+
+
+def test_install_tiene_actualizar_frontend():
+    texto = INSTALL.read_text()
+    assert '--actualizar-frontend)' in texto
+    assert 'actualizar_frontend_validar()' in texto
+    assert 'actualizar_frontend_construir()' in texto
+    assert '\n    actualizar_frontend_despliegue "$FRONTEND_UNIT"\n' in texto
+    # Reutiliza el build de la instalación (sin duplicar npm ci/build/cp).
+    assert texto.count('npm run build') == 1
+    assert texto.index('actualizar_frontend_despliegue "$FRONTEND_UNIT"') < texto.index('\ninstalar_dependencias\n')
+
+
+def test_install_actualizar_frontend_no_se_combina():
+    for otra in ('--actualizar', '--force'):
+        r = subprocess.run(['bash', str(INSTALL), '--actualizar-frontend', otra],
+                           capture_output=True, text=True, timeout=10)
+        assert r.returncode == 2, (otra, r.stderr)
