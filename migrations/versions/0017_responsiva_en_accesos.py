@@ -5,8 +5,8 @@
   - `responsiva_firmada_at`: fecha y hora de la firma de la responsiva (UTC).
 - Permite detectar cuándo se aprueban nuevos accesos para solicitar la responsiva en el portal.
 
-Revision ID: 0015
-Revises: 0014
+Revision ID: 0017
+Revises: 0016
 Create Date: 2026-11-18
 """
 from typing import Sequence, Union
@@ -26,7 +26,7 @@ TABLA = 'platform_access_grants'
 def upgrade() -> None:
     with op.batch_alter_table(TABLA) as lote:
         lote.add_column(sa.Column('responsiva_firmada', sa.Boolean(), nullable=False,
-                                  server_default=sa.text('1')))
+                                  server_default=sa.true()))
         lote.add_column(sa.Column('responsiva_firmada_at', sa.DateTime(), nullable=True))
 
 
