@@ -128,6 +128,42 @@ describe('ModalResponsiva', () => {
     expect(screen.getByText('Plataformas recientemente aprobadas')).toBeTruthy();
     expect(screen.getByRole('button', { name: /Firmar y activar accesos/i })).toBeTruthy();
   });
+
+  // Auditoría de accesibilidad independiente (B3): el fondo queda inert bajo un diálogo modal,
+  // así que la región de anuncios debe vivir dentro del diálogo para que el lector la lea.
+  it('B3: la región de anuncios está dentro del diálogo, no fuera de él', async () => {
+    renderWithToast(<ModalResponsiva session={mockSessionNoFirmada} onFirmado={vi.fn()} />);
+    const dialogo = await screen.findByRole('dialog');
+    const regiones = document.querySelectorAll('[data-region-anuncios]');
+    expect(regiones).toHaveLength(1);
+    expect(dialogo.contains(regiones[0])).toBe(true);
+  });
+
+  it('M4: mientras falta la casilla, un texto visible explica por qué «Firmar» está deshabilitado', async () => {
+    renderWithToast(<ModalResponsiva session={mockSessionNoFirmada} onFirmado={vi.fn()} />);
+    await screen.findByRole('dialog');
+    const boton = screen.getByRole('button', { name: /Firmar y acceder al portal/i });
+    const id = boton.getAttribute('aria-describedby');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id as string)?.textContent).toBe('Marca la casilla para firmar');
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(boton.hasAttribute('aria-describedby')).toBe(false);
+    expect(screen.queryByText('Marca la casilla para firmar')).toBeNull();
+  });
+
+  it('M5: la casilla usa el estilo estándar del proyecto', async () => {
+    renderWithToast(<ModalResponsiva session={mockSessionNoFirmada} onFirmado={vi.fn()} />);
+    await screen.findByRole('dialog');
+    expect(screen.getByRole('checkbox').className).toContain('nexus-checkbox');
+  });
+
+  it('M8: el diálogo se describe con el texto de la carta', async () => {
+    renderWithToast(<ModalResponsiva session={mockSessionNoFirmada} onFirmado={vi.fn()} />);
+    const dialogo = await screen.findByRole('dialog');
+    const id = dialogo.getAttribute('aria-describedby');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id as string)?.textContent).toContain('Texto legal de la responsiva');
+  });
 });
 
 describe('AppShell - Integración directa en el portal', () => {

@@ -18,6 +18,9 @@ import { RegionDeAnuncios } from '../region-de-anuncios';
 import { useToast } from '../toast';
 import { Badge, ErrorNote, Spinner } from '../ui';
 
+const ID_TEXTO_CARTA = 'texto-carta-responsiva';
+const ID_AYUDA_FIRMAR = 'ayuda-firmar-responsiva';
+
 export function ModalResponsiva({
   session,
   onFirmado,
@@ -37,11 +40,6 @@ export function ModalResponsiva({
   const errorCarga = responsivaAsync.error;
 
   async function handleFirmar() {
-    if (!aceptado) {
-      setAnuncio('Debes marcar la casilla para confirmar que aceptas la responsiva.');
-      return;
-    }
-
     setFirmando(true);
     setErrorFirma(null);
     try {
@@ -65,12 +63,12 @@ export function ModalResponsiva({
 
   return (
     <>
-      <RegionDeAnuncios mensaje={anuncio} />
       <Modal
         title={data?.titulo || 'Carta Responsiva de Uso de Activos de Información'}
         icon="escudo"
         size="3xl"
         onClose={handleIntentoCerrar}
+        describedBy={data?.contenido ? ID_TEXTO_CARTA : undefined}
         footer={
           <div className="flex w-full flex-col-reverse sm:flex-row items-center justify-between gap-3">
             <a
@@ -82,24 +80,35 @@ export function ModalResponsiva({
               <span>Cerrar sesión</span>
             </a>
 
-            <Button
-              onClick={handleFirmar}
-              disabled={!aceptado || firmando || loading}
-              className="w-full sm:w-auto"
-            >
-              <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
-              <span>
-                {firmando
-                  ? 'Registrando firma…'
-                  : data?.es_aprobacion
-                    ? 'Firmar y activar accesos'
-                    : 'Firmar y acceder al portal'}
-              </span>
-            </Button>
+            <div className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:items-end">
+              <Button
+                onClick={handleFirmar}
+                disabled={!aceptado || firmando || loading}
+                aria-describedby={!aceptado ? ID_AYUDA_FIRMAR : undefined}
+                className="w-full sm:w-auto"
+              >
+                <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+                <span>
+                  {firmando
+                    ? 'Registrando firma…'
+                    : data?.es_aprobacion
+                      ? 'Firmar y activar accesos'
+                      : 'Firmar y acceder al portal'}
+                </span>
+              </Button>
+              {/* Mientras falta la casilla; al integrar DIS-096 pasa a `motivoDeshabilitado` de Button. */}
+              {!aceptado ? (
+                <p id={ID_AYUDA_FIRMAR} className="text-xs text-label">
+                  Marca la casilla para firmar
+                </p>
+              ) : null}
+            </div>
           </div>
         }
       >
         <div className="space-y-5 text-body-text">
+          {/* Dentro del diálogo: el fondo queda inert y una región fuera no se anunciaría. */}
+          <RegionDeAnuncios mensaje={anuncio} />
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Spinner label="Cargando términos de la responsiva…" />
@@ -171,10 +180,11 @@ export function ModalResponsiva({
                     <Icono nombre="documento" tamano="xs" ariaHidden={true} className="text-primary-text" />
                     <span>Términos y Obligaciones</span>
                   </span>
-                  <span className="text-2xs font-semibold text-label">Lectura obligatoria</span>
+                  <span className="text-xs font-semibold text-label">Lectura obligatoria</span>
                 </div>
 
                 <div
+                  id={ID_TEXTO_CARTA}
                   tabIndex={0}
                   aria-label="Texto de la carta responsiva"
                   className="p-4 sm:p-5 overflow-y-auto max-h-56 sm:max-h-64 text-xs sm:text-sm text-body-text leading-relaxed whitespace-pre-line outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-b-xl"
@@ -196,7 +206,7 @@ export function ModalResponsiva({
                     type="checkbox"
                     checked={aceptado}
                     onChange={(e) => setAceptado(e.target.checked)}
-                    className="mt-0.5 size-5 rounded border-panel-border focus:ring-primary focus:ring-offset-0 cursor-pointer"
+                    className="nexus-checkbox mt-0.5 cursor-pointer"
                   />
                   <span>
                     He leído, comprendo y acepto los términos, responsabilidades y lineamientos establecidos en la presente carta responsiva para el uso de mis cuentas y plataformas institucionales.

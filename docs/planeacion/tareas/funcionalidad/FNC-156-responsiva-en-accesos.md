@@ -32,3 +32,10 @@
 ## Pruebas
 - `tests/test_responsiva.py` (otro agente), `tests/test_migraciones_postgresql.py` (tramo 0016:0017).
 - Batería: ver bitácora del día.
+
+## Correcciones de la auditoría de accesibilidad independiente (2026-11-19)
+- B3 (bloqueante): `RegionDeAnuncios` de `modal-responsiva.tsx` estaba fuera del `Modal` (bajo `#raiz-app`, `inert`); ahora va dentro del cuerpo del diálogo. Regresión: `tests/components/responsiva.test.tsx`.
+- M4: «Firmar…» sigue con `disabled` nativo (DIS-096 aún no está en esta rama) y suma el texto visible «Marca la casilla para firmar» con `aria-describedby`; retirado el código muerto `if (!aceptado)` de `handleFirmar`. **Al integrar DIS-096 se pasará a `motivoDeshabilitado`.**
+- M5: casilla con `.nexus-checkbox` (estándar del proyecto). M6: `text-2xs` (no existe) a `text-xs`. M8: el diálogo se describe con el texto de la carta (`describedBy`).
+- M7 (Modal compartido con ✕ que no cierra): propuesta DIS-098 en el tablero de la rama DIS-097; no se tocó `Modal`.
+
