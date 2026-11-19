@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Agregado
+- Usuarios: el alta en el directorio exige una contraseña inicial que cumple la política (`PASSWORD_POLICY_*`) y la entrega por un Send de Vaultwarden con el enlace por correo; si falla queda «credenciales pendientes» y el worker reintenta con contraseña nueva; «Reenviar credenciales» (superadmin); `GET /users/password-policy`, `credentials_status` y migración 0015 (FNC-138, FNC-139, ADR-008, 2026-11-18).
 - Despliegue: install.sh --actualizar actualiza sin reinstalar; un nginx .conf editado a mano ya no se sobrescribe (pregunta o se conserva, con copia al reemplazar), y los servicios se reinician para tomar el código nuevo (FNC-153, 2026-11-18).
 - Base de datos: DB_TLS_CA_FILE opcional exige TLS verificado hacia una BD remota (FNC-151, 2026-11-18).
 - Despliegue: `install.sh` y `preflight.sh` detectan PostgreSQL de PGDG (`postgresql-NN.service`, la versión mayor) sin `--db-service` (FNC-148, 2026-11-17).
