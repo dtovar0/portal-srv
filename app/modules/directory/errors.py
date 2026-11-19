@@ -54,6 +54,10 @@ MOTIVO_ULTIMO_MIEMBRO = 'ultimo_miembro'
 MOTIVO_DATOS_INCOMPLETOS = 'datos_incompletos'
 MOTIVO_DATOS_INVALIDOS = 'datos_invalidos'
 MOTIVO_DIRECTORIO = 'directorio'
+# Mover un grupo entre OU (FNC-163).
+MOTIVO_DESTINO_INEXISTENTE = 'ou_destino_inexistente'
+MOTIVO_DESTINO_OCUPADO = 'destino_ocupado'
+MOTIVO_MOVER_NO_CONFIGURADO = 'inactivos_no_configurado'
 
 
 @dataclass(frozen=True)
