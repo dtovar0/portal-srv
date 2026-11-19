@@ -195,7 +195,13 @@ def _registrar_cli_y_manejadores(app):
 
 
 def _crear_tablas(app):
-    """Importa los modelos y crea las tablas y el usuario inicial."""
+    """Importa los modelos; en desarrollo crea las tablas.
+
+    Fuera de desarrollo el esquema lo crean SOLO las migraciones (FNC-160): un
+    `create_all` al arrancar con código nuevo antes de `alembic upgrade` creaba
+    tablas nuevas y la migración fallaba con DuplicateTable.
+    """
+    from app.utils.uri_bd import es_desarrollo
     # Sincronizar Modelos (Importar antes de crear tablas)
     from app.modules.settings.models import SystemConfig
     from app.modules.audit.models import AuditLog
@@ -206,13 +212,15 @@ def _crear_tablas(app):
     # Crear tablas automáticamente dentro del contexto de la app
     with app.app_context():
         try:
-            db.create_all()
+            if es_desarrollo():
+                db.create_all()
             # Sin cuenta automática con contraseña conocida (FNC-003): el
             # primer superadmin se crea con `flask cuentas superadmin`.
             if not User.query.first():
                 print('Sin cuentas: crea el superadmin con '
                       '`flask --app run:app cuentas superadmin`.')
-            print("🚀 Base de Datos Sincronizada Correctamente")
+            print("🚀 Base de Datos Sincronizada Correctamente" if es_desarrollo()
+                  else "Base de datos: esquema por migraciones (alembic upgrade head)")
         except Exception as e:
             print(f"❌ Error al sincronizar base de datos: {e}")
 

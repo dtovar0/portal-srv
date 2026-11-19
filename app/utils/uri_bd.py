@@ -36,6 +36,11 @@ class ErrorConfiguracionBD(RuntimeError):
     """`DB_ENGINE` o `DB_PORT` no son válidos (el texto nunca lleva secretos)."""
 
 
+def es_desarrollo():
+    """`True` con `APP_ENV=development`."""
+    return _es_desarrollo()
+
+
 def _es_desarrollo():
     return (os.getenv(VAR_ENTORNO) or '').strip().lower() == ENTORNO_DESARROLLO
 

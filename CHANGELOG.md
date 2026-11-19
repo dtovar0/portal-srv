@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Base de datos: fuera de desarrollo la app ya no crea tablas al arrancar (solo `alembic upgrade head`); la migración 0016 recrea `credential_deliveries` si el arranque la dejó vacía y se detiene si tiene filas. Evita el DuplicateTable al actualizar (FNC-160, 2026-11-19).
 - Despliegue: `OIDC_HABILITADO=false` permite instalar y arrancar sin Authelia (solo entra la cuenta de emergencia por `/acceso-emergencia`); `preflight.sh`/`install.sh` lo muestran como AVISO en vez de FALTA (FNC-157, 2026-11-19).
 - Migración 0014 (responsiva de usuario): el valor por defecto de `responsiva_firmada` era `DEFAULT 1`, que PostgreSQL rechaza y detenía `alembic upgrade`; ahora `DEFAULT true`. Prueba nueva que genera el SQL de PostgreSQL de la migración (FNC-155, 2026-11-18).
 
