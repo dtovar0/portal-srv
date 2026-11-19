@@ -23,6 +23,7 @@
 
 ### Corregido
 - Despliegue: nginx ya no trae el bloque `auth_request` comentado (el acceso es OIDC); conserva el borrado de `Remote-*` (FNC-143, 2026-11-18).
+- Estilos: variables CSS inexistentes reemplazadas por tokens; vuelve a aplicarse el estilo de deshabilitado y las animaciones de entrada de modal y pestañas (DIS-095, 2026-11-18).
 - Pruebas: la del buscador global ya no falla bajo carga (esperaba al menú y no al buscador que escucha Ctrl K) (DIS-094, 2026-11-18).
 - Accesibilidad: bordes de tarjetas seleccionables y pestaña activa a 3:1; la barra del toast toma su duración de --toast-duracion (igual a TOAST_MS) (DIS-093, 2026-11-18).
 - Interfaz: la barra de progreso del toast se pausa con el cursor o el foco; el menú 'Log conectores' pasa a 'Ejecuciones'; los paneles de áreas avisan que quitar a alguien le retira sus accesos (DIS-092, 2026-11-18).
