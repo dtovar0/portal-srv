@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * Barra superior del marco (DIS-078), 64 px: botón de menú, ruta de navegación, buscador global,
- * tema claro/oscuro, notificaciones con indicador y ayuda (el menú de usuario va en el pie de la
- * barra lateral, DIS-080). Bajo `md` el botón
- * de menú abre el cajón (`MobileMenu`) y el buscador se reduce a un icono.
+ * Barra superior del marco (DIS-078), 64 px: botón de menú, ruta de navegación, tema
+ * claro/oscuro, notificaciones con indicador y ayuda. Sin buscador global (DIS-101). El menú
+ * de usuario va en el pie de la barra lateral (DIS-080). Bajo `md` el botón de menú abre el
+ * cajón (`MobileMenu`).
  */
 
 import Link from 'next/link';
@@ -12,15 +12,12 @@ import { Icono } from '../icono';
 import { AyudaMarco } from './ayuda-marco';
 import { ID_BARRA_LATERAL } from './barra-lateral';
 import { BotonIcono, CLASE_BOTON_ICONO } from './boton-icono';
-import { BuscadorGlobal } from './buscador-global';
-import type { Comando } from './comandos';
 import { RutaNavegacion } from './ruta-navegacion';
 
 export function BarraSuperior({
   menuMovil,
   colapsada,
   onAlternarMenu,
-  comandos,
   oscuro,
   onAlternarTema,
   noLeidas,
@@ -29,7 +26,6 @@ export function BarraSuperior({
   menuMovil: React.ReactNode;
   colapsada: boolean;
   onAlternarMenu: () => void;
-  comandos?: readonly Comando[];
   oscuro: boolean;
   onAlternarTema: () => void;
   noLeidas: number;
@@ -50,7 +46,6 @@ export function BarraSuperior({
         className="hidden md:inline-flex"
       />
       <RutaNavegacion />
-      <BuscadorGlobal comandos={comandos ?? []} />
       <div className="ml-auto flex min-w-0 items-center gap-2">
         <Link
           href="/platforms"

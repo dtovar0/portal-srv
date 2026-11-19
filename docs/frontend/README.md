@@ -75,7 +75,7 @@ Definido en `components/marco/nav-items.ts` (`NAV`, FNC-070; sección, icono y p
 
 | Componente | Archivo | Rol |
 |---|---|---|
-| `AppShell`, `Marco` | `app-shell.tsx`, `marco/marco.tsx` | Estados de carga y error de sesión; `Marco` (DIS-078) compone la barra lateral colapsable (264/76 px, recordada en `localStorage`), la barra superior de 64 px (menú, ruta, buscador `Ctrl K`, tema, notificaciones, ayuda, menú de usuario) y el `<main>`. Piezas en `components/marco/`. |
+| `AppShell`, `Marco` | `app-shell.tsx`, `marco/marco.tsx` | Estados de carga y error de sesión; `Marco` (DIS-078) compone la barra lateral colapsable (264/76 px, recordada en `localStorage`), la barra superior de 64 px (menú, ruta, tema, notificaciones, ayuda, menú de usuario) y el `<main>`. Piezas en `components/marco/`. |
 | `MobileMenu` | `mobile-menu.tsx` | Bajo `md`: botón de icono «Menú» (`aria-expanded`, `aria-controls`) y panel `role="dialog"` con la misma `NavPrincipal` por rol; cierra con Escape, al elegir opción y con clic fuera; foco al primer enlace, de vuelta al botón y atrapado con Tab (`useFocusTrap`, DIS-031); panel en portal, velo `bg-overlay` y bloqueo del fondo (DIS-038); áreas de 44 px (DIS-025, DIS-078). |
 | `SessionProvider` / `useSession` | `session-provider.tsx` | Pide `/me` una vez; sin sesión redirige a `/login`. |
 | `RequireRole` / `meetsRequirement` | `require-role.tsx` | Guarda de ruta y regla de visibilidad por rol (FNC-070). |

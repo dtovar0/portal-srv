@@ -348,7 +348,7 @@ Definidos en `frontend/src/styles/tokens.css` bajo la arquitectura de 3 capas (A
 | `--control-alto` | Altura táctil mínima accesible | `48px` | `48px` | `tokens.css` | DIS-072 | Vigente |
 | `--marco-lateral-ancho`, `--marco-lateral-colapsada` | Ancho de la barra lateral expandida y colapsada (utilidades `w-lateral`, `w-lateral-colapsada`) | `264px`, `76px` | ídem | `tokens.css` | DIS-078 | Vigente |
 | `--marco-superior-alto` | Alto de la barra superior y del logo de la barra lateral (utilidad `h-barra-superior`) | `64px` | ídem | `tokens.css` | DIS-078 | Vigente |
-| `--marco-buscador-max` | Ancho máximo del campo del buscador global (utilidad `max-w-buscador`; la paleta usa `Modal`, que fija su propio ancho) | `520px` | ídem | `tokens.css` | DIS-078 | Vigente |
+| `--marco-buscador-max` | Ancho máximo del campo del buscador global (utilidad `max-w-buscador`; la paleta usa `Modal`, que fija su propio ancho) | `520px` | ídem | `tokens.css` | DIS-078 | Retirada (DIS-101, 2026-11-19) |
 | `--contenido-max`, `--formulario-max`, `--dialogo-max` | Anchos máximos semánticos | `1280px`, `640px`, `560px` | `1280px`, `640px`, `560px` | `tokens.css` | DIS-072 | Vigente |
 | `--espacio-1` a `--espacio-12` | Escala única de espaciado 8pt | `4px`, `8px`, `12px`, `16px`, `24px`, `32px`, `48px` | ídem | `tokens.css` | DIS-072 | Vigente |
 | `--icono-sm`, `--icono-md`, `--icono-lg` | Tamaños normalizados de ícono | `16px`, `20px`, `24px` | ídem | `tokens.css` | DIS-072 | Vigente |

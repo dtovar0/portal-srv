@@ -1,6 +1,6 @@
 /**
- * DIS-078: marco de administración. Barra lateral colapsable, barra superior (buscador global con
- * paleta de comandos, tema, notificaciones, ayuda; menú de usuario en el pie de la barra lateral, DIS-080) y cajón móvil.
+ * DIS-078: marco de administración. Barra lateral colapsable, barra superior (tema,
+ * notificaciones, ayuda; sin buscador global desde DIS-101; menú de usuario en el pie de la barra lateral, DIS-080) y cajón móvil.
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -57,9 +57,7 @@ async function montar(rol: Rol = 'administrador') {
   sesionSimulada.mockResolvedValue(sesion(rol));
   render(<AppShell>contenido</AppShell>, { container: crearRaiz() });
   await screen.findByRole('navigation', { name: 'Principal' });
-  // El atajo Ctrl K lo escucha el buscador de la barra superior: bajo carga se
-  // monta después del menú y un atajo pulsado antes se perdía (DIS-094).
-  await screen.findByRole('button', { name: 'Buscar' });
+  await screen.findByRole('button', { name: 'Ayuda' });
 }
 
 const lateral = () => within(document.querySelector('aside')!);
@@ -233,7 +231,8 @@ describe('Barra superior', () => {
     boton.focus();
     fireEvent.click(boton);
     const dialogo = screen.getByRole('dialog', { name: 'Ayuda' });
-    expect(within(dialogo).getByText(/Ctrl K|⌘K/)).toBeTruthy();
+    // DIS-101: sin buscador global, la ayuda ya no menciona Ctrl K.
+    expect(within(dialogo).queryByText(/Ctrl K|⌘K|buscador/i)).toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(boton);
@@ -293,111 +292,12 @@ describe('Menú de usuario', () => {
   });
 });
 
-describe('Buscador global', () => {
-  async function abrirPaleta() {
-    await montar('admin_area');
-    const origen = document.activeElement;
-    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    return { origen, dialogo: await screen.findByRole('dialog', { name: 'Buscador global' }) };
-  }
-
-  it('Ctrl K y ⌘K abren la paleta con el foco en el combobox y las pantallas del rol', async () => {
-    const { dialogo } = await abrirPaleta();
-    const campo = within(dialogo).getByRole('combobox', { name: 'Buscar pantallas y acciones' });
-    expect(within(dialogo).queryByRole('option', { name: /Aprobaciones/ })).toBeNull();
-    expect(within(dialogo).getByRole('option', { name: /Plataformas/ })).toBeTruthy();
-    // Un admin de área no ve «Conectores» (solo superadmin).
-    expect(within(dialogo).queryByRole('option', { name: /Conectores/ })).toBeNull();
-    expect(within(dialogo).getByRole('option', { name: /Cerrar sesión/ })).toBeTruthy();
-
-    fireEvent.keyDown(document, { key: 'Escape' });
-    fireEvent.keyDown(document, { key: 'K', metaKey: true });
-    expect(screen.getByRole('dialog', { name: 'Buscador global' })).toBeTruthy();
-    fireEvent.keyDown(document, { key: 'Escape' });
-  });
-
-  it('filtra sin distinguir acentos ni mayúsculas', async () => {
-    const { dialogo } = await abrirPaleta();
-    fireEvent.change(within(dialogo).getByRole('combobox'), { target: { value: 'auditoria' } });
-    const opciones = within(dialogo).getAllByRole('option');
-    expect(opciones).toHaveLength(2);
-    const textos = opciones.map((o) => o.textContent);
-    expect(textos.some((t) => t?.includes('Auditoría'))).toBe(true);
-    expect(textos.some((t) => t?.includes('Auditoría usuarios'))).toBe(true);
-    fireEvent.keyDown(document, { key: 'Escape' });
-  });
-
-  it('muestra un aviso si no hay resultados', async () => {
-    const { dialogo } = await abrirPaleta();
-    fireEvent.change(within(dialogo).getByRole('combobox'), { target: { value: 'zzzz' } });
-    expect(within(dialogo).queryAllByRole('option')).toHaveLength(0);
-    expect(within(dialogo).getByRole('status').textContent).toContain('Sin resultados');
-    expect(within(dialogo).getByRole('combobox').getAttribute('aria-activedescendant')).toBeNull();
-    fireEvent.keyDown(document, { key: 'Escape' });
-  });
-
-  it('las flechas mueven la opción activa y Enter navega a la pantalla', async () => {
-    const { dialogo } = await abrirPaleta();
-    const campo = within(dialogo).getByRole('combobox');
-    const opciones = () => within(dialogo).getAllByRole('option');
-    expect(opciones()[0].getAttribute('aria-selected')).toBe('true');
-    expect(campo.getAttribute('aria-activedescendant')).toBe(opciones()[0].id);
-
-    fireEvent.keyDown(campo, { key: 'ArrowDown' });
-    expect(opciones()[1].getAttribute('aria-selected')).toBe('true');
-    expect(campo.getAttribute('aria-activedescendant')).toBe(opciones()[1].id);
-    fireEvent.keyDown(campo, { key: 'ArrowUp' });
-    fireEvent.keyDown(campo, { key: 'ArrowUp' });
-    expect(opciones()[opciones().length - 1].getAttribute('aria-selected')).toBe('true');
-
-    fireEvent.change(campo, { target: { value: 'usuarios' } });
-    fireEvent.keyDown(campo, { key: 'Enter' });
-    expect(ruta.empujar).toHaveBeenCalledWith('/users');
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('un clic en una acción la ejecuta (cambiar de tema)', async () => {
-    const { dialogo } = await abrirPaleta();
-    fireEvent.click(within(dialogo).getByRole('option', { name: /Cambiar a tema oscuro/ }));
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('Escape cierra y devuelve el foco al control que lo tenía', async () => {
-    const { origen } = await abrirPaleta();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(document.activeElement).toBe(origen);
-  });
-
-  it('Tab no saca el foco de la paleta', async () => {
-    const { dialogo } = await abrirPaleta();
-    const campo = within(dialogo).getByRole('combobox');
-    const cerrar = within(dialogo).getByRole('button', { name: 'Cerrar' });
-    cerrar.focus();
-    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
-    expect(document.activeElement).toBe(campo);
-    fireEvent.keyDown(document, { key: 'Tab' });
-    expect(document.activeElement).toBe(cerrar);
-    fireEvent.keyDown(document, { key: 'Escape' });
-  });
-
-  it('Ctrl K abre la paleta', async () => {
-    await montar('usuario');
-    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    expect(await screen.findByRole('dialog', { name: 'Buscador global' })).toBeTruthy();
-    fireEvent.keyDown(document, { key: 'Escape' });
-  });
-});
-
 describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
-  it('ya no está en la barra superior, que conserva ☰, ruta, buscador, tema, notificaciones y ayuda', async () => {
+  it('ya no está en la barra superior, que conserva ☰, ruta, tema, notificaciones y ayuda (sin buscador, DIS-101)', async () => {
     await montar('administrador');
     expect(barra().queryByRole('button', { name: /Menú de usuario/ })).toBeNull();
     expect(barra().getByRole('button', { name: 'Colapsar menú' })).toBeTruthy();
-    const buscar = barra().getByRole('button', { name: 'Buscar' });
-    expect(buscar.getAttribute('aria-haspopup')).toBe('dialog');
-    expect(buscar.getAttribute('aria-keyshortcuts')).toBe('Control+K Meta+K');
+    expect(barra().queryByRole('button', { name: 'Buscar' })).toBeNull();
     expect(barra().getByRole('button', { name: 'Cambiar a tema oscuro' })).toBeTruthy();
     expect(barra().getByRole('link', { name: 'Notificaciones' })).toBeTruthy();
     expect(barra().getByRole('button', { name: /Ayuda/ })).toBeTruthy();
@@ -507,22 +407,6 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
     expect(lateral().queryByRole('button', { name: /(Colapsar|Expandir) menú/ })).toBeNull();
   });
 
-  it('la paleta anuncia el número de resultados y aria-expanded sigue a la lista', async () => {
-    await montar('usuario');
-    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    const dialogo = await screen.findByRole('dialog', { name: 'Buscador global' });
-    const campo = within(dialogo).getByRole('combobox');
-    const vivo = () => dialogo.querySelector('[aria-live="polite"]')!;
-    expect(vivo().textContent).toMatch(/^\d+ resultados$/);
-    expect(campo.getAttribute('aria-expanded')).toBe('true');
-    fireEvent.change(campo, { target: { value: 'plataforma' } });
-    expect(vivo().textContent).toBe('1 resultado');
-    fireEvent.change(campo, { target: { value: 'zzzz' } });
-    expect(vivo().textContent).toBe('Sin resultados');
-    expect(campo.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.keyDown(document, { key: 'Escape' });
-  });
-
   it('ArrowUp en el botón del menú de usuario lo abre y enfoca el último ítem', async () => {
     await montar('usuario');
     const boton = lateral().getByRole('button', { name: /Menú de usuario/ });
@@ -530,5 +414,14 @@ describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
     fireEvent.keyDown(boton, { key: 'ArrowUp' });
     const menu = screen.getByRole('menu');
     expect(document.activeElement).toBe(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' }));
+  });
+});
+
+describe('Sin buscador global (DIS-101)', () => {
+  it('Ctrl K no abre ninguna paleta y la barra superior no tiene botón Buscar', async () => {
+    await montar('administrador');
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(barra().queryByRole('button', { name: 'Buscar' })).toBeNull();
   });
 });
