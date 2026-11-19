@@ -2,7 +2,10 @@
 
 /**
  * Alta de una nueva cuenta en 2 pasos (DIS-019, F-USR-02, RF-04).
- * - Paso 1: Datos del usuario (Nombre completo, Correo, Contraseña, Confirmar contraseña).
+ * - Paso 1: Datos del usuario (Nombre completo, Correo y Contraseña inicial). La
+ *   política de la contraseña sale del backend (`GET /users/password-policy`, FNC-139);
+ *   sin campo «Confirmar» (ADR-008 7): mostrar u ocultar y generador. Tras crear, un aviso
+ *   dice si las credenciales se enviaron o quedaron pendientes; la contraseña se borra del estado.
  * - Paso 2: Accesos mediante Dual Picklist (Áreas disponibles a la izquierda,
  *   Áreas asignadas a la derecha) con transferencia directa de un solo clic.
  * - Estandarizado en el Modal central con botones alineados a izquierda (Cancelar/Atrás)
@@ -11,15 +14,17 @@
  * - Espaciado de error pre-reservado (min-h-5) para evitar saltos y temblores de layout (CLS = 0).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usersApi } from '@/lib/access/users';
-import { generarContrasenaSegura, LONGITUD_MINIMA_GENERADOR } from '@/lib/generador-contrasena';
+import type { PasswordPolicy } from '@/lib/access/types';
+import { generarSegunPolitica } from '@/lib/contrasena';
 import type { Area, AreaRef, ManagedUser } from '@/lib/types';
 import { Button, Field, Modal, TextInput } from '../form';
 import { Icono } from '../icono';
 import { useToast } from '../toast';
 import { focusFirstError } from '../platforms/field-notes';
 import { AreaDualPicklist } from './area-dual-picklist';
+import { avisoDeCredenciales } from './estado-entrega';
 import {
   CORREO_MAX, NOMBRE_MAX, cuerpoAlta, describeDirectoryAccountError,
   validarStep1, type CampoAlta, type FormularioAlta,
@@ -31,7 +36,6 @@ const IDS = {
   fullName: 'alta-directorio-nombre-completo',
   email: 'alta-directorio-correo',
   password: 'alta-directorio-contrasena',
-  confirmPassword: 'alta-directorio-confirmar-contrasena',
   area_ids: 'alta-directorio-areas',
 } as const;
 
@@ -39,7 +43,6 @@ const ORDEN_PASO_1: [CampoAlta, string][] = [
   ['fullName', IDS.fullName],
   ['email', IDS.email],
   ['password', IDS.password],
-  ['confirmPassword', IDS.confirmPassword],
 ];
 
 const VACIO: FormularioAlta = {
@@ -49,7 +52,6 @@ const VACIO: FormularioAlta = {
   surname: '',
   fullName: '',
   password: '',
-  confirmPassword: '',
   area_ids: [],
 };
 
@@ -75,42 +77,37 @@ export function DirectoryAccountForm({
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [mostrarPassword, setMostrarPassword] = useState(false);
+  // Política vigente del backend; sin ella el servidor sigue validando.
+  const [politica, setPolitica] = useState<PasswordPolicy | null>(null);
+
+  useEffect(() => {
+    let vigente = true;
+    usersApi.passwordPolicy().then(
+      (res) => { if (vigente) setPolitica(res.policy); },
+      () => {
+        if (vigente) avisar('error', 'No se pudo cargar la política de contraseña.', 'Error');
+      },
+    );
+    return () => { vigente = false; };
+    // `avisar` no es estable; la política se pide una sola vez al abrir el alta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleGenerarContrasena() {
+    if (!politica) {
+      avisar('warning', 'La política de contraseña aún no está disponible.', 'Espera un momento');
+      return;
+    }
     let nueva: string;
     try {
-      nueva = generarContrasenaSegura(LONGITUD_MINIMA_GENERADOR);
+      nueva = generarSegunPolitica(politica);
     } catch (err) {
       avisar('error', err instanceof Error ? err.message : 'No se pudo generar la contraseña.', 'Error');
       return;
     }
     cambiar('password', nueva);
-    cambiar('confirmPassword', nueva);
     setMostrarPassword(true);
-    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(nueva).then(
-        () => {
-          avisar(
-            'success',
-            `Contraseña segura de ${LONGITUD_MINIMA_GENERADOR} caracteres generada y copiada al portapapeles.`,
-            'Contraseña generada',
-          );
-        },
-        () => {
-          avisar(
-            'success',
-            `Contraseña segura de ${LONGITUD_MINIMA_GENERADOR} caracteres generada.`,
-            'Contraseña generada',
-          );
-        },
-      );
-    } else {
-      avisar(
-        'success',
-        `Contraseña segura de ${LONGITUD_MINIMA_GENERADOR} caracteres generada.`,
-        'Contraseña generada',
-      );
-    }
+    avisar('success', `Contraseña segura de ${nueva.length} caracteres generada.`, 'Contraseña generada');
   }
 
   function cambiar<K extends CampoAlta>(campo: K, valor: FormularioAlta[K]) {
@@ -120,7 +117,7 @@ export function DirectoryAccountForm({
   }
 
   function avanzarAlPaso2() {
-    const errs = validarStep1(form);
+    const errs = validarStep1(form, politica);
     if (Object.keys(errs).length > 0) {
       setFields(errs);
       const msg = 'Por favor completa todos los datos obligatorios correctamente.';
@@ -159,6 +156,10 @@ export function DirectoryAccountForm({
       const payload = cuerpoAlta(form);
       const res = await usersApi.createDirectoryAccount(payload);
       avisar('success', `${res.user.name || res.user.email} se agregó al directorio.`, 'Cuenta creada');
+      const credenciales = avisoDeCredenciales(res.user.credentials_status);
+      avisar(credenciales.tipo, credenciales.mensaje, 'Credenciales');
+      // La contraseña no se conserva en el estado del cliente.
+      setForm(VACIO);
       onCreated(res.user);
     } catch (err) {
       const view = describeDirectoryAccountError(err);
@@ -166,7 +167,7 @@ export function DirectoryAccountForm({
       avisar('error', view.message, 'Error al crear');
       setFields(view.fields);
 
-      if (view.fields.email || view.fields.given_name || view.fields.surname || view.fields.uid) {
+      if (view.fields.email || view.fields.given_name || view.fields.surname || view.fields.uid || view.fields.password) {
         setPaso(1);
         setTimeout(() => {
           focusFirstError(ORDEN_PASO_1, view.fields as Record<string, string>);
@@ -331,60 +332,34 @@ export function DirectoryAccountForm({
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <Field label="Contraseña">
-                  <TextInput
-                    id={IDS.password}
-                    type={mostrarPassword ? 'text' : 'password'}
-                    value={form.password ?? ''}
-                    onChange={(e) => cambiar('password', e.target.value)}
-                    placeholder="Mínimo 8 caracteres"
-                    required
-                    aria-required="true"
-                    autoComplete="new-password"
-                    aria-describedby={fields.password ? `${IDS.password}-error` : undefined}
-                    aria-invalid={fields.password ? true : undefined}
-                  />
-                </Field>
-                <div className="min-h-5 pt-0.5" aria-live="polite">
-                  {fields.password ? (
-                    <span id={`${IDS.password}-error`} role="alert" className="block text-xs font-bold text-error-text">
-                      {fields.password}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-
-              <div>
-                <Field label="Confirmar contraseña">
-                  <TextInput
-                    id={IDS.confirmPassword}
-                    type={mostrarPassword ? 'text' : 'password'}
-                    value={form.confirmPassword ?? ''}
-                    onChange={(e) => cambiar('confirmPassword', e.target.value)}
-                    placeholder="Repite la contraseña"
-                    required
-                    aria-required="true"
-                    autoComplete="new-password"
-                    aria-describedby={fields.confirmPassword ? `${IDS.confirmPassword}-error` : undefined}
-                    aria-invalid={fields.confirmPassword ? true : undefined}
-                  />
-                </Field>
-                <div className="min-h-5 pt-0.5" aria-live="polite">
-                  {fields.confirmPassword ? (
-                    <span id={`${IDS.confirmPassword}-error`} role="alert" className="block text-xs font-bold text-error-text">
-                      {fields.confirmPassword}
-                    </span>
-                  ) : null}
-                </div>
+            <div>
+              <Field label="Contraseña inicial">
+                <TextInput
+                  id={IDS.password}
+                  type={mostrarPassword ? 'text' : 'password'}
+                  value={form.password ?? ''}
+                  onChange={(e) => cambiar('password', e.target.value)}
+                  placeholder={politica ? `Mínimo ${politica.min_length} caracteres` : 'Contraseña inicial'}
+                  required
+                  aria-required="true"
+                  autoComplete="new-password"
+                  aria-describedby={fields.password ? `${IDS.password}-error` : undefined}
+                  aria-invalid={fields.password ? true : undefined}
+                />
+              </Field>
+              <div className="min-h-5 pt-0.5" aria-live="polite">
+                {fields.password ? (
+                  <span id={`${IDS.password}-error`} role="alert" className="block text-xs font-bold text-error-text">
+                    {fields.password}
+                  </span>
+                ) : null}
               </div>
             </div>
 
-            {/* Generador de contraseña alfanumérica con símbolos (mínimo 16 caracteres) ubicado abajo de los inputs */}
+            {/* Generador de contraseña según la política del backend, abajo del campo */}
             <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border/80 bg-surface-container/40">
               <span className="text-xs text-label font-medium truncate">
-                Clave segura (16+ caracteres)
+                {politica ? `Clave segura (${politica.min_length}+ caracteres)` : 'Clave segura'}
               </span>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
@@ -392,7 +367,7 @@ export function DirectoryAccountForm({
                   onClick={handleGenerarContrasena}
                   aria-label="Generar contraseña"
                   className="min-h-12 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 active:scale-[0.98] text-primary-text font-bold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  title="Generar contraseña alfanumérica con símbolos de 16 caracteres"
+                  title="Generar una contraseña que cumple la política"
                 >
                   <Icono nombre="marca" tamano="xs" ariaHidden={true} className="text-primary-text shrink-0" />
                   <span>Generar</span>
@@ -403,6 +378,7 @@ export function DirectoryAccountForm({
                       type="button"
                       onClick={() => setMostrarPassword((prev) => !prev)}
                       aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                      aria-pressed={mostrarPassword}
                       className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                     >

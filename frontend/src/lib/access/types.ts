@@ -249,6 +249,23 @@ export interface DirectoryAccountInput {
   surname: string;
   /** Obligatorio para un admin de área; el superadmin puede enviarlo vacío. */
   area_ids: number[];
+  /** Contraseña inicial (v2): cumple la política de `GET /users/password-policy`. Nunca se guarda en el cliente. */
+  password: string;
+}
+
+/** Política de la contraseña inicial (`GET /users/password-policy`). */
+export type ClasePassword = 'mayusculas' | 'minusculas' | 'digitos' | 'simbolos';
+
+export interface PasswordPolicy {
+  min_length: number;
+  max_length: number;
+  required_classes: ClasePassword[];
+  symbols: string;
+}
+
+export interface PasswordPolicyResult {
+  status: 'success';
+  policy: PasswordPolicy;
 }
 
 export interface UserWriteResult {

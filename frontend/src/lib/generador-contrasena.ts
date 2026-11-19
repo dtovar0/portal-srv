@@ -19,7 +19,7 @@ const RANGO_UINT32 = 0x100000000;
  * (sesgo de módulo). Sin Web Crypto lanza un error: nunca recurre a
  * `Math.random`, que no es seguro para contraseñas.
  */
-function obtenerIndiceAleatorio(max: number): number {
+export function obtenerIndiceAleatorio(max: number): number {
   const cripto = globalThis.crypto;
   if (!cripto || typeof cripto.getRandomValues !== 'function') {
     throw new Error('El navegador no permite generar contraseñas seguras.');

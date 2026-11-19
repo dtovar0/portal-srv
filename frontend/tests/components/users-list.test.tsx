@@ -21,7 +21,9 @@ vi.mock('@/lib/api', async (original) => ({
   },
 }));
 vi.mock('@/lib/access/users', () => ({
-  usersApi: { setManagedAreas: vi.fn(), createDirectoryAccount: vi.fn() },
+  usersApi: {
+    setManagedAreas: vi.fn(), createDirectoryAccount: vi.fn(), passwordPolicy: vi.fn(), resendCredentials: vi.fn(),
+  },
 }));
 vi.mock('@/components/session-provider', () => ({
   useSession: () => ({
@@ -29,7 +31,7 @@ vi.mock('@/components/session-provider', () => ({
   }),
 }));
 
-import { api } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import { usersApi } from '@/lib/access/users';
 import { UsersList } from '@/components/users-list';
 
@@ -56,6 +58,14 @@ beforeEach(() => {
   });
   vi.mocked(usersApi.setManagedAreas).mockResolvedValue(
     { status: 'success', user: ADMIN_AREA });
+  vi.mocked(usersApi.passwordPolicy).mockResolvedValue({
+    status: 'success',
+    policy: {
+      min_length: 16, max_length: 128,
+      required_classes: ['mayusculas', 'minusculas', 'digitos', 'simbolos'],
+      symbols: '!#$%&()*+,-./:;<=>?@[]^_{}~',
+    },
+  });
 });
 
 afterEach(() => {
@@ -75,8 +85,8 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
     expect(modal.getByText('Nueva cuenta')).toBeTruthy();
     expect(modal.getByLabelText('Nombre completo')).toBeTruthy();
     expect(modal.getByLabelText('Correo')).toBeTruthy();
-    expect(modal.getByLabelText('Contraseña')).toBeTruthy();
-    expect(modal.getByLabelText('Confirmar contraseña')).toBeTruthy();
+    expect(modal.getByLabelText('Contraseña inicial')).toBeTruthy();
+    expect(modal.queryByLabelText('Confirmar contraseña')).toBeNull();
     expect(modal.queryByLabelText('Rol')).toBeNull();
     expect(api.createUser).not.toHaveBeenCalled();
   });
@@ -276,5 +286,75 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
     expect(await screen.findByRole('heading', { name: 'Accesos — 2 usuarios seleccionados' })).toBeTruthy();
     expect(screen.getByText('Selección múltiple:')).toBeTruthy();
     expect(screen.getByText('2 usuarios')).toBeTruthy();
+  });
+});
+
+describe('UsersList: credenciales iniciales (FNC-139)', () => {
+  const ONBOARDING: ManagedUser = {
+    ...ADMIN_AREA, id: 8, email: 'ana@ejemplo.local', name: 'Ana Ruiz', role: 'usuario',
+    auth_source: 'ldap', credentials_status: 'pendientes', credentials_sent_at: null,
+  };
+  const ENVIADA: ManagedUser = {
+    ...ONBOARDING, id: 9, email: 'eva@ejemplo.local', name: 'Eva Mora',
+    credentials_status: 'enviadas', credentials_sent_at: '2026-11-18T12:00:00Z',
+  };
+
+  beforeEach(() => {
+    vi.mocked(api.users).mockResolvedValue([ONBOARDING, ENVIADA, ADMIN_AREA]);
+  });
+
+  it('muestra el estado con texto y solo en cuentas dadas de alta desde el portal', async () => {
+    render(<UsersList />);
+    await screen.findByText('Ana Ruiz');
+    expect(screen.getByText('Credenciales pendientes')).toBeTruthy();
+    expect(screen.getByText('Credenciales enviadas')).toBeTruthy();
+    expect(screen.getAllByText(/^Credenciales (enviadas|pendientes)$/)).toHaveLength(2);
+  });
+
+  it('Reenviar solo se habilita con 1 usuario con onboarding', async () => {
+    render(<UsersList />);
+    await screen.findByText('Ana Ruiz');
+    const boton = screen.getByRole('button', { name: 'Reenviar credenciales' }) as HTMLButtonElement;
+    expect(boton.disabled || boton.getAttribute('aria-disabled') === 'true').toBe(true);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Luis Paz' }));
+    expect(screen.getByRole('button', { name: 'Reenviar credenciales a Luis Paz' })
+      .hasAttribute('disabled')).toBe(true);
+  });
+
+  it('pide confirmación, reenvía, avisa «enviadas» y recarga la lista', async () => {
+    vi.mocked(usersApi.resendCredentials).mockResolvedValue(
+      { status: 'success', user: { ...ONBOARDING, credentials_status: 'enviadas' } });
+    render(<UsersList />);
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar a Ana Ruiz' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar credenciales a Ana Ruiz' }));
+
+    const modal = within(screen.getByRole('alertdialog'));
+    expect(modal.getByText('Reenviar credenciales')).toBeTruthy();
+    expect(usersApi.resendCredentials).not.toHaveBeenCalled();
+    fireEvent.click(modal.getByText('Reenviar'));
+
+    await waitFor(() => expect(usersApi.resendCredentials).toHaveBeenCalledWith(8));
+    await waitFor(() => expect(api.users).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+
+  it('un reenvío pendiente (202) y un error (503) se avisan sin romper la lista', async () => {
+    vi.mocked(usersApi.resendCredentials)
+      .mockResolvedValueOnce({ status: 'success', user: ONBOARDING })
+      .mockRejectedValueOnce(new ApiError(503, 'detalle interno', { code: 'directorio_no_disponible' }));
+    render(<UsersList />);
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar a Ana Ruiz' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar credenciales a Ana Ruiz' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByText('Reenviar'));
+    await waitFor(() => expect(usersApi.resendCredentials).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar credenciales a Ana Ruiz' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByText('Reenviar'));
+    await waitFor(() => expect(usersApi.resendCredentials).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    expect(screen.queryByText('detalle interno')).toBeNull();
   });
 });

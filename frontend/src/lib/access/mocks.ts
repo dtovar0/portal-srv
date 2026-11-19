@@ -8,7 +8,7 @@
 import type { ManagedUser } from '../types';
 import type {
   Access, AccessRequest, AuditEntryV1, CatalogItem, Connector, DirectoryConfig,
-  HomeSummary, Job, JobDetail, Paginated,
+  HomeSummary, Job, JobDetail, Paginated, PasswordPolicy,
 } from './types';
 
 export function page<T>(items: T[]): Paginated<T> {
@@ -78,7 +78,13 @@ export const MOCK_JOB_DETAIL: JobDetail = {
 export const MOCK_USER: ManagedUser = {
   id: 31, email: 'ana@ejemplo.local', name: 'Ana Ruiz', role: 'usuario', is_active: true,
   auth_source: 'ldap', areas: [{ id: 3, name: 'Finanzas' }], managed_areas: [],
-  last_login_at: null,
+  last_login_at: null, credentials_status: 'pendientes', credentials_sent_at: null,
+};
+
+export const MOCK_PASSWORD_POLICY: PasswordPolicy = {
+  min_length: 16, max_length: 128,
+  required_classes: ['mayusculas', 'minusculas', 'digitos', 'simbolos'],
+  symbols: '!#$%&()*+,-./:;<=>?@[]^_{}~',
 };
 
 export const MOCK_DIRECTORY_CONFIG: DirectoryConfig = {
