@@ -1,6 +1,6 @@
 'use client';
 
-/** Cierre de sesión: avisa a Flask y, con SSO, salta al cierre de Authelia. */
+/** Cierre de sesión: avisa a Flask y, si el backend devuelve `redirect` (`OIDC_LOGOUT_URL`), salta al cierre de Authelia. */
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
@@ -14,7 +14,7 @@ export function LogoutView() {
     api.logout()
       .then((result) => {
         if (!active) return;
-        // Con SSO hay que cerrar también en Authelia, o volvería a entrar solo.
+        // Hay que cerrar también en Authelia, o volvería a entrar solo.
         if (result.redirect) {
           window.location.href = result.redirect;
           return;

@@ -217,3 +217,22 @@ def test_la_sesion_previa_no_sobrevive_al_login_local(client, crear_usuario):
 
     with client.session_transaction() as sesion:
         assert 'dato_previo' not in sesion
+
+
+@pytest.mark.parametrize('cabeceras', [
+    {'Origin': 'null'},
+    {'Referer': 'https://atacante.pruebas.invalid/pagina'},
+    {'Sec-Fetch-Site': 'cross-site'},
+])
+def test_login_local_de_otro_sitio_da_403_sin_sesion(client, crear_usuario,
+                                                     cabeceras):
+    """FNC-008 sigue vigente en la ruta de emergencia (FNC-142/ADR-009)."""
+    usuario = crear_usuario(ROLE_ADMIN, contrasena=CONTRASENA_FICTICIA)
+
+    respuesta = client.post(f'{A}/auth/local', headers=cabeceras,
+                            json={'email': usuario.email,
+                                  'password': CONTRASENA_FICTICIA})
+
+    assert respuesta.status_code == 403
+    assert respuesta.get_json()['code'] == 'csrf_invalido'
+    assert usuario_en_sesion(client) is None
