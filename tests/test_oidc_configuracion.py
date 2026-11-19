@@ -14,8 +14,12 @@ BD_MYSQL = {'DB_ENGINE': 'mysql', 'DB_USER': 'usuario', 'DB_PASS': 'clave',
             'DB_NAME': 'nexus_pruebas'}
 
 
+LOGOUT_URL = 'https://auth.pruebas.invalid/logout'
+
+
 def _entorno(entorno='production', **cambios):
-    datos = {'APP_ENV': entorno, **VARIABLES}
+    # Fuera de desarrollo OIDC_LOGOUT_URL es obligatoria (revisión de seguridad).
+    datos = {'APP_ENV': entorno, **VARIABLES, 'OIDC_LOGOUT_URL': LOGOUT_URL}
     datos.update(cambios)
     return {k: v for k, v in datos.items() if v is not None}
 
@@ -123,10 +127,22 @@ def test_fuera_de_desarrollo_la_app_no_arranca_con_issuer_http(arranque,
 
 def test_fuera_de_desarrollo_la_app_arranca_con_oidc_completo(arranque,
                                                               monkeypatch):
-    for clave, valor in VARIABLES.items():
+    for clave, valor in {**VARIABLES, 'OIDC_LOGOUT_URL': LOGOUT_URL}.items():
         monkeypatch.setenv(clave, valor)
 
     aplicacion = create_app()
 
     assert aplicacion.test_client().get(
         '/api/v1/auth/context').get_json()['oidc_enabled'] is True
+
+
+@pytest.mark.parametrize('entorno', ['production', 'staging', ''])
+def test_fuera_de_desarrollo_sin_logout_url_es_un_error(entorno):
+    """Sin OIDC_LOGOUT_URL, «Cerrar sesión» no cierra Authelia: en un equipo
+    compartido el siguiente entraría como el anterior."""
+    with pytest.raises(ErrorConfiguracionOidc, match='OIDC_LOGOUT_URL'):
+        leer_configuracion(_entorno(entorno, OIDC_LOGOUT_URL=None))
+
+
+def test_en_desarrollo_la_logout_url_sigue_siendo_opcional():
+    assert leer_configuracion(_entorno('development', OIDC_LOGOUT_URL=None)) is not None

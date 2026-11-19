@@ -586,3 +586,18 @@ def test_el_modulo_ya_no_lee_authelia_enabled(client, oidc, monkeypatch):
 
     assert client.post(f'{A}/sso', headers=CABECERAS_REMOTAS).status_code == 410
     assert usuario_en_sesion(client) is None
+
+
+def test_un_error_libre_del_callback_se_audita_como_otro(client, oidc):
+    """Revisión de seguridad: `?error=` lo elige quien llama; a la auditoría
+    solo llegan códigos OAuth conocidos (el resto, como «otro»)."""
+    from app.modules.audit.models import AuditLog
+    _, parametros = oidc.empezar(client)
+
+    respuesta = client.get(f'{A}/oidc/callback', query_string={
+        'error': 'texto inventado por un atacante', 'state': parametros['state']})
+
+    _sin_sesion_y_con_error(client, respuesta, 'autenticacion_fallida')
+    fallos = AuditLog.query.filter_by(action='ACCESO OIDC FALLIDO').all()
+    assert fallos and all('texto inventado' not in (a.detail or '') for a in fallos)
+    assert any('OIDC: otro' in (a.detail or '') for a in fallos)

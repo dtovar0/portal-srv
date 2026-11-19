@@ -15,6 +15,7 @@ BASE = {
     'OIDC_ISSUER_URL': 'https://auth.ejemplo.test',
     'OIDC_CLIENT_SECRET': MARCA,
     'OIDC_REDIRECT_URI': 'https://portal.ejemplo.test/api/v1/auth/oidc/callback',
+    'OIDC_LOGOUT_URL': 'https://auth.ejemplo.test/logout',
 }
 
 
@@ -70,7 +71,8 @@ def test_valores_invalidos(tmp_path, cambio, texto):
 def test_desarrollo_sin_oidc_pasa(tmp_path):
     codigo, salida = _revisar(
         tmp_path, {'APP_ENV': 'development'},
-        quitar=('OIDC_ISSUER_URL', 'OIDC_CLIENT_SECRET', 'OIDC_REDIRECT_URI'))
+        quitar=('OIDC_ISSUER_URL', 'OIDC_CLIENT_SECRET', 'OIDC_REDIRECT_URI',
+                'OIDC_LOGOUT_URL'))
     assert codigo == 0
     assert 'acceso-emergencia' in salida
 
@@ -101,3 +103,9 @@ def test_nginx_sin_auth_request_y_con_borrado_de_remote():
     activas = [l for l in texto.splitlines() if not l.lstrip().startswith('#')]
     assert not any('auth_request' in l for l in activas)
     assert 'proxy_set_header Remote-Email' in texto
+
+
+def test_fuera_de_desarrollo_sin_logout_url_es_falta(tmp_path):
+    codigo, salida = _revisar(tmp_path, quitar=('OIDC_LOGOUT_URL',))
+    assert codigo == 1
+    assert 'FALTA OIDC_LOGOUT_URL sin definir' in salida

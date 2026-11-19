@@ -33,6 +33,13 @@ ERROR_DENEGADO = 'acceso_denegado'
 ERROR_AUTENTICACION = 'autenticacion_fallida'
 ERROR_IDENTIDAD = 'identidad_incompleta'
 ERROR_CUENTA = 'cuenta_no_disponible'
+# Códigos de error OAuth que se auditan tal cual; cualquier otro texto del
+# callback (lo elige quien llama) se audita como «otro» (revisión de seguridad).
+CODIGOS_OAUTH_AUDITABLES = frozenset({
+    'invalid_request', 'unauthorized_client', 'access_denied', 'unsupported_response_type',
+    'invalid_scope', 'server_error', 'temporarily_unavailable', 'mismatching_state',
+    'invalid_grant', 'invalid_client', 'login_required', 'consent_required',
+    'interaction_required'})
 
 
 class ErrorOidc(Exception):
@@ -106,12 +113,14 @@ def identidad_del_callback(config: ConfiguracionOidc) -> Identidad:
     from authlib.integrations.base_client.errors import OAuthError
     remoto = cliente(config)
     try:
-        token = remoto.authorize_access_token()
+        # `iss` contra OIDC_ISSUER_URL, no solo contra el descubrimiento.
+        token = remoto.authorize_access_token(claims_options={
+            'iss': {'essential': True, 'values': [config.issuer, f'{config.issuer}/']}})
     except OAuthError as exc:
         if exc.error == 'access_denied':
             raise ErrorOidc(ERROR_DENEGADO, 'Authelia negó el acceso') from None
-        raise ErrorOidc(ERROR_AUTENTICACION,
-                        f'OIDC: {exc.error or type(exc).__name__}') from None
+        codigo = exc.error if exc.error in CODIGOS_OAUTH_AUDITABLES else 'otro'
+        raise ErrorOidc(ERROR_AUTENTICACION, f'OIDC: {codigo}') from None
     except Exception as exc:
         raise ErrorOidc(ERROR_AUTENTICACION,
                         f'OIDC: {type(exc).__name__} al validar el callback') from None
@@ -138,7 +147,9 @@ def identidad_del_callback(config: ConfiguracionOidc) -> Identidad:
     correo = _texto(claims.get('email')).lower()
     if not correo:
         raise ErrorOidc(ERROR_IDENTIDAD, 'OIDC: el token no trae correo')
-    # Si Authelia publica `email_verified`, se exige verdadero.
+    # Si Authelia publica `email_verified`, se exige verdadero. No se exige que
+    # venga: el correo sale del `mail` de LDAP, que solo escribe el portal tras
+    # comprobar que no está repetido (revisión de seguridad, hallazgo 4).
     if claims.get('email_verified') is False:
         raise ErrorOidc(ERROR_IDENTIDAD, 'OIDC: correo no verificado')
     nombre = _texto(claims.get('name')) or correo

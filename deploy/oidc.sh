@@ -72,6 +72,12 @@ revisar_oidc() {
         fi
     done
 
+    # Fuera de desarrollo, sin OIDC_LOGOUT_URL cerrar sesión no cierra Authelia.
+    if [[ "$app_env" != "development" ]] && ! _oidc_tiene_valor "$env" OIDC_LOGOUT_URL; then
+        echo "FALTA OIDC_LOGOUT_URL sin definir (sin ella, cerrar sesión no cierra la sesión de Authelia)"
+        fallos=1
+    fi
+
     for var in OIDC_ISSUER_URL OIDC_REDIRECT_URI OIDC_LOGOUT_URL; do
         valor="$(_oidc_valor "$env" "$var")"
         [[ -n "$valor" ]] || continue

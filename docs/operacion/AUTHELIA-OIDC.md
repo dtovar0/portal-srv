@@ -29,7 +29,7 @@ Se ponen en el `.env` del servidor (permisos 600); el detalle está en [VARIABLE
 | `OIDC_CLIENT_ID` | `portal` | `client_id` del cliente en Authelia |
 | `OIDC_CLIENT_SECRET` | el secreto **en claro** que generaste (no el digest) | el digest guardado en `client_secret` en Authelia |
 | `OIDC_REDIRECT_URI` | `https://portal.<dominio>/api/v1/auth/oidc/callback` | `redirect_uris` del cliente, carácter por carácter |
-| `OIDC_LOGOUT_URL` | `https://auth.<dominio>/logout` (opcional) | URL de cierre de sesión de Authelia |
+| `OIDC_LOGOUT_URL` | `https://auth.<dominio>/logout` (**obligatoria** fuera de desarrollo) | URL de cierre de sesión de Authelia |
 | `OIDC_SCOPES` | vacía (`openid profile email`) | `scopes` del cliente. Sin `groups`: el rol no sale del token |
 
 Fuera de desarrollo, el portal no arranca sin `OIDC_ISSUER_URL`, `OIDC_CLIENT_SECRET` y `OIDC_REDIRECT_URI`, ni con `http` o una IP. `deploy/preflight.sh` lo comprueba antes de instalar.
@@ -97,7 +97,7 @@ El correo (`email`) debe existir en el usuario de Authelia (su fuente de usuario
 ## 5. Cierre de sesión
 
 - «Cerrar sesión» borra la sesión del portal y lleva a `OIDC_LOGOUT_URL?rd=https://portal.<dominio>/login`.
-- Si `OIDC_LOGOUT_URL` está vacía, el portal usa el `end_session_endpoint` del descubrimiento, **si Authelia lo publica** (según versión puede no existir; entonces solo se cierra la sesión del portal y la de Authelia sigue abierta).
+- Fuera de desarrollo `OIDC_LOGOUT_URL` es obligatoria (la app no arranca y el preflight da `FALTA`): sin ella el cierre no llega a Authelia y, en un equipo compartido, el siguiente entraría como el anterior. En desarrollo, vacía, se usa el `end_session_endpoint` del descubrimiento si Authelia lo publica.
 - Authelia solo respeta `rd` si el destino cae bajo su dominio de sesión: confírmalo en la prueba de humo.
 
 ## 6. Prueba de humo

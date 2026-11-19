@@ -9,7 +9,9 @@ Variables (`docs/configuracion/VARIABLES.md`):
   igual a la registrada en Authelia.
 - `OIDC_SCOPES`: por defecto `openid profile email`. Sin `groups`: el rol no
   sale del token (SEG-10).
-- `OIDC_LOGOUT_URL`: opcional (ADR-009 4B); URL de cierre de sesión de Authelia.
+- `OIDC_LOGOUT_URL`: URL de cierre de sesión de Authelia (ADR-009 4B). Obligatoria
+  fuera de desarrollo: sin ella, «Cerrar sesión» no cierra la sesión de Authelia y
+  en un equipo compartido el siguiente entra como el anterior (revisión de seguridad).
 
 Fuera de desarrollo, las cuatro primeras son obligatorias y deben usar `https`;
 si falta una, la app no arranca. En desarrollo, sin ninguna `OIDC_*` el acceso
@@ -124,6 +126,10 @@ def leer_configuracion(entorno=None):
     logout = _leer(entorno, VAR_LOGOUT_URL)
     if logout:
         _url_https(logout, VAR_LOGOUT_URL, entorno)
+    elif not es_desarrollo(entorno):
+        raise ErrorConfiguracionOidc(
+            f'Falta {VAR_LOGOUT_URL}: sin ella, cerrar sesión no cierra la sesión de '
+            'Authelia.')
     return ConfiguracionOidc(
         issuer=issuer.rstrip('/'),
         client_id=_leer(entorno, VAR_CLIENT_ID) or CLIENT_ID_POR_DEFECTO,
