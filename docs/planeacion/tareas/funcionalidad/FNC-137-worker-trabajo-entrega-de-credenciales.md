@@ -8,12 +8,12 @@
 | **Fase** | 8 (propuesta) |
 | **Módulo / Área** | provisioning (worker) |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | Hecha |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
-| **Inicio** | |
-| **Finalizada** | |
-| **Estatus Git** | — |
+| **Inicio** | 2026-11-18 |
+| **Finalizada** | 2026-11-18 |
+| **Estatus Git** | Rama local, sin merge ni push |
 | **Rama** | `fnc/FNC-137-worker-entregas` |
 | **Commits / PR** | |
 | **Requiere migración BD** | No |
@@ -66,6 +66,9 @@
 - Toca el worker de todos los accesos: regresión cubierta por la suite completa; reversión limpia (el registro queda vacío).
 
 ## Verificación
+- `python -m pytest -q -p no:cacheprovider -W ignore tests/provisioning tests/access` → 328 passed (incluye `tests/provisioning/test_tipos_de_trabajo.py`: función no registrada, argumentos, kwargs, *callbacks* y nombres inventados rechazados; tipo registrado de prueba se ejecuta y se barre; un tipo que falla no frena a los demás; `enviar` solo admite funciones registradas; las pruebas existentes de mensajes RQ y de accesos siguen en verde).
+- No verificado: un worker RQ real con Redis (las pruebas usan dobles, como las de FNC-049).
+- Pendiente: `auditor-seguridad` sobre el bloque (se pide al cerrar FNC-138).
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -78,3 +81,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño A, 2026-11-17) |
+| 2026-11-18 | Implementada: tipos_de_trabajo.py, barrido por tipo y enviar con función registrada |

@@ -8,12 +8,12 @@
 | **Fase** | 8 (propuesta) |
 | **Módulo / Área** | secretos |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | Hecha |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
-| **Inicio** | |
-| **Finalizada** | |
-| **Estatus Git** | — |
+| **Inicio** | 2026-11-18 |
+| **Finalizada** | 2026-11-18 |
+| **Estatus Git** | Rama local, sin merge ni push |
 | **Rama** | `fnc/FNC-136-sends-vaultwarden` |
 | **Commits / PR** | |
 | **Requiere migración BD** | No |
@@ -83,6 +83,9 @@
 - Reversión: las funciones son nuevas; quitar la tarea no afecta la lectura.
 
 ## Verificación
+- `python -m pytest -q -p no:cacheprovider -W ignore tests/secretos tests/connectors tests/directory` → 882 passed (incluye `tests/secretos/test_sends.py`, pruebas nuevas: ida y vuelta del cifrado y de la derivación (contra HKDF RFC 5869 aparte), modos `api` y `bw`, fallos transitorio/permanente, política «Deshabilitar Send», idempotencia del borrado, valores fuera de logs y `repr`, configuración).
+- No verificado: contra un Vaultwarden real ni con la CLI `bw` real (ver `docs/operacion/SECRETOS.md`, verificación pendiente); el formato del Send y la salida de `bw send create` siguen la documentación y el cliente oficial, pero solo se probaron con dobles.
+- Pendiente: `auditor-seguridad` sobre el bloque (se pide al cerrar FNC-138).
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -95,3 +98,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño A, 2026-11-17) |
+| 2026-11-18 | Implementada: sends.py (modos api y bw), cifrado de Sends, variables ONBOARDING_SEND_* y VAULTWARDEN_SEND_*/BW_* |

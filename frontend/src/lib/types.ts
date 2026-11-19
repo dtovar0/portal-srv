@@ -117,7 +117,12 @@ export interface ManagedUser {
   areas: AreaRef[];
   managed_areas: AreaRef[];
   last_login_at: string | null;
+  /** Entrega de la contraseña inicial (usuarios-directorio.md v2); `null` o ausente: sin onboarding del portal. */
+  credentials_status?: CredentialsStatus | null;
+  credentials_sent_at?: string | null;
 }
+
+export type CredentialsStatus = 'enviadas' | 'pendientes';
 
 export interface Stats {
   areas: number;

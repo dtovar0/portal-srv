@@ -289,7 +289,8 @@ def test_superadmin_reemplaza_areas_administradas(escena, como):
     assert [a['id'] for a in datos['user']['managed_areas']] == [escena['B']]
     assert set(datos['user']) == {'id', 'email', 'name', 'role', 'is_active',
                                   'auth_source', 'areas', 'managed_areas',
-                                  'last_login_at'}
+                                  'last_login_at', 'credentials_status',
+                                  'credentials_sent_at'}
     assert [a.id for a in _cuenta(escena['admin_a']).managed_areas] == \
         [escena['B']]
 

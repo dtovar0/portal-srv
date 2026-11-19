@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Agregado
+- Usuarios: el alta en el directorio exige una contraseña inicial que cumple la política (`PASSWORD_POLICY_*`) y la entrega por un Send de Vaultwarden con el enlace por correo; si falla queda «credenciales pendientes» y el worker reintenta con contraseña nueva; «Reenviar credenciales» (superadmin); `GET /users/password-policy`, `credentials_status` y migración 0015 (FNC-138, FNC-139, ADR-008, 2026-11-18).
 - Web: `/login` tiene un solo botón «Entrar con Authelia» (inicia el flujo OIDC); los errores del callback salen por toast y la URL se limpia; `/acceso-emergencia` (sin enlace visible) permite entrar a la cuenta de emergencia; el cierre de sesión sigue la URL de Authelia (FNC-142, 2026-11-18).
 - Despliegue: `preflight.sh` e `install.sh` revisan las `OIDC_*` (obligatorias fuera de desarrollo, https y nombre de host; el secreto nunca se imprime) con `deploy/oidc.sh`; guía `docs/operacion/AUTHELIA-OIDC.md` del cliente `portal` para Authelia 4.38 o mayor (FNC-143, 2026-11-18).
 - Responsiva de usuario: el usuario firma la carta responsiva en su primer ingreso antes de usar el sistema; las áreas muestran sus administradores (FNC-155, 2026-11-18).
@@ -54,6 +55,7 @@
 - Texto mínimo de 12 px: insignias, botones, cabeceras de tabla, contador del tour, marca de las casillas, ejes de las gráficas del Inicio e iniciales de Administrar plataformas pasan de 9–11 px a 12 px (token `--text-xs`); se retira el token `--text-2xs` (10 px) y una prueba impide volver a bajar de 12 px (DIS-007, DIS-032, 2026-10-26).
 
 ### Seguridad
+- Entrega de credenciales (revisión de seguridad): una entrada huérfana en LDAP queda con contraseña aleatoria; en modo `bw` solo ids GUID tras `--` y el enlace debe ser del servidor configurado; Reenviar no compite con una entrega en curso (409); «Copiar» solo avisa si se copió (FNC-138, 2026-11-18).
 - OIDC (revisión de seguridad): `OIDC_LOGOUT_URL` obligatoria fuera de desarrollo; el `iss` del token se valida contra `OIDC_ISSUER_URL`; a la auditoría solo llegan códigos de error OAuth conocidos (FNC-141, 2026-11-18).
 - Seguridad (acceso): el inicio de sesión de las personas pasa por Authelia con OIDC (código de autorización con PKCE S256, `state` y `nonce`; ID token validado; cuenta enlazada por `sub`, migración 0014); `POST /auth/sso` (cabeceras `Remote-*`, suplantables) y el login por directorio se retiran (`410 endpoint_retirado`); queda `POST /auth/local` solo para la cuenta de emergencia, sin enlace visible y con el límite de intentos; variables `OIDC_*` obligatorias fuera de desarrollo, el rol nunca sale del token; Authlib 1.6.5 y requests 2.32.5 (FNC-140, FNC-141, ADR-009, 2026-11-18).
 - Seguridad (LDAP): la contraseña inicial y los cambios se fijan con Password Modify (RFC 3062): OpenLDAP la guarda cifrada en lugar de en texto claro (FNC-138, 2026-11-18).

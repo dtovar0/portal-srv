@@ -2,7 +2,9 @@
 
 Contrato `POST /users/directory` (`docs/contratos/usuarios-directorio.md`):
 - P2: superadmin y admins (solo sus áreas, solo rol `usuario`).
-- P8: sin contraseña; `password` → `400 campo_no_permitido` (regresión SEG-02).
+- P8 modificada (ADR-008, FNC-138): `password` es obligatoria y cumple la
+  política; sin ella `422` (antes `400 campo_no_permitido`, regresión SEG-02).
+  La entrega por Send está en `test_entrega_credenciales.py`.
 - 409 por uid o correo duplicados (directorio o portal); 503 si el directorio
   falla, sin crear nada en la BD; fallo parcial auditado.
 
@@ -24,6 +26,7 @@ from tests.directorio_falso import instalar_directorio
 from tests.directory.conftest import dn_persona
 
 URL = '/api/v1/users/directory'
+CONTRASENA = 'Clave-De-Prueba-2026!x'  # ficticia; cumple la política
 EVENTO = 'cuenta_directorio_creada'
 
 
@@ -47,7 +50,8 @@ def directorio(monkeypatch, app):
 
 def _cuerpo(**cambios):
     datos = {'uid': 'ana.ruiz', 'email': 'ana@pruebas.local',
-             'given_name': 'Ana', 'surname': 'Ruiz', 'area_ids': []}
+             'given_name': 'Ana', 'surname': 'Ruiz', 'area_ids': [],
+             'password': CONTRASENA}
     datos.update(cambios)
     return datos
 
@@ -89,7 +93,7 @@ def _eventos(status=None):
 # Alta correcta
 # --------------------------------------------------------------------------- #
 
-def test_superadmin_crea_la_entrada_y_la_cuenta_sin_contrasena(
+def test_superadmin_crea_la_entrada_y_la_cuenta_con_su_contrasena_inicial(
         escena, directorio, cliente_como):
     respuesta = cliente_como(escena['super']).post(
         URL, json=_cuerpo(area_ids=[escena['B']]))
@@ -111,7 +115,10 @@ def test_superadmin_crea_la_entrada_y_la_cuenta_sin_contrasena(
     assert entrada is not None
     assert entrada['mail'] == ['ana@pruebas.local']
     assert entrada['givenName'] == ['Ana'] and entrada['sn'] == ['Ruiz']
-    assert 'userPassword' not in entrada
+    # Password Modify: el servidor la guarda cifrada, nunca en claro.
+    assert entrada['userPassword'] == [directorio_falso.cifrado_simulado(
+        CONTRASENA)]
+    assert CONTRASENA not in str(entrada)
 
     cuenta = _cuenta('ana@pruebas.local')
     assert cuenta.auth_source == 'ldap'
@@ -192,11 +199,10 @@ def test_usuario_normal_recibe_403(escena, directorio, cliente_como):
 
 
 # --------------------------------------------------------------------------- #
-# Lista blanca y contraseña (P8, regresión SEG-02)
+# Lista blanca (SEG-02)
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.parametrize('campo, valor', [
-    ('password', 'clave-ficticia'),
     ('role', ROLE_AREA_ADMIN),
     ('role', ROLE_USER),
     ('auth_source', 'local'),
@@ -263,7 +269,8 @@ def test_valores_invalidos_dan_422_sin_escribir(escena, directorio,
 def test_faltan_campos_obligatorios(escena, directorio, cliente_como):
     respuesta = cliente_como(escena['super']).post(URL, json={})
     datos = _error(respuesta, 422, 'validacion')
-    assert set(datos['fields']) == {'uid', 'email', 'given_name', 'surname'}
+    assert set(datos['fields']) == {'uid', 'email', 'given_name', 'surname',
+                                    'password'}
 
 
 def test_uid_con_punto_guion_y_guion_bajo_se_acepta(escena, directorio,

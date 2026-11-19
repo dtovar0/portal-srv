@@ -67,6 +67,9 @@ const ACCION_ICONO: Record<string, NombreIcono> = {
 
   // Notificaciones
   notificacion_fallida: 'campana',
+  credenciales_enviadas: 'usuarios',
+  credenciales_pendientes: 'usuarios',
+  credenciales_reenviadas: 'usuarios',
 };
 
 const TONO_STATUS: Record<string, TonoCaja> = {

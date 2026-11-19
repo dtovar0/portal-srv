@@ -5,9 +5,18 @@ Contrato: `POST /users/directory` en `docs/contratos/usuarios-directorio.md`.
 - Permisos (P2): el superadmin y los admins de área; el admin solo para sus
   áreas (`area_ids` ajenas o inexistentes → 404, SEC-AUTHZ-03/04). El rol es
   siempre `usuario` (SEC-AUTHZ-05).
-- Sin contraseña (P8, SEC-LDAP-09): la entrada nace sin `userPassword` y la
-  cuenta del portal con `auth_source='ldap'` y `password_hash` NULL
-  (SEC-AUTH-04); la contraseña la maneja Authelia.
+- Contraseña inicial (P8 modificada, ADR-008, FNC-138): `password` es
+  obligatoria y el backend siempre la valida con `politica_contrasena`; se
+  fija con Password Modify (RFC 3062) tras crear la entrada y nunca se guarda
+  ni se registra. La cuenta del portal es `auth_source='ldap'` con
+  `password_hash` NULL (SEC-AUTH-04); el resto del ciclo de la contraseña sigue
+  en Authelia. Si la `ppolicy` del directorio la rechaza: `422` en
+  `fields.password` con mensaje propio y no se crea nada.
+- Entrega: la fila de `credential_deliveries` (`pendientes`) se crea en la
+  misma transacción que la cuenta; tras el `commit` el primer intento
+  síncrono crea el Send y manda el enlace (`entrega_credenciales.py`). Si
+  falla, la cuenta queda con `credentials_status: pendientes` y la reintenta
+  el worker.
 - Orden: lista blanca y validación → duplicados en la BD → reserva del
   correo (fila de `users` sin confirmar; `users.email` UNIQUE serializa dos
   altas con el mismo correo) → `mail` en el directorio, justo antes de
@@ -22,8 +31,9 @@ Contrato: `POST /users/directory` en `docs/contratos/usuarios-directorio.md`.
   los fallos del directorio como `error`.
 """
 import logging
+import secrets
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -40,25 +50,33 @@ from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
                                                  directorio_activo)
 from app.modules.directory.errors import Resultado
 from app.modules.directory.ldap_client import ErrorDirectorio, PersonaAmbigua
-from app.modules.directory.writer import (PATRON_CORREO, DatosCuenta,
+from app.modules.directory.writer import (MOTIVO_CONTRASENA_RECHAZADA,
+                                          PATRON_CORREO, DatosCuenta,
                                           EscritorDirectorio)
 from app.modules.users.areas_administradas import (CAMPO_AREAS,
                                                    validar_area_ids)
 from app.modules.users.correos import correos_registrados
+from app.modules.users.entrega_credenciales import (completar_alta,
+                                                    nueva_entrega)
+from app.modules.users.politica_contrasena import (
+    MENSAJE_RECHAZO_DIRECTORIO, mensaje_de_incumplimiento)
 from app.modules.users.roles import MODULO_AUDITORIA
 from app.utils.naming import _CONTROL as CARACTERES_DE_CONTROL
 from app.utils.naming import sanitize_display_name
 
+# Bytes de la contraseña aleatoria con que se invalida una entrada huérfana.
+LARGO_CONTRASENA_DESCARTADA = 48
 logger = logging.getLogger(__name__)
 
-# Lista blanca del cuerpo (SEC-AUTHZ-09); cualquier otro campo, incluida
-# `password`, es `400 campo_no_permitido`.
+# Lista blanca del cuerpo (SEC-AUTHZ-09); cualquier otro campo es
+# `400 campo_no_permitido`.
 CAMPO_UID = 'uid'
 CAMPO_CORREO = 'email'
 CAMPO_NOMBRE = 'given_name'
 CAMPO_APELLIDO = 'surname'
+CAMPO_CONTRASENA = 'password'
 CAMPOS_PERMITIDOS = frozenset({CAMPO_UID, CAMPO_CORREO, CAMPO_NOMBRE,
-                               CAMPO_APELLIDO, CAMPO_AREAS})
+                               CAMPO_APELLIDO, CAMPO_AREAS, CAMPO_CONTRASENA})
 
 # Reglas del contrato. El correo además no supera la columna `users.email`.
 MIN_UID = 3
@@ -87,6 +105,9 @@ DIRECTORIO_NO_DISPONIBLE = ('No se pudo crear la cuenta en el directorio; '
                             'intenta más tarde.', 503,
                             'directorio_no_disponible')
 ERROR_INTERNO = ('Ocurrió un error. Intenta de nuevo.', 500, 'error_interno')
+# `ppolicy` del directorio rechazó la contraseña: el API lo traduce a
+# `422 validacion` en `fields.password` (sin el texto del servidor).
+CONTRASENA_RECHAZADA = (MENSAJE_RECHAZO_DIRECTORIO, 422, 'validacion')
 
 # Motivos para la auditoría y el log (sin datos de la persona).
 MOTIVO_NO_CONFIGURADO = 'directorio_no_configurado'
@@ -99,13 +120,17 @@ SISTEMA_PORTAL = 'portal'
 
 @dataclass(frozen=True)
 class AltaDirectorio:
-    """Datos validados de una cuenta nueva (sin contraseña)."""
+    """Datos validados de una cuenta nueva.
+
+    La contraseña no sale en `repr` ni en la auditoría (ADR-008 2d).
+    """
 
     uid: str
     correo: str
     nombre: str
     apellido: str
     area_ids: tuple
+    password: str = field(default='', repr=False)
 
 
 def _texto(datos, campo, errores):
@@ -164,6 +189,11 @@ def validar_alta(datos):
     _validar_nombre(CAMPO_NOMBRE, nombre, errores)
     apellido = _texto(datos, CAMPO_APELLIDO, errores)
     _validar_nombre(CAMPO_APELLIDO, apellido, errores)
+    # La contraseña va tal cual (sin `strip`): la política decide.
+    contrasena = datos.get(CAMPO_CONTRASENA)
+    problema = mensaje_de_incumplimiento(contrasena)
+    if problema:
+        errores[CAMPO_CONTRASENA] = problema
 
     valor_areas = datos.get(CAMPO_AREAS, [])
     if is_area_admin():
@@ -182,8 +212,8 @@ def validar_alta(datos):
 
     if errores:
         return None, None, errores
-    return AltaDirectorio(uid, correo, nombre, apellido,
-                          tuple(area_ids)), None, None
+    return AltaDirectorio(uid, correo, nombre, apellido, tuple(area_ids),
+                          contrasena), None, None
 
 
 def _uid_en_portal(uid):
@@ -284,9 +314,13 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
 
     resultado = escritor.create_user(DatosCuenta(
         identificador=alta.uid, nombre=alta.nombre, apellido=alta.apellido,
-        correo=alta.correo))
+        correo=alta.correo, password=alta.password))
     if resultado.resultado is Resultado.YA_ESTABA:
         return _descartar_reserva(alta, UID_DUPLICADO)
+    if resultado.motivo == MOTIVO_CONTRASENA_RECHAZADA:
+        return _descartar_reserva(
+            alta, CONTRASENA_RECHAZADA, 'warning',
+            f'{SISTEMA_DIRECTORIO}: {MOTIVO_CONTRASENA_RECHAZADA}')
     if resultado.resultado is not Resultado.HECHO:
         return _descartar_reserva(
             alta, DIRECTORIO_NO_DISPONIBLE, 'error',
@@ -294,6 +328,7 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
             f'({resultado.motivo or MOTIVO_SIN_CONEXION})')
 
     try:
+        nueva_entrega(cuenta, alta.uid)
         _auditar(alta, 'success',
                  f'Sistemas: {SISTEMA_DIRECTORIO} y {SISTEMA_PORTAL}',
                  cuenta=cuenta, commit=False)
@@ -301,6 +336,12 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
     except SQLAlchemyError:
         logger.exception('Alta de cuenta: la entrada quedó en el directorio '
                          'y falló el registro en el portal')
+        # La entrada huérfana no se queda con la contraseña que conoce quien dio
+        # el alta: se le pone una aleatoria que nadie sabe (revisión de seguridad).
+        try:
+            escritor.change_password(resultado.dn, secrets.token_urlsafe(LARGO_CONTRASENA_DESCARTADA))
+        except Exception:  # nunca oculta la respuesta del alta
+            logger.error('Alta de cuenta: no se pudo invalidar la contraseña de la entrada huérfana')
         try:
             # Sin borrado en v1: la entrada queda marcada para revisión.
             _descartar_reserva(
@@ -311,4 +352,6 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
         except Exception:  # la auditoría no oculta la respuesta
             logger.exception('Alta de cuenta: no se pudo auditar el fallo')
         return None, ERROR_INTERNO
+    # Primer intento de entrega; nunca lanza (si falla, queda `pendientes`).
+    completar_alta(cuenta, alta.password)
     return cuenta, None

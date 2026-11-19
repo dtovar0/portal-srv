@@ -30,7 +30,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-AUTHZ-03 | Los recursos con área se cargan con `scoped_*` o `can_*`, y el área se lee de la BD, nunca de la petición | Prueba: admin de X sobre Y da 404 | SEG-16 |
 | SEC-AUTHZ-04 | Un recurso fuera de alcance responde 404; un rol insuficiente responde 403 | Prueba | — |
 | SEC-AUTHZ-05 | Solo el superadmin crea, eleva o degrada admins y les asigna áreas | Prueba | SEG-09 |
-| SEC-AUTHZ-06 | Un admin no gestiona a otros admins ni al superadmin, ni toca la contraseña de cuentas `ldap` o `sso` | Prueba con dos admins de áreas solapadas | SEG-05 |
+| SEC-AUTHZ-06 | Un admin no gestiona a otros admins ni al superadmin, ni toca la contraseña de cuentas `ldap` o `sso`; el portal solo fija la contraseña **inicial** (alta y «Reenviar credenciales», este último solo del superadmin; ADR-008, FNC-138) | Prueba con dos admins de áreas solapadas | SEG-05 |
 | SEC-AUTHZ-07 | Un admin aprueba, rechaza y revoca solo en sus áreas | Prueba | RF-03 |
 | SEC-AUTHZ-08 | Nadie aprueba su propia solicitud ni modifica sus propios accesos o rol | Prueba | — |
 | SEC-AUTHZ-09 | El actor sale de la sesión; cada endpoint tiene una lista blanca de campos y rechaza `role`, `is_active`, `auth_source` y `password_hash` | Prueba de *mass assignment* | SEG-09 |
@@ -49,7 +49,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-LDAP-06 | Escapar filtros (`escape_filter_chars`) y DN (`escape_rdn`); nunca concatenar | Prueba con `*`, `)(`, `,`, `\` | SEG-12 |
 | SEC-LDAP-07 | Solo se usa `MODIFY_ADD` o `MODIFY_DELETE` de un valor del atributo de membresía; nunca `REPLACE` ni atributos operativos | Doble que registra las operaciones | — |
 | SEC-LDAP-08 | Escritura idempotente: un miembro existente o ausente cuenta como "sin cambios" | Prueba de doble ejecución | — |
-| SEC-LDAP-09 | La contraseña inicial de una cuenta nueva nunca es fija, no se guarda y no se envía por correo (mecanismo *Por confirmar*) | Revisión | SEG-02 |
+| SEC-LDAP-09 | La contraseña inicial de una cuenta nueva cumple la política (`PASSWORD_POLICY_*`, validada siempre en el backend), se fija con Password Modify (RFC 3062), se entrega por un Send de Vaultwarden con el enlace por correo y nunca se guarda, se registra ni se envía en claro; cada reintento o reenvío genera una contraseña nueva (ADR-008, FNC-138) | Revisión | SEG-02 |
 | SEC-LDAP-10 | El rol se deriva por DN exacto normalizado; el directorio nunca otorga `administrador` | Prueba con DN parecidos | SEG-10 |
 | SEC-LDAP-11 | El bind sale del entorno o de Vaultwarden, nunca de la BD; la prueba de conexión usa solo el host configurado | `grep ldap_pass`; prueba | SEG-08, 22 |
 | SEC-LDAP-12 | Tiempos de espera registrados; los errores van al log | Revisión | SEG-21 |

@@ -5,6 +5,7 @@
 import type { ManagedUser } from '@/lib/types';
 import { Button } from '../form';
 import { Badge, Card } from '../ui';
+import { ETIQUETA_CREDENCIALES } from './estado-entrega';
 
 const ROLE_LABELS: Record<string, string> = {
   administrador: 'Super admin',
@@ -56,6 +57,15 @@ export function UserCard({
           >
             {user.auth_source}
           </Badge>
+          {user.credentials_status ? (
+            <Badge
+              tone={user.credentials_status === 'enviadas' ? 'success' : 'warning'}
+              icon={user.credentials_status === 'enviadas' ? 'exito' : 'aviso'}
+              title={ETIQUETA_CREDENCIALES[user.credentials_status]}
+            >
+              {ETIQUETA_CREDENCIALES[user.credentials_status]}
+            </Badge>
+          ) : null}
         </div>
       </div>
 
