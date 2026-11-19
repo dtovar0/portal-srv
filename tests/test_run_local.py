@@ -14,6 +14,8 @@ def test_servidor_local_en_loopback(monkeypatch, entorno, depurador):
         for clave in ('DB_USER', 'DB_PASS', 'DB_HOST', 'DB_NAME'):
             monkeypatch.setenv(clave, 'x')
         monkeypatch.setattr('app._crear_tablas', lambda app: None)
+        from tests.oidc_simulado import fijar_oidc_de_produccion
+        fijar_oidc_de_produccion(monkeypatch)  # fuera de dev el login es solo OIDC
 
     runpy.run_path('run.py', run_name='__main__')
 
