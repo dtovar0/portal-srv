@@ -421,7 +421,7 @@ def set_user_areas(user_id):
 @api_bp.route('/stats')
 @login_required
 def stats():
-    """Contadores del panel, ya filtrados por alcance."""
+    """Contadores del panel, ya filtrados por alcance, con su `desglose` (FNC-164)."""
     areas_q = scoped_areas()
     platforms_q = scoped_platforms()
 
@@ -443,18 +443,20 @@ def stats():
     }
     from app.modules.access_requests.approvals import bandeja
     from app.modules.access_requests.models import PlatformAccessRequest
+    from app.modules.api.desglose_stats import desglose
     if is_admin():
-        payload['requests'] = (PlatformAccessRequest.query
-                               .join(Platform, Platform.id == PlatformAccessRequest.platform_id)
-                               .count())
+        requests_q = (PlatformAccessRequest.query
+                      .join(Platform, Platform.id == PlatformAccessRequest.platform_id))
     elif is_area_admin():
-        payload['requests'] = bandeja(current_user).count()
+        requests_q = bandeja(current_user)
     else:
-        payload['requests'] = (PlatformAccessRequest.query
-                               .join(Platform, Platform.id == PlatformAccessRequest.platform_id)
-                               .filter(PlatformAccessRequest.user_id == current_user.id)
-                               .count())
+        requests_q = (PlatformAccessRequest.query
+                      .join(Platform, Platform.id == PlatformAccessRequest.platform_id)
+                      .filter(PlatformAccessRequest.user_id == current_user.id))
+    payload['requests'] = requests_q.count()
 
-    if is_admin() or is_area_admin():
-        payload['users'] = scoped_users().count()
+    users_q = scoped_users() if (is_admin() or is_area_admin()) else None
+    if users_q is not None:
+        payload['users'] = users_q.count()
+    payload['desglose'] = desglose(areas_q, platforms_q, requests_q, users_q)
     return jsonify(payload)
