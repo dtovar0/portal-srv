@@ -334,6 +334,8 @@ describe('UsersList: credenciales iniciales (FNC-139)', () => {
     const modal = within(screen.getByRole('alertdialog'));
     expect(modal.getByText('Reenviar credenciales')).toBeTruthy();
     expect(usersApi.resendCredentials).not.toHaveBeenCalled();
+    // DIS-097: reenviar no es destructivo, el botón de confirmar no es de peligro
+    expect(modal.getByRole('button', { name: 'Reenviar' }).className).not.toContain('nexus-btn-danger');
     fireEvent.click(modal.getByText('Reenviar'));
 
     await waitFor(() => expect(usersApi.resendCredentials).toHaveBeenCalledWith(8));
