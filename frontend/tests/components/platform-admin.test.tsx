@@ -431,9 +431,9 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     const btnEliminar = screen.getByRole('button', { name: 'Eliminar' });
     const btnNuevo = screen.getByRole('button', { name: 'Nuevo' });
 
-    expect((btnAccesos as HTMLButtonElement).disabled).toBe(true);
-    expect((btnEditar as HTMLButtonElement).disabled).toBe(true);
-    expect((btnEliminar as HTMLButtonElement).disabled).toBe(true);
+    expect(btnAccesos.getAttribute('aria-disabled')).toBe('true');
+    expect(btnEditar.getAttribute('aria-disabled')).toBe('true');
+    expect(btnEliminar.getAttribute('aria-disabled')).toBe('true');
     expect((btnNuevo as HTMLButtonElement).disabled).toBe(false);
 
     // Al seleccionar 1 plataforma (Contabilidad) se habilitan con el contexto correspondiente
@@ -543,8 +543,8 @@ describe('PlatformAdmin: accesibilidad (revisión de DIS-017)', () => {
     // Sin selección: botones deshabilitados con nombre genérico
     const btnEditar = screen.getByRole('button', { name: 'Editar' });
     const btnEliminar = screen.getByRole('button', { name: 'Eliminar' });
-    expect((btnEditar as HTMLButtonElement).disabled).toBe(true);
-    expect((btnEliminar as HTMLButtonElement).disabled).toBe(true);
+    expect(btnEditar.getAttribute('aria-disabled')).toBe('true');
+    expect(btnEliminar.getAttribute('aria-disabled')).toBe('true');
 
     // Con 1 plataforma seleccionada: botones habilitados con el nombre de la plataforma
     fireEvent.click(screen.getByLabelText('Seleccionar Contabilidad'));

@@ -149,6 +149,7 @@
   --color-texto-tenue: var(--p-gris-600);
   --color-texto-sobre-accion: 255 255 255;
   --color-texto-sobre-peligro: 255 255 255;
+  --color-texto-sobre-aviso: var(--p-noche-900);
   --color-texto-enlace: var(--p-marca-700);
   --color-navegacion: var(--p-gris-800);
   --color-activo-fondo: var(--p-activo-fondo-oscuro);
@@ -409,6 +410,7 @@
     --color-texto-tenue: var(--p-noche-300);
     --color-texto-sobre-accion: 255 255 255;
     --color-texto-sobre-peligro: 255 255 255;
+    --color-texto-sobre-aviso: var(--p-noche-900);
     --color-texto-enlace: 96 165 250;
     --color-navegacion: var(--p-noche-200);
     --color-activo-fondo: var(--p-activo-fondo-oscuro);
@@ -612,6 +614,7 @@ html.dark {
   --color-texto-tenue: var(--p-noche-300);
   --color-texto-sobre-accion: 255 255 255;
   --color-texto-sobre-peligro: 255 255 255;
+  --color-texto-sobre-aviso: var(--p-noche-900);
   --color-texto-enlace: 96 165 250;
   --color-navegacion: var(--p-noche-200);
   --color-activo-fondo: var(--p-activo-fondo-oscuro);

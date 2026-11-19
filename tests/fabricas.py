@@ -77,7 +77,7 @@ def crear_usuario_de_rol(rol):
 
 
 def crear_acceso(usuario, plataforma, estado='activo', nivel='usuario',
-                 origen='solicitud'):
+                 origen='solicitud', responsiva_firmada=True):
     """Acceso otorgado (`platform_access_grants`, FNC-054) ya guardado.
 
     Con origen `solicitud` lleva un `request_id` ficticio (F-AUD-02).
@@ -89,6 +89,7 @@ def crear_acceso(usuario, plataforma, estado='activo', nivel='usuario',
         user_id=usuario.id, platform_id=plataforma.id, level=nivel,
         origin=origen,
         request_id=_siguiente() if origen == ORIGEN_SOLICITUD else None,
+        responsiva_firmada=responsiva_firmada,
         status=estado)
     acceso.sincronizar_slots()
     db.session.add(acceso)

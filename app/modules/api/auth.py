@@ -21,7 +21,8 @@ from flask_login import current_user, login_required, login_user, logout_user
 from app.modules.api.helpers import endpoint_retirado
 from app.modules.audit.services import add_audit_log
 from app.modules.auth import oidc
-from app.modules.auth.acceso_local import motivo_rechazo_login_local
+from app.modules.auth.acceso_local import (es_cuenta_de_emergencia,
+                                           motivo_rechazo_login_local)
 from app.modules.auth.limite_intentos import MENSAJE_BLOQUEO, bloqueado
 from app.modules.auth.models import User
 from app.modules.auth.oidc_cuentas import cuenta_de_la_identidad
@@ -145,13 +146,16 @@ def local_login():
         return jsonify({'status': 'error',
                         'message': 'Indica usuario y contraseña.'}), 400
 
+    user = User.query.filter_by(email=email).first()
+
     # Fuerza bruta (FNC-014): sin probar credenciales mientras dure el bloqueo.
-    if bloqueado(email):
+    # La cuenta de emergencia solo se bloquea por IP (FNC-154): nadie debe poder
+    # dejarla fuera a propósito sin quedar bloqueado él mismo.
+    if bloqueado(email, omitir_limite_de_cuenta=es_cuenta_de_emergencia(user)):
         add_audit_log('ACCESO BLOQUEADO', status='warning', target=email,
                       detail='Límite de intentos fallidos')
         return jsonify({'status': 'error', 'message': MENSAJE_BLOQUEO}), 429
 
-    user = User.query.filter_by(email=email).first()
     if user and user.password_hash and user.check_password(password):
         # Solo la cuenta de emergencia (o, en desarrollo, la bandera):
         # respuesta única, el motivo solo a la auditoría (FNC-077).

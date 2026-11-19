@@ -27,6 +27,7 @@ export default {
         'texto-tenue': 'rgb(var(--color-texto-tenue) / <alpha-value>)',
         'texto-sobre-accion': 'rgb(var(--color-texto-sobre-accion) / <alpha-value>)',
         'texto-sobre-peligro': 'rgb(var(--color-texto-sobre-peligro) / <alpha-value>)',
+        'texto-sobre-aviso': 'rgb(var(--color-texto-sobre-aviso) / <alpha-value>)',
         'texto-enlace': 'rgb(var(--color-texto-enlace) / <alpha-value>)',
 
         borde: 'rgb(var(--color-borde) / <alpha-value>)',

@@ -30,17 +30,34 @@ RUTAS_EXENTAS_RESPONSIVA = {
     'api.me',
     'api.get_responsiva',
     'api.sign_responsiva',
+    'api.list_platforms',
 }
 
 
 @api_bp.before_request
 def check_responsiva():
-    """Defensa en profundidad: bloquea consultas de API si no ha firmado la responsiva."""
+    """Defensa en profundidad: bloquea consultas de API si tiene accesos pendientes de firma de responsiva."""
     if not current_user.is_authenticated:
         return None
     if is_admin():
         return None
-    if getattr(current_user, 'responsiva_firmada', True) is False:
+
+    from app.modules.access.configuracion import responsiva_por_plataforma
+
+    # En modo global, si ya firmó la responsiva en algún momento de su ciclo de vida, nunca se bloquea
+    if not responsiva_por_plataforma() and getattr(current_user, 'responsiva_firmada', False):
+        return None
+
+    from app.modules.access.models import PlatformAccessGrant
+    from app.modules.access.tipos import ESTADOS_VIGENTES
+    pendientes_firma = (PlatformAccessGrant.query
+                        .filter(PlatformAccessGrant.user_id == current_user.id,
+                                PlatformAccessGrant.status.in_(ESTADOS_VIGENTES),
+                                PlatformAccessGrant.responsiva_firmada.is_(False))
+                        .count())
+
+    # Solo se bloquea si el usuario tiene plataformas otorgadas/aprobadas pendientes de firma
+    if pendientes_firma > 0:
         if request.endpoint not in RUTAS_EXENTAS_RESPONSIVA:
             return jsonify({
                 'code': 'responsiva_requerida',
@@ -57,13 +74,32 @@ def me():
     El frontend usa `permissions` para decidir qué menús y acciones muestra; el
     backend vuelve a comprobarlo en cada endpoint.
     """
+    from app.modules.access.configuracion import responsiva_por_plataforma
+    from app.modules.access.models import PlatformAccessGrant
+    from app.modules.access.tipos import ESTADOS_VIGENTES
+
+    if is_admin():
+        firmada = True
+    elif not responsiva_por_plataforma() and getattr(current_user, 'responsiva_firmada', False):
+        firmada = True
+    else:
+        # En modo por plataforma (o si es modo global y aún no ha firmado nunca):
+        # Solo se exige firma (firmada = False) si ya cuenta con accesos aprobados o pre-asignados.
+        # Si tiene 0 accesos pendientes, puede entrar al portal libremente para explorar y solicitar plataformas.
+        pendientes_firma = (PlatformAccessGrant.query
+                            .filter(PlatformAccessGrant.user_id == current_user.id,
+                                    PlatformAccessGrant.status.in_(ESTADOS_VIGENTES),
+                                    PlatformAccessGrant.responsiva_firmada.is_(False))
+                            .count())
+        firmada = (pendientes_firma == 0)
+
     return jsonify({
         'id': current_user.id,
         'email': current_user.email,
         'name': current_user.nombre or current_user.email,
         'role': current_user.role,
         'auth_source': current_user.auth_source,
-        'responsiva_firmada': True if is_admin() else bool(getattr(current_user, 'responsiva_firmada', True)),
+        'responsiva_firmada': firmada,
         'responsiva_firmada_at': current_user.responsiva_firmada_at.isoformat() if getattr(current_user, 'responsiva_firmada_at', None) else None,
         'responsiva_version': getattr(current_user, 'responsiva_version', '1.0') or '1.0',
         'areas': [{'id': a.id, 'name': a.name} for a in (current_user.areas or [])],
@@ -90,13 +126,21 @@ def me():
 def get_responsiva():
     """Texto oficial de la responsiva y lista de plataformas/áreas asignadas al usuario."""
     from app.modules.access.models import PlatformAccessGrant
-    from app.modules.access.tipos import ESTADOS_VIGENTES
+    from app.modules.access.tipos import ESTADOS_VIGENTES, ORIGEN_SOLICITUD
+
+    grants_pendientes = (PlatformAccessGrant.query
+                         .filter(PlatformAccessGrant.user_id == current_user.id,
+                                 PlatformAccessGrant.status.in_(ESTADOS_VIGENTES),
+                                 PlatformAccessGrant.responsiva_firmada.is_(False))
+                         .all())
+    grants = grants_pendientes if grants_pendientes else (
+        PlatformAccessGrant.query
+        .filter(PlatformAccessGrant.user_id == current_user.id,
+                PlatformAccessGrant.status.in_(ESTADOS_VIGENTES))
+        .all()
+    )
 
     plataformas_asignadas = []
-    grants = (PlatformAccessGrant.query
-              .filter(PlatformAccessGrant.user_id == current_user.id,
-                      PlatformAccessGrant.status.in_(ESTADOS_VIGENTES))
-              .all())
     for g in grants:
         if g.platform:
             plataformas_asignadas.append({
@@ -108,14 +152,33 @@ def get_responsiva():
 
     areas_asignadas = [{'id': a.id, 'name': a.name} for a in (current_user.areas or [])]
 
+    from app.modules.access.configuracion import responsiva_por_plataforma
+
+    # Contexto: ¿es por aprobación de una solicitud o pre-asignación en onboarding?
+    es_aprobacion = any(g.origin == ORIGEN_SOLICITUD or g.request_id is not None for g in (grants_pendientes or grants))
+    if not es_aprobacion and getattr(current_user, 'responsiva_firmada', False) and responsiva_por_plataforma():
+        es_aprobacion = True
+
+    titulo = ('Carta Responsiva: Aprobación de Nuevos Accesos a Plataformas'
+              if es_aprobacion
+              else 'Carta Responsiva de Uso de Activos de Información y Plataformas Institucionales')
+
+    if is_admin():
+        firmada = True
+    elif not responsiva_por_plataforma() and getattr(current_user, 'responsiva_firmada', False):
+        firmada = True
+    else:
+        firmada = (len(grants_pendientes) == 0)
+
     return jsonify({
         'version': getattr(current_user, 'responsiva_version', '1.0') or '1.0',
-        'firmada': True if is_admin() else bool(getattr(current_user, 'responsiva_firmada', True)),
+        'firmada': firmada,
         'firmada_at': current_user.responsiva_firmada_at.isoformat() if getattr(current_user, 'responsiva_firmada_at', None) else None,
-        'titulo': 'Carta Responsiva de Uso de Activos de Información y Plataformas Institucionales',
+        'titulo': titulo,
+        'es_aprobacion': es_aprobacion,
         'contenido': (
             'Por medio del presente documento, el usuario reconoce y acepta que las cuentas de acceso, '
-            'credenciales, plataformas digitales y activos de información asignados son para uso estrictamente laboral '
+            'credenciales, plataformas digitales y activos de información asignados o recientemente aprobados son para uso estrictamente laboral '
             'y profesional en el marco de sus funciones en la organización.\n\n'
             'Términos y Compromisos:\n'
             '1. Confidencialidad: El usuario se compromete a salvaguardar sus credenciales de acceso y no divulgarlas ni transferirlas a terceros.\n'
@@ -132,17 +195,36 @@ def get_responsiva():
 @api_bp.route('/me/firmar-responsiva', methods=['POST'])
 @login_required
 def sign_responsiva():
-    """Firma digital y aceptación formal de la carta responsiva de primer ingreso."""
+    """Firma digital y aceptación formal de la carta responsiva de primer ingreso o accesos aprobados."""
     from datetime import datetime
     from app.modules.audit.services import add_audit_log
+    from app.modules.access.models import PlatformAccessGrant
+    from app.modules.access.tipos import ESTADOS_VIGENTES
+    from app.modules.provisioning.tipos import OPERACION_OTORGAR
+    from app.modules.access.services import _encolar, registro_manual
 
     current_user.responsiva_firmada = True
     current_user.responsiva_firmada_at = datetime.utcnow()
 
+    # Firmar y disparar aprovisionamiento de todos los accesos pendientes de responsiva
+    accesos_pendientes = PlatformAccessGrant.query.filter(
+        PlatformAccessGrant.user_id == current_user.id,
+        PlatformAccessGrant.status.in_(ESTADOS_VIGENTES),
+        PlatformAccessGrant.responsiva_firmada.is_(False),
+    ).all()
+
+    ahora_momento = datetime.utcnow()
+    for acceso in accesos_pendientes:
+        acceso.responsiva_firmada = True
+        acceso.responsiva_firmada_at = ahora_momento
+        if acceso.last_job_id is None and not registro_manual(acceso.platform):
+            _encolar(acceso, OPERACION_OTORGAR, acceso.platform)
+
     add_audit_log(
         action='firma_responsiva',
         status='success',
-        detail=f'Usuario {current_user.email} firmó la carta responsiva v{getattr(current_user, "responsiva_version", "1.0")}.',
+        detail=(f'Usuario {current_user.email} firmó la carta responsiva v{getattr(current_user, "responsiva_version", "1.0")}. '
+                f'Aprovisionamiento activado para {len(accesos_pendientes)} accesos.'),
         module='auth',
         target=current_user.email,
         target_user_id=current_user.id,
@@ -154,6 +236,7 @@ def sign_responsiva():
         'status': 'success',
         'message': 'Carta responsiva firmada correctamente.',
         'firmada_at': current_user.responsiva_firmada_at.isoformat(),
+        'provisioned_grants': len(accesos_pendientes),
     })
 
 
@@ -189,7 +272,17 @@ def get_area(area_id):
 # Plataformas (catálogo de enlaces)
 # --------------------------------------------------------------------------- #
 
-def _platform_payload(p, favorite_ids):
+def _platform_payload(p, favorite_ids, grants_map=None):
+    from app.modules.access.configuracion import responsiva_por_plataforma
+    acceso = (grants_map or {}).get(p.id)
+    if is_admin():
+        firmada = True
+    elif responsiva_por_plataforma():
+        # En modo por plataforma, este acceso en específico debe estar firmado
+        firmada = (acceso is None or getattr(acceso, 'responsiva_firmada', True))
+    else:
+        # En modo global, basta con que el usuario haya firmado o el acceso no esté pendiente
+        firmada = bool(getattr(current_user, 'responsiva_firmada', False)) or (acceso is None or getattr(acceso, 'responsiva_firmada', True))
     return {
         'id': p.id,
         'name': p.name,
@@ -199,7 +292,8 @@ def _platform_payload(p, favorite_ids):
         'area_color': p.area.color if p.area else '#6366f1',
         'area_icon': p.area.icon if p.area else 'box',
         # FNC-046: una URL guardada que no es https sale como null.
-        'direct_link': url_segura(p.direct_link),
+        # Bloqueo: si el usuario no ha firmado la responsiva, la URL directa se oculta (null).
+        'direct_link': url_segura(p.direct_link) if firmada else None,
         'icon': p.icon,
         'logo_url': url_segura(p.logo_url),
         'bg_color': p.bg_color,
@@ -214,6 +308,9 @@ def _platform_payload(p, favorite_ids):
 @login_required
 def list_platforms():
     """Catálogo de plataformas visibles, con marca de favorito."""
+    from app.modules.access.models import PlatformAccessGrant
+    from app.modules.access.tipos import ESTADOS_VIGENTES
+
     favorite_ids = {p.id for p in (current_user.favorites or [])}
     query = scoped_platforms()
 
@@ -225,7 +322,12 @@ def list_platforms():
         query = query.filter(Platform.name.ilike(f'%{search}%'))
 
     platforms = query.order_by(Platform.name).all()
-    return jsonify([_platform_payload(p, favorite_ids) for p in platforms])
+    grants = (PlatformAccessGrant.query
+              .filter(PlatformAccessGrant.user_id == current_user.id,
+                      PlatformAccessGrant.status.in_(ESTADOS_VIGENTES))
+              .all()) if current_user.is_authenticated and not is_admin() else []
+    grants_map = {g.platform_id: g for g in grants}
+    return jsonify([_platform_payload(p, favorite_ids, grants_map) for p in platforms])
 
 
 @api_bp.route('/platforms/<int:platform_id>/visit', methods=['POST'])
