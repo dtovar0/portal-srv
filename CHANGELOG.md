@@ -12,6 +12,7 @@
 - Web: la tarjeta de área de Admin › Plataformas se rediseña (icono a la izquierda con degradado del color del área, cifras de personas y plataformas, logos de las primeras 3 plataformas y «Ver plataformas»); ya no se estira al alto de la rejilla (DIS-102, 2026-11-19).
 
 ### Corregido
+- Web: la tarjeta de área toma más el color del área (borde, recuadros de cifras, cifras, pie y píldora «Ver plataformas» que se intensifica al pasar el ratón), con texto AA en ambos temas (DIS-104, 2026-11-19).
 - Web: la cuadrícula de áreas ofrece solo 2×3, 3×2 y 3×3 (por omisión 2×3; una guardada que ya no existe vuelve a esa); las filas tienen alto mínimo y la pantalla hace scroll en vez de encimar tarjetas; sin el padding duplicado de la rejilla (DIS-103, 2026-11-19).
 - Web: se quita el buscador global de la barra superior (botón «Buscar», atajo Ctrl K y paleta de comandos) y su mención en la Ayuda; token `--marco-buscador-max` retirado (DIS-101, 2026-11-19).
 - Despliegue: `install.sh --actualizar` decía «portal-backend.service no existe» con la unidad activa: `systemctl … | grep -q` bajo `pipefail` daba falso negativo (SIGPIPE). Ahora `deploy/unidades.sh` guarda la salida antes de buscar; mismo arreglo en las demás tuberías del preflight (FNC-159, 2026-11-19).
