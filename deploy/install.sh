@@ -10,10 +10,19 @@
 #                            [--nginx-conf conservar|reemplazar]
 #   sudo ./deploy/install.sh --actualizar      # tras un git pull (FNC-153)
 #
-# --actualizar: solo dependencias (pip y npm), build del frontend, migraciones
-# (alembic upgrade head) y reinicio de backend, worker y frontend. No toca
-# paquetes, usuario, unidades systemd, nginx ni firewall. Exige una
-# instalación previa (las unidades ya existen).
+# --actualizar (FNC-153, FNC-159), en este orden y sin tocar paquetes, usuario,
+# unidades systemd, nginx, firewall ni .env; exige una instalación previa:
+#   1. validaciones previas (las del instalador y preflight.sh --actualizar);
+#      si fallan, los servicios siguen en marcha y no se cambia nada
+#   2. detiene backend, worker y frontend: nada arranca con código nuevo
+#      sobre un esquema sin migrar
+#   3. respaldo de la BD: no hay mecanismo automático; solo se avisa
+#   4. dependencias (pip y npm) y build del frontend
+#   5. alembic upgrade head
+#   6. arranca los servicios y comprueba que queden activos y que el backend
+#      responda; si no, muestra su journal
+# Si falla del paso 2 al 5, los servicios quedan detenidos a propósito y se
+# indica cómo reintentar; nunca se borran datos (deploy/actualizar.sh).
 #
 # --nginx-conf: si /etc/nginx/conf.d/NOMBRE.conf existe y es distinto de la
 # plantilla (editado a mano), en una terminal se pregunta si conservarlo o
@@ -61,7 +70,7 @@
 #   6. nginx como reverse proxy, con SELinux y firewalld
 #
 # No toca la base de datos: las migraciones (Alembic) se aplican aparte, salvo
-# con --actualizar, que corre `alembic upgrade head`.
+# con --actualizar, que corre `alembic upgrade head` con los servicios detenidos.
 
 set -Eeuo pipefail
 # Lo que crea el instalador (venv, node_modules, .next) queda sin escritura de
@@ -139,7 +148,7 @@ while [[ $# -gt 0 ]]; do
         --skip-packages) SKIP_PKGS=1; shift ;;
         --actualizar) ACTUALIZAR=1; SKIP_PKGS=1; shift ;;
         --nginx-conf) NGINX_MODO="$2"; shift 2 ;;
-        -h|--help) sed -n '2,63p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,73p' "$0"; exit 0 ;;
         *) echo "Opción desconocida: $1" >&2; exit 2 ;;
     esac
 done
@@ -229,6 +238,16 @@ DB_MOTOR="$(motor_bd_de_env "$PREFIX/.env")"
 . "$PREFIX/deploy/reinstalar.sh"
 # shellcheck source=deploy/propiedad.sh
 . "$PREFIX/deploy/propiedad.sh"
+# Actualización transparente (FNC-159). Desde aquí, si --actualizar falla, el
+# aviso de salida dice en qué estado quedaron los servicios y cómo reintentar
+# (sin las opciones: pueden llevar credenciales, p. ej. --proxy).
+# shellcheck source=deploy/actualizar.sh
+. "$PREFIX/deploy/actualizar.sh"
+if (( ACTUALIZAR )); then
+    ACTUALIZAR_REINTENTO="sudo $PREFIX/deploy/install.sh --actualizar  (con las mismas opciones)"
+    ACTUALIZAR_FASE=validacion
+    trap actualizar_aviso_salida EXIT
+fi
 if [[ -n "$DB_SERVICE" ]]; then
     DB_SERVICE="$(servicio_bd_valido "$DB_SERVICE")" \
         || { echo "ERROR: --db-service debe ser un nombre de unidad (letras, dígitos, ':', '_', '.', '@' o '-'), p. ej. mariadb" >&2; exit 2; }
@@ -462,68 +481,83 @@ entregar_datos_a_servicio "$PREFIX" "$LOGDIR" "$SVC_USER" "$SVC_GROUP" "${DATOS_
     || die "no se pudieron entregar los datos a $SVC_USER; ver el mensaje anterior."
 note "código de root; datos y registros de $SVC_USER"
 
-# --- 4. Backend --------------------------------------------------------------
-# venv, node_modules y .next los crea y posee root (SEG-1); los servicios
-# solo los leen (ProtectSystem=strict ya les impide escribir en el prefijo).
-log "Backend (venv y dependencias)"
-"$PY_BIN" -m venv "$PREFIX/venv"
-# El proxy se pasa a pip explícitamente, además del entorno.
-PIP_PROXY_ARG=()
-[[ -n "$PROXY_URL" ]] && PIP_PROXY_ARG=(--proxy "$PROXY_URL")
-"$PREFIX/venv/bin/pip" install --quiet "${PIP_PROXY_ARG[@]}" \
-    --upgrade pip wheel
-"$PREFIX/venv/bin/pip" install --quiet "${PIP_PROXY_ARG[@]}" \
-    -r "$PREFIX/requirements.txt" \
-    || die "fallo instalando dependencias de Python"
-note "venv listo en $PREFIX/venv"
+# --- 4 y 5. Dependencias ------------------------------------------------------
+# Las usan la instalación completa y --actualizar (con los servicios detenidos).
+instalar_dependencias() {
+    # --- 4. Backend --------------------------------------------------------------
+    # venv, node_modules y .next los crea y posee root (SEG-1); los servicios
+    # solo los leen (ProtectSystem=strict ya les impide escribir en el prefijo).
+    log "Backend (venv y dependencias)"
+    "$PY_BIN" -m venv "$PREFIX/venv"
+    # El proxy se pasa a pip explícitamente, además del entorno.
+    PIP_PROXY_ARG=()
+    [[ -n "$PROXY_URL" ]] && PIP_PROXY_ARG=(--proxy "$PROXY_URL")
+    "$PREFIX/venv/bin/pip" install --quiet "${PIP_PROXY_ARG[@]}" \
+        --upgrade pip wheel
+    "$PREFIX/venv/bin/pip" install --quiet "${PIP_PROXY_ARG[@]}" \
+        -r "$PREFIX/requirements.txt" \
+        || die "fallo instalando dependencias de Python"
+    note "venv listo en $PREFIX/venv"
 
-# --- 5. Frontend -------------------------------------------------------------
-log "Frontend (dependencias y build)"
-pushd "$PREFIX/frontend" >/dev/null
-# A npm también se le pasa el proxy por línea de órdenes.
-NPM_PROXY_ARG=()
-if [[ -n "$PROXY_URL" ]]; then
-    NPM_PROXY_ARG=(--proxy "$PROXY_URL" --https-proxy "$PROXY_URL"
-                   --noproxy "$NO_PROXY_LIST")
-    note "npm usará el proxy"
-fi
-npm ci --no-audit --no-fund "${NPM_PROXY_ARG[@]}" \
-    || die "fallo en npm ci"
-npm run build \
-    || die "fallo en 'next build' (si es por memoria, añadir swap)"
+    # --- 5. Frontend -------------------------------------------------------------
+    log "Frontend (dependencias y build)"
+    pushd "$PREFIX/frontend" >/dev/null
+    # A npm también se le pasa el proxy por línea de órdenes.
+    NPM_PROXY_ARG=()
+    if [[ -n "$PROXY_URL" ]]; then
+        NPM_PROXY_ARG=(--proxy "$PROXY_URL" --https-proxy "$PROXY_URL"
+                       --noproxy "$NO_PROXY_LIST")
+        note "npm usará el proxy"
+    fi
+    npm ci --no-audit --no-fund "${NPM_PROXY_ARG[@]}" \
+        || die "fallo en npm ci"
+    npm run build \
+        || die "fallo en 'next build' (si es por memoria, añadir swap)"
 
-# El build standalone no copia los estáticos ni public/: hay que ponerlos donde
-# server.js los espera, o la página carga sin CSS ni imágenes.
-cp -r .next/static .next/standalone/.next/static
-[[ -d public ]] && cp -r public .next/standalone/public
-popd >/dev/null
-note "build en $PREFIX/frontend/.next/standalone"
+    # El build standalone no copia los estáticos ni public/: hay que ponerlos donde
+    # server.js los espera, o la página carga sin CSS ni imágenes.
+    cp -r .next/static .next/standalone/.next/static
+    [[ -d public ]] && cp -r public .next/standalone/public
+    popd >/dev/null
+    note "build en $PREFIX/frontend/.next/standalone"
+}
 
-# --- 6. Servicios ------------------------------------------------------------
+# --- Actualización (--actualizar, FNC-159) ------------------------------------
+# validar → detener → dependencias → migrar → arrancar (deploy/actualizar.sh).
 if (( ACTUALIZAR )); then
-    log "Migraciones y reinicio (--actualizar)"
-    for unit in "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"; do
-        [[ -f "${SYSTEMD_DIR}/${unit}.service" ]] \
-            || die "no hay instalación previa (falta ${unit}.service): correr install.sh sin --actualizar"
-    done
-    ( cd "$PREFIX" && "$PREFIX/venv/bin/alembic" upgrade head ) \
-        || die "fallo en 'alembic upgrade head' (base existente de NEXUS: antes, una vez, alembic stamp 0001)"
-    note "migraciones al día"
-    systemctl reset-failed "$WORKER_UNIT" >/dev/null 2>&1 || true
-    systemctl restart "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"
-    sleep 3
-    for unit in "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"; do
-        systemctl is-active --quiet "$unit" \
-            && note "$unit activo" \
-            || { journalctl -u "$unit" -n 20 --no-pager; die "$unit no arrancó"; }
-    done
+    actualizar_validar() {
+        local unit
+        for unit in "$BACKEND_UNIT" "$FRONTEND_UNIT" "$WORKER_UNIT"; do
+            [[ -f "${SYSTEMD_DIR}/${unit}.service" ]] \
+                || die "no hay instalación previa (falta ${unit}.service): correr install.sh sin --actualizar"
+        done
+        # .env, variables, BD y Redis alcanzables, Python, Node, disco, salida
+        # a Internet, unidades y puertos (en uso por los propios servicios).
+        ( cd "$PREFIX" && APP_NAME="$APP_NAME" SVC_USER="$SVC_USER" \
+              WEB_PORT="$WEB_PORT" API_PORT="$API_PORT" PROXY_URL="$PROXY_URL" \
+              bash "$PREFIX/deploy/preflight.sh" --actualizar ) \
+            || die "las validaciones previas fallaron (puntos FALTA de arriba)"
+    }
+    actualizar_dependencias() { instalar_dependencias; }
+    actualizar_migrar() {
+        ( cd "$PREFIX" && "$PREFIX/venv/bin/alembic" upgrade head ) \
+            || die "falló 'alembic upgrade head' (ver el error de arriba; BD existente de NEXUS: antes, una vez, alembic stamp 0001)"
+    }
+    # Pasado el paso 1 ya se modificó algo: el mensaje genérico no lo niega.
+    trap 'die "falló en la línea $LINENO."' ERR
+    actualizar_despliegue "$BACKEND_UNIT" "$WORKER_UNIT" "$FRONTEND_UNIT" "$API_PORT"
     cat <<FIN
 
-Actualización terminada: dependencias, frontend, migraciones y servicios
-reiniciados. nginx, unidades systemd y .env no se tocaron.
+Actualización terminada: validaciones, servicios detenidos, dependencias,
+frontend, migraciones y servicios en marcha. nginx, unidades systemd y .env
+no se tocaron.
 FIN
     exit 0
 fi
+
+instalar_dependencias
+
+# --- 6. Servicios ------------------------------------------------------------
 log "Servicios systemd"
 render() {
     # Sustituye los marcadores de una plantilla. '|' como separador, así que los

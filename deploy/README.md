@@ -30,15 +30,28 @@ cd /opt/portal
 ./deploy/preflight.sh                              # evaluación, no modifica nada
 sudo ./deploy/install.sh --domain portal.ejemplo.com
 
-# Actualizar (dependencias, frontend, migraciones y reinicio; no toca nginx ni unidades)
+# Actualizar (valida, detiene, dependencias, migra y arranca; no toca nginx ni unidades)
 sudo git -C /opt/portal pull
 sudo /opt/portal/deploy/install.sh --actualizar
 ```
 
-### Actualizar sin reinstalar (FNC-153)
+### Actualizar sin reinstalar (FNC-153, FNC-159)
 
-- `--actualizar`: `pip install -r requirements.txt`, `npm ci` + `next build`, `alembic upgrade head` y reinicio de backend, worker y frontend.
+`--actualizar` sigue este orden, con un mensaje `[n/6]` por paso (`deploy/actualizar.sh`):
+
+| Paso | Qué hace | Si falla |
+|---|---|---|
+| 1. Validaciones | Las del instalador (`.env`, puertos, Vaultwarden, OIDC, motor de BD) y `preflight.sh --actualizar` (BD y Redis alcanzables, Python, Node, disco, salida a Internet, unidades instaladas; puertos en uso solo por los propios servicios) | Nada se detiene ni se cambia; los servicios siguen con la versión anterior |
+| 2. Detener | `systemctl stop` de frontend, worker y backend; comprueba que ninguno siga activo | Se detiene ahí |
+| 3. Respaldo | No hay respaldo automático de la BD (`docs/operacion/RESPALDOS.md`): solo se avisa | — |
+| 4. Dependencias | `pip install -r requirements.txt`, `npm ci` + `next build` | Servicios **detenidos** |
+| 5. Migraciones | `alembic upgrade head` | Servicios **detenidos**; se muestra el error (la migración fallida se revierte) |
+| 6. Arrancar | `systemctl start`, espera a que queden activos y pide `/api/v1/auth/context` al backend | Muestra las últimas líneas del journal de la unidad que falló |
+
+- Motivo del orden: la app crea tablas al arrancar; un servicio que arrancaba con el código nuevo antes de migrar creaba la tabla y la migración fallaba con `DuplicateTable` (FNC-159).
+- Si falla del paso 2 al 5, los servicios quedan detenidos **a propósito**: el código nuevo no arranca sobre un esquema viejo. Nunca se borran datos. Se corrige la causa y se repite `sudo ./deploy/install.sh --actualizar` (seguro: no repite migraciones).
 - No toca paquetes, usuario, unidades systemd, `/etc/nginx/conf.d/<nombre>.conf`, firewall ni `.env`. Exige una instalación previa.
+- `preflight.sh --actualizar` también se puede correr a mano antes de actualizar.
 - Sin `--actualizar` (instalación completa) los servicios también se reinician: antes un servicio ya activo seguía con el código anterior.
 
 ### nginx editado a mano (FNC-153)
