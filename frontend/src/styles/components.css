@@ -1037,6 +1037,11 @@ select::-ms-expand {
 .nx-area-card:hover .nx-area-card__icono::after {
     transform: translateX(120%);
 }
+/* Área inactiva: los logos de sus plataformas también se ven inactivos (DIS-108). */
+.nx-area-card[data-state='inactiva'] .nx-area-card__logos > * {
+    filter: grayscale(1);
+    opacity: 0.55;
+}
 /* Logos del pie: se abren un poco al pasar el ratón. */
 .nx-area-card__logos > * {
     transition: margin var(--duracion-corta) var(--curva);
