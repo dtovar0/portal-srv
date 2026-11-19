@@ -19,6 +19,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
       updateArea: vi.fn(),
       deleteArea: vi.fn(),
       setAreaUsers: vi.fn(),
+      updateUser: vi.fn(),
     },
   };
 });
@@ -80,6 +81,7 @@ beforeEach(() => {
   vi.mocked(api.createArea).mockResolvedValue({ status: 'success', area: area(9, 'Compras') });
   vi.mocked(api.deleteArea).mockResolvedValue({ status: 'success' });
   vi.mocked(api.setAreaUsers).mockResolvedValue({ status: 'success' });
+  vi.mocked(api.updateUser).mockResolvedValue({ status: 'success' });
   vi.mocked(usersApi.setManagedAreas).mockResolvedValue({ status: 'success', user: LUIS });
 });
 
@@ -103,12 +105,12 @@ describe('AreasList por rol', () => {
     expect(api.areas).not.toHaveBeenCalled();
   });
 
-  it('admin de área: ve "Nueva área", gestiona solo las suyas y no ve el panel de admins', async () => {
+  it('admin de área: no ve "Nueva área", gestiona solo las suyas y no ve el panel de admins', async () => {
     rolActual = 'admin_area';
     render(<AreasList />);
     await screen.findByText('Sistemas');
 
-    expect(screen.getByText('Nueva área')).toBeTruthy();
+    expect(screen.queryByText('Nueva área')).toBeNull();
     expect(screen.queryByText('Administradores')).toBeNull();
     expect(screen.queryByText('Admins')).toBeNull();
 
@@ -132,8 +134,8 @@ describe('AreasList por rol', () => {
     expect(document.getElementById('areas-eliminar-motivo')?.textContent).toBe('Selecciona al menos 1 área para eliminar');
   });
 
-  it('admin de área: el alta no envía color y el área nueva queda gestionable', async () => {
-    rolActual = 'admin_area';
+  it('superadmin: el alta no envía color y el área nueva queda gestionable', async () => {
+    rolActual = 'administrador';
     render(<AreasList />);
     fireEvent.click(await screen.findByText('Nueva área'));
     fireEvent.change(dialogo().getByLabelText('Nombre'), { target: { value: 'Compras' } });
@@ -144,7 +146,6 @@ describe('AreasList por rol', () => {
     await waitFor(() => expect(api.createArea).toHaveBeenCalledTimes(1));
     expect(vi.mocked(api.createArea).mock.calls[0][0]).not.toHaveProperty('color');
     await screen.findByText('Compras');
-    expect(tarjeta('Compras').getByText('Administras')).toBeTruthy();
     fireEvent.click(screen.getByLabelText('Seleccionar Compras'));
     expect((screen.getByRole('button', { name: 'Editar Compras' }) as HTMLButtonElement).disabled).toBe(false);
   });
@@ -157,16 +158,45 @@ describe('AreasList por rol', () => {
     expect(screen.getByRole('button', { name: 'Administradores de Finanzas' })).toBeTruthy();
   });
 
-  it('renderiza exactamente las columnas: Área, Descripción, Plataformas, Usuarios y Estado, sin columna de Alcance', async () => {
+  it('renderiza exactamente las columnas: Área, Descripción, Admin, Plataformas, Usuarios y Estado, sin columna de Alcance', async () => {
     render(<AreasList />);
     await screen.findByText('Finanzas');
 
     expect(screen.getByRole('columnheader', { name: 'Área' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Descripción' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Admin' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Plataformas' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Usuarios' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Estado' })).toBeTruthy();
     expect(screen.queryByRole('columnheader', { name: 'Alcance' })).toBeNull();
+  });
+
+  it('la columna Admin muestra el nombre del administrador o Sin asignar', async () => {
+    const areaConAdmin: Area = {
+      ...area(10, 'Operaciones'),
+      admins: [{ id: 9, name: 'Carlos Admin', email: 'carlos@empresa.com' }],
+    };
+    const areaSinAdmin: Area = {
+      ...area(11, 'Logística'),
+      admins: [],
+    };
+    vi.mocked(api.areas).mockResolvedValue([areaConAdmin, areaSinAdmin]);
+    render(<AreasList />);
+
+    expect(await screen.findByText('Carlos Admin')).toBeTruthy();
+    expect(screen.getByText('Sin asignar')).toBeTruthy();
+  });
+
+  it('en la barra de herramientas los botones están en el orden: Accesos, Admins, Editar, Eliminar y Nuevo', async () => {
+    render(<AreasList />);
+    await screen.findByText('Finanzas');
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+
+    const btnAccesos = screen.getByRole('button', { name: 'Accesos de Finanzas' });
+    const btnAdmins = screen.getByRole('button', { name: 'Administradores de Finanzas' });
+    expect(btnAccesos).toBeTruthy();
+    expect(btnAdmins).toBeTruthy();
+    expect(btnAccesos.compareDocumentPosition(btnAdmins) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 
@@ -446,6 +476,54 @@ describe('Accesos del área (gestión de usuarios)', () => {
     // Debe llamar a api.setAreaUsers con el ID del área (3) y los IDs de Ana y Luis ([8, 5])
     await waitFor(() => {
       expect(api.setAreaUsers).toHaveBeenCalledWith(3, expect.arrayContaining([8, 5]));
+    });
+  });
+
+  it('modal de nueva área: paso 3 de Accesos con Dual Picklist y asignación de Admin', async () => {
+    vi.mocked(api.createArea).mockResolvedValue({ status: 'success', area: area(15, 'Operaciones') });
+    vi.mocked(api.users).mockResolvedValue([LUIS, EVA, ANA]);
+
+    render(<AreasList />);
+    fireEvent.click(await screen.findByText('Nueva área'));
+
+    const modal = dialogo();
+    // Paso 1: Descripción
+    fireEvent.change(modal.getByLabelText('Nombre'), { target: { value: 'Operaciones' } });
+    fireEvent.click(modal.getByText('Siguiente'));
+
+    // Paso 2: Estilo
+    expect(modal.getByText('Color')).toBeTruthy();
+    fireEvent.click(modal.getByText('Siguiente: Accesos'));
+
+    // Paso 3: Accesos (Dual Picklist)
+    expect(await modal.findByText('Asignación rápida de accesos y administradores')).toBeTruthy();
+
+    // Verificamos que Luis está en Sin acceso
+    const btnAgregarLuis = modal.getByLabelText('Agregar Luis al área');
+    expect(btnAgregarLuis).toBeTruthy();
+
+    // Transferir Luis a Con acceso
+    fireEvent.click(btnAgregarLuis);
+
+    // En Con acceso, Luis ahora tiene casilla de Admin
+    const chkAdminLuis = modal.getByLabelText('Hacer admin de área a Luis') as HTMLInputElement;
+    expect(chkAdminLuis).toBeTruthy();
+    expect(chkAdminLuis.checked).toBe(false);
+
+    // Marcarlo como administrador de área
+    fireEvent.click(chkAdminLuis);
+    expect(chkAdminLuis.checked).toBe(true);
+
+    // Guardar (Crear área)
+    fireEvent.click(modal.getByText('Crear área'));
+
+    // Verificamos que se crea el área, se asigna el usuario y se nombra admin
+    await waitFor(() => {
+      expect(api.createArea).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Operaciones' }),
+      );
+      expect(api.setAreaUsers).toHaveBeenCalledWith(15, [5]);
+      expect(usersApi.setManagedAreas).toHaveBeenCalledWith(5, expect.arrayContaining([15]));
     });
   });
 });

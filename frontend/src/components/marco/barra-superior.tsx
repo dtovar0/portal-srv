@@ -52,6 +52,14 @@ export function BarraSuperior({
       <RutaNavegacion />
       <BuscadorGlobal comandos={comandos ?? []} />
       <div className="ml-auto flex min-w-0 items-center gap-2">
+        <Link
+          href="/platforms"
+          aria-label="Catálogo de plataformas"
+          title="Catálogo de plataformas"
+          className={CLASE_BOTON_ICONO}
+        >
+          <Icono nombre="plataformas" />
+        </Link>
         <BotonIcono icono={oscuro ? 'sol' : 'luna'} etiqueta={etiquetaTema} onClick={onAlternarTema} />
         <Link href="/notifications" aria-label={etiquetaNotificaciones} title="Notificaciones" className={CLASE_BOTON_ICONO}>
           <Icono nombre="campana" />

@@ -103,7 +103,7 @@ describe('Menú móvil', () => {
   it('elegir una opción cierra el menú', async () => {
     const boton = await montar();
     const panel = abrir(boton);
-    fireEvent.click(within(panel).getByRole('link', { name: 'Ajustes' }));
+    fireEvent.click(within(panel).getByRole('link', { name: 'Plataformas' }));
     expect(boton.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(boton);
   });
@@ -111,7 +111,7 @@ describe('Menú móvil', () => {
   it('el clic fuera cierra; el clic dentro no', async () => {
     const boton = await montar();
     const panel = abrir(boton);
-    fireEvent.pointerDown(within(panel).getByRole('link', { name: 'Dashboard' }));
+    fireEvent.pointerDown(within(panel).getByRole('link', { name: 'Plataformas' }));
     expect(boton.getAttribute('aria-expanded')).toBe('true');
     fireEvent.pointerDown(screen.getByText('contenido'));
     expect(boton.getAttribute('aria-expanded')).toBe('false');
@@ -154,8 +154,8 @@ describe('Menú móvil', () => {
   });
 
   it.each<[Rol, number]>([
-    ['usuario', 4],
-    ['admin_area', 9],
+    ['usuario', 1],
+    ['admin_area', 8],
     ['administrador', 9],
   ])('%s ve en el menú móvil las mismas entradas que en la barra lateral (%i)', async (rol, n) => {
     const boton = await montar(rol);
@@ -176,7 +176,7 @@ describe('Menú móvil', () => {
 
   it('marca la página actual con aria-current="page"', async () => {
     ruta.actual = '/settings';
-    const panel = abrir(await montar());
+    const panel = abrir(await montar('administrador'));
     const actuales = within(panel)
       .getAllByRole('link')
       .filter((a) => a.getAttribute('aria-current') === 'page');

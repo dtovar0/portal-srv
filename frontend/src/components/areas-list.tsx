@@ -54,9 +54,8 @@ function AreasScreen() {
   const [created, setCreated] = useState<number[]>([]);
 
   const isAdmin = session?.permissions.is_admin ?? false;
-  // `can_manage_areas` de `/me` sigue siendo solo del superadmin (FNC-045);
-  // el alta se decide por rol: superadmin o admin de área.
-  const canCreate = session ? meetsRequirement('any_admin', session.permissions) : false;
+  // Solo el superadmin puede dar de alta áreas (el admin de área no puede dar de alta áreas)
+  const canCreate = isAdmin;
   const managedIds = useMemo(
     () => new Set([...(session?.managed_areas ?? []).map((a) => a.id), ...created]),
     [session?.managed_areas, created],
@@ -249,6 +248,38 @@ function AreasScreen() {
         ),
       },
       {
+        key: 'admin',
+        header: 'Admin',
+        headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none',
+        cellClassName: 'px-6 py-1.5',
+        cell: (area) => {
+          const lista =
+            area.admins && area.admins.length > 0
+              ? area.admins.map((a) => a.name || a.email)
+              : area.admin_names && area.admin_names.length > 0
+              ? area.admin_names
+              : [];
+
+          if (lista.length === 0) {
+            return (
+              <span className="text-xs text-label italic leading-tight">
+                Sin asignar
+              </span>
+            );
+          }
+
+          const texto = lista.join(', ');
+          return (
+            <div className="flex items-center gap-1.5 min-w-0" title={texto}>
+              <Icono nombre="escudo" tamano="xs" ariaHidden={true} className="text-primary-text shrink-0" />
+              <span className="truncate font-semibold text-xs text-body-text leading-tight">
+                {texto}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
         key: 'plataformas',
         header: 'Plataformas',
         headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none text-center',
@@ -353,27 +384,6 @@ function AreasScreen() {
 
           {/* A LA DERECHA: Botones estandarizados (idéntico a Usuarios) */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Botón Administradores (superadmin) */}
-            {isAdmin ? (
-              <Button
-                variant="fila"
-                disabled={!isSingleSelected}
-                onClick={() => effectiveSelectedArea && setAssigning(effectiveSelectedArea)}
-                aria-label={effectiveSelectedArea ? `Administradores de ${effectiveSelectedArea.name}` : 'Administradores del área'}
-                title={
-                  isSingleSelected
-                    ? `Administradores de ${effectiveSelectedArea?.name}`
-                    : activeSelectedIds.size > 1
-                    ? 'Solo se puede ver administradores de 1 área a la vez'
-                    : 'Selecciona 1 área para ver administradores'
-                }
-                className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
-              >
-                <Icono nombre="usuarios" tamano="sm" ariaHidden={true} />
-                <span>Admins</span>
-              </Button>
-            ) : null}
-
             {/* Botón Accesos (Usuarios del área) */}
             <Button
               variant="fila"
@@ -394,6 +404,27 @@ function AreasScreen() {
               <Icono nombre="solicitudes" tamano="sm" ariaHidden={true} />
               <span>Accesos</span>
             </Button>
+
+            {/* Botón Administradores (superadmin) */}
+            {isAdmin ? (
+              <Button
+                variant="fila"
+                disabled={!isSingleSelected}
+                onClick={() => effectiveSelectedArea && setAssigning(effectiveSelectedArea)}
+                aria-label={effectiveSelectedArea ? `Administradores de ${effectiveSelectedArea.name}` : 'Administradores del área'}
+                title={
+                  isSingleSelected
+                    ? `Administradores de ${effectiveSelectedArea?.name}`
+                    : activeSelectedIds.size > 1
+                    ? 'Solo se puede ver administradores de 1 área a la vez'
+                    : 'Selecciona 1 área para ver administradores'
+                }
+                className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+              >
+                <Icono nombre="usuarios" tamano="sm" ariaHidden={true} />
+                <span>Admins</span>
+              </Button>
+            ) : null}
 
             {/* Botón Editar */}
             <Button

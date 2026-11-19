@@ -37,7 +37,7 @@ def crear_plataforma(area, nombre=None, descripcion='Plataforma de prueba',
 
 
 def crear_usuario(rol=ROLE_USER, email=None, areas=(), areas_administradas=(),
-                  plataformas=(), activo=True, contrasena=None):
+                  plataformas=(), activo=True, contrasena=None, responsiva_firmada=True):
     """Crea un usuario local con el rol indicado.
 
     - `areas`: áreas asignadas (`user_areas`), lo que ve un usuario normal.
@@ -50,7 +50,8 @@ def crear_usuario(rol=ROLE_USER, email=None, areas=(), areas_administradas=(),
         raise ValueError(f'Rol desconocido en pruebas: {rol}')
     n = _siguiente()
     usuario = User(email=email or f'{rol}{n}@pruebas.local',
-                   nombre=f'{rol} {n}', role=rol, is_active=activo)
+                   nombre=f'{rol} {n}', role=rol, is_active=activo,
+                   responsiva_firmada=responsiva_firmada)
     if contrasena:
         usuario.set_password(contrasena)
     usuario.areas = list(areas)
