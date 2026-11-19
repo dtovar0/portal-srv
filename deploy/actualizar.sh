@@ -39,13 +39,16 @@ ACTUALIZAR_TIEMPO_MAX_SALUD_SEG=5
 ACTUALIZAR_TOTAL_PASOS=6
 
 # Estado para el aviso de salida: validacion | detenidos | migrando |
-# arrancando | terminado. Vacío: la actualización no empezó.
+# arrancando | frontend_detenido | terminado. Vacío: la actualización no empezó.
 ACTUALIZAR_FASE=""
 # Comando para reintentar; lo fija el llamador (sin opciones: pueden llevar
 # credenciales, p. ej. --proxy).
 ACTUALIZAR_REINTENTO="sudo ./deploy/install.sh --actualizar"
 
-_act_paso()  { printf '\n==> [%s/%s] %s\n' "$1" "$ACTUALIZAR_TOTAL_PASOS" "$2"; }
+# Pasos de --actualizar-frontend (FNC-162).
+ACTUALIZAR_FRONTEND_TOTAL_PASOS=3
+
+_act_paso()  { printf '\n==> [%s/%s] %s\n' "$1" "${ACTUALIZAR_PASOS_DE:-$ACTUALIZAR_TOTAL_PASOS}" "$2"; }
 _act_nota()  { printf '    %s\n' "$1"; }
 _act_error() { printf '\nERROR: %s\n' "$1" >&2; }
 
@@ -60,6 +63,9 @@ actualizar_aviso_salida() {
                 "$ACTUALIZAR_REINTENTO" >&2 ;;
         detenidos|migrando)
             printf '\nLos servicios quedan DETENIDOS a propósito: el código nuevo no arranca sobre\nun esquema sin migrar. No se borró ningún dato; la migración fallida se\nrevierte entera.\nCorregir la causa (ver el error de arriba) y repetir:\n  %s\n' \
+                "$ACTUALIZAR_REINTENTO" >&2 ;;
+        frontend_detenido)
+            printf '\nEl FRONTEND queda detenido (el build anterior ya se reemplazó); backend y\nworker siguen en marcha. Corregir la causa (ver el error de arriba) y repetir:\n  %s\n' \
                 "$ACTUALIZAR_REINTENTO" >&2 ;;
         arrancando)
             printf '\nLas migraciones se aplicaron, pero algún servicio no quedó en marcha (ver el\njournal de arriba). Tras corregir, repetir (es seguro: no repite migraciones):\n  %s\n' \
@@ -178,6 +184,41 @@ actualizar_despliegue() {
     _act_paso 6 "Arrancar servicios y comprobar"
     actualizar_arrancar "$backend" "$worker" "$frontend"
     actualizar_salud "$backend" "$puerto"
+
+    ACTUALIZAR_FASE=terminado
+}
+
+# actualizar_frontend_despliegue FRONTEND (--actualizar-frontend, FNC-162)
+# Solo el frontend, tras un `git pull` que no trae cambios de backend ni de BD:
+#   1. validar     actualizar_frontend_validar (lo define el llamador)
+#   2. build       detiene el frontend (next build reemplaza .next y el servidor
+#                  en marcha quedaría sin archivos) y corre
+#                  actualizar_frontend_construir (npm ci, build y estáticos)
+#   3. arrancar    el frontend; si no queda activo, su journal
+# Backend y worker no se tocan; no hay migraciones. Orden simple con `set -e`.
+actualizar_frontend_despliegue() {
+    local frontend="$1"
+    local ACTUALIZAR_PASOS_DE=$ACTUALIZAR_FRONTEND_TOTAL_PASOS
+    # Si el llamador no fijó cómo reintentar, el de este modo (no el de --actualizar).
+    [[ "$ACTUALIZAR_REINTENTO" == *--actualizar-frontend* ]] \
+        || ACTUALIZAR_REINTENTO="sudo ./deploy/install.sh --actualizar-frontend"
+    if [[ $- != *e* ]]; then
+        _act_error "actualizar_frontend_despliegue necesita 'set -e' (un fallo no debe pasar inadvertido)"
+        return 1
+    fi
+
+    ACTUALIZAR_FASE=validacion
+    _act_paso 1 "Validaciones previas (el frontend sigue en marcha)"
+    actualizar_frontend_validar
+    _act_nota "validaciones superadas"
+
+    ACTUALIZAR_FASE=frontend_detenido
+    _act_paso 2 "Build del frontend (frontend detenido; backend y worker siguen)"
+    actualizar_detener "$frontend"
+    actualizar_frontend_construir
+
+    _act_paso 3 "Arrancar el frontend y comprobar"
+    actualizar_arrancar "$frontend"
 
     ACTUALIZAR_FASE=terminado
 }

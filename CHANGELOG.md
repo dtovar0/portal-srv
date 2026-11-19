@@ -24,6 +24,7 @@
 - Migración 0014 (responsiva de usuario): el valor por defecto de `responsiva_firmada` era `DEFAULT 1`, que PostgreSQL rechaza y detenía `alembic upgrade`; ahora `DEFAULT true`. Prueba nueva que genera el SQL de PostgreSQL de la migración (FNC-155, 2026-11-18).
 
 ### Agregado
+- Despliegue: `install.sh --actualizar-frontend` actualiza solo el frontend tras un `git pull` (valida, detiene el frontend, `npm ci`, build y estáticos, lo arranca y comprueba; si falla muestra su journal). Backend, worker, BD, nginx y `.env` no se tocan (FNC-162, 2026-11-19).
 - Usuarios: «Editar usuario» cambia la contraseña según el origen de la cuenta: `local` guarda el hash en la base (cualquier cuenta local gestionable) y `ldap` la cambia en el directorio con Password Modify y la política `PASSWORD_POLICY_*` (solo superadmin; nunca queda hash en la base); `sso` se rechaza. El formulario muestra el campo con su ayuda y la política. Contrato `areas-y-roles` v3 (FNC-161, 2026-11-19).
 - Web: el botón de confirmar de `ConfirmDialog` es de peligro solo en acciones destructivas (`type` aviso o error); «Reenviar credenciales» pasa a primario; `variant` opcional para forzarlo (DIS-097, 2026-11-18).
 - Web: los botones deshabilitados de las barras de Áreas, Usuarios, Plataformas y Conectores quedan `aria-disabled` (enfocables) con el motivo asociado por `aria-describedby`, visible al foco y descartable con Esc; `Button` acepta `motivoDeshabilitado` (DIS-096, 2026-11-18).
