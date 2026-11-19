@@ -125,12 +125,23 @@ export interface ManagedUser {
 
 export type CredentialsStatus = 'enviadas' | 'pendientes';
 
+/** Indicadores del dashboard que traen desglose en `GET /stats` (contrato de FNC-164). */
+export type ClaveIndicador = 'areas' | 'platforms' | 'requests' | 'visits' | 'users';
+
+/** Reparto de un contador en dos partes: `parte + resto` = el contador (DIS-112). */
+export interface DesgloseIndicador {
+  parte: number;
+  resto: number;
+}
+
 export interface Stats {
   areas: number;
   platforms: number;
   visits: number;
   users?: number;
   requests?: number;
+  /** Ausente en un backend anterior a FNC-164; `users` solo llega a admins. */
+  desglose?: Partial<Record<ClaveIndicador, DesgloseIndicador>>;
   most_visited: { id: number; name: string; visits: number }[];
   platforms_by_area: { area: string; color: string; count: number }[];
 }

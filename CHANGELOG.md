@@ -9,6 +9,7 @@
 - Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
 
 ### Cambiado
+- Web: las tarjetas de contadores del dashboard (Áreas, Plataformas, Solicitudes, Visitas, Usuarios) pasan de tarjetas planas a tres diseños con anillo, «Anillo con brillo», «Dos segmentos» (por omisión) y «Medidor»; el botón «Diseño de tarjetas» del encabezado abre un modal para elegir el activo (se recuerda por navegador). Usan `desglose` de `GET /stats` (FNC-164); sin él, solo la cifra. Tokens nuevos `--color-indicador-*` (DIS-112, 2026-11-19).
 - Web: la tarjeta de área de Admin › Plataformas se rediseña (icono a la izquierda con degradado del color del área, cifras de personas y plataformas, logos de las primeras 3 plataformas y «Ver plataformas»); ya no se estira al alto de la rejilla (DIS-102, 2026-11-19).
 
 ### Corregido
