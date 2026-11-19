@@ -23,6 +23,8 @@ from app.modules.directory.configuracion import directorio_activo
 from app.modules.directory.ldap_client import ClienteDirectorio, ErrorDirectorio
 from app.modules.users.entrega_credenciales import (
     CODIGO_CONTRASENA_RECHAZADA, fijar_contrasena_en_directorio)
+from app.modules.provisioning.reloj import ahora
+from app.modules.users.models import ESTADO_ENVIADAS, ESTADO_PENDIENTES
 from app.modules.users.politica_contrasena import (MENSAJE_RECHAZO_DIRECTORIO,
                                                    mensaje_de_incumplimiento)
 
@@ -102,4 +104,20 @@ def aplicar_cambio(cuenta, contrasena):
         return (MENSAJE_RECHAZO_DIRECTORIO, 400, 'contrasena_rechazada')
     if codigo:
         return DIRECTORIO_NO_DISPONIBLE
+    _cerrar_entrega_pendiente(cuenta)
     return None
+
+
+def _cerrar_entrega_pendiente(cuenta):
+    """La contraseña ya la fijó un superadmin: la entrega por Send pendiente se
+    cierra para que el worker no la reintente y ponga otra contraseña encima.
+    La petición hace el commit."""
+    entrega = cuenta.credential_delivery
+    if entrega is None or entrega.status != ESTADO_PENDIENTES:
+        return
+    entrega.status = ESTADO_ENVIADAS
+    entrega.next_attempt_at = None
+    entrega.last_error = None
+    entrega.locked_at = None
+    entrega.locked_by = None
+    entrega.updated_at = ahora()

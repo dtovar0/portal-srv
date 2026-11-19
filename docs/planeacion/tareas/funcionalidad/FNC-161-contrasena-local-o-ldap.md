@@ -53,3 +53,7 @@
 
 ## Bitácora
 - 2026-11-19: implementada en rama propia, sin push ni merge.
+
+## Corrección del orquestador al integrar
+- Al cambiar la contraseña en LDAP desde Editar se cierra la entrega por Send pendiente (`enviadas`, sin reintento): sin esto el worker reintentaba y fijaba otra contraseña al azar encima. Prueba `test_cambio_en_ldap_cierra_la_entrega_pendiente` (fallaba antes). Resuelve el punto 5 de las decisiones.
+- Auditoría de seguridad diferida a la completa (decisión del dueño 2026-11-19).

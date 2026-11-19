@@ -264,3 +264,21 @@ def test_sin_password_no_se_toca_ni_el_hash_ni_el_directorio(
     assert directorio.filtros == []
     assert _clave_ldap() == ['Inicial-1']
 
+
+
+def test_cambio_en_ldap_cierra_la_entrega_pendiente(escena, como, directorio):
+    """Sin esto el worker reintentaba la entrega y fijaba OTRA contraseña al azar
+    encima de la que el superadmin acaba de poner (riesgo del retiro de Reenviar)."""
+    directorio.agregar('otro.uid', 'Inicial-2', correo='otro@pruebas.local')
+    db.session.add(EntregaCredenciales(
+        user_id=escena['ldap'], uid='otro.uid', status='pendientes',
+        attempts_count=3, max_attempts=3, last_error='send'))
+    db.session.commit()
+
+    respuesta = _put(como(escena['super']), escena['ldap'], password=NUEVA)
+
+    assert respuesta.status_code == 200, respuesta.get_data(as_text=True)
+    db.session.expire_all()
+    entrega = EntregaCredenciales.query.filter_by(user_id=escena['ldap']).one()
+    assert entrega.status != 'pendientes'
+    assert entrega.next_attempt_at is None and entrega.last_error is None
