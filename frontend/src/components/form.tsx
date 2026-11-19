@@ -248,6 +248,7 @@ export function Modal({
   describedBy,
   icon,
   size = 'xl',
+  cerrable = true,
 }: {
   title: string;
   onClose: () => void;
@@ -256,6 +257,12 @@ export function Modal({
   describedBy?: string;
   icon?: NombreIcono;
   size?: keyof typeof ANCHOS_MODAL;
+  /**
+   * DIS-098: `false` en diálogos obligatorios (p. ej. la responsiva): sin la ✕
+   * «Cerrar», que no cerraría. Escape y el velo siguen llamando a `onClose`
+   * (el diálogo decide qué hacer, como avisar que es obligatorio).
+   */
+  cerrable?: boolean;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
@@ -300,14 +307,16 @@ export function Modal({
             </h2>
           </div>
           {/* DIS-031, DIS-061: área táctil de 48 px con Icono accesible. */}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl text-texto-sobre-accion/80 transition-colors hover:bg-superficie/15 hover:text-texto-sobre-accion focus-visible:ring-2 focus-visible:ring-superficie shrink-0"
-          >
-            <Icono nombre="cerrar" tamano="md" ariaHidden={true} />
-          </button>
+          {cerrable ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="flex min-h-12 min-w-12 items-center justify-center rounded-xl text-texto-sobre-accion/80 transition-colors hover:bg-superficie/15 hover:text-texto-sobre-accion focus-visible:ring-2 focus-visible:ring-superficie shrink-0"
+            >
+              <Icono nombre="cerrar" tamano="md" ariaHidden={true} />
+            </button>
+          ) : null}
         </div>
 
         {/* BODY */}

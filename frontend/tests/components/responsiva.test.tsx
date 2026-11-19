@@ -88,6 +88,8 @@ describe('ModalResponsiva', () => {
     expect(screen.getByText('Área: Operaciones')).toBeTruthy();
     expect(screen.getByText('Texto legal de la responsiva institucional para el uso de plataformas.')).toBeTruthy();
     expect(screen.getByRole('link', { name: /Cerrar sesión/i })).toBeTruthy();
+    // DIS-098: la carta es obligatoria; sin una ✕ «Cerrar» que no cierra.
+    expect(screen.queryByRole('button', { name: 'Cerrar' })).toBeNull();
   });
 
   it('el botón de firma permanece deshabilitado hasta marcar la casilla de aceptación', async () => {

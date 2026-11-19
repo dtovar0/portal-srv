@@ -68,6 +68,7 @@ export function ModalResponsiva({
         icon="escudo"
         size="3xl"
         onClose={handleIntentoCerrar}
+        cerrable={false}
         describedBy={data?.contenido ? ID_TEXTO_CARTA : undefined}
         footer={
           <div className="flex w-full flex-col-reverse sm:flex-row items-center justify-between gap-3">
