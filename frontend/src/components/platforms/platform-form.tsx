@@ -21,7 +21,7 @@ import { Button, ColorInput, Field, FileInput, Modal, TextArea, TextInput, Toggl
 import { Icono } from '../icono';
 import { TRAZOS, type NombreIcono } from '../icono-trazos';
 import { RegionDeAnuncios } from '../region-de-anuncios';
-import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
+import { Badge, ErrorNote, Spinner } from '../ui';
 import { useToast } from '../toast';
 import { describedBy, FieldErrorNote, FieldHint, focusFirstError } from './field-notes';
 import { type IntegrationValue } from './platform-integration-fields';
@@ -121,7 +121,7 @@ export function PlatformForm({
         }
       : { ...EMPTY, icon: 'plataformas', area_id: defaultAreaId ?? areas[0]?.id },
   );
-  const [integration, setIntegration] = useState<IntegrationValue>(initialIntegration);
+  const [integration] = useState<IntegrationValue>(initialIntegration);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -243,7 +243,7 @@ export function PlatformForm({
     if (linkNormalizado !== (form.direct_link ?? '')) {
       set('direct_link', linkNormalizado);
     }
-    const errors = validate(formAvanzado, integration, isEdit);
+    const errors = validate(formAvanzado, integration);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError(MENSAJE_REVISA_CAMPOS);
@@ -258,7 +258,7 @@ export function PlatformForm({
   function avanzarAlPaso3() {
     const linkNormalizado = normalizarEnlaceDirecto(form.direct_link);
     const formAvanzado = { ...form, direct_link: linkNormalizado };
-    const errors = validate(formAvanzado, integration, isEdit);
+    const errors = validate(formAvanzado, integration);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError(MENSAJE_REVISA_CAMPOS);
@@ -288,7 +288,7 @@ export function PlatformForm({
     if (linkNormalizado !== (form.direct_link ?? '')) {
       set('direct_link', linkNormalizado);
     }
-    const errors = validate(formFinal, integration, isEdit);
+    const errors = validate(formFinal, integration);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError(MENSAJE_REVISA_CAMPOS);
@@ -678,6 +678,8 @@ export function PlatformForm({
                   {imagePreview ? (
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
+                        {/* Vista previa local o https externo: next/image no la optimiza (mismo motivo que areas/tarjeta-area.tsx) */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imagePreview}
                           alt="Icono subido"
@@ -739,6 +741,8 @@ export function PlatformForm({
                     aria-hidden="true"
                   >
                     {imagePreview ? (
+                      // Vista previa local o https externo: next/image no la optimiza (mismo motivo que areas/tarjeta-area.tsx)
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={imagePreview} alt="Logo" className="size-full object-contain p-1" />
                     ) : form.icon && form.icon in TRAZOS ? (
                       <Icono nombre={form.icon as NombreIcono} tamano="md" ariaHidden={true} />

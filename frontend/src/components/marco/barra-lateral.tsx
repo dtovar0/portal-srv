@@ -20,14 +20,10 @@ export function BarraLateral({
   colapsada,
   contadores,
   session,
-  segunSistema,
-  onSegunSistema,
 }: {
   colapsada: boolean;
   contadores?: Readonly<Record<string, number>>;
   session: Session;
-  segunSistema: boolean;
-  onSegunSistema: () => void;
 }) {
   return (
     <aside
@@ -57,7 +53,7 @@ export function BarraLateral({
       <div
         className={`flex shrink-0 items-center border-t border-barra-lateral-borde p-3 ${colapsada ? 'justify-center' : ''}`}
       >
-        <MenuUsuario session={session} segunSistema={segunSistema} onSegunSistema={onSegunSistema} colapsada={colapsada} />
+        <MenuUsuario session={session} colapsada={colapsada} />
       </div>
     </aside>
   );

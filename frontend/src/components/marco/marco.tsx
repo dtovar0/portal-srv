@@ -21,7 +21,7 @@ import { useIndicadores } from './use-indicadores';
 export function Marco({ session, children }: { session: Session; children: React.ReactNode }) {
   const pathname = usePathname();
   const { colapsado: colapsada, alternar } = useMenuColapsado();
-  const { tema, oscuro, elegir, alternar: alternarTema } = useTema();
+  const { oscuro, alternar: alternarTema } = useTema();
   const esAdmin = session.permissions.is_admin || session.permissions.is_area_admin;
   const { noLeidas, pendientes } = useIndicadores({ esAdmin, ruta: pathname });
   const contadores = useMemo(() => ({ '/approvals': pendientes }), [pendientes]);
@@ -40,8 +40,6 @@ export function Marco({ session, children }: { session: Session; children: React
         colapsada={colapsada}
         contadores={contadores}
         session={session}
-        segunSistema={tema === 'sistema'}
-        onSegunSistema={() => { void elegir('sistema'); }}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -53,7 +51,7 @@ export function Marco({ session, children }: { session: Session; children: React
                   <NavPrincipal onNavigate={close} contadores={contadores} enBarraLateral={false} />
                   {/* Pie del cajón: la tarjeta de usuario queda a la vista aunque la lista se desplace. */}
                   <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex border-t border-borde bg-panel-fill p-3">
-                    <MenuUsuario session={session} segunSistema={tema === 'sistema'} onSegunSistema={() => { void elegir('sistema'); }} enBarraLateral={false} />
+                    <MenuUsuario session={session} enBarraLateral={false} />
                   </div>
                 </>
               )}

@@ -7,8 +7,7 @@
  */
 
 import type { Job, JobOperation, JobParams, JobStatus } from '@/lib/access/types';
-import { FilterBar, FilterBarGrid } from '../filter-bar';
-import { Field, Option, Select } from '../form';
+import { Option, Select } from '../form';
 import { type OpcionesAlcance, ScopeSelects } from '../access/scope-filters';
 import { ESTADOS_EJECUCION, OPERACIONES, PROVEEDORES } from './job-catalog';
 

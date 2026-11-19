@@ -23,7 +23,7 @@ import { Button } from '../form';
 import { Icono } from '../icono';
 import { useSession } from '../session-provider';
 import { useToast } from '../toast';
-import { Card, ErrorNote, PremiumEmptyState, Spinner } from '../ui';
+import { ErrorNote, PremiumEmptyState, Spinner } from '../ui';
 import { hayTransitorios } from './job-catalog';
 import { JobDetailModal } from './job-detail-modal';
 import { JobRetryDialog } from './job-retry-dialog';

@@ -2,7 +2,7 @@
 
 /** Usuarios: alta, edición, baja y asignación de áreas y plataformas. */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 import { useAsync } from '@/lib/use-async';
@@ -20,20 +20,8 @@ import { DirectoryAccountForm } from './users/directory-account-form';
 import { DirectoryPicker } from './users/directory-picker';
 import { PurgePanel } from './users/purge-panel';
 import { useToast } from './toast';
-import { MENSAJE_SUPERADMIN, UserAccessPanel } from './users/user-access-panel';
+import { UserAccessPanel } from './users/user-access-panel';
 import { UserForm } from './users/user-form';
-
-const ROLE_LABELS: Record<string, string> = {
-  administrador: 'Super admin',
-  admin_area: 'Admin',
-  usuario: 'Usuario',
-};
-
-const ROLE_TONES: Record<string, 'primary' | 'sky' | 'slate'> = {
-  administrador: 'primary',
-  admin_area: 'sky',
-  usuario: 'slate',
-};
 
 export function UsersList() {
   const { session } = useSession();
@@ -47,6 +35,9 @@ export function UsersList() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [directory, setDirectory] = useState(false);
+  // Panel de purga sin disparador en la interfaz actual (a medio quitar): se conserva el
+  // setter para reconectarlo; ver DIS-106.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showPurge, setShowPurge] = useState(false);
   const [prefill, setPrefill] = useState<DirectoryUser | null>(null);
   // DIS-018: accesos del usuario; al cerrar, el foco vuelve a su botón.
@@ -67,6 +58,9 @@ export function UsersList() {
   /** Botón que abrió el alta o la acción de rol: recibe el foco tras el aviso. */
   const disparadorAviso = useRef<HTMLButtonElement | null>(null);
 
+  // Ninguna vista lo invoca hoy (los diálogos de rol quedaron sin disparador): se conserva
+  // para reconectarlo; ver DIS-106.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function abrirRol(trigger: HTMLButtonElement, user: ManagedUser, action: 'areas' | 'quitar') {
     roleTrigger.current = trigger;
     disparadorAviso.current = trigger;
@@ -394,6 +388,10 @@ export function UsersList() {
         ),
       },
     ],
+    // `toggleAll`/`toggleUser` leen `selectedUserIds` (= `activeSelectedIds`, en las dependencias)
+    // y `lastSelectedId`, que solo cambia junto con la selección: nunca hay un cierre viejo.
+    // Agregarlas recrearía las columnas en cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeSelectedIds, allSelected, someSelected, allDisplayIds, areasMap],
   );
 
