@@ -10,7 +10,7 @@ import type {
   Area, AreaInput, AppNotification, AuditEntry, AuthContext,
   EmailTemplate,
   DirectoryUser, InactiveUser, ManagedUser, Platform, PlatformInput, PlatformWarning,
-  Session, SmtpConfig, Stats,
+  ResponsivaData, Session, SmtpConfig, Stats,
   SystemSettings, UserInput,
 } from './types';
 import type { Access } from './access/types';
@@ -125,6 +125,12 @@ export { request as apiRequest };
 
 export const api = {
   session: () => request<Session>('/me'),
+  responsiva: () => request<ResponsivaData>('/responsiva'),
+  firmarResponsiva: () =>
+    request<{ status: string; message: string; firmada_at: string }>(
+      '/me/firmar-responsiva',
+      { method: 'POST' },
+    ),
   areas: () => request<Area[]>('/areas'),
   stats: () => request<Stats>('/stats'),
   users: () => request<ManagedUser[]>('/users'),
@@ -254,12 +260,11 @@ export const api = {
 
   // --- Autenticación ---
   authContext: () => request<AuthContext>('/auth/context'),
-  ssoLogin: () =>
-    request<{ status: string; role: string }>('/auth/sso', { method: 'POST' }),
-  login: (email: string, password: string, method: 'directory' | 'local') =>
-    request<{ status: string; role: string }>('/auth/login', {
+  /** Cuenta de emergencia (ADR-009 6A): única entrada con contraseña. */
+  loginLocal: (email: string, password: string) =>
+    request<{ status: string; role: string }>('/auth/local', {
       method: 'POST',
-      body: JSON.stringify({ email, password, method }),
+      body: JSON.stringify({ email, password }),
     }),
   logout: () =>
     request<{ status: string; redirect: string | null }>(

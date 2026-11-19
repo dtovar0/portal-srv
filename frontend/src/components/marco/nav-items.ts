@@ -27,21 +27,26 @@ export const SECCIONES: readonly SeccionNav[] = ['General', 'Gestión', 'Sistema
 
 /** Entradas por rol según la tabla de pantallas (REQUERIMIENTOS §4, FNC-070). */
 export const NAV: readonly NavItem[] = [
-  { href: '/', label: 'Dashboard', icono: 'panel', seccion: 'General' },
+  { href: '/', label: 'Dashboard', icono: 'panel', seccion: 'General', requires: 'any_admin' },
+  { href: '/platforms', label: 'Plataformas', icono: 'plataformas', seccion: 'General', oculto: true },
   { href: '/admin/platforms', label: 'Plataformas', icono: 'plataformas', seccion: 'General', requires: 'any_admin' },
-  { href: '/requests', label: 'Mis solicitudes', icono: 'solicitudes', seccion: 'General', requires: 'requester' },
+  { href: '/requests', label: 'Mis solicitudes', icono: 'solicitudes', seccion: 'General', requires: 'any_admin', oculto: true },
   { href: '/approvals', label: 'Aprobaciones', icono: 'aprobaciones', seccion: 'Gestión', requires: 'any_admin', oculto: true },
   { href: '/areas', label: 'Áreas', icono: 'areas', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/users', label: 'Usuarios', icono: 'usuarios', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/admin/connectors', label: 'Conectores', icono: 'marca', seccion: 'Gestión', requires: 'admin' },
   { href: '/inventory', label: 'Auditoría usuarios', icono: 'inventario', seccion: 'Gestión', requires: 'any_admin' },
-  { href: '/settings', label: 'Ajustes', icono: 'ajustes', seccion: 'Sistema' },
+  { href: '/settings', label: 'Ajustes', icono: 'ajustes', seccion: 'Sistema', requires: 'any_admin' },
   { href: '/admin/jobs', label: 'Ejecuciones', icono: 'ejecuciones', seccion: 'Sistema', requires: 'any_admin' },
-  { href: '/audit', label: 'Auditoría', icono: 'auditoria', seccion: 'Sistema' },
+  { href: '/audit', label: 'Auditoría', icono: 'auditoria', seccion: 'Sistema', requires: 'any_admin' },
 ];
 
 /** Entradas que el rol puede ver, en el orden del menú. */
 export function entradasVisibles(permissions: Session['permissions']): NavItem[] {
+  const isUser = !permissions.is_admin && !permissions.is_area_admin;
+  if (isUser) {
+    return NAV.filter((item) => item.href === '/platforms');
+  }
   return NAV.filter((item) => !item.oculto && meetsRequirement(item.requires, permissions));
 }
 

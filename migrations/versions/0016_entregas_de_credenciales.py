@@ -10,8 +10,8 @@
 - `downgrade()` borra la tabla y solo las plantillas que siguen idénticas a las
   insertadas (una editada desde Ajustes → Plantillas se conserva).
 
-Revision ID: 0015
-Revises: 0014
+Revision ID: 0016
+Revises: 0015
 Create Date: 2026-11-18
 """
 from datetime import datetime
@@ -21,8 +21,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '0015'
-down_revision: Union[str, Sequence[str], None] = '0014'
+revision: str = '0016'
+down_revision: Union[str, Sequence[str], None] = '0015'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

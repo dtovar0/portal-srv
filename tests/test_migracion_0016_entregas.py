@@ -15,7 +15,7 @@ def _slugs(motor):
 
 def test_upgrade_crea_la_tabla_sin_columnas_de_secretos_y_las_plantillas(
         motor_vacio):  # noqa: F811
-    migrar(motor_vacio, command.upgrade, '0015')
+    migrar(motor_vacio, command.upgrade, '0016')
 
     columnas = {c['name'] for c in inspect(motor_vacio)
                 .get_columns('credential_deliveries')}
@@ -28,13 +28,13 @@ def test_upgrade_crea_la_tabla_sin_columnas_de_secretos_y_las_plantillas(
 
 def test_downgrade_quita_la_tabla_y_solo_las_plantillas_sin_editar(
         motor_vacio):  # noqa: F811
-    migrar(motor_vacio, command.upgrade, '0015')
+    migrar(motor_vacio, command.upgrade, '0016')
     with motor_vacio.begin() as conexion:
         conexion.execute(text(
             "UPDATE notification_templates SET subject = 'Editada' "
             "WHERE slug = 'credenciales_no_entregadas'"))
 
-    migrar(motor_vacio, command.downgrade, '0014')
+    migrar(motor_vacio, command.downgrade, '0015')
 
     assert 'credential_deliveries' not in inspect(motor_vacio).get_table_names()
     assert _slugs(motor_vacio) & set(SLUGS) == {'credenciales_no_entregadas'}

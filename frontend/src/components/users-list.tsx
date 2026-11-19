@@ -482,7 +482,7 @@ export function UsersList() {
                   setPage(1);
                 }}
                 aria-label="Buscar usuarios"
-                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               {busqueda ? (
                 <button
@@ -507,33 +507,8 @@ export function UsersList() {
             ) : null}
           </div>
 
-          {/* A LA DERECHA: Botones solicitados: áreas, accesos, editar, eliminar y nuevo */}
+          {/* A LA DERECHA: Botones solicitados: accesos, áreas, editar, eliminar y nuevo */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Botón Áreas: activo si hay 1 o más usuarios seleccionados */}
-            <Button
-              variant="fila"
-              disabled={activeSelectedIds.size === 0}
-              onClick={(event) => {
-                if (selectedUsers.length === 0) return;
-                accessTrigger.current = event.currentTarget;
-                setAccessTab('areas');
-                setAccessUsers(selectedUsers);
-                setAccessOf(selectedUsers[0] ?? null);
-              }}
-              aria-label={effectiveSelectedUser ? `Áreas de ${effectiveSelectedUser.name}` : 'Áreas'}
-              title={
-                activeSelectedIds.size === 0
-                  ? 'Selecciona al menos 1 usuario para ver áreas'
-                  : selectedUsers.length > 1
-                  ? `Asignar áreas a ${selectedUsers.length} usuarios seleccionados`
-                  : `Áreas de ${effectiveSelectedUser?.name}`
-              }
-              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
-            >
-              <Icono nombre="areas" tamano="sm" ariaHidden={true} />
-              <span>Áreas</span>
-            </Button>
-
             {/* Botón Accesos: activo si hay 1 o más usuarios seleccionados y ninguno sin áreas (salvo superadmin) */}
             <Button
               variant="fila"
@@ -565,6 +540,31 @@ export function UsersList() {
             >
               <Icono nombre="solicitudes" tamano="sm" ariaHidden={true} />
               <span>Accesos</span>
+            </Button>
+
+            {/* Botón Áreas: activo si hay 1 o más usuarios seleccionados */}
+            <Button
+              variant="fila"
+              disabled={activeSelectedIds.size === 0}
+              onClick={(event) => {
+                if (selectedUsers.length === 0) return;
+                accessTrigger.current = event.currentTarget;
+                setAccessTab('areas');
+                setAccessUsers(selectedUsers);
+                setAccessOf(selectedUsers[0] ?? null);
+              }}
+              aria-label={effectiveSelectedUser ? `Áreas de ${effectiveSelectedUser.name}` : 'Áreas'}
+              title={
+                activeSelectedIds.size === 0
+                  ? 'Selecciona al menos 1 usuario para ver áreas'
+                  : selectedUsers.length > 1
+                  ? `Asignar áreas a ${selectedUsers.length} usuarios seleccionados`
+                  : `Áreas de ${effectiveSelectedUser?.name}`
+              }
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="areas" tamano="sm" ariaHidden={true} />
+              <span>Áreas</span>
             </Button>
 
             {/* Botón Editar: activo solo si se selecciona exactamente 1 fila */}

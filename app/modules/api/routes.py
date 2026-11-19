@@ -23,8 +23,31 @@ api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 
 
 # --------------------------------------------------------------------------- #
-# Sesión
+# Sesión y Responsiva
 # --------------------------------------------------------------------------- #
+
+RUTAS_EXENTAS_RESPONSIVA = {
+    'api.me',
+    'api.get_responsiva',
+    'api.sign_responsiva',
+}
+
+
+@api_bp.before_request
+def check_responsiva():
+    """Defensa en profundidad: bloquea consultas de API si no ha firmado la responsiva."""
+    if not current_user.is_authenticated:
+        return None
+    if is_admin():
+        return None
+    if getattr(current_user, 'responsiva_firmada', True) is False:
+        if request.endpoint not in RUTAS_EXENTAS_RESPONSIVA:
+            return jsonify({
+                'code': 'responsiva_requerida',
+                'message': 'Debes leer y firmar la carta responsiva antes de acceder al sistema.',
+            }), 403
+    return None
+
 
 @api_bp.route('/me')
 @login_required
@@ -40,6 +63,9 @@ def me():
         'name': current_user.nombre or current_user.email,
         'role': current_user.role,
         'auth_source': current_user.auth_source,
+        'responsiva_firmada': True if is_admin() else bool(getattr(current_user, 'responsiva_firmada', True)),
+        'responsiva_firmada_at': current_user.responsiva_firmada_at.isoformat() if getattr(current_user, 'responsiva_firmada_at', None) else None,
+        'responsiva_version': getattr(current_user, 'responsiva_version', '1.0') or '1.0',
         'areas': [{'id': a.id, 'name': a.name} for a in (current_user.areas or [])],
         'managed_areas': [{'id': a.id, 'name': a.name}
                           for a in (current_user.managed_areas or [])],
@@ -59,6 +85,78 @@ def me():
     })
 
 
+@api_bp.route('/responsiva')
+@login_required
+def get_responsiva():
+    """Texto oficial de la responsiva y lista de plataformas/áreas asignadas al usuario."""
+    from app.modules.access.models import PlatformAccessGrant
+    from app.modules.access.tipos import ESTADOS_VIGENTES
+
+    plataformas_asignadas = []
+    grants = (PlatformAccessGrant.query
+              .filter(PlatformAccessGrant.user_id == current_user.id,
+                      PlatformAccessGrant.status.in_(ESTADOS_VIGENTES))
+              .all())
+    for g in grants:
+        if g.platform:
+            plataformas_asignadas.append({
+                'id': g.platform.id,
+                'name': g.platform.name,
+                'area_name': g.platform.area.name if g.platform.area else None,
+                'level': g.level,
+            })
+
+    areas_asignadas = [{'id': a.id, 'name': a.name} for a in (current_user.areas or [])]
+
+    return jsonify({
+        'version': getattr(current_user, 'responsiva_version', '1.0') or '1.0',
+        'firmada': True if is_admin() else bool(getattr(current_user, 'responsiva_firmada', True)),
+        'firmada_at': current_user.responsiva_firmada_at.isoformat() if getattr(current_user, 'responsiva_firmada_at', None) else None,
+        'titulo': 'Carta Responsiva de Uso de Activos de Información y Plataformas Institucionales',
+        'contenido': (
+            'Por medio del presente documento, el usuario reconoce y acepta que las cuentas de acceso, '
+            'credenciales, plataformas digitales y activos de información asignados son para uso estrictamente laboral '
+            'y profesional en el marco de sus funciones en la organización.\n\n'
+            'Términos y Compromisos:\n'
+            '1. Confidencialidad: El usuario se compromete a salvaguardar sus credenciales de acceso y no divulgarlas ni transferirlas a terceros.\n'
+            '2. Uso Autorizado: Las plataformas institucionales deberán utilizarse exclusivamente para los fines legítimos del puesto y área asignada.\n'
+            '3. Seguridad de la Información: Queda estrictamente prohibida la extracción, alteración, copia o distribución no autorizada de datos sensibles o confidenciales.\n'
+            '4. Notificación Oportuna: El usuario reportará de inmediato al área de TI/Seguridad cualquier anomalía o sospecha de vulneración de credenciales.\n'
+            '5. Monitoreo y Revocación: La organización podrá auditar las operaciones realizadas y revocar los accesos en caso de cambio de área, baja laboral o incumplimiento normativo.'
+        ),
+        'areas': areas_asignadas,
+        'plataformas': plataformas_asignadas,
+    })
+
+
+@api_bp.route('/me/firmar-responsiva', methods=['POST'])
+@login_required
+def sign_responsiva():
+    """Firma digital y aceptación formal de la carta responsiva de primer ingreso."""
+    from datetime import datetime
+    from app.modules.audit.services import add_audit_log
+
+    current_user.responsiva_firmada = True
+    current_user.responsiva_firmada_at = datetime.utcnow()
+
+    add_audit_log(
+        action='firma_responsiva',
+        status='success',
+        detail=f'Usuario {current_user.email} firmó la carta responsiva v{getattr(current_user, "responsiva_version", "1.0")}.',
+        module='auth',
+        target=current_user.email,
+        target_user_id=current_user.id,
+        commit=False,
+    )
+
+    db.session.commit()
+    return jsonify({
+        'status': 'success',
+        'message': 'Carta responsiva firmada correctamente.',
+        'firmada_at': current_user.responsiva_firmada_at.isoformat(),
+    })
+
+
 # --------------------------------------------------------------------------- #
 # Áreas
 # --------------------------------------------------------------------------- #
@@ -72,6 +170,10 @@ def list_areas():
         **a.to_dict(),
         'platforms_count': len(a.platforms or []),
         'users_count': len(a.area_users or []),
+        'admins': [{'id': u.id, 'name': u.nombre or u.email, 'email': u.email}
+                   for u in (a.admins or []) if u.is_active and u.role == 'admin_area'],
+        'admin_names': [u.nombre or u.email for u in (a.admins or [])
+                        if u.is_active and u.role == 'admin_area'],
     } for a in areas])
 
 

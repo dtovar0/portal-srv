@@ -15,6 +15,9 @@ export interface Session {
   name: string;
   role: Role;
   auth_source: string;
+  responsiva_firmada?: boolean;
+  responsiva_firmada_at?: string | null;
+  responsiva_version?: string;
   areas: AreaRef[];
   managed_areas: AreaRef[];
   permissions: {
@@ -33,6 +36,27 @@ export interface Session {
   };
 }
 
+export interface ResponsivaData {
+  version: string;
+  firmada: boolean;
+  firmada_at: string | null;
+  titulo: string;
+  contenido: string;
+  areas: AreaRef[];
+  plataformas: {
+    id: number;
+    name: string;
+    area_name?: string | null;
+    level?: string;
+  }[];
+}
+
+export interface AreaAdminRef {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export interface Area {
   id: number;
   name: string;
@@ -42,6 +66,8 @@ export interface Area {
   status: string;
   platforms_count: number;
   users_count: number;
+  admins?: AreaAdminRef[];
+  admin_names?: string[];
 }
 
 export interface Platform {
@@ -208,11 +234,11 @@ export interface UserInput {
 }
 
 export interface AuthContext {
-  sso_enabled: boolean;
-  /** Identidad que ya aporta Authelia, si el proxy la inyectó. */
-  sso_user: string | null;
+  /** `OIDC_*` completas: se muestra «Entrar con Authelia». */
+  oidc_enabled: boolean;
   authenticated: boolean;
-  ldap_available: boolean;
+  /** La ruta `/auth/local` existe; no hay enlace visible (ADR-009 6A). */
+  emergency_available: boolean;
 }
 
 export interface InactiveUser {

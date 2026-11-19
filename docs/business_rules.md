@@ -897,3 +897,171 @@ Alta de `ana.ruiz` con Vaultwarden caído: la cuenta y su entrada se crean, el e
 
 ### Impacto
 `POST /users/directory`, `GET /users/password-policy`, `POST /users/<id>/credentials`, `credentials_status` en `ManagedUser`, tabla `credential_deliveries` (migración 0015), worker, plantillas `credenciales_iniciales` y `credenciales_no_entregadas`, modal de alta.
+
+## Orden de Acciones en la Barra de Herramientas de Usuarios
+
+## Usuarios
+
+### Regla
+En la barra de herramientas superior de la vista de Usuarios (`/admin/users`), los botones de gestión de accesos y estructura organizativa se ordenan de izquierda a derecha de la siguiente forma:
+1. `ACCESOS` (`Icono nombre="solicitudes"`): Gestión y consulta de plataformas a las que tiene acceso el usuario o los usuarios seleccionados.
+2. `ÁREAS` (`Icono nombre="areas"`): Asignación y desvinculación de áreas organizativas del usuario o los usuarios seleccionados.
+3. `Editar` (`Icono nombre="editar"`): Edición del perfil de usuario seleccionado.
+4. `Eliminar` (`Icono nombre="eliminar"`): Baja individual o masiva de usuarios seleccionados.
+5. `Nuevo` (`Icono nombre="mas"`): Alta de nueva cuenta en el directorio.
+
+### Ejemplo
+Al acceder a `/admin/users`, un administrador observa en la barra de acciones superior a la derecha el botón "Accesos" en primer lugar, seguido inmediatamente por el botón "Áreas", ubicando en primer plano la consulta directa de permisos a plataformas.
+
+### Impacto
+Afecta a [users-list.tsx](../frontend/src/components/users-list.tsx) y [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
+
+
+## Columna de Administradores y Orden de Acciones en la Tabla de Áreas
+
+## Áreas
+
+### Regla
+1. **Columna Admin en la Tabla de Áreas**:
+   - En la vista principal de Áreas (`/admin/areas`), la tabla `AreasList` incorpora la columna dedicada `Admin`, situada entre `Descripción` y `Plataformas`.
+   - Muestra el nombre de las cuentas con rol `admin_area` que administran dicha área (`area.admins` / `area.admin_names`). Si no cuenta con administradores delegados, despliega el texto `"Sin asignar"` en cursiva.
+   - El backend serializa los administradores activos de cada área en `GET /api/v1/areas` (`admins` y `admin_names`).
+2. **Orden de Acciones en la Barra de Herramientas de Áreas**:
+   - En la barra de herramientas de `/admin/areas`, las acciones de fila seleccionada se ordenan de izquierda a derecha de la siguiente manera:
+     1. `ACCESOS` (`Icono nombre="solicitudes"`): Gestión de usuarios asignados al área.
+     2. `ADMINS` (`Icono nombre="usuarios"`): Asignación y desvinculación de administradores delegados del área (visible solo para superadmin).
+     3. `Editar` (`Icono nombre="editar"`): Modificación de datos y estilo del área.
+     4. `Eliminar` (`Icono nombre="eliminar"`): Baja del área (restringida si tiene plataformas o usuarios).
+     5. `Nuevo` (`Icono nombre="mas"`): Creación de nueva área.
+
+### Ejemplo
+Al ingresar al catálogo de áreas en `/admin/areas`, un superadmin observa en la tabla la columna "Admin" con el nombre del administrador responsable de cada área (ej. "Admin de Área Demo"). En la barra de herramientas superior, el botón "Accesos" precede al botón "Admins", unificando el criterio de orden con la pantalla de Usuarios donde las acciones operativas de accesos se ubican en primer término.
+
+### Impacto
+Afecta a [routes.py](../app/modules/api/routes.py), [types.ts](../frontend/src/lib/types.ts), [areas-list.tsx](../frontend/src/components/areas-list.tsx) y [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
+
+
+## Paso de Accesos con Dual Picklist y Asignación de Administradores en Nueva Área
+
+## Áreas
+
+### Regla
+1. **Flujo de 3 Pasos en el Asistente de Áreas (`AreaForm`)**:
+   - El formulario modal de creación y edición de áreas (`AreaForm`) pasa a contar con 3 pasos secuenciales y accesibles:
+     1. **Paso 1: Descripción**: Captura del Nombre (obligatorio) y la Descripción del área.
+     2. **Paso 2: Estilo**: Selección de color visual, icono representativo, vista previa interactiva y estado (Activa / Inactiva).
+     3. **Paso 3: Accesos**: Asignación rápida de usuarios y administradores delegados del área mediante un *Dual Picklist*.
+   - La barra de navegación superior (`nav[aria-label="Progreso del formulario"]`) refleja los 3 pasos (`1. Descripción`, `2. Estilo`, `3. Accesos`), permitiendo navegación directa entre pasos validados y marcando con un cotejo (`✓`) los pasos completados.
+2. **Dual Picklist en el Paso 3 (Accesos)**:
+   - **Columna Izquierda ("Sin acceso")**: Despliega la lista de usuarios del sistema que aún no pertenecen al área. Incluye buscador en tiempo real, contador de usuarios y acción rápida para "Agregar todos" los filtrados. La pulsación de un usuario o su control `+` lo transfiere inmediatamente a la columna derecha.
+   - **Columna Derecha ("Con acceso")**: Despliega los usuarios incorporados al área. Incluye buscador, contador de miembros y acción para "Quitar todos".
+3. **Casilla de Administrador (`Admin`) por Usuario**:
+   - Cada usuario dentro de la columna "Con acceso" dispone de una casilla de verificación accesible (`Checkbox` con etiqueta `Admin` y área táctil $\ge 48\text{ px}$).
+   - Al marcar la casilla, el usuario es designado como administrador del área.
+   - Al guardar (`save`):
+     - El área se crea o actualiza (`api.createArea` / `api.updateArea`).
+     - Se asignan los miembros seleccionados al área mediante `api.setAreaUsers(areaId, userIds)`.
+     - Para los usuarios marcados como `Admin`: si no cuentan con rol `admin_area`, se les promueve (`api.updateUser(userId, { role: 'admin_area' })`) y se añade la nueva área a su lista de áreas administradas mediante `usersApi.setManagedAreas(userId, [...areasActuales, areaId])`.
+     - Al retirar a un usuario del área o desmarcar su casilla de administrador, se retira el área de sus áreas administradas.
+4. **Guardado Flexible y Accesibilidad**:
+   - En el Paso 2 se mantiene disponible el botón "Guardar" para permitir guardar el área de forma directa sin requerir avanzar obligatoriamente al Paso 3 si no se desean agregar usuarios en ese momento.
+   - Todos los controles interactivos respetan el área táctil mínima de 48 px (`min-h-12`, `min-w-12`), los tokens de diseño y anuncios para lectores de pantalla (`RegionDeAnuncios`).
+
+### Ejemplo
+Un superadministrador pulsa "Nueva área". En el Paso 1 escribe "Logística" y presiona "Siguiente". En el Paso 2 selecciona el color y el icono del área y presiona "Siguiente: Accesos". En el Paso 3 busca a "Carlos" en la columna de la izquierda y hace clic sobre él, trasladándolo a la columna "Con acceso". En la fila de Carlos marca la casilla "Admin". Al presionar "Crear área", el sistema crea el área "Logística", asocia a Carlos como miembro del área y le otorga el rol y administración de "Logística", todo en una sola operación ágil y sin pasos manuales posteriores.
+
+### Impacto
+Afecta a [area-form.tsx](../frontend/src/components/areas/area-form.tsx) y [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx).
+
+
+## Definición y Aislamiento de Permisos por Rol: Superadmin, Admin de Área y Usuario
+
+## Autorización y Permisos
+
+### Regla
+1. **Superadministrador (`superadmin` / `administrador`)**:
+   - Acceso irrestricto y completo a todas las secciones, módulos y funcionalidades del sistema (Dashboard, Plataformas, Administrar plataformas, Conectores, Áreas, Usuarios, Auditoría, Ajustes y Ejecuciones).
+   - Es el único rol con facultades para crear nuevas áreas en el sistema (`POST /api/v1/areas`) y para designar o revocar administradores de área (`role: 'admin_area'` y asignación en `managed_areas`).
+   - Puede dar de alta, editar y desvincular plataformas y usuarios en cualquier área registrada.
+
+2. **Administrador de Área (`admin` / `admin_area`)**:
+   - Ámbito operativo delimitado exclusivamente a las áreas que tiene asignadas como administrador (`session.managed_areas` / `current_user.managed_areas`).
+   - En la administración de plataformas (`/admin/platforms`), únicamente puede consultar, listar y gestionar las plataformas pertenecientes a las áreas donde es administrador.
+   - Puede dar de alta nuevas plataformas únicamente dentro de sus áreas administradas.
+   - Puede dar de alta nuevas cuentas de usuario en el directorio y asociarlas a sus áreas, asignándoles el rol estándar de usuario (`role: 'usuario'`).
+   - **Prohibiciones estrictas**: No puede dar de alta usuarios con privilegios de administrador (`admin_area` ni `administrador`) ni crear nuevas áreas. En la interfaz, el botón "Nueva área" permanece oculto para este rol, y en los asistentes de área las opciones y casillas para designar administradores quedan deshabilitadas con indicador de solo lectura y mensaje accesible.
+
+3. **Usuario Estándar (`usuario`)**:
+   - Acceso exclusivo al portal y catálogo de solicitud de plataformas (`/platforms` con `PlatformsView` y `RequestCatalog`).
+   - No tiene acceso a pantallas de gestión ni de configuración global (Dashboard, Gestión de plataformas, Áreas, Usuarios, Conectores, Ajustes, Ejecuciones ni Auditoría).
+   - En el menú principal (`entradasVisibles`), tanto en la barra lateral como en el menú móvil, solo se despliega la opción "Plataformas" (`/platforms`).
+   - Si un usuario estándar ingresa a la raíz del portal (`/`), la compuerta de navegación (`DashboardGate`) lo redirige automáticamente a `/platforms`.
+   - Se incorpora un acceso directo interactivo con área táctil accesible ($\ge 48\text{ px}$) en la barra superior (`BarraSuperior` en el adminboard), situado a un costado del interruptor de tema claro/oscuro, garantizando el acceso inmediato al catálogo de solicitudes.
+
+### Ejemplo
+- Un usuario con rol `usuario` inicia sesión: la barra lateral muestra únicamente la entrada "Plataformas", la barra superior incluye el botón con icono de plataformas junto al selector de tema, y al intentar acceder al Dashboard es redirigido a `/platforms`, donde puede visualizar el catálogo de plataformas de sus áreas y solicitar permisos.
+- Un usuario con rol `admin_area` para el área de "Finanzas": ingresa al portal y en la lista de áreas observa únicamente "Finanzas"; el botón "Nueva área" no se muestra. Al crear o consultar plataformas en `/admin/platforms`, solo visualiza y puede asociar plataformas al área de "Finanzas". En la pantalla de usuarios, puede dar de alta nuevos usuarios pero no puede conferirles rol de administrador.
+- Un `superadmin`: visualiza la totalidad de áreas y plataformas, puede pulsar "Nueva área", asignar administradores de área en el paso 3 de accesos y realizar cualquier cambio administrativo global.
+
+### Impacto
+Afecta a [nav-items.ts](../frontend/src/components/marco/nav-items.ts), [barra-superior.tsx](../frontend/src/components/marco/barra-superior.tsx), [dashboard-gate.tsx](../frontend/src/components/dashboard-gate.tsx), [page.tsx](../frontend/src/app/page.tsx), [platform-admin.tsx](../frontend/src/components/platform-admin.tsx), [areas-list.tsx](../frontend/src/components/areas-list.tsx), [area-form.tsx](../frontend/src/components/areas/area-form.tsx), [users-list.tsx](../frontend/src/components/users-list.tsx), [settings/page.tsx](../frontend/src/app/settings/page.tsx), [audit/page.tsx](../frontend/src/app/audit/page.tsx), [marco-nav.test.ts](../frontend/tests/lib/marco-nav.test.ts), [navegacion-por-rol.test.tsx](../frontend/tests/components/navegacion-por-rol.test.tsx), [menu-movil.test.tsx](../frontend/tests/components/menu-movil.test.tsx), [areas-list.test.tsx](../frontend/tests/components/areas-list.test.tsx), [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx) y [marco-admin.test.tsx](../frontend/tests/components/marco-admin.test.tsx).
+
+
+## Reestructuración del Asistente de Plataformas: Vista Previa en Paso 2 y Dual Picklist de Accesos en Paso 3
+
+## Administración de Plataformas
+
+### Regla
+1. **Flujo de 3 Pasos Reorganizado**:
+   - **Paso 1: Descripción**: Nombre (`name`), Descripción (`description`), Enlace directo (`direct_link`).
+   - **Paso 2: Diseño y Activación**: Identidad visual (colores de fondo y texto, selector de icono o subida de imagen), **Vista previa en tiempo real de la plataforma** y el **Interruptor (Toggle) de Estado Activo/Inactivo**. Al consolidar aquí la vista previa y la activación, el administrador valida visualmente la tarjeta de la plataforma y su disponibilidad inmediatamente tras configurar su apariencia.
+   - **Paso 3: Accesos**: Se renombra formalmente de "Vista previa" a "Accesos". Integra un componente **Dual Picklist** accesible de dos columnas:
+     - **Columna Izquierda ("Sin acceso")**: Muestra a los usuarios pertenecientes al área de la plataforma (`form.area_id`) que actualmente no disponen de acceso a la misma. Incluye buscador reactivo, contador y acción rápida "Agregar todos".
+     - **Columna Derecha ("Con acceso")**: Muestra a los usuarios autorizados para acceder a la plataforma. Incluye buscador reactivo, contador y acción rápida "Quitar todos".
+2. **Transferencia e Interacción**:
+   - Transferencia ágil con un solo clic: al pulsar sobre un usuario en "Sin acceso", este se transfiere a "Con acceso" con la insignia `Nuevo`. Al pulsar en "Con acceso", se transfiere de regreso a "Sin acceso".
+3. **Persistencia Directa de Accesos al Guardar**:
+   - Al pulsar "Guardar", se crea o actualiza la plataforma (`api.createPlatform` o `api.updatePlatform`).
+   - Para los usuarios añadidos a "Con acceso", el sistema invoca de inmediato `api.grantPlatformAccess(platformId, userId, 'usuario')`.
+   - Para los usuarios retirados en edición, se invoca `api.revokeAccess(accessId, 'Retirado por administrador')`.
+4. **Accesibilidad y Sistema 8pt**:
+   - Modal ampliado a `size="2xl"` para máxima legibilidad de la doble columna.
+   - Área táctil $\ge 48\text{ px}$ (`min-h-12`) en todos los botones de transferencia y acciones en lote.
+   - Foco preservado tras mover (`useFocoTrasMover`) y anuncios audibles con `RegionDeAnuncios`.
+
+### Ejemplo
+Al crear una plataforma para el área "Finanzas", en el Paso 2 el administrador elige el color azul, el icono de catálogo y ve en tiempo real la tarjeta generada junto con el interruptor "Activa". Al presionar "Siguiente", llega al Paso 3 "Accesos", donde visualiza a los usuarios de "Finanzas". Hace clic sobre "Carlos" y "Lucía" para otorgarles acceso directo a la plataforma, o pulsa "Agregar todos". Al presionar "Guardar", la plataforma se crea y ambos usuarios reciben de inmediato sus accesos sin necesidad de gestionar permisos por separado.
+
+### Impacto
+Afecta a [platform-form.tsx](../frontend/src/components/platforms/platform-form.tsx) y [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
+
+
+## Bloqueo Obligatorio por Carta Responsiva de TI en Primer Ingreso
+
+## Autenticación y Cumplimiento
+
+### Regla
+1. **Gatekeeper de Primer Ingreso (Consent Gate)**:
+   - Todo usuario que cuente con `responsiva_firmada = False` en su cuenta queda confinado de forma estricta e infranqueable a la pantalla de **Carta Responsiva de Uso de Activos de Información y Plataformas Institucionales** (`PantallaResponsiva` en `AppShell`).
+   - El sistema oculta por completo el marco de administración (`Marco`), la barra lateral, la barra superior, el menú móvil y cualquier contenido o plataforma pre-asignada.
+   - Cualquier intento de navegación directa por URL (por ejemplo hacia `/`, `/platforms`, `/admin/platforms` o `/settings`) es interceptado por `AppShell`, manteniendo al usuario bloqueado en la vista de responsiva.
+2. **Defensa en Profundidad en Backend**:
+   - En la API Flask (`api_bp.before_request`), cualquier solicitud autenticada de un usuario con responsiva pendiente (distinto de `administrador`) es rechazada con código HTTP `403 Forbidden` (`code: 'responsiva_requerida'`), exceptuando exclusivamente `GET /api/v1/me` (consulta de sesión), `GET /api/v1/responsiva` (lectura de términos y plataformas) y `POST /api/v1/me/firmar-responsiva` (registro de firma).
+   - El rol `administrador` (superadmin) queda exento del bloqueo por facultad operativa de gobernanza global.
+3. **Firma y Desbloqueo Atómico**:
+   - El usuario visualiza la lista de áreas y plataformas asignadas sobre las que asume responsabilidad.
+   - Debe marcar la casilla de verificación obligatoria para habilitar el botón de firma.
+   - Al pulsar "Firmar y acceder al portal", se ejecuta `POST /api/v1/me/firmar-responsiva`:
+     - Se registra `responsiva_firmada = True` y `responsiva_firmada_at` con fecha y hora UTC.
+     - Se emite un evento en la bitácora de auditoría (`audit_log`) con acción `firma_responsiva`, IP de origen y versión del documento.
+     - El frontend actualiza de forma reactiva el estado de la sesión, desmontando la pantalla de bloqueo y permitiendo el acceso normal al portal.
+4. **Relación con el SSO de Authelia**:
+   - Authelia funge como proveedor de identidad exterior (valida usuario y contraseña contra LDAP).
+   - Al validar las credenciales, Authelia redirige al usuario al portal.
+   - Es el portal (Next.js + Flask) el que inspecciona el estado de la responsiva tras la autenticación y ejecuta el confinamiento antes de permitir el acceso a cualquier recurso.
+
+### Ejemplo
+Un administrador de área da de alta a "Pedro" y le asigna el área de "Operaciones" y la plataforma "Jira". Cuando Pedro inicia sesión por primera vez a través de Authelia, Authelia valida su cuenta y lo envía a la URL del portal. En ese instante, `AppShell` detecta que Pedro tiene `responsiva_firmada: false`. En lugar de mostrarle el catálogo o menú, le presenta en pantalla completa la Carta Responsiva indicando: "Hola, Pedro. Se te han asignado los siguientes activos: Área Operaciones, Plataforma Jira Software". Pedro no puede saltarse la pantalla ni navegar a otra sección. Lee los términos, marca la casilla "He leído y acepto los términos..." y presiona "Firmar y acceder al portal". El sistema registra la firma en auditoría y en ese momento se desbloquea el portal, dándole la bienvenida a su espacio de trabajo. En logins posteriores, el portal lo lleva directamente a sus plataformas sin volver a solicitarle la firma.
+
+### Impacto
+Afecta a [pantalla-responsiva.tsx](../frontend/src/components/responsiva/pantalla-responsiva.tsx), [app-shell.tsx](../frontend/src/components/app-shell.tsx), [session-provider.tsx](../frontend/src/components/session-provider.tsx), [routes.py](../app/modules/api/routes.py), [models.py](../app/modules/auth/models.py), [types.ts](../frontend/src/lib/types.ts), [api.ts](../frontend/src/lib/api.ts), [0014_responsiva_de_usuario.py](../migrations/versions/0014_responsiva_de_usuario.py) y las suites de pruebas [responsiva.test.tsx](../frontend/tests/components/responsiva.test.tsx) y [test_responsiva.py](../tests/test_responsiva.py).

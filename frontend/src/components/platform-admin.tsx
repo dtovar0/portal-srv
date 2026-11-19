@@ -72,6 +72,11 @@ export function PlatformAdmin({ initialAreaId }: { initialAreaId?: number | null
 
 function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null }) {
   const { session } = useSession();
+  const isSuperadmin = Boolean(session?.permissions.is_admin);
+  const managedAreaIds = useMemo(
+    () => new Set((session?.managed_areas ?? []).map((a) => a.id)),
+    [session?.managed_areas],
+  );
   const { avisar } = useToast();
   const areas = useAsync(() => api.areas(), [], 'admin-areas');
   const platforms = useAsync(() => api.platforms(), [], 'admin-platforms');
@@ -236,18 +241,28 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     [areas.data, selectedAreaId],
   );
 
+  const hasManagedAreasExplicit = Boolean(session?.managed_areas && session.managed_areas.length > 0);
+
   // Conteo reactivo de plataformas por área
   const conteoPorArea = useMemo(() => {
     const mapa: Record<number, number> = {};
     for (const p of platforms.data ?? []) {
-      mapa[p.area_id] = (mapa[p.area_id] ?? 0) + 1;
+      if (isSuperadmin || !hasManagedAreasExplicit || managedAreaIds.has(p.area_id)) {
+        mapa[p.area_id] = (mapa[p.area_id] ?? 0) + 1;
+      }
     }
     return mapa;
-  }, [platforms.data]);
+  }, [platforms.data, isSuperadmin, hasManagedAreasExplicit, managedAreaIds]);
+
+  // Áreas gestionables según el rol (superadmin ve todas; admin de área solo las suyas)
+  const assignableAreas = useMemo(() => {
+    if (isSuperadmin || !hasManagedAreasExplicit) return areas.data ?? [];
+    return (areas.data ?? []).filter((a) => managedAreaIds.has(a.id));
+  }, [isSuperadmin, areas.data, hasManagedAreasExplicit, managedAreaIds]);
 
   // Áreas filtradas por estado y búsqueda de texto
   const areasFiltradas = useMemo(() => {
-    let list = areas.data ?? [];
+    let list = assignableAreas;
     if (filtroEstado === 'activo') {
       list = list.filter((a) => a.status === 'Activo');
     } else if (filtroEstado === 'inactivo') {
@@ -262,7 +277,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
       );
     }
     return list;
-  }, [areas.data, busquedaAreas, filtroEstado]);
+  }, [assignableAreas, busquedaAreas, filtroEstado]);
 
   const totalAreasFiltradas = areasFiltradas.length;
   const totalPaginasAreas = Math.max(1, Math.ceil(totalAreasFiltradas / AREAS_PER_PAGE));
@@ -272,9 +287,10 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
   }, [areasFiltradas, pageAreas, AREAS_PER_PAGE]);
   const ghostCountAreas = Math.max(0, AREAS_PER_PAGE - displayAreas.length);
 
-  // Plataformas filtradas del área seleccionada
+  // Plataformas filtradas del área seleccionada (admin de área solo ve donde es admin)
   const plataformasFiltradas = useMemo(() => {
     if (!selectedArea) return [];
+    if (!isSuperadmin && hasManagedAreasExplicit && !managedAreaIds.has(selectedArea.id)) return [];
     const list = (platforms.data ?? []).filter((p) => p.area_id === selectedArea.id);
     if (!busquedaPlataformas.trim()) return list;
     const q = busquedaPlataformas.toLowerCase().trim();
@@ -283,7 +299,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
         p.name.toLowerCase().includes(q) ||
         (p.description ?? '').toLowerCase().includes(q),
     );
-  }, [platforms.data, selectedArea, busquedaPlataformas]);
+  }, [platforms.data, selectedArea, busquedaPlataformas, isSuperadmin, hasManagedAreasExplicit, managedAreaIds]);
 
   const totalPlataformas = plataformasFiltradas.length;
   const totalPaginasPlataformas = Math.max(1, Math.ceil(totalPlataformas / PLATFORMS_PER_PAGE));
@@ -401,7 +417,6 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     }
   }
 
-  const isSuperadmin = Boolean(session?.permissions.is_admin);
   const canManage =
     session?.permissions.is_admin || session?.permissions.is_area_admin;
 
@@ -499,7 +514,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                     setPageAreas(1);
                   }}
                   aria-label="Buscar áreas"
-                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 {busquedaAreas ? (
                   <button
@@ -999,7 +1014,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                     setPagePlataformas(1);
                   }}
                   aria-label={`Buscar plataformas en ${selectedArea.name}`}
-                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 {busquedaPlataformas ? (
                   <button
@@ -1202,7 +1217,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
 
       {creating ? (
         <PlatformForm
-          areas={areas.data ?? []}
+          areas={assignableAreas}
           platform={null}
           defaultAreaId={selectedArea?.id}
           isSuperadmin={isSuperadmin}
@@ -1213,7 +1228,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
 
       {editing ? (
         <PlatformForm
-          areas={areas.data ?? []}
+          areas={assignableAreas}
           platform={editing}
           isSuperadmin={isSuperadmin}
           onClose={closeDialogs}

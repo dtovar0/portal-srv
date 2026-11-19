@@ -6,7 +6,7 @@
 - La IP registrada es la del cliente cuando la petición llega del proxy de
   confianza, y `X-Forwarded-For` se ignora si llega de otro origen.
 
-Sin direcciones IP: los orígenes son nombres ficticios (como en test_sso.py).
+Sin direcciones IP: los orígenes son nombres ficticios (como en test_oidc.py).
 """
 
 from app.modules.audit.models import AuditLog

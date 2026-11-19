@@ -36,6 +36,7 @@ id_ed25519*
 # Claude Code: configuración personal (la de equipo .claude/settings.json sí se versiona)
 .claude/settings.local.json
 .claude/*.local.json
+.claude/worktrees/
 # Datos y respaldos (pueden contener datos personales)
 *.sqlite
 *.sqlite3

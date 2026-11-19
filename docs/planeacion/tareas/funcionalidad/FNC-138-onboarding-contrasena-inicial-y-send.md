@@ -108,10 +108,10 @@
 - Reversión: la migración tiene `downgrade`; el contrato v1 vuelve a rechazar `password`.
 
 ## Verificación
-- `pytest tests/users tests/secretos tests/provisioning tests/directory tests/notifications tests/test_guardia_rutas.py tests/test_migracion_0015.py`: 752 passed (con un 0014 de relleno temporal, ver abajo).
+- `pytest tests/users tests/secretos tests/provisioning tests/directory tests/notifications tests/test_guardia_rutas.py tests/test_migracion_0016_entregas.py`: 752 passed (con un 0014 de relleno temporal, ver abajo).
 - `pytest tests/test_guardia_rutas.py tests/test_proteccion_por_rol.py -k "users or credentials or guardia or directory or password"`: 75 passed.
 - Cubierto con dobles (`tests/users/conftest.py`, `directorio_falso`): política y variables, alta 201 enviadas/pendientes (Vaultwarden caído, correo fallido, notificaciones desactivadas, sin `BASE_URL`), rechazo de `ppolicy` (422 y entrada retirada), contraseña ausente de BD, auditoría, logs y respuestas (centinela), reintento con contraseña nueva, agotamiento con aviso, reserva exclusiva, reenvío (200/202/503/403/404/409/400).
-- Migración 0015 probada en SQLite con un 0014 de relleno temporal (la 0014 real está en la rama OIDC; el relleno no se versiona). **Falta** correr `tests/test_migraciones.py` y `tests/test_migracion_0015.py` tras integrar con 0014, y probar en MySQL.
+- Migración 0016 probada en SQLite con un 0014 de relleno temporal (la 0014 real está en la rama OIDC; el relleno no se versiona). **Falta** correr `tests/test_migraciones.py` y `tests/test_migracion_0016_entregas.py` tras integrar con 0014, y probar en MySQL.
 - **No verificado:** Vaultwarden real (modos `api` y `bw`), CLI `bw`, OpenLDAP real con `ppolicy`, SMTP real, worker RQ con Redis real, política «Deshabilitar Send» de la organización.
 - No se corrió la batería completa de pytest (instrucción del coordinador).
 
@@ -126,4 +126,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño A, 2026-11-17) |
-| 2026-11-18 | Implementada: `entrega_credenciales.py`, `GET /users/password-policy`, `POST /users/<id>/credentials`, `credentials_status`, auditoría, migración 0015 (renumerada), plantillas `credenciales_iniciales` y `credenciales_no_entregadas`, matriz de protección, documentación. Decisiones: se reutiliza `PROVISIONING_MAX_ATTEMPTS` (sin `ONBOARDING_MAX_ATTEMPTS`); la fila de entrega nace en la transacción de la alta; sin barrido tras agotar. Pendiente `revisor` y `auditor-seguridad` |
+| 2026-11-18 | Implementada: `entrega_credenciales.py`, `GET /users/password-policy`, `POST /users/<id>/credentials`, `credentials_status`, auditoría, migración 0016 (renumerada), plantillas `credenciales_iniciales` y `credenciales_no_entregadas`, matriz de protección, documentación. Decisiones: se reutiliza `PROVISIONING_MAX_ATTEMPTS` (sin `ONBOARDING_MAX_ATTEMPTS`); la fila de entrega nace en la transacción de la alta; sin barrido tras agotar. Pendiente `revisor` y `auditor-seguridad` |

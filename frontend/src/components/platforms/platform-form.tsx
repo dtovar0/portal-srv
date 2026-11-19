@@ -3,21 +3,25 @@
 /**
  * Alta y edición de una plataforma en 3 pasos:
  * - Paso 1: Descripción (Nombre, Descripción, Enlace).
- * - Paso 2: Diseño (Icono del catálogo o subida de imagen, Colores de fondo y del icono).
- * - Paso 3: Vista previa y activación (Vista previa dinámica y Toggle Activa/Inactiva).
+ * - Paso 2: Diseño y activación (Icono del catálogo o subida de imagen, Colores de fondo y del icono, Vista previa dinámica y Toggle Activa/Inactiva).
+ * - Paso 3: Accesos (Dual Picklist con usuarios del área para asignar accesos directos).
  *
- * Mismo criterio y coherencia que `areas/area-form.tsx` (DIS-016, DIS-017).
+ * Mismo criterio y coherencia que `areas/area-form.tsx` (DIS-016, DIS-017, DIS-019).
  */
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
-import type { Area, Platform, PlatformInput, PlatformWarning } from '@/lib/types';
+import type { Access } from '@/lib/access/types';
+import type { Area, ManagedUser, Platform, PlatformInput, PlatformWarning } from '@/lib/types';
+import { useAsync } from '@/lib/use-async';
+import { useFocoTrasMover } from '@/lib/use-foco-tras-mover';
 import { atributoTexto, variablesChipPlataforma } from '@/lib/color-legible';
 import { variablesCss } from '@/lib/variables-css';
 import { Button, ColorInput, Field, FileInput, Modal, TextArea, TextInput, Toggle } from '../form';
 import { Icono } from '../icono';
 import { TRAZOS, type NombreIcono } from '../icono-trazos';
-import { Badge } from '../ui';
+import { RegionDeAnuncios } from '../region-de-anuncios';
+import { Badge, EmptyNote, ErrorNote, Spinner } from '../ui';
 import { useToast } from '../toast';
 import { describedBy, FieldErrorNote, FieldHint, focusFirstError } from './field-notes';
 import { type IntegrationValue } from './platform-integration-fields';
@@ -25,6 +29,12 @@ import {
   buildPayload, DESCRIPCION_MAX, NOMBRE_MAX, URL_MAX, validate, normalizarEnlaceDirecto,
 } from './platform-payload';
 import { describeSaveError, MENSAJE_REVISA_CAMPOS } from './platform-save-errors';
+
+/** Coincidencia simple por nombre o correo para el buscador del Dual Picklist. */
+function coincideUsuario(user: ManagedUser, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  return !q || (user.name || '').toLowerCase().includes(q) || (user.email || '').toLowerCase().includes(q);
+}
 
 /** Tamaño máximo de la imagen de la plataforma (2 MB). */
 const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024;
@@ -116,6 +126,92 @@ export function PlatformForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const toast = useToast();
+
+  const usersAsync = useAsync(() => api.users(), []);
+  const accessAsync = useAsync(
+    () => (platform ? api.platformAccess(platform.id) : Promise.resolve({ items: [] as Access[], total: 0 })),
+    [platform?.id],
+  );
+
+  const [cambiosAcceso, setCambiosAcceso] = useState<Record<number, boolean>>({});
+  const [searchSinAcceso, setSearchSinAcceso] = useState('');
+  const [searchConAcceso, setSearchConAcceso] = useState('');
+  const [anuncio, setAnuncio] = useState('');
+  const { refLista, enfocarTras } = useFocoTrasMover();
+
+  // Mapa de accesos vigentes de la plataforma: user_id -> Access
+  const accesosPorUsuario = useMemo(() => {
+    const map = new Map<number, Access>();
+    for (const acc of accessAsync.data?.items ?? []) {
+      map.set(acc.user.id, acc);
+    }
+    return map;
+  }, [accessAsync.data]);
+
+  const todosLosUsuarios: ManagedUser[] = useMemo(() => usersAsync.data ?? [], [usersAsync.data]);
+
+  // Usuarios pertenecientes al área de la plataforma (form.area_id)
+  const usuariosDelArea = useMemo(() => {
+    if (!form.area_id) return todosLosUsuarios;
+    return todosLosUsuarios.filter((u) => u.areas?.some((a) => a.id === form.area_id));
+  }, [todosLosUsuarios, form.area_id]);
+
+  const tieneAcceso = useCallback(
+    (u: ManagedUser) => cambiosAcceso[u.id] ?? accesosPorUsuario.has(u.id),
+    [cambiosAcceso, accesosPorUsuario],
+  );
+
+  const sinAcceso = useMemo(
+    () => usuariosDelArea.filter((u) => !tieneAcceso(u)),
+    [usuariosDelArea, tieneAcceso],
+  );
+
+  const conAcceso = useMemo(
+    () => usuariosDelArea.filter((u) => tieneAcceso(u)),
+    [usuariosDelArea, tieneAcceso],
+  );
+
+  const sinAccesoVisibles = useMemo(
+    () => sinAcceso.filter((u) => coincideUsuario(u, searchSinAcceso)),
+    [sinAcceso, searchSinAcceso],
+  );
+
+  const conAccesoVisibles = useMemo(
+    () => conAcceso.filter((u) => coincideUsuario(u, searchConAcceso)),
+    [conAcceso, searchConAcceso],
+  );
+
+  function darAcceso(user: ManagedUser) {
+    enfocarTras('sin-acceso', sinAccesoVisibles, user.id);
+    setCambiosAcceso((prev) => ({ ...prev, [user.id]: true }));
+    setAnuncio(`«${user.name || user.email}» pasa a con acceso, ${conAcceso.length + 1} con acceso`);
+  }
+
+  function quitarAcceso(user: ManagedUser) {
+    enfocarTras('con-acceso', conAccesoVisibles, user.id);
+    setCambiosAcceso((prev) => ({ ...prev, [user.id]: false }));
+    setAnuncio(`«${user.name || user.email}» pasa a sin acceso, ${sinAcceso.length + 1} sin acceso`);
+  }
+
+  function agregarTodosFiltrados() {
+    if (sinAccesoVisibles.length === 0) return;
+    const nuevos: Record<number, boolean> = {};
+    for (const u of sinAccesoVisibles) {
+      nuevos[u.id] = true;
+    }
+    setCambiosAcceso((prev) => ({ ...prev, ...nuevos }));
+    setAnuncio(`${sinAccesoVisibles.length} usuarios agregados a con acceso`);
+  }
+
+  function quitarTodosFiltrados() {
+    if (conAccesoVisibles.length === 0) return;
+    const nuevos: Record<number, boolean> = {};
+    for (const u of conAccesoVisibles) {
+      nuevos[u.id] = false;
+    }
+    setCambiosAcceso((prev) => ({ ...prev, ...nuevos }));
+    setAnuncio(`${conAccesoVisibles.length} usuarios retirados de con acceso`);
+  }
 
   function set<K extends keyof PlatformInput>(key: K, value: PlatformInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -209,6 +305,32 @@ export function PlatformForm({
       const result = platform
         ? await api.updatePlatform(platform.id, payload)
         : await api.createPlatform(payload);
+
+      const targetPlatformId = result.platform.id;
+
+      // Otorgar accesos seleccionados
+      const aOtorgar = usuariosDelArea.filter((u) => tieneAcceso(u) && !accesosPorUsuario.has(u.id));
+      for (const u of aOtorgar) {
+        try {
+          await api.grantPlatformAccess(targetPlatformId, u.id, 'usuario');
+        } catch (err) {
+          console.error('Error al otorgar acceso a la plataforma:', err);
+        }
+      }
+
+      // Revocar accesos retirados
+      const aRevocar = usuariosDelArea.filter((u) => !tieneAcceso(u) && accesosPorUsuario.has(u.id));
+      for (const u of aRevocar) {
+        const acceso = accesosPorUsuario.get(u.id);
+        if (acceso) {
+          try {
+            await api.revokeAccess(acceso.id, 'Retirado por administrador');
+          } catch (err) {
+            console.error('Error al revocar acceso de la plataforma:', err);
+          }
+        }
+      }
+
       onSaved({ platform: result.platform, warnings: result.warnings ?? [] });
     } catch (err) {
       const view = describeSaveError(err);
@@ -225,10 +347,8 @@ export function PlatformForm({
         view.fields.ldap_group_admin_dn
       ) {
         setPaso(1);
-      } else if (view.fields.icon || view.fields.bg_color || view.fields.text_color) {
+      } else if (view.fields.icon || view.fields.bg_color || view.fields.text_color || view.fields.status) {
         setPaso(2);
-      } else if (view.fields.status) {
-        setPaso(3);
       }
       focusFirstError(ORDEN_CAMPOS, view.fields);
     } finally {
@@ -242,6 +362,7 @@ export function PlatformForm({
     <Modal
       title={platform ? 'Editar plataforma' : 'Nueva plataforma'}
       icon="plataformas"
+      size="2xl"
       onClose={onClose}
       footer={
         <div className="flex w-full items-center justify-between gap-3">
@@ -350,7 +471,7 @@ export function PlatformForm({
               3
             </span>
             <span className={`text-xs font-bold ${paso === 3 ? 'text-body-text' : 'text-label'}`}>
-              Vista previa
+              Accesos
             </span>
           </button>
         </nav>
@@ -597,13 +718,8 @@ export function PlatformForm({
                 </div>
               )}
             </div>
-          </div>
-        ) : null}
 
-        {/* PASO 3: Vista previa y activación (Toggle) */}
-        {paso === 3 ? (
-          <div className="space-y-4">
-            {/* Vista previa en vivo del diseño de la plataforma */}
+            {/* Vista previa en vivo del diseño de la plataforma (movido a Paso 2) */}
             <div className="rounded-xl border border-panel-border/80 bg-surface-container/30 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-label block">
@@ -655,7 +771,7 @@ export function PlatformForm({
               </div>
             </div>
 
-            {/* Toggle de plataforma activa */}
+            {/* Toggle de plataforma activa (movido a Paso 2) */}
             <div>
               <Toggle
                 id="platform-status"
@@ -665,6 +781,233 @@ export function PlatformForm({
                 onChange={(checked) => set('status', checked ? 'Activo' : 'Inactivo')}
               />
             </div>
+          </div>
+        ) : null}
+
+        {/* PASO 3: Accesos (Dual Picklist con usuarios del área) */}
+        {paso === 3 ? (
+          <div className="space-y-4">
+            <RegionDeAnuncios mensaje={anuncio} />
+
+            {/* Cabecera contextual del área y conteos */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-panel-border/80 bg-surface-container/60 shadow-xs">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-body-text">
+                  Asignación rápida de accesos a la plataforma
+                </p>
+                <p className="text-xs text-label truncate">
+                  Área:{' '}
+                  <span className="font-semibold text-primary-text">
+                    {areaSeleccionada?.name || 'Sin área'}
+                  </span>{' '}
+                  — Transfiere los usuarios a la columna derecha para concederles acceso.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/10 text-primary-text">
+                  {conAcceso.length} con acceso
+                </span>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg border border-panel-border/60 bg-superficie text-label">
+                  {sinAcceso.length} sin acceso
+                </span>
+              </div>
+            </div>
+
+            {usersAsync.loading && !usersAsync.data ? <Spinner /> : null}
+            {usersAsync.error ? <ErrorNote message={usersAsync.error} /> : null}
+
+            {!usersAsync.loading && !usersAsync.error ? (
+              /* DUAL PICK LIST: 2 columnas */
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-stretch w-full min-h-0">
+                {/* COLUMNA IZQUIERDA: Sin acceso */}
+                <div className="flex flex-col rounded-2xl border border-panel-border/80 bg-surface-container/60 p-3.5 shadow-xs min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-body-text flex items-center gap-1.5">
+                      <Icono nombre="usuarios" tamano="xs" ariaHidden={true} className="text-label" />
+                      <span>Sin acceso</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {sinAccesoVisibles.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={agregarTodosFiltrados}
+                          title="Otorgar acceso a todos los usuarios filtrados"
+                          className="min-h-12 inline-flex items-center px-3 text-xs font-bold text-primary-text hover:underline cursor-pointer"
+                        >
+                          Agregar todos
+                        </button>
+                      ) : null}
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-superficie text-label border border-panel-border/60">
+                        {sinAcceso.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative mb-2.5">
+                    <input
+                      type="text"
+                      placeholder="Filtrar sin acceso…"
+                      value={searchSinAcceso}
+                      onChange={(e) => setSearchSinAcceso(e.target.value)}
+                      aria-label="Filtrar usuarios sin acceso"
+                      className="w-full h-10 rounded-xl border border-panel-border bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label"
+                      aria-hidden="true"
+                    >
+                      <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
+                    </div>
+                  </div>
+
+                  <ul
+                    ref={refLista('sin-acceso')}
+                    tabIndex={-1}
+                    aria-label={`Usuarios sin acceso a ${form.name || 'la plataforma'}`}
+                    className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-64 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-panel-border"
+                  >
+                    {sinAccesoVisibles.length === 0 ? (
+                      <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
+                        {searchSinAcceso.trim()
+                          ? 'Ningún usuario coincide con la búsqueda.'
+                          : usuariosDelArea.length === 0
+                          ? 'No hay usuarios asignados a esta área.'
+                          : 'Todos los miembros del área tienen acceso.'}
+                      </li>
+                    ) : (
+                      sinAccesoVisibles.map((user) => (
+                        <li key={user.id} className="p-0 list-none">
+                          <button
+                            type="button"
+                            data-item-id={user.id}
+                            onClick={() => darAcceso(user)}
+                            aria-label={`Otorgar acceso a ${user.name || user.email}`}
+                            title={`Haz clic para otorgar acceso a ${user.name || user.email}`}
+                            className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-panel-border bg-superficie hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="size-7 rounded-lg bg-surface-container group-hover:bg-primary/10 group-hover:text-primary-text flex items-center justify-center shrink-0 text-label font-bold text-xs transition-colors">
+                                {(user.name || user.email).charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold truncate text-body-text group-hover:text-primary-text transition-colors">
+                                  {user.name || user.email}
+                                </p>
+                                <p className="text-xs text-label truncate max-w-36">
+                                  {user.email}
+                                </p>
+                              </div>
+                            </div>
+
+                            <span className="size-7 rounded-lg bg-surface-container group-hover:bg-primary group-hover:text-superficie flex items-center justify-center text-label transition-all shrink-0">
+                              <Icono nombre="mas" tamano="xs" ariaHidden={true} />
+                            </span>
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+
+                {/* COLUMNA DERECHA: Con acceso */}
+                <div className="flex flex-col rounded-2xl border border-primary/40 bg-gradient-to-b from-primary/5 via-superficie to-primary/5 p-3.5 shadow-xs min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-primary-text flex items-center gap-1.5">
+                      <Icono nombre="exito" tamano="xs" ariaHidden={true} className="text-primary-text" />
+                      <span>Con acceso</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {conAccesoVisibles.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={quitarTodosFiltrados}
+                          title="Retirar acceso a todos los usuarios filtrados"
+                          className="min-h-12 inline-flex items-center px-3 text-xs font-bold text-error-text hover:underline cursor-pointer"
+                        >
+                          Quitar todos
+                        </button>
+                      ) : null}
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary-text border border-primary/40">
+                        {conAcceso.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative mb-2.5">
+                    <input
+                      type="text"
+                      placeholder="Filtrar con acceso…"
+                      value={searchConAcceso}
+                      onChange={(e) => setSearchConAcceso(e.target.value)}
+                      aria-label="Filtrar usuarios con acceso"
+                      className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label"
+                      aria-hidden="true"
+                    >
+                      <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
+                    </div>
+                  </div>
+
+                  <ul
+                    ref={refLista('con-acceso')}
+                    tabIndex={-1}
+                    aria-label={`Usuarios con acceso a ${form.name || 'la plataforma'}`}
+                    className="outline-none focus-visible:ring-2 focus-visible:ring-primary flex-1 min-h-48 max-h-64 overflow-y-auto overflow-x-hidden space-y-1.5 p-1 rounded-xl bg-superficie/50 border border-primary/20"
+                  >
+                    {conAccesoVisibles.length === 0 ? (
+                      <li className="flex items-center justify-center h-32 text-xs text-label italic p-4 text-center">
+                        {searchConAcceso.trim()
+                          ? 'Ningún usuario coincide con la búsqueda.'
+                          : 'Ningún usuario tiene acceso todavía.'}
+                      </li>
+                    ) : (
+                      conAccesoVisibles.map((user) => {
+                        const esNuevo = !accesosPorUsuario.has(user.id);
+                        return (
+                          <li key={user.id} className="p-0 list-none">
+                            <button
+                              type="button"
+                              data-item-id={user.id}
+                              onClick={() => quitarAcceso(user)}
+                              aria-label={`Retirar acceso a ${user.name || user.email}`}
+                              title={`Haz clic para retirar acceso a ${user.name || user.email}`}
+                              className="w-full min-h-12 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-primary/30 bg-superficie hover:border-error/60 hover:bg-error/5 active:scale-95 transition-all cursor-pointer select-none text-left shadow-2xs group"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="size-7 rounded-lg bg-primary/10 text-primary-text group-hover:bg-error/10 group-hover:text-error-text flex items-center justify-center shrink-0 font-bold text-xs transition-colors">
+                                  {(user.name || user.email).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold truncate text-body-text group-hover:text-error-text transition-colors">
+                                    {user.name || user.email}
+                                  </p>
+                                  <p className="text-xs text-label truncate max-w-36">
+                                    {user.email}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {esNuevo ? (
+                                  <Badge tone="primary">Nuevo</Badge>
+                                ) : (
+                                  <Badge tone="success" dot>Activo</Badge>
+                                )}
+                                <span className="size-7 rounded-lg bg-surface-container group-hover:bg-error group-hover:text-superficie flex items-center justify-center text-label transition-all">
+                                  <Icono nombre="cerrar" tamano="xs" ariaHidden={true} />
+                                </span>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
