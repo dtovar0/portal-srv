@@ -1,4 +1,4 @@
-"""Entrega de las credenciales iniciales de una cuenta (FNC-138, migración 0014).
+"""Entrega de las credenciales iniciales de una cuenta (FNC-138, migración 0015).
 
 - `credential_deliveries`: una fila por cuenta dada de alta desde el portal.
   Guarda el estado (`pendientes` o `enviadas`), los intentos del reintento

@@ -12,7 +12,8 @@ from datetime import timedelta
 import pytest
 from flask import g
 from ldap3 import ALL_ATTRIBUTES, BASE
-from ldap3.core.exceptions import LDAPConstraintViolationResult
+from ldap3.core.exceptions import (LDAPConstraintViolationResult,
+                                   LDAPNoSuchObjectResult)
 from ldap3.extend import StandardExtendedOperations
 from sqlalchemy import text
 
@@ -332,9 +333,9 @@ def test_el_rechazo_de_ppolicy_es_un_422_propio_y_no_crea_nada(
     assert entrega.sends == []
     # La entrada recién creada se retiró: no queda una cuenta sin contraseña.
     with ldap_client.ClienteDirectorio().conexion_servicio() as conexion:
-        conexion.search(dn_persona('ana.ruiz'), '(objectClass=*)', BASE,
-                        attributes=[])
-        assert conexion.entries == []
+        with pytest.raises(LDAPNoSuchObjectResult):
+            conexion.search(dn_persona('ana.ruiz'), '(objectClass=*)', BASE,
+                            attributes=[])
 
 
 # --------------------------------------------------------------------------- #

@@ -28,7 +28,7 @@
 """
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ldap3 import BASE, MODIFY_ADD, MODIFY_DELETE, SUBTREE
 from ldap3.core.exceptions import (LDAPAttributeOrValueExistsResult,
@@ -80,7 +80,7 @@ class DatosCuenta:
     nombre: str
     apellido: str
     correo: str
-    password: str | None = None
+    password: str | None = field(default=None, repr=False)
 
 
 def _leer_grupo(conexion, cfg, dn):

@@ -190,10 +190,48 @@ def _nuevo_usuario(esc):
                      'area_ids': [esc.area_id]}}
 
 
+# Contraseña inicial ficticia que cumple la política (FNC-138).
+CONTRASENA_ONBOARDING = 'Clave-De-Prueba-2026!x'
+
+
+def _con_entrega_de_credenciales(esc, monkeypatch):
+    """Cuenta `ldap` del escenario con su entrega; Send, correo y directorio
+    simulados (reenvío de credenciales, FNC-138)."""
+    from app.modules.auth.models import User
+    from app.modules.notifications import services
+    from app.modules.secretos.sends import SendCreado
+    from app.modules.users import entrega_credenciales
+    from app.modules.users.models import EntregaCredenciales
+
+    _con_directorio_simulado(esc, monkeypatch)
+    cuenta = db.session.get(User, esc.objetivo_id)
+    cuenta.auth_source = 'ldap'
+    if cuenta.credential_delivery is None:
+        db.session.add(EntregaCredenciales(
+            cuenta=cuenta, uid='objetivo', status='pendientes',
+            attempts_count=1, max_attempts=5))
+    db.session.commit()
+    monkeypatch.setenv('ENABLE_NOTIFICATIONS', 'true')
+    monkeypatch.setenv('BASE_URL', 'https://portal.pruebas.invalid')
+    monkeypatch.setattr(
+        entrega_credenciales, 'crear_send_texto',
+        lambda nombre, texto, entorno=None: SendCreado(
+            id='00000000-0000-4000-8000-000000000001',
+            enlace='https://vault.pruebas.invalid/#/send/a/k'))
+    monkeypatch.setattr(entrega_credenciales, 'borrar_send',
+                        lambda send_id, entorno=None: None)
+    monkeypatch.setattr(services, 'send_notification_by_slug',
+                        lambda *args, **kwargs: {'status': 'success'})
+    monkeypatch.setattr(
+        entrega_credenciales, 'fijar_contrasena_en_directorio',
+        lambda uid, contrasena: None)
+
+
 def _nueva_cuenta_directorio(esc):
     return {'json': {'uid': 'ana.ruiz', 'email': 'ana.ruiz@pruebas.local',
                      'given_name': 'Ana', 'surname': 'Ruiz',
-                     'area_ids': [esc.area_id]}}
+                     'area_ids': [esc.area_id],
+                     'password': CONTRASENA_ONBOARDING}}
 
 
 def _plataforma_solicitable(esc, monkeypatch):
@@ -430,6 +468,13 @@ CASOS = (
          _con_directorio_simulado,
          nota='FNC-064 (P2): superadmin y admins (sus áreas) crean cuentas '
               'en OpenLDAP'),
+    Caso('GET', f'{A}/users/password-policy',
+         _fija(f'{A}/users/password-policy'), administradores(),
+         nota='FNC-138: política de la contraseña inicial (contrato v2)'),
+    Caso('POST', f'{A}/users/<int:user_id>/credentials',
+         _objetivo('/credentials'), solo_superadmin(), _json({}),
+         _con_entrega_de_credenciales,
+         nota='FNC-138 (ADR-008 9): reenviar credenciales, solo superadmin'),
     Caso('PUT', f'{A}/me/preferences', _fija(f'{A}/me/preferences'),
          con_sesion(), _json({'tour_enabled': False})),
     Caso('GET', f'{A}/users/inactive', _fija(f'{A}/users/inactive'),
@@ -540,7 +585,7 @@ CASOS_400 = (
     ('POST', f'{A}/platforms', _json({'user_ids': []})),
     ('PUT', f'{A}/platforms/{{plataforma_id}}', _json({'visits': 0})),
     ('POST', f'{A}/users', _json({'email': ''})),
-    ('POST', f'{A}/users/directory', _json({'password': 'x'})),
+    ('POST', f'{A}/users/directory', _json({'role': 'usuario'})),
     ('PUT', f'{A}/me/preferences', _json({'refresh_interval': 'no-numero'})),
     ('POST', f'{A}/users/purge', _json({'days': 'no-numero'})),
     ('GET', f'{A}/me/access?status=otro', _sin_cuerpo),

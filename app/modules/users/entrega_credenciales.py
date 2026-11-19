@@ -218,7 +218,6 @@ def marcar_enviada(entrega, send_id, momento, evento, como_sistema):
     entrega.last_error = None
     entrega.next_attempt_at = None
     entrega.locked_at = entrega.locked_by = None
-    entrega.attempts_count = max(entrega.attempts_count, 1)
     _auditar(evento, entrega.cuenta, 'success',
              'Credenciales entregadas por Send.', entrega, como_sistema)
 

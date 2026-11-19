@@ -886,3 +886,14 @@ Un administrador selecciona 5 usuarios pertenecientes al departamento de Finanza
 
 ### Impacto
 Afecta a [users-list.tsx](../frontend/src/components/users-list.tsx), [user-access-panel.tsx](../frontend/src/components/users/user-access-panel.tsx), [user-access-panel.test.tsx](../frontend/tests/components/users/user-access-panel.test.tsx) y [users-list.test.tsx](../frontend/tests/components/users-list.test.tsx).
+
+## Contraseña inicial de onboarding entregada por Send (FNC-138, ADR-008)
+
+### Regla
+El portal fija **solo la contraseña inicial** de una cuenta del directorio (alta y «Reenviar credenciales»); el resto del ciclo de la contraseña sigue en Authelia. La contraseña cumple la política vigente (`PASSWORD_POLICY_*`, siempre validada en el backend), se escribe en OpenLDAP con Password Modify y se entrega por un Send de Vaultwarden (usuario, contraseña y URL del portal) con **solo el enlace** por correo. Nunca se guarda en la BD, la auditoría ni los logs, ni se manda en claro. Si Vaultwarden, el correo o las notificaciones fallan, la cuenta se crea igual con `credentials_status: pendientes` y el worker reintenta con una **contraseña nueva** en cada intento (`PROVISIONING_MAX_ATTEMPTS`); agotados los intentos se avisa a los superadmins y solo «Reenviar» (superadmin) los reabre. Si la `ppolicy` del directorio rechaza la contraseña, el alta responde `422` en `fields.password` y no se crea nada.
+
+### Ejemplo
+Alta de `ana.ruiz` con Vaultwarden caído: la cuenta y su entrada se crean, el estado es `pendientes`; al volver el servicio, el worker genera otra contraseña, la escribe en LDAP, crea el Send y manda el enlace.
+
+### Impacto
+`POST /users/directory`, `GET /users/password-policy`, `POST /users/<id>/credentials`, `credentials_status` en `ManagedUser`, tabla `credential_deliveries` (migración 0015), worker, plantillas `credenciales_iniciales` y `credenciales_no_entregadas`, modal de alta.
