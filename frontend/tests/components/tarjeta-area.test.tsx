@@ -100,6 +100,16 @@ describe('TarjetaArea: CSS y contraste (AA en ambos temas)', () => {
   const CSS = readFileSync('src/styles/components.css', 'utf8');
   const tokens = readFileSync(RUTA_TOKENS, 'utf8');
 
+  it('DIS-104: recuadros, cifras, pie y «Ver plataformas» toman el color del área', () => {
+    for (const clase of ['__cifra', '__valor', '__pie', '__ir']) {
+      expect(CSS, clase).toMatch(new RegExp(`\\.nx-area-card${clase}\\s*\\{[^}]*var\\(--nx-area`));
+    }
+    const { container } = render(<TarjetaArea area={AREA} conteo={2} plataformas={PLATAFORMAS} onSelect={vi.fn()} />);
+    expect(container.querySelectorAll('.nx-area-card__cifra')).toHaveLength(2);
+    expect(container.querySelectorAll('.nx-area-card__valor')).toHaveLength(2);
+    expect(container.querySelector('.nx-area-card__pie')).toBeTruthy();
+  });
+
   it('hover eleva y respeta prefers-reduced-motion; el foco usa la clase común', () => {
     expect(CSS).toMatch(/\.nx-area-card:hover\s*\{[^}]*translateY\(-2px\)/);
     expect(CSS).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.nx-area-card,[\s\S]*?transform: none/);
@@ -133,10 +143,13 @@ describe('TarjetaArea: CSS y contraste (AA en ambos temas)', () => {
         const pares: [string, number][] = [
           ['nombre/encabezado', razonContraste(cuerpo, resplandor)],
           ['descripción/encabezado', razonContraste(etiqueta, resplandor)],
-          ['cifra/recuadro', razonContraste(cuerpo, hundida)],
-          ['etiqueta cifra/recuadro', razonContraste(etiqueta, hundida)],
-          ['Ver plataformas/panel', razonContraste(legible, panel)],
-          ['icono mini/recuadro teñido', razonContraste(legible, componer({ ...c, a: 0.14 }, hundida))],
+          // DIS-104: recuadro de cifras 8 %, pie 6 %, píldora «Ver plataformas» 14 % (20 % en hover).
+          ['cifra (color del área)/recuadro teñido', razonContraste(legible, mezcla(c, panel, 0.08))],
+          ['etiqueta cifra/recuadro teñido', razonContraste(etiqueta, mezcla(c, panel, 0.08))],
+          ['Ver plataformas/píldora', razonContraste(legible, mezcla(c, panel, 0.14))],
+          ['Ver plataformas/píldora hover', razonContraste(legible, mezcla(c, panel, 0.2))],
+          ['logo «+N»/pie teñido', razonContraste(etiqueta, mezcla(c, panel, 0.06))],
+          ['icono mini/recuadro teñido', razonContraste(legible, componer({ ...c, a: 0.14 }, mezcla(c, panel, 0.08)))],
         ];
         for (const [nombre, r] of pares) {
           mediciones.push(`${canalesArea} ${nombre}: ${r.toFixed(2)}`);

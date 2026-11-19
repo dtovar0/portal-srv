@@ -895,6 +895,26 @@ select::-ms-expand {
 .nx-area-card[data-state='inactiva'] {
     --nx-area: rgb(var(--color-neutro-relleno));
 }
+/* Más color (DIS-104, pedido del dueño: «está muy plana»). Tintes medidos en el peor caso
+   (áreas blanca, negra, amarilla, índigo, roja y cian en ambos temas): todo texto >= 4.5:1.
+   Borde de la tarjeta con el color del área. */
+.nx-area-card {
+    border-color: color-mix(in srgb, var(--nx-area) 28%, rgb(var(--color-panel-border)));
+}
+/* Recuadros de cifras: fondo 8 % del color del área y borde del mismo tono. */
+.nx-area-card__cifra {
+    background: color-mix(in srgb, var(--nx-area) 8%, rgb(var(--color-superficie)));
+    border-color: color-mix(in srgb, var(--nx-area) 30%, rgb(var(--color-panel-border)));
+}
+/* Cifras en el color legible del área (20px bold = texto grande; aun así >= 5.5:1). */
+.nx-area-card__valor {
+    color: var(--nx-area-legible);
+}
+/* Pie con un tinte suave del área (6 %) y separador del mismo tono. */
+.nx-area-card__pie {
+    background: color-mix(in srgb, var(--nx-area) 6%, rgb(var(--color-superficie)));
+    border-top-color: color-mix(in srgb, var(--nx-area) 22%, rgb(var(--color-panel-border)));
+}
 .nx-area-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--sombra-2), 0 14px 30px -18px var(--nx-area);
@@ -910,7 +930,8 @@ select::-ms-expand {
     pointer-events: none;
     background:
         radial-gradient(circle 52px at 44px 50%, color-mix(in srgb, var(--nx-area) 38%, transparent), transparent 70%),
-        radial-gradient(90% 160% at 0% 0%, color-mix(in srgb, var(--nx-area) 6%, transparent), transparent 75%);
+        radial-gradient(90% 160% at 0% 0%, color-mix(in srgb, var(--nx-area) 6%, transparent), transparent 75%),
+        linear-gradient(180deg, color-mix(in srgb, var(--nx-area) 5%, transparent), transparent);
     transition: opacity var(--duracion-corta) var(--curva);
     opacity: 0.85;
 }
@@ -947,6 +968,12 @@ select::-ms-expand {
 }
 .nx-area-card__ir {
     color: var(--nx-area-legible);
+    /* Píldora con 14 % del color del área; se intensifica al pasar el ratón. */
+    background: color-mix(in srgb, var(--nx-area) 14%, rgb(var(--color-superficie)));
+    transition: background-color var(--duracion-corta) var(--curva);
+}
+.nx-area-card:hover .nx-area-card__ir {
+    background: color-mix(in srgb, var(--nx-area) 20%, rgb(var(--color-superficie)));
 }
 .nx-area-card__flecha {
     transition: transform var(--duracion-corta) var(--curva);
