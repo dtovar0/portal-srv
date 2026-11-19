@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Web: barra de botones de Inventario y Auditoría reordenada (contador junto a los filtros); el contador cumple AA en oscuro y la búsqueda de Inventario no desborda en móvil (DIS-099, 2026-11-19).
 - Base de datos: fuera de desarrollo la app ya no crea tablas al arrancar (solo `alembic upgrade head`); la migración 0016 recrea `credential_deliveries` si el arranque la dejó vacía y se detiene si tiene filas. Evita el DuplicateTable al actualizar (FNC-160, 2026-11-19).
 - Despliegue: `install.sh --actualizar` ya no deja arrancar el código nuevo antes de migrar (la app creaba la tabla nueva y `alembic upgrade head` fallaba con DuplicateTable). Orden nuevo con mensajes `[n/6]`: validaciones previas (incluido `preflight.sh --actualizar`) sin tocar nada → detener backend, worker y frontend → dependencias → migraciones → arrancar y comprobar que queden activos y que el backend responda (journal de la unidad que falle). Si falla la migración o las dependencias, los servicios quedan detenidos y se indica cómo reintentar; nunca se borran datos (FNC-159, 2026-11-19).
 - Login: con `OIDC_HABILITADO=false`, `/login` muestra usuario y contraseña y entran las cuentas locales activas (no las de directorio ni OIDC); el formulario es el mismo de `/acceso-emergencia` (FNC-158, 2026-11-19).
