@@ -76,6 +76,8 @@ Los endpoints `/audit/users/<id>` y `/audit/platforms/<id>` son siempre paginado
 | `ejecucion_reintentada` | superadmin | — |
 | `ejecucion_cancelada` | admin o `sistema` | Un otorgar en espera se canceló por una revocación de la misma terna (FNC-049) |
 | `notificacion_fallida` | `sistema` | Un correo del gestor no se envió (SMTP caído o sin plantilla); `target` = plantilla (FNC-048) |
+| `credenciales_enviadas` / `credenciales_pendientes` | admin, superadmin o `sistema` (worker) | Entrega de la contraseña inicial por Send (usuarios-directorio.md v2); sin contraseña ni enlace; `target` = correo (FNC-138) |
+| `credenciales_reenviadas` | superadmin | «Reenviar credenciales» (FNC-138) |
 
 El catálogo vive en FNC-047; agregar valores es aditivo (misma versión).
 
@@ -97,3 +99,4 @@ El catálogo vive en FNC-047; agregar valores es aditivo (misma versión).
 | 1 | 2026-10-14 | Versión inicial (FNC-038) |
 | 1 | 2026-10-15 | Aditivo: `action` `notificacion_fallida` (FNC-048) |
 | 1 | 2026-10-20 | Corrección del ejemplo: `acceso_otorgado` automático con nivel `usuario` (P6; accesos.md 1.1, FNC-054) |
+| 1 | 2026-11-18 | Aditivo: `action` `credenciales_enviadas`, `credenciales_pendientes` y `credenciales_reenviadas` (FNC-138, ADR-008) |

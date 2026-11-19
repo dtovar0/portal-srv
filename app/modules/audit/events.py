@@ -39,3 +39,6 @@ class Evento(str, Enum):
     EJECUCION_REINTENTADA = 'ejecucion_reintentada'
     EJECUCION_CANCELADA = 'ejecucion_cancelada'
     NOTIFICACION_FALLIDA = 'notificacion_fallida'
+    CREDENCIALES_ENVIADAS = 'credenciales_enviadas'
+    CREDENCIALES_PENDIENTES = 'credenciales_pendientes'
+    CREDENCIALES_REENVIADAS = 'credenciales_reenviadas'
