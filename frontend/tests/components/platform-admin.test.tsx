@@ -338,7 +338,7 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     const { container } = render(<PlatformAdmin />);
     expect(await screen.findByLabelText('Buscar áreas')).toBeTruthy();
     expect(screen.getByRole('button', { name: /Filtrar por estado/i })).toBeTruthy();
-    expect(screen.getByRole('group', { name: /Cuadrícula de áreas/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Configurar cuadrícula/i })).toBeTruthy();
     expect(screen.getByText('Finanzas')).toBeTruthy();
     expect(screen.getByLabelText('Área Finanzas, 1 plataforma. Ver plataformas.')).toBeTruthy();
     // 5 huecos para completar la cuadrícula 2×3 por omisión (6 en total): la rejilla ocupa todo el alto
@@ -369,7 +369,7 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(screen.getByText('Legales Inactiva')).toBeTruthy();
   });
 
-  it('la cuadrícula solo ofrece 2×3, 3×2 y 3×3, y recuerda la elegida (DIS-103)', async () => {
+  it('la cuadrícula ofrece 2×2, 2×3, 3×2 y 3×3, y recuerda la elegida (DIS-103, DIS-111)', async () => {
     const { container } = render(<PlatformAdmin />);
     await screen.findByText('Finanzas');
     const huecos = () => container.querySelectorAll('.border-dashed[aria-hidden="true"]');
@@ -377,22 +377,20 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     // Por omisión 2×3 (6 slots: 1 real + 5 huecos)
     expect(huecos()).toHaveLength(5);
 
-    // DIS-110: las 3 opciones están directo en la barra, sin menú ni encabezado «slots».
-    expect(screen.queryByRole('button', { name: /Configurar cuadrícula/i })).toBeNull();
-    expect(screen.queryByText(/slots/)).toBeNull();
-    const grupo = screen.getByRole('group', { name: /Cuadrícula de áreas/i });
-    expect(within(grupo).getAllByRole('button').map((b) => b.textContent)).toEqual(['2×3', '3×2', '3×3']);
-    expect(within(grupo).getByRole('button', { name: '2 filas por 3 columnas' }).getAttribute('aria-pressed')).toBe('true');
-    for (const quitada of ['2×2', '2×4', '3×4', '4×2', '4×3', '4×4', '4 filas', '4 columnas']) {
+    fireEvent.click(screen.getByRole('button', { name: /Configurar cuadrícula/i }));
+    for (const quitada of ['2×4', '3×4', '4×2', '4×3', '4×4', '4 filas', '4 columnas']) {
       expect(screen.queryByRole('button', { name: quitada })).toBeNull();
     }
 
     // DIS-109: sin el texto «Combinaciones» (pedido del dueño)
     expect(screen.queryByText('Combinaciones')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '3 filas por 2 columnas' }));
+    // DIS-111: 2×2 (4 slots: 1 real + 3 huecos)
+    fireEvent.click(screen.getByRole('button', { name: '2×2' }));
+    expect(huecos()).toHaveLength(3);
+    fireEvent.click(screen.getByRole('button', { name: '3×2' }));
     expect(huecos()).toHaveLength(5);
 
-    fireEvent.click(screen.getByRole('button', { name: '3 filas por 3 columnas' }));
+    fireEvent.click(screen.getByRole('button', { name: '3×3' }));
     expect(huecos()).toHaveLength(8);
     expect(window.localStorage.getItem('portal_grid_filas')).toBe('3');
     expect(window.localStorage.getItem('portal_grid_columnas')).toBe('3');

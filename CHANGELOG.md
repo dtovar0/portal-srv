@@ -12,6 +12,7 @@
 - Web: la tarjeta de área de Admin › Plataformas se rediseña (icono a la izquierda con degradado del color del área, cifras de personas y plataformas, logos de las primeras 3 plataformas y «Ver plataformas»); ya no se estira al alto de la rejilla (DIS-102, 2026-11-19).
 
 ### Corregido
+- Web: la cuadrícula de áreas vuelve al menú desplegable (sin el texto «Combinaciones») y suma la opción 2×2; se revierte el selector en la barra de DIS-110 (DIS-111, 2026-11-19).
 - Web: en Áreas, la cuadrícula se elige con tres botones directo en la barra (2×3, 3×2, 3×3); sin menú desplegable ni el encabezado «Cuadrícula · N slots» (DIS-110, 2026-11-19).
 - Web: el menú de cuadrícula de áreas ya no muestra el texto «Combinaciones» (DIS-109, 2026-11-19).
 - Web: en un área inactiva, los logos de sus plataformas en la tarjeta se ven grises y atenuados (DIS-108, 2026-11-19).
