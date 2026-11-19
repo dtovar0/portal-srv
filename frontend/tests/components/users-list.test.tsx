@@ -221,8 +221,8 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
     fireEvent.click(selectAllCheckbox);
 
     // Con selección múltiple (2 usuarios): Editar y Accesos deshabilitados, Eliminar activo
-    expect(screen.getByRole('button', { name: 'Accesos de Luis Paz' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Editar Luis Paz' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Accesos de Luis Paz' }).getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Editar Luis Paz' }).getAttribute('aria-disabled')).toBe('true');
     const botonEliminar = screen.getByRole('button', { name: 'Eliminar 2 usuarios seleccionados' });
     expect(botonEliminar.hasAttribute('disabled')).toBe(false);
 
@@ -249,8 +249,10 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
     // Selecciona usuario sin áreas
     fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Pedro Sin Areas' }));
     const botonAccesosPedro = screen.getByRole('button', { name: 'Accesos de Pedro Sin Areas' });
-    expect(botonAccesosPedro.hasAttribute('disabled')).toBe(true);
-    expect(botonAccesosPedro.getAttribute('title')).toBe('El usuario no tiene áreas asignadas. Asigna al menos 1 área primero');
+    expect(botonAccesosPedro.getAttribute('aria-disabled')).toBe('true');
+    expect(document.getElementById(botonAccesosPedro.getAttribute('aria-describedby')!)?.textContent).toBe(
+      'El usuario no tiene áreas asignadas. Asigna al menos 1 área primero',
+    );
 
     // El botón Áreas sí está habilitado para poder asignarle áreas
     const botonAreasPedro = screen.getByRole('button', { name: 'Áreas de Pedro Sin Areas' });
@@ -319,7 +321,7 @@ describe('UsersList: credenciales iniciales (FNC-139)', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Luis Paz' }));
     expect(screen.getByRole('button', { name: 'Reenviar credenciales a Luis Paz' })
-      .hasAttribute('disabled')).toBe(true);
+      .getAttribute('aria-disabled')).toBe('true');
   });
 
   it('pide confirmación, reenvía, avisa «enviadas» y recarga la lista', async () => {

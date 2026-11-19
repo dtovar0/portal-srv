@@ -134,6 +134,7 @@ export function ConnectorsAdmin() {
             <Button
               variant="fila"
               disabled={!seleccionada}
+              motivoDeshabilitado="Selecciona 1 plataforma para editar su conector"
               onClick={handleEditar}
               aria-label={seleccionada ? `Editar conector de ${seleccionada.name}` : 'Editar'}
               title={
@@ -151,6 +152,11 @@ export function ConnectorsAdmin() {
             <Button
               variant="fila-peligro"
               disabled={!seleccionada || !seleccionada.has_connector}
+              motivoDeshabilitado={
+                !seleccionada
+                  ? 'Selecciona 1 plataforma para eliminar su conector'
+                  : 'Esta plataforma no tiene conector configurado'
+              }
               onClick={handleEliminar}
               aria-label={seleccionada ? `Eliminar conector de ${seleccionada.name}` : 'Eliminar'}
               title={

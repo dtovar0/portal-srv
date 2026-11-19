@@ -513,6 +513,13 @@ export function UsersList() {
             <Button
               variant="fila"
               disabled={activeSelectedIds.size === 0 || algunoSinAreas}
+              motivoDeshabilitado={
+                activeSelectedIds.size === 0
+                  ? 'Selecciona al menos 1 usuario para ver accesos'
+                  : selectedUsers.length > 1
+                  ? 'Uno o más usuarios seleccionados no tienen áreas asignadas. Asigna al menos 1 área primero'
+                  : 'El usuario no tiene áreas asignadas. Asigna al menos 1 área primero'
+              }
               onClick={(event) => {
                 if (selectedUsers.length === 0) return;
                 accessTrigger.current = event.currentTarget;
@@ -546,6 +553,7 @@ export function UsersList() {
             <Button
               variant="fila"
               disabled={activeSelectedIds.size === 0}
+              motivoDeshabilitado="Selecciona al menos 1 usuario para ver áreas"
               onClick={(event) => {
                 if (selectedUsers.length === 0) return;
                 accessTrigger.current = event.currentTarget;
@@ -571,6 +579,11 @@ export function UsersList() {
             <Button
               variant="fila"
               disabled={!isSingleSelected}
+              motivoDeshabilitado={
+                activeSelectedIds.size > 1
+                  ? 'Solo se puede editar 1 usuario a la vez'
+                  : 'Selecciona 1 usuario para editar'
+              }
               onClick={() => effectiveSelectedUser && setEditing(effectiveSelectedUser)}
               aria-label={effectiveSelectedUser ? `Editar ${effectiveSelectedUser.name}` : 'Editar'}
               title={
@@ -591,6 +604,7 @@ export function UsersList() {
               <Button
                 variant="fila"
                 disabled={!isSingleSelected || !effectiveSelectedUser?.credentials_status}
+                motivoDeshabilitado="Selecciona 1 usuario dado de alta desde el portal para reenviar sus credenciales"
                 onClick={() => effectiveSelectedUser && setResendOf(effectiveSelectedUser)}
                 aria-label={
                   effectiveSelectedUser ? `Reenviar credenciales a ${effectiveSelectedUser.name}` : 'Reenviar credenciales'
@@ -612,6 +626,7 @@ export function UsersList() {
             <Button
               variant="fila-peligro"
               disabled={activeSelectedIds.size === 0}
+              motivoDeshabilitado="Selecciona al menos 1 usuario para eliminar"
               onClick={() => selectedUsers.length > 0 && setRemoving(selectedUsers)}
               aria-label={
                 selectedUsers.length === 1

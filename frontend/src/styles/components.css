@@ -813,5 +813,48 @@ select::-ms-expand {
     }
 }
 
+/* === MOTIVO DE UN BOTÓN DESHABILITADO (DIS-096) ===
+   Texto asociado con aria-describedby: siempre en el árbol de accesibilidad; visible al foco
+   y con el puntero, descartable con Esc (WCAG 1.4.13). Mismos tokens que el tooltip. */
+.nexus-btn-con-motivo {
+    position: relative;
+    display: inline-flex;
+}
+
+.nexus-motivo-boton {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    max-width: min(18rem, 80vw);
+    border-radius: var(--radio-control, 0.5rem);
+    border-style: solid;
+    border-color: rgb(var(--color-panel-border) / 0.5);
+    background: rgb(var(--color-tooltip-fondo));
+    color: rgb(var(--color-tooltip-texto));
+    box-shadow: var(--sombra-1);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    white-space: normal;
+    z-index: 60;
+    pointer-events: none;
+    /* Oculto a la vista, no al lector. */
+    clip-path: inset(50%);
+    overflow: hidden;
+    height: 1px;
+    width: 1px;
+    padding: 0;
+    border-width: 0;
+}
+
+.nexus-btn-con-motivo:not([data-motivo-descartado='true']):hover .nexus-motivo-boton,
+.nexus-btn-con-motivo:not([data-motivo-descartado='true']) .nexus-btn:focus-visible + .nexus-motivo-boton {
+    clip-path: none;
+    overflow: visible;
+    height: auto;
+    width: max-content;
+    padding: 0.25rem 0.625rem;
+    border-width: 1px;
+}
+
 
 

@@ -7,6 +7,12 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: ButtonVariant;
   size?: ButtonSize;
   busy?: boolean;
+  /**
+   * Motivo por el que el botón está deshabilitado (DIS-096). Con `disabled` y un motivo,
+   * el botón queda `aria-disabled` (enfocable, sin ejecutar nada) y el motivo se asocia con
+   * `aria-describedby` y se muestra al foco o al pasar el puntero. Sin motivo, `disabled` es nativo.
+   */
+  motivoDeshabilitado?: string;
 }
 
 export const CLASES_VARIANTE_BOTON: Record<ButtonVariant, string> = {
@@ -30,6 +36,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
     variant = 'primary',
     size = 'md',
     busy = false,
+    motivoDeshabilitado,
     className = '',
     children,
     disabled,
@@ -38,8 +45,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
   },
   ref,
 ) {
-  const ariaDisabled = Boolean(props['aria-disabled']) || busy;
-  const isDisabled = Boolean(disabled);
+  const idMotivo = React.useId();
+  const [motivoDescartado, setMotivoDescartado] = React.useState(false);
+  const motivo = disabled && motivoDeshabilitado ? motivoDeshabilitado : undefined;
+  const ariaDisabled = Boolean(props['aria-disabled']) || busy || Boolean(motivo);
+  const isDisabled = Boolean(disabled) && !motivo;
+  const describedBy = [props['aria-describedby'], motivo ? idMotivo : undefined].filter(Boolean).join(' ') || undefined;
   const sizeClasses = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : '';
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -50,15 +61,25 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
     onClick?.(e);
   };
 
-  return (
+  const boton = (
     <button
       ref={ref}
       type="button"
       {...props}
+      title={motivo ? undefined : props.title}
+      aria-describedby={describedBy}
       disabled={isDisabled}
       aria-disabled={ariaDisabled ? 'true' : undefined}
       aria-busy={busy ? 'true' : props['aria-busy']}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (motivo && e.key === 'Escape') setMotivoDescartado(true);
+        props.onKeyDown?.(e);
+      }}
+      onBlur={(e) => {
+        setMotivoDescartado(false);
+        props.onBlur?.(e);
+      }}
       className={`nexus-btn ${CLASES_VARIANTE_BOTON[variant]} ${sizeClasses} ${isDisabled || ariaDisabled ? 'estado-deshabilitado' : ''} ${className}`.trim()}
     >
       {busy ? (
@@ -69,6 +90,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
       ) : null}
       {children}
     </button>
+  );
+
+  if (!motivo) return boton;
+
+  return (
+    <span
+      className="nexus-btn-con-motivo"
+      data-motivo-descartado={motivoDescartado ? 'true' : undefined}
+      onMouseLeave={() => setMotivoDescartado(false)}
+    >
+      {boton}
+      <span id={idMotivo} role="tooltip" className="nexus-motivo-boton">
+        {motivo}
+      </span>
+    </span>
   );
 });
 

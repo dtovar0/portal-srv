@@ -122,16 +122,18 @@ describe('AreasList por rol', () => {
     // Sistemas no está en sus áreas administradas: botones de barra deshabilitados
     fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
     fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
-    expect((screen.getByRole('button', { name: 'Editar Sistemas' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole('button', { name: 'Eliminar Sistemas' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole('button', { name: 'Editar Sistemas' }).getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Eliminar Sistemas' }).getAttribute('aria-disabled')).toBe('true');
 
     // DIS-089: el motivo del botón deshabilitado es texto accesible (describedby), el nombre no cambia
     const eliminar = screen.getByRole('button', { name: 'Eliminar Sistemas' });
     const motivo = document.getElementById(eliminar.getAttribute('aria-describedby')!);
     expect(motivo?.textContent).toBe('No tienes permisos para eliminar alguna de las áreas seleccionadas');
     fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
-    expect(screen.getByRole('button', { name: 'Eliminar' }).getAttribute('aria-describedby')).toBeTruthy();
-    expect(document.getElementById('areas-eliminar-motivo')?.textContent).toBe('Selecciona al menos 1 área para eliminar');
+    const sinSeleccion = screen.getByRole('button', { name: 'Eliminar' });
+    expect(document.getElementById(sinSeleccion.getAttribute('aria-describedby')!)?.textContent).toBe(
+      'Selecciona al menos 1 área para eliminar',
+    );
   });
 
   it('superadmin: el alta no envía color y el área nueva queda gestionable', async () => {
@@ -426,7 +428,7 @@ describe('Accesos del área (gestión de usuarios)', () => {
 
     // Sin seleccionar área: botón Accesos deshabilitado
     const botonAccesos = screen.getByRole('button', { name: 'Accesos' }) as HTMLButtonElement;
-    expect(botonAccesos.disabled).toBe(true);
+    expect(botonAccesos.getAttribute('aria-disabled')).toBe('true');
 
     // Selecciona Finanzas (área administrada): botón Accesos habilitado con aria-label contextual
     fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
@@ -437,7 +439,7 @@ describe('Accesos del área (gestión de usuarios)', () => {
     fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
     fireEvent.click(screen.getByLabelText('Seleccionar Sistemas'));
     const botonSistemas = screen.getByRole('button', { name: 'Accesos de Sistemas' }) as HTMLButtonElement;
-    expect(botonSistemas.disabled).toBe(true);
+    expect(botonSistemas.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('abre el panel de accesos con Dual Picklist y permite transferir y guardar usuarios', async () => {
