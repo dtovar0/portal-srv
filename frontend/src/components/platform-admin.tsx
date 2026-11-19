@@ -33,14 +33,27 @@ import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 const CLASES_COLS: Record<number, string> = {
   2: 'sm:grid-cols-2 lg:grid-cols-2',
   3: 'sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3',
-  4: 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4',
 };
 
+// Filas que llenan el alto disponible sin bajar del mínimo de la tarjeta (14rem = `min-h-56`):
+// si no caben, el contenedor hace scroll en vez de encimar las tarjetas (DIS-103).
 const CLASES_ROWS: Record<number, string> = {
-  2: 'lg:grid-rows-2',
-  3: 'lg:grid-rows-3',
-  4: 'lg:grid-rows-4',
+  2: 'lg:grid-rows-[repeat(2,minmax(14rem,1fr))]',
+  3: 'lg:grid-rows-[repeat(3,minmax(14rem,1fr))]',
 };
+
+/** Cuadrículas que ofrece la pantalla (filas × columnas). Con 4 filas o 4 columnas la tarjeta
+ *  se deformaba: el dueño dejó solo estas (DIS-103). */
+export const CUADRICULAS: ReadonlyArray<{ f: number; c: number }> = [
+  { f: 2, c: 3 },
+  { f: 3, c: 2 },
+  { f: 3, c: 3 },
+];
+const CUADRICULA_POR_OMISION = CUADRICULAS[0];
+
+function cuadriculaValida(f: number, c: number): boolean {
+  return CUADRICULAS.some((x) => x.f === f && x.c === c);
+}
 
 export const CLAVE_GRID_FILAS = 'portal_grid_filas';
 export const CLAVE_GRID_COLUMNAS = 'portal_grid_columnas';
@@ -179,26 +192,19 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
   const estadoRef = useRef<HTMLDivElement>(null);
 
   // Configuración de dimensiones de Cuadrícula (Sección 1): 2..4 filas x 2..4 columnas (persistido en navegador)
-  const [gridFilas, setGridFilas] = useState<number>(() => leerDimGrid(CLAVE_GRID_FILAS, 2));
-  const [gridColumnas, setGridColumnas] = useState<number>(() => leerDimGrid(CLAVE_GRID_COLUMNAS, 4));
+  // Una combinación guardada que ya no se ofrece (p. ej. 2×4) vuelve a la de por omisión.
+  const [cuadricula, setCuadricula] = useState(() => {
+    const f = leerDimGrid(CLAVE_GRID_FILAS, CUADRICULA_POR_OMISION.f);
+    const c = leerDimGrid(CLAVE_GRID_COLUMNAS, CUADRICULA_POR_OMISION.c);
+    return cuadriculaValida(f, c) ? { f, c } : CUADRICULA_POR_OMISION;
+  });
+  const gridFilas = cuadricula.f;
+  const gridColumnas = cuadricula.c;
   const [menuGridAbierto, setMenuGridAbierto] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const actualizarGridFilas = useCallback((f: number) => {
-    setGridFilas(f);
-    setPageAreas(1);
-    guardarDimGrid(CLAVE_GRID_FILAS, f);
-  }, []);
-
-  const actualizarGridColumnas = useCallback((c: number) => {
-    setGridColumnas(c);
-    setPageAreas(1);
-    guardarDimGrid(CLAVE_GRID_COLUMNAS, c);
-  }, []);
-
   const actualizarGridPreset = useCallback((f: number, c: number) => {
-    setGridFilas(f);
-    setGridColumnas(c);
+    setCuadricula({ f, c });
     setPageAreas(1);
     guardarDimGrid(CLAVE_GRID_FILAS, f);
     guardarDimGrid(CLAVE_GRID_COLUMNAS, c);
@@ -714,73 +720,13 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                       </span>
                     </div>
 
-                    {/* Selector de Filas: 2..4 */}
+                    {/* Combinaciones (filas × columnas) */}
                     <div>
-                      <span className="block text-xs font-bold text-body-text mb-1.5">
-                        Filas ({gridFilas})
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {[2, 3, 4].map((f) => (
-                          <button
-                            key={`filas-${f}`}
-                            type="button"
-                            onClick={() => actualizarGridFilas(f)}
-                            className={`flex min-h-12 min-w-12 items-center justify-center rounded-lg text-xs font-bold transition-all ${
-                              gridFilas === f
-                                ? 'bg-primary text-on-primary shadow-xs'
-                                : 'bg-superficie-hundida text-body-text hover:bg-surface-container'
-                            }`}
-                            aria-pressed={gridFilas === f}
-                            aria-label={`${f} filas`}
-                          >
-                            {f} filas
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Selector de Columnas: 2..4 */}
-                    <div>
-                      <span className="block text-xs font-bold text-body-text mb-1.5">
-                        Columnas ({gridColumnas})
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {[2, 3, 4].map((c) => (
-                          <button
-                            key={`cols-${c}`}
-                            type="button"
-                            onClick={() => actualizarGridColumnas(c)}
-                            className={`flex min-h-12 min-w-12 items-center justify-center rounded-lg text-xs font-bold transition-all ${
-                              gridColumnas === c
-                                ? 'bg-primary text-on-primary shadow-xs'
-                                : 'bg-superficie-hundida text-body-text hover:bg-surface-container'
-                            }`}
-                            aria-pressed={gridColumnas === c}
-                            aria-label={`${c} columnas`}
-                          >
-                            {c} cols
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Combinaciones rápidas */}
-                    <div className="border-t border-panel-border/50 pt-2">
                       <span className="block text-xs font-bold text-label mb-1.5">
                         Combinaciones
                       </span>
                       <div className="grid grid-cols-3 gap-1.5">
-                        {[
-                          { f: 2, c: 2, l: '2×2' },
-                          { f: 2, c: 3, l: '2×3' },
-                          { f: 2, c: 4, l: '2×4' },
-                          { f: 3, c: 2, l: '3×2' },
-                          { f: 3, c: 3, l: '3×3' },
-                          { f: 3, c: 4, l: '3×4' },
-                          { f: 4, c: 2, l: '4×2' },
-                          { f: 4, c: 3, l: '4×3' },
-                          { f: 4, c: 4, l: '4×4' },
-                        ].map((p) => (
+                        {CUADRICULAS.map((x) => ({ ...x, l: `${x.f}×${x.c}` })).map((p) => (
                           <button
                             key={p.l}
                             type="button"
@@ -803,12 +749,12 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
           </div>
 
           {/* Fila 2: Body con Grid configurable */}
-          <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-y-auto p-1">
+          <div className="flex flex-1 min-h-0 flex-col w-full overflow-y-auto p-1">
             {areas.loading && !areas.data ? (
               <div
-                className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} ${
+                className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-3'} ${
                   CLASES_ROWS[gridFilas] ?? 'lg:grid-rows-2'
-                } gap-4 flex-1 h-full min-h-0 p-1`}
+                } gap-4 flex-1`}
               >
                 {Array.from({ length: AREAS_PER_PAGE }).map((_, i) => (
                   <div key={i} className="min-h-56 h-full rounded-xl border border-panel-border/60 bg-panel-fill p-5 animate-pulse" />
@@ -844,14 +790,14 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
             ) : null}
 
             {displayAreas.length > 0 ? (
-              <div className="flex flex-col flex-1 min-h-0 h-full w-full justify-between gap-4">
+              <div className="flex flex-col flex-1 w-full justify-between gap-4">
                 {/* Grid configurable: filas fijas que ocupan todo el alto; la tarjeta se reparte (DIS-102) */}
                 <div
                   role="region"
                   aria-label="Catálogo de áreas"
-                  className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} ${
+                  className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-3'} ${
                     CLASES_ROWS[gridFilas] ?? 'lg:grid-rows-2'
-                  } gap-4 flex-1 h-full min-h-0 auto-rows-fr p-1`}
+                  } gap-4 flex-1`}
                 >
                   {displayAreas.map((area) => (
                     <TarjetaArea
