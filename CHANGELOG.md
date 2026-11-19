@@ -6,6 +6,8 @@
 ## [Sin publicar]
 
 ### Agregado
+- Web: `/login` tiene un solo botón «Entrar con Authelia» (inicia el flujo OIDC); los errores del callback salen por toast y la URL se limpia; `/acceso-emergencia` (sin enlace visible) permite entrar a la cuenta de emergencia; el cierre de sesión sigue la URL de Authelia (FNC-142, 2026-11-18).
+- Despliegue: `preflight.sh` e `install.sh` revisan las `OIDC_*` (obligatorias fuera de desarrollo, https y nombre de host; el secreto nunca se imprime) con `deploy/oidc.sh`; guía `docs/operacion/AUTHELIA-OIDC.md` del cliente `portal` para Authelia 4.38 o mayor (FNC-143, 2026-11-18).
 - Despliegue: install.sh --actualizar actualiza sin reinstalar; un nginx .conf editado a mano ya no se sobrescribe (pregunta o se conserva, con copia al reemplazar), y los servicios se reinician para tomar el código nuevo (FNC-153, 2026-11-18).
 - Base de datos: DB_TLS_CA_FILE opcional exige TLS verificado hacia una BD remota (FNC-151, 2026-11-18).
 - Despliegue: `install.sh` y `preflight.sh` detectan PostgreSQL de PGDG (`postgresql-NN.service`, la versión mayor) sin `--db-service` (FNC-148, 2026-11-17).
@@ -20,6 +22,7 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Despliegue: nginx ya no trae el bloque `auth_request` comentado (el acceso es OIDC); conserva el borrado de `Remote-*` (FNC-143, 2026-11-18).
 - Pruebas: la del buscador global ya no falla bajo carga (esperaba al menú y no al buscador que escucha Ctrl K) (DIS-094, 2026-11-18).
 - Accesibilidad: bordes de tarjetas seleccionables y pestaña activa a 3:1; la barra del toast toma su duración de --toast-duracion (igual a TOAST_MS) (DIS-093, 2026-11-18).
 - Interfaz: la barra de progreso del toast se pausa con el cursor o el foco; el menú 'Log conectores' pasa a 'Ejecuciones'; los paneles de áreas avisan que quitar a alguien le retira sus accesos (DIS-092, 2026-11-18).

@@ -11,7 +11,7 @@
 ## Topología de un servidor (staging y producción)
 
 ```text
-cliente ──HTTPS 443──> nginx ──(auth_request)──> Authelia (existente)
+cliente ──HTTPS 443──> nginx        (la app habla OIDC con Authelia, existente, por nombre de host)
                          │
                          ├── /api/ y /auth/ ──> <nombre>-backend  (Gunicorn, loopback:5001)
                          └── /  y /_next/static/ ──> <nombre>-frontend (node server.js, loopback:3000)
