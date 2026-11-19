@@ -34,6 +34,8 @@ Se ponen en el `.env` del servidor (permisos 600); el detalle está en [VARIABLE
 
 Fuera de desarrollo, el portal no arranca sin `OIDC_ISSUER_URL`, `OIDC_CLIENT_SECRET` y `OIDC_REDIRECT_URI`, ni con `http` o una IP. `deploy/preflight.sh` lo comprueba antes de instalar.
 
+**Instalar sin Authelia todavía:** `OIDC_HABILITADO=false` en el `.env` (FNC-157). El portal arranca sin las `OIDC_*` y solo entra la cuenta de emergencia por `/acceso-emergencia` (créala con `flask --app run:app cuentas superadmin`). Para activar Authelia, quita la línea o pon `true` y completa las variables de esta tabla.
+
 ## 3. Bloque del cliente `portal` (Authelia 4.38)
 
 En `configuration.yml` de Authelia. `hmac_secret` y `jwks` (la llave de firma) los configura el dueño de Authelia y nunca van en este repositorio.

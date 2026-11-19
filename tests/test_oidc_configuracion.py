@@ -146,3 +146,25 @@ def test_fuera_de_desarrollo_sin_logout_url_es_un_error(entorno):
 
 def test_en_desarrollo_la_logout_url_sigue_siendo_opcional():
     assert leer_configuracion(_entorno('development', OIDC_LOGOUT_URL=None)) is not None
+
+
+# FNC-157: instalar sin Authelia (decisión del dueño 2026-11-19).
+@pytest.mark.parametrize('valor', ['false', 'FALSE', '0', 'no'])
+def test_oidc_habilitado_false_permite_arrancar_sin_variables(valor):
+    assert leer_configuracion({'APP_ENV': 'production',
+                               'OIDC_HABILITADO': valor}) is None
+
+
+def test_oidc_habilitado_false_ignora_las_demas_variables():
+    assert leer_configuracion(_entorno(OIDC_HABILITADO='false')) is None
+
+
+@pytest.mark.parametrize('valor', ['', 'true', '1', 'si'])
+def test_oidc_habilitado_vacio_o_verdadero_sigue_exigiendo(valor):
+    with pytest.raises(ErrorConfiguracionOidc):
+        leer_configuracion({'APP_ENV': 'production', 'OIDC_HABILITADO': valor})
+
+
+def test_oidc_habilitado_invalido_es_error():
+    with pytest.raises(ErrorConfiguracionOidc, match='OIDC_HABILITADO'):
+        leer_configuracion({'APP_ENV': 'production', 'OIDC_HABILITADO': 'flase'})

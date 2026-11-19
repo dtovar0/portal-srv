@@ -16,6 +16,10 @@ Variables (`docs/configuracion/VARIABLES.md`):
 Fuera de desarrollo, las cuatro primeras son obligatorias y deben usar `https`;
 si falta una, la app no arranca. En desarrollo, sin ninguna `OIDC_*` el acceso
 por Authelia queda apagado (se entra por la ruta de emergencia).
+
+`OIDC_HABILITADO=false` (FNC-157) apaga Authelia también fuera de desarrollo, para
+instalar antes de configurarlo: solo entra la cuenta de emergencia por
+`/acceso-emergencia`. Vacía o `true` = encendido (lo de siempre); otro valor es error.
 """
 import os
 from dataclasses import dataclass, field
@@ -29,6 +33,9 @@ VAR_CLIENT_SECRET = 'OIDC_CLIENT_SECRET'
 VAR_REDIRECT_URI = 'OIDC_REDIRECT_URI'
 VAR_SCOPES = 'OIDC_SCOPES'
 VAR_LOGOUT_URL = 'OIDC_LOGOUT_URL'
+VAR_HABILITADO = 'OIDC_HABILITADO'
+VALORES_APAGADO = frozenset({'false', '0', 'no'})
+VALORES_ENCENDIDO = frozenset({'', 'true', '1', 'si', 'sí', 'yes'})
 PREFIJO = 'OIDC_'
 
 VAR_ENTORNO = 'APP_ENV'
@@ -67,8 +74,19 @@ def es_desarrollo(entorno=None):
 def hay_variables_oidc(entorno=None):
     """`True` si alguna variable `OIDC_*` tiene valor."""
     entorno = os.environ if entorno is None else entorno
-    return any(clave.startswith(PREFIJO) and (valor or '').strip()
-               for clave, valor in entorno.items())
+    return any(clave.startswith(PREFIJO) and clave != VAR_HABILITADO
+               and (valor or '').strip() for clave, valor in entorno.items())
+
+
+def oidc_apagado(entorno=None):
+    """`True` con `OIDC_HABILITADO=false` (FNC-157); valor no reconocido = error."""
+    entorno = os.environ if entorno is None else entorno
+    valor = _leer(entorno, VAR_HABILITADO).lower()
+    if valor in VALORES_APAGADO:
+        return True
+    if valor in VALORES_ENCENDIDO:
+        return False
+    raise ErrorConfiguracionOidc(f'{VAR_HABILITADO} debe ser true o false.')
 
 
 def _url_https(valor, nombre, entorno):
@@ -105,6 +123,8 @@ def leer_configuracion(entorno=None):
     sin ninguna `OIDC_*` devuelve `None`; con alguna, exige todas.
     """
     entorno = os.environ if entorno is None else entorno
+    if oidc_apagado(entorno):
+        return None
     if not hay_variables_oidc(entorno):
         if es_desarrollo(entorno):
             return None

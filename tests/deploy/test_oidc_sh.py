@@ -109,3 +109,19 @@ def test_fuera_de_desarrollo_sin_logout_url_es_falta(tmp_path):
     codigo, salida = _revisar(tmp_path, quitar=('OIDC_LOGOUT_URL',))
     assert codigo == 1
     assert 'FALTA OIDC_LOGOUT_URL sin definir' in salida
+
+
+# FNC-157: instalar sin Authelia.
+def test_oidc_habilitado_false_es_aviso_y_pasa(tmp_path):
+    codigo, salida = _revisar(tmp_path, {'OIDC_HABILITADO': 'false'},
+                              quitar=('OIDC_ISSUER_URL', 'OIDC_CLIENT_SECRET',
+                                      'OIDC_REDIRECT_URI', 'OIDC_LOGOUT_URL'))
+    assert codigo == 0, salida
+    assert 'FALTA' not in salida
+    assert 'AVISO OIDC_HABILITADO=false' in salida
+
+
+def test_oidc_habilitado_invalido_es_falta(tmp_path):
+    codigo, salida = _revisar(tmp_path, {'OIDC_HABILITADO': 'flase'})
+    assert codigo == 1
+    assert 'FALTA OIDC_HABILITADO' in salida
