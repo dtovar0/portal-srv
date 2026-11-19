@@ -5,8 +5,8 @@
  *
  * Encabezado: icono del área (degradado de su color) + nombre y descripción. Cuerpo: dos
  * recuadros con las personas y las plataformas del área. Pie: logos de las primeras 3
- * plataformas, «+N» y «Ver plataformas». El alto lo da el contenido (no se estira a la
- * rejilla). El color del área es un dato: viaja como `--area-color` y `.nx-area-card*`
+ * plataformas, «+N» y «Ver plataformas». Ocupa toda la celda de la rejilla: el cuerpo se
+ * reparte el alto sobrante (las cifras quedan centradas, sin hueco vacío). El color del área es un dato: viaja como `--area-color` y `.nx-area-card*`
  * (components.css) lo consume; el texto sale de tokens.
  */
 
@@ -94,7 +94,7 @@ export function TarjetaArea({
       aria-label={`Área ${area.name}${inactiva ? ' (Inactiva)' : ''}, ${conteo} ${conteo === 1 ? 'plataforma' : 'plataformas'}. Ver plataformas.`}
       data-state={inactiva ? 'inactiva' : 'activa'}
       style={variablesCss({ '--area-color': color })}
-      className="nx-area-card foco-visible group relative flex min-h-12 min-w-12 cursor-pointer select-none flex-col overflow-hidden rounded-xl border border-panel-border bg-panel-fill text-left shadow-1"
+      className="nx-area-card foco-visible group relative flex h-full min-h-56 min-w-12 cursor-pointer select-none flex-col overflow-hidden rounded-xl border border-panel-border bg-panel-fill text-left shadow-1"
     >
       <div className="nx-area-card__cabecera relative flex items-center gap-3 p-5 pb-4">
         <span
@@ -114,7 +114,7 @@ export function TarjetaArea({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 px-5 pb-4">
+      <div className="grid flex-1 grid-cols-2 content-center gap-2.5 px-5 pb-4">
         <Cifra icono="usuarios" valor={personas} etiqueta={personas === 1 ? 'Persona' : 'Personas'} />
         <Cifra icono="plataformas" valor={conteo} etiqueta={conteo === 1 ? 'Plataforma' : 'Plataformas'} />
       </div>
