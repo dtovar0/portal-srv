@@ -21,10 +21,10 @@ import { DataTable, type DataColumn } from './data-table';
 import { Button, ConfirmDialog } from './form';
 import { Icono, type NombreIcono } from './icono';
 import { PageHeader } from './page-header';
-import { RequireRole, meetsRequirement } from './require-role';
+import { RequireRole } from './require-role';
 import { useSession } from './session-provider';
 import { useToast } from './toast';
-import { Badge, EmptyNote, ErrorNote, Spinner } from './ui';
+import { Badge } from './ui';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 
 export function AreasList() {
@@ -318,6 +318,9 @@ function AreasScreen() {
         ),
       },
     ],
+    // `toggleSelectAll` solo lee `allSelected` y `allDisplayIds` (ya en las dependencias) y usa
+    // el setter funcional: no hay dato viejo; agregarla recrearía las columnas en cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isAdmin, managedIds, activeSelectedIds, allSelected, someSelected, allDisplayIds],
   );
 

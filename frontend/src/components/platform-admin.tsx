@@ -180,6 +180,10 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     }
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
+  // Intencional: `selectedAreaId` solo se lee como «aún sin área» al montar o cambiar
+  // `initialAreaId`. Agregarlo reejecutaría la lectura de la URL/historial al volver a la lista
+  // (`null`) y restauraría el área recién cerrada.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialAreaId]);
 
   // Búsqueda y paginación para Áreas (Sección 1)
@@ -449,6 +453,10 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
         toggleSelectAll: toggleSelectAllPlatforms,
         togglePlatform,
       }),
+    // `toggleSelectAllPlatforms` solo lee `allSelected` y `allDisplayPlatformIds` (ya en las
+    // dependencias) y usa el setter funcional: no hay dato viejo; agregarla recrearía las
+    // columnas en cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeSelectedPlatformIds, allSelected, someSelected, allDisplayPlatformIds],
   );
 

@@ -15,7 +15,7 @@ import { useState } from 'react';
 import type { AuditParams, AuditResult } from '@/lib/access/types';
 import { BUSQUEDA_MAX, limpiarBusqueda } from '../access/inventory-filters';
 import { type OpcionesAlcance, ScopeSelects } from '../access/scope-filters';
-import { Button, Field, Option, Select, TextInput } from '../form';
+import { Button, Option, Select } from '../form';
 import { Icono } from '../icono';
 import { ACCIONES, RESULTADOS } from './audit-actions';
 

@@ -20,15 +20,10 @@ const CLASE_ITEM =
 
 export function MenuUsuario({
   session,
-  segunSistema: _segunSistema,
-  onSegunSistema: _onSegunSistema,
   colapsada = false,
   enBarraLateral = true,
 }: {
   session: Session;
-  /** El tema actual es «según el sistema». */
-  segunSistema?: boolean;
-  onSegunSistema?: () => void;
   /** Barra lateral colapsada: solo el avatar y el menú a la derecha. */
   colapsada?: boolean;
   /** Aplica los tokens específicos del menú lateral oscuro (por defecto true). */

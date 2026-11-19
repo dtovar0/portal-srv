@@ -24,7 +24,7 @@ import { usePolling } from '@/lib/use-polling';
 import { Button, Option, Select } from '../form';
 import { useSession } from '../session-provider';
 import { useToast } from '../toast';
-import { Card, EmptyNote, ErrorNote, Skeleton } from '../ui';
+import { EmptyNote, ErrorNote, Skeleton } from '../ui';
 import { AccessStatusBadge, NIVELES } from './access-status-badge';
 import { ApproveDialog } from './approve-dialog';
 import { formatearFecha } from './fecha';
