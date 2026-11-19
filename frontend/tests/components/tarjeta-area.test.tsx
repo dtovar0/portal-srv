@@ -111,8 +111,11 @@ describe('TarjetaArea: CSS y contraste (AA en ambos temas)', () => {
   });
 
   it('DIS-105: efectos de color (borde en degradado, aurora, halo, brillo del icono) y sin movimiento si se pide', () => {
-    expect(CSS).toMatch(/\.nx-area-card\[data-state='activa'\]\s*\{[^}]*border-box[^}]*box-shadow[^}]*var\(--nx-area\)/);
-    expect(CSS).toMatch(/\.nx-area-card::after\s*\{[^}]*radial-gradient\(circle, color-mix\(in srgb, var\(--nx-area\) 10%/);
+    expect(CSS).toMatch(/\.nx-area-card\[data-state='activa'\]\s*\{[^}]*border-color: color-mix[^}]*box-shadow[^}]*var\(--nx-area\)/);
+    // DIS-107: simétrica. Sin borde en degradado diagonal ni mancha en una esquina.
+    expect(CSS).not.toMatch(/border-box/);
+    expect(CSS).toMatch(/\.nx-area-card::after\s*\{[^}]*inset: 0 0 auto 0;[^}]*at 50% 0%/);
+    expect(CSS).not.toMatch(/\.nx-area-card__cabecera::before\s*\{[^}]*at 0% 0%/);
     expect(CSS).toMatch(/\.nx-area-card\[data-state='inactiva'\]::after\s*\{\s*display: none/);
     expect(CSS).toMatch(/\.nx-area-card:hover \.nx-area-card__icono::after\s*\{\s*transform: translateX\(120%\)/);
     const reducido = CSS.slice(CSS.lastIndexOf('@media (prefers-reduced-motion: reduce) {\n    .nx-area-card,'));
