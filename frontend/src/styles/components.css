@@ -981,11 +981,89 @@ select::-ms-expand {
 .nx-area-card:hover .nx-area-card__flecha {
     transform: translateX(3px);
 }
+/* Efectos de color (DIS-105, pedido del dueño: «le faltan más efectos de color»).
+   El texto no cambia de fondo útil: los efectos van en el borde, la sombra, la esquina
+   superior derecha (centro a 10px del borde, pico 10 %: la descripción queda <= 8 % y
+   conserva >= 4.5:1 con áreas blancas en oscuro) y el icono. */
+/* Borde en degradado: el color del área en la esquina del icono que se apaga hacia el lado opuesto. */
+.nx-area-card[data-state='activa'] {
+    border-color: transparent;
+    background:
+        linear-gradient(rgb(var(--color-panel-fill)), rgb(var(--color-panel-fill))) padding-box,
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--nx-area) 75%, transparent),
+            color-mix(in srgb, var(--nx-area) 22%, rgb(var(--color-panel-border))) 45%,
+            rgb(var(--color-panel-border))) border-box;
+    /* Halo de color permanente bajo la tarjeta. */
+    box-shadow: var(--sombra-1), 0 12px 28px -20px var(--nx-area);
+}
+/* Aurora en la esquina superior derecha, detrás del contenido. */
+.nx-area-card::after {
+    content: '';
+    position: absolute;
+    top: -80px;
+    right: -80px;
+    width: 180px;
+    height: 180px;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--nx-area) 10%, transparent), transparent 68%);
+    transition: transform calc(var(--duracion-media) * 1.6) var(--curva), opacity var(--duracion-corta) var(--curva);
+}
+.nx-area-card[data-state='inactiva']::after {
+    display: none;
+}
+.nx-area-card > * {
+    position: relative;
+    z-index: 1;
+}
+.nx-area-card[data-state='activa']:hover {
+    box-shadow: var(--sombra-2), 0 18px 36px -16px var(--nx-area);
+}
+.nx-area-card:hover::after {
+    transform: translate(-14px, 14px) scale(1.18);
+}
+/* Icono: brillo que lo cruza al pasar el ratón y leve elevación. */
+.nx-area-card__icono {
+    overflow: hidden;
+    transition: transform var(--duracion-corta) var(--curva), box-shadow var(--duracion-corta) var(--curva);
+}
+.nx-area-card__icono::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 30%, color-mix(in srgb, rgb(var(--color-texto-sobre-accion)) 45%, transparent) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform calc(var(--duracion-media) * 2.4) var(--curva);
+}
+.nx-area-card:hover .nx-area-card__icono {
+    transform: translateY(-2px) rotate(-4deg);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, rgb(var(--color-texto-sobre-accion)) 35%, transparent),
+        0 14px 26px -10px var(--nx-area);
+}
+.nx-area-card:hover .nx-area-card__icono::after {
+    transform: translateX(120%);
+}
+/* Logos del pie: se abren un poco al pasar el ratón. */
+.nx-area-card__logos > * {
+    transition: margin var(--duracion-corta) var(--curva);
+}
+.nx-area-card:hover .nx-area-card__logos > * + * {
+    margin-left: -2px;
+}
 @media (prefers-reduced-motion: reduce) {
     .nx-area-card,
     .nx-area-card:hover,
     .nx-area-card__flecha,
-    .nx-area-card:hover .nx-area-card__flecha {
+    .nx-area-card:hover .nx-area-card__flecha,
+    .nx-area-card::after,
+    .nx-area-card:hover::after,
+    .nx-area-card__icono,
+    .nx-area-card:hover .nx-area-card__icono,
+    .nx-area-card__icono::after,
+    .nx-area-card:hover .nx-area-card__icono::after,
+    .nx-area-card__logos > * {
         transition: none;
         transform: none;
     }
