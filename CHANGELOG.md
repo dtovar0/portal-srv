@@ -9,6 +9,7 @@
 - Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
 
 ### Corregido
+- Despliegue: `install.sh --actualizar` decía «portal-backend.service no existe» con la unidad activa: `systemctl … | grep -q` bajo `pipefail` daba falso negativo (SIGPIPE). Ahora `deploy/unidades.sh` guarda la salida antes de buscar; mismo arreglo en las demás tuberías del preflight (FNC-159, 2026-11-19).
 - Web: en la carta responsiva, el lector de pantalla vuelve a leer el aviso de firma obligatoria en cada Escape o clic fuera, no solo la primera vez (DIS-100, 2026-11-19).
 - Web: la ventana de la carta responsiva ya no muestra la ✕ «Cerrar» (no cerraba: la carta es obligatoria); `Modal` acepta `cerrable={false}` y las demás ventanas siguen igual (DIS-098, 2026-11-19).
 - Web: barra de botones de Inventario y Auditoría reordenada (contador junto a los filtros); el contador cumple AA en oscuro y la búsqueda de Inventario no desborda en móvil (DIS-099, 2026-11-19).
