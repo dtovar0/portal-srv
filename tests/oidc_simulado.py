@@ -30,6 +30,16 @@ VARIABLES = {
     'OIDC_REDIRECT_URI': REDIRECT_URI,
 }
 
+# Fuera de desarrollo OIDC_LOGOUT_URL también es obligatoria.
+LOGOUT_URL = 'https://auth.pruebas.invalid/logout'
+
+
+def fijar_oidc_de_produccion(monkeypatch):
+    """OIDC completo para pruebas que arrancan la app fuera de desarrollo
+    (donde el inicio de sesión es solo por Authelia, FNC-141)."""
+    for clave, valor in {**VARIABLES, 'OIDC_LOGOUT_URL': LOGOUT_URL}.items():
+        monkeypatch.setenv(clave, valor)
+
 
 def _respuesta(url, datos, estado=200):
     respuesta = requests.Response()
