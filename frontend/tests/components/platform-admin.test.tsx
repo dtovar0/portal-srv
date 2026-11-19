@@ -341,9 +341,9 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(screen.getByRole('button', { name: /Configurar cuadrícula/i })).toBeTruthy();
     expect(screen.getByText('Finanzas')).toBeTruthy();
     expect(screen.getByLabelText('Área Finanzas, 1 plataforma. Ver plataformas.')).toBeTruthy();
-    // 7 huecos para completar la cuadrícula 2x4 (8 en total): la rejilla ocupa todo el alto
+    // 5 huecos para completar la cuadrícula 2×3 por omisión (6 en total): la rejilla ocupa todo el alto
     const ghostCards = container.querySelectorAll('.border-dashed[aria-hidden="true"]');
-    expect(ghostCards).toHaveLength(7);
+    expect(ghostCards).toHaveLength(5);
   });
 
   it('el botón de filtrar por estado permite alternar entre Todos, Activas e Inactivas', async () => {
@@ -369,29 +369,39 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(screen.getByText('Legales Inactiva')).toBeTruthy();
   });
 
-  it('el botón de configurar cuadrícula permite cambiar dimensiones de 2x2 hasta 4x4 dinámicamente', async () => {
+  it('la cuadrícula solo ofrece 2×3, 3×2 y 3×3, y recuerda la elegida (DIS-103)', async () => {
     const { container } = render(<PlatformAdmin />);
     await screen.findByText('Finanzas');
+    const huecos = () => container.querySelectorAll('.border-dashed[aria-hidden="true"]');
 
-    // Inicialmente 2x4 (8 slots: 1 real + 7 huecos)
-    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(7);
+    // Por omisión 2×3 (6 slots: 1 real + 5 huecos)
+    expect(huecos()).toHaveLength(5);
 
-    // Abrir configuración de cuadrícula y cambiar a 2 columnas (2x2: 4 slots -> 1 real + 3 huecos)
     fireEvent.click(screen.getByRole('button', { name: /Configurar cuadrícula/i }));
-    fireEvent.click(screen.getByRole('button', { name: '2 columnas' }));
-    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(3);
+    for (const quitada of ['2×2', '2×4', '3×4', '4×2', '4×3', '4×4', '4 filas', '4 columnas']) {
+      expect(screen.queryByRole('button', { name: quitada })).toBeNull();
+    }
 
-    // Cambiar a 3x3 (9 slots: 1 real + 8 huecos) y verificar persistencia en localStorage
+    fireEvent.click(screen.getByRole('button', { name: '3×2' }));
+    expect(huecos()).toHaveLength(5);
+
     fireEvent.click(screen.getByRole('button', { name: '3×3' }));
-    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(8);
+    expect(huecos()).toHaveLength(8);
     expect(window.localStorage.getItem('portal_grid_filas')).toBe('3');
     expect(window.localStorage.getItem('portal_grid_columnas')).toBe('3');
 
-    // Desmontar y volver a montar: debe recordar la cuadrícula 3x3
     cleanup();
     const segundo = render(<PlatformAdmin />);
     await segundo.findByText('Finanzas');
     expect(segundo.container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(8);
+  });
+
+  it('una cuadrícula guardada que ya no existe (2×4) vuelve a 2×3', async () => {
+    window.localStorage.setItem('portal_grid_filas', '2');
+    window.localStorage.setItem('portal_grid_columnas', '4');
+    const { container } = render(<PlatformAdmin />);
+    await screen.findByText('Finanzas');
+    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(5);
   });
 
   it('el buscador de áreas filtra la cuadrícula', async () => {
