@@ -29,6 +29,7 @@ from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
 from app.modules.auth.models import User
 from app.modules.core.models import Area
+from app.modules.platforms import traslado_grupos
 
 areas_api_bp = Blueprint('api_areas', __name__, url_prefix='/api/v1')
 
@@ -133,9 +134,14 @@ def update_area(area_id):
         setattr(area, campo, valor)
     _auditar(Evento.AREA_EDITADA, area, area_id=area.id, antes=antes,
              despues=area.to_dict())
+    # Área inactiva o reactivada: los grupos de sus plataformas se mueven a la
+    # OU de inactivos o regresan (FNC-163; solo si la función está encendida).
+    traslados = (traslado_grupos.conciliar(area.platforms)
+                 if 'status' in valores else [])
     error = _guardar()
     if error:
         return error
+    traslado_grupos.despertar(traslados)
     return jsonify({'status': 'success', 'area': area.to_dict()})
 
 

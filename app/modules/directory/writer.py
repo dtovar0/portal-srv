@@ -39,12 +39,15 @@ from ldap3.core.exceptions import (LDAPAttributeOrValueExistsResult,
                                    LDAPSizeLimitExceededResult,
                                    LDAPUnwillingToPerformResult)
 
-from app.modules.directory.dn import bajo_base, mismo_dn
+from app.modules.directory.dn import bajo_base, mismo_dn, separar_dn
 from app.modules.directory.errors import (MOTIVO_DATOS_INCOMPLETOS,
                                           MOTIVO_DATOS_INVALIDOS,
+                                          MOTIVO_DESTINO_INEXISTENTE,
+                                          MOTIVO_DESTINO_OCUPADO,
                                           MOTIVO_DIRECTORIO,
                                           MOTIVO_FUERA_DE_BASE,
                                           MOTIVO_GRUPO_INEXISTENTE,
+                                          MOTIVO_MOVER_NO_CONFIGURADO,
                                           MOTIVO_ULTIMO_MIEMBRO,
                                           MOTIVO_USUARIO_INEXISTENTE,
                                           Resultado, ResultadoEscritura,
@@ -149,9 +152,17 @@ class EscritorDirectorio:
             return guardado == valor
         return mismo_dn(guardado, valor)
 
+    def grupo_en_base(self, group_dn):
+        """Grupo bajo la base de activos o, si está configurada, bajo la de
+        inactivos (FNC-163: un grupo movido sigue siendo del portal)."""
+        cfg = self.configuracion
+        return (bajo_base(group_dn, cfg.grupos_base_dn)
+                or bool(cfg.grupos_inactivos_base_dn
+                        and bajo_base(group_dn, cfg.grupos_inactivos_base_dn)))
+
     def _fuera_de_base(self, group_dn, usuario):
         cfg = self.configuracion
-        return not (bajo_base(group_dn, cfg.grupos_base_dn)
+        return not (self.grupo_en_base(group_dn)
                     and bajo_base(usuario.dn, cfg.usuarios_base_dn)
                     and valor_de_membresia(cfg, usuario))
 
@@ -270,6 +281,65 @@ class EscritorDirectorio:
             return ResultadoEscritura(Resultado.HECHO, group_dn)
 
         return self._ejecutar('baja de miembro', group_dn, baja_miembro)
+
+    # ------------------------------------------------------------------ #
+    # Mover grupos entre OU (FNC-163)
+    # ------------------------------------------------------------------ #
+
+    def _destino_valido(self, nuevo_padre):
+        """El padre destino es la OU de inactivos (o algo debajo) o la base de
+        activos (o algo debajo): nunca otra parte del árbol."""
+        cfg = self.configuracion
+        return (bajo_base(nuevo_padre, cfg.grupos_base_dn, incluir_base=True)
+                or bool(cfg.grupos_inactivos_base_dn and bajo_base(
+                    nuevo_padre, cfg.grupos_inactivos_base_dn,
+                    incluir_base=True)))
+
+    def mover_grupo(self, group_dn, nuevo_padre):
+        """Mueve el grupo `group_dn` debajo de `nuevo_padre` (ModifyDN con
+        `new_superior`, mismo RDN: el `cn` no cambia ni se tocan los miembros).
+
+        Idempotente: ya bajo `nuevo_padre` → `YA_ESTABA`; si el origen no está
+        pero el destino sí (movido antes) también. Sin `LDAP_GROUPS_INACTIVE_
+        BASE_DN` no se mueve nada. El resultado lleva el DN **final**.
+        """
+        cfg = self.configuracion
+        if not cfg.grupos_inactivos_base_dn:
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                      MOTIVO_MOVER_NO_CONFIGURADO)
+        partes = separar_dn(group_dn)
+        if (partes is None or not self.grupo_en_base(group_dn)
+                or not self._destino_valido(nuevo_padre)):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                      MOTIVO_FUERA_DE_BASE)
+        rdn = partes[0]
+        destino = f'{rdn},{nuevo_padre}'
+        if mismo_dn(group_dn, destino):
+            return ResultadoEscritura(Resultado.YA_ESTABA, destino)
+
+        def mover(conexion):
+            if not _existe(conexion, group_dn):
+                if _existe(conexion, destino):
+                    return ResultadoEscritura(Resultado.YA_ESTABA, destino)
+                return ResultadoEscritura(Resultado.NO_EXISTE, group_dn,
+                                          MOTIVO_GRUPO_INEXISTENTE)
+            if not _existe(conexion, nuevo_padre):
+                return ResultadoEscritura(Resultado.NO_EXISTE, group_dn,
+                                          MOTIVO_DESTINO_INEXISTENTE)
+            if _existe(conexion, destino):  # otro grupo con el mismo cn
+                return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                          MOTIVO_DESTINO_OCUPADO)
+            try:
+                conexion.modify_dn(group_dn, rdn, new_superior=nuevo_padre)
+            except LDAPEntryAlreadyExistsResult:
+                return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                          MOTIVO_DESTINO_OCUPADO)
+            except LDAPNoSuchObjectResult:
+                return ResultadoEscritura(Resultado.NO_EXISTE, group_dn,
+                                          MOTIVO_GRUPO_INEXISTENTE)
+            return ResultadoEscritura(Resultado.HECHO, destino)
+
+        return self._ejecutar('mover grupo', group_dn, mover)
 
     # ------------------------------------------------------------------ #
     # Alta de cuentas

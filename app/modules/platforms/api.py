@@ -34,7 +34,8 @@ from app.modules.audit.services import add_audit_log
 from app.modules.connectors.credenciales import limpiar_cache
 from app.modules.core.models import Area, Platform
 from app.modules.directory.dn import mismo_dn
-from app.modules.platforms import baja, grupos
+from app.modules.platforms import baja, grupos, traslado_grupos
+from app.modules.platforms.ubicacion_grupos import ubicacion_actual
 from app.modules.platforms.estado import (accesos_que_impiden_mover,
                                           accesos_vigentes)
 from app.modules.platforms.tipos import (CAMPOS_DN, GRUPOS_SIN_VERIFICAR,
@@ -52,6 +53,10 @@ DN_SOLO_SUPERADMIN = ('Solo el superadmin define los grupos del directorio.',
                       403, 'dn_solo_superadmin')
 PLATAFORMA_CON_ACCESOS = ('No se puede cambiar el tipo, los grupos ni el área '
                           'con accesos vigentes.', 409, 'plataforma_con_accesos')
+GRUPOS_EN_INACTIVOS = ('Los grupos están en la OU de inactivos o su traslado '
+                       'está pendiente: reactiva la plataforma y su área antes '
+                       'de cambiar el tipo o los grupos.', 409,
+                       'grupos_en_inactivos')
 GRUPO_EN_USO = ('El grupo ya pertenece a otra plataforma.', 409,
                 'grupo_en_uso')
 GRUPOS_IGUALES = ('Los grupos de usuario y admin deben ser distintos.', 409,
@@ -224,7 +229,9 @@ def create_platform():
                          f'{plataforma.name}',
                   commit=False)
     sincronizar_plataforma(plataforma)
+    traslados = traslado_grupos.conciliar([plataforma])
     db.session.commit()
+    traslado_grupos.despertar(traslados)
     return _respuesta(plataforma, avisos, 201)
 
 
@@ -251,6 +258,16 @@ def _cambios_de_grupos(plataforma, limpios, area):
     return tipo, configuracion, dns
 
 
+def _grupos_movidos(plataforma):
+    """`True` si algún grupo está en la OU de inactivos o su traslado sigue
+    pendiente: cambiarlos ahora dejaría el registro del traslado sin sentido."""
+    traslado = plataforma.group_move
+    return traslado is not None and (
+        traslado.status != 'hecho'
+        or any(ubicacion_actual(plataforma, n) != 'activos'
+               for n in ('usuario', 'admin')))
+
+
 def _mismo_grupo(uno, otro):
     return uno == otro or mismo_dn(uno, otro)
 
@@ -270,6 +287,8 @@ def update_platform(platform_id):
                 else plataforma.area)
         limpios = _validar(datos, alta=False)
         cambio_grupos = _cambios_de_grupos(plataforma, limpios, area)
+        if cambio_grupos and _grupos_movidos(plataforma):
+            raise Rechazo(error_response(*GRUPOS_EN_INACTIVOS))
         if ((cambio_grupos and accesos_vigentes(plataforma) > 0)
                 or (cambia_area and accesos_que_impiden_mover(plataforma) > 0)):
             raise Rechazo(error_response(*PLATAFORMA_CON_ACCESOS))
@@ -304,7 +323,11 @@ def update_platform(platform_id):
                       commit=False)
     if cambia_area or cambio_grupos:
         sincronizar_plataforma(plataforma)
+    # Estado o área distintos: los grupos van a la OU de inactivos o regresan;
+    # un traslado fallido se rearma al guardar de nuevo (FNC-163).
+    traslados = traslado_grupos.conciliar([plataforma])
     db.session.commit()
+    traslado_grupos.despertar(traslados)
     return _respuesta(plataforma, avisos)
 
 

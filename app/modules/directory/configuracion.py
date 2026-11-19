@@ -42,6 +42,7 @@ VAR_TIEMPO_ESPERA = 'LDAP_TIMEOUT_SECONDS'
 VAR_CLASES_USUARIO = 'LDAP_USER_OBJECT_CLASSES'
 VAR_MIEMBRO_RELLENO = 'LDAP_GROUP_PLACEHOLDER_MEMBER'
 VAR_PLANTILLA_GRUPO = 'LDAP_PLATFORM_GROUP_TEMPLATE'
+VAR_GRUPOS_INACTIVOS_BASE_DN = 'LDAP_GROUPS_INACTIVE_BASE_DN'
 
 # Valores por defecto: esquema estándar de OpenLDAP (inetOrgPerson y
 # groupOfNames), no datos de un directorio real.
@@ -102,6 +103,9 @@ class ConfiguracionDirectorio:
     # Ítem de Vaultwarden con la contraseña de bind (FNC-068); None = se usa
     # `bind_password`.
     bind_password_ref: str | None = None
+    # OU a la que se mueven los grupos de las áreas y plataformas inactivas
+    # (FNC-163); '' = función apagada (desactivar solo afecta al portal).
+    grupos_inactivos_base_dn: str = ''
 
 
 def _leer(entorno, nombre):
@@ -244,6 +248,24 @@ def _plantilla_grupo(entorno):
     return plantilla
 
 
+def _grupos_inactivos_base_dn(entorno, grupos_base_dn):
+    """OU de grupos inactivos (FNC-163); '' si no se define (función apagada).
+
+    No puede ser la base de grupos activos ni estar dentro (ni contenerla):
+    un grupo movido debe quedar fuera de la búsqueda de grupos activos.
+    """
+    if not _leer(entorno, VAR_GRUPOS_INACTIVOS_BASE_DN):
+        return ''
+    base = _dn(entorno, VAR_GRUPOS_INACTIVOS_BASE_DN)
+    if (bajo_base(base, grupos_base_dn, incluir_base=True)
+            or bajo_base(grupos_base_dn, base, incluir_base=True)):
+        raise ErrorConfiguracionDirectorio(
+            f'{VAR_GRUPOS_INACTIVOS_BASE_DN} no puede ser {VAR_GRUPOS_BASE_DN} '
+            'ni estar dentro ni contenerla: debe quedar fuera de la base de '
+            'grupos activos.')
+    return base
+
+
 def _ca_cert_file(entorno):
     ruta = _leer(entorno, VAR_CA_CERT_FILE)
     if not ruta:
@@ -289,6 +311,7 @@ def cargar_configuracion(entorno=None):
     host, puerto, usa_ldaps = _validar_url(url)
     usuarios_base_dn = _dn(entorno, VAR_USUARIOS_BASE_DN)
     bind_password, bind_password_ref = _bind(entorno)
+    grupos_base_dn = _dn(entorno, VAR_GRUPOS_BASE_DN)
     return ConfiguracionDirectorio(
         url=url,
         host=host,
@@ -299,7 +322,9 @@ def cargar_configuracion(entorno=None):
         bind_password=bind_password,
         bind_password_ref=bind_password_ref,
         usuarios_base_dn=usuarios_base_dn,
-        grupos_base_dn=_dn(entorno, VAR_GRUPOS_BASE_DN),
+        grupos_base_dn=grupos_base_dn,
+        grupos_inactivos_base_dn=_grupos_inactivos_base_dn(
+            entorno, grupos_base_dn),
         atributo_usuario=_nombre_atributo(
             entorno, VAR_ATRIBUTO_USUARIO, ATRIBUTO_USUARIO_POR_DEFECTO),
         clase_grupo=_nombre_atributo(
