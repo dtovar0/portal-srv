@@ -141,6 +141,22 @@ describe('ModalResponsiva', () => {
     expect(dialogo.contains(regiones[0])).toBe(true);
   });
 
+  // DIS-100: con el mismo texto, React no cambia el DOM y el lector solo lo leía la primera vez.
+  it('DIS-100: cada Escape vuelve a cambiar la región de anuncios para que se lea otra vez', async () => {
+    renderWithToast(<ModalResponsiva session={mockSessionNoFirmada} onFirmado={vi.fn()} />);
+    await screen.findByRole('dialog');
+    const region = document.querySelector('[data-region-anuncios]') as HTMLElement;
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    const primero = region.textContent;
+    fireEvent.keyDown(document, { key: 'Escape' });
+    const segundo = region.textContent;
+
+    expect(primero).toMatch(/aceptar la responsiva o cerrar sesión/);
+    expect(segundo).toMatch(/aceptar la responsiva o cerrar sesión/);
+    expect(segundo).not.toBe(primero);
+  });
+
   it('M4: mientras falta la casilla, un texto visible explica por qué «Firmar» está deshabilitado', async () => {
     renderWithToast(<ModalResponsiva session={mockSessionNoFirmada} onFirmado={vi.fn()} />);
     await screen.findByRole('dialog');

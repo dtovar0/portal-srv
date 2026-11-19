@@ -21,6 +21,9 @@ import { Badge, ErrorNote, Spinner } from '../ui';
 const ID_TEXTO_CARTA = 'texto-carta-responsiva';
 const ID_AYUDA_FIRMAR = 'ayuda-firmar-responsiva';
 
+const AVISO_OBLIGATORIA = 'Para ingresar al portal debes aceptar la responsiva o cerrar sesión.';
+const ESPACIO_DURO = '\u00A0';
+
 export function ModalResponsiva({
   session,
   onFirmado,
@@ -58,7 +61,10 @@ export function ModalResponsiva({
 
   function handleIntentoCerrar() {
     avisar('warning', 'Debes leer y aceptar la responsiva para usar el portal, o puedes cerrar sesión.', 'Firma requerida');
-    setAnuncio('Para ingresar al portal debes aceptar la responsiva o cerrar sesión.');
+    // DIS-100: con el mismo texto React no toca el DOM y el lector no lo repite;
+    // un espacio duro alterno (invisible) cambia el nodo en cada intento.
+    setAnuncio((previo) =>
+      `${AVISO_OBLIGATORIA}${previo.endsWith(ESPACIO_DURO) ? '' : ESPACIO_DURO}`);
   }
 
   return (

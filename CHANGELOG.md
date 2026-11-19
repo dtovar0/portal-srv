@@ -9,6 +9,7 @@
 - Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
 
 ### Corregido
+- Web: en la carta responsiva, el lector de pantalla vuelve a leer el aviso de firma obligatoria en cada Escape o clic fuera, no solo la primera vez (DIS-100, 2026-11-19).
 - Web: la ventana de la carta responsiva ya no muestra la ✕ «Cerrar» (no cerraba: la carta es obligatoria); `Modal` acepta `cerrable={false}` y las demás ventanas siguen igual (DIS-098, 2026-11-19).
 - Web: barra de botones de Inventario y Auditoría reordenada (contador junto a los filtros); el contador cumple AA en oscuro y la búsqueda de Inventario no desborda en móvil (DIS-099, 2026-11-19).
 - Base de datos: fuera de desarrollo la app ya no crea tablas al arrancar (solo `alembic upgrade head`); la migración 0016 recrea `credential_deliveries` si el arranque la dejó vacía y se detiene si tiene filas. Evita el DuplicateTable al actualizar (FNC-160, 2026-11-19).
