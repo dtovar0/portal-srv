@@ -20,6 +20,9 @@ const DIRECTORY_IMPORT_PENDING =
   'El alta de cuentas del directorio aún no está disponible en el portal.';
 
 
+const ID_AYUDA_CONTRASENA = 'usuario-contrasena-ayuda';
+const ID_ERROR_GUARDAR = 'usuario-guardar-error';
+
 export function UserForm({
   user,
   areas,
@@ -63,6 +66,7 @@ export function UserForm({
   const [platformIds, setPlatformIds] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorEnContrasena, setErrorEnContrasena] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -90,6 +94,7 @@ export function UserForm({
     }
     setSaving(true);
     setError(null);
+    setErrorEnContrasena(false);
     try {
       if (user) {
         const { password, ...resto } = form;
@@ -106,6 +111,8 @@ export function UserForm({
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo guardar';
       setError(msg);
+      // Si se envió contraseña, el error se liga al campo (el backend la valida primero).
+      setErrorEnContrasena(Boolean(form.password));
       toast.avisar('error', msg, 'Error al guardar');
     } finally {
       setSaving(false);
@@ -130,7 +137,7 @@ export function UserForm({
         </>
       }
     >
-      {error ? <div className="sr-only">{error}</div> : null}
+      {error ? <div id={ID_ERROR_GUARDAR} className="sr-only">{error}</div> : null}
 
       {!user ? (
         <Field label="Correo">
@@ -156,11 +163,14 @@ export function UserForm({
               type="password" autoComplete="new-password"
               value={form.password ?? ''}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              aria-describedby="usuario-contrasena-ayuda"
+              aria-describedby={
+                errorEnContrasena ? `${ID_AYUDA_CONTRASENA} ${ID_ERROR_GUARDAR}` : ID_AYUDA_CONTRASENA
+              }
+              aria-invalid={errorEnContrasena ? true : undefined}
             />
           </Field>
           {/* Fuera del <label>: no forma parte del nombre del campo. */}
-          <p id="usuario-contrasena-ayuda" className="text-xs text-label">
+          <p id={ID_AYUDA_CONTRASENA} className="text-xs text-label">
             {esLocal
               ? 'Se guarda en el portal. Vacío conserva la actual.'
               : 'Se cambia en el directorio LDAP. Vacío conserva la actual.'}

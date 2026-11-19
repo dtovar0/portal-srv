@@ -4,7 +4,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
-import { usersApi } from '@/lib/access/users';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 import { useAsync } from '@/lib/use-async';
 import type { DirectoryUser, ManagedUser } from '@/lib/types';

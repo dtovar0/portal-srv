@@ -111,4 +111,18 @@ describe('UserForm: contraseña (FNC-161)', () => {
     expect(await screen.findAllByText(/rechazó la contraseña/)).not.toHaveLength(0);
     expect(onSaved).not.toHaveBeenCalled();
   });
+
+  it('el rechazo de la contraseña marca el campo como inválido y le liga el mensaje', async () => {
+    vi.mocked(api.updateUser).mockRejectedValue(
+      new Error('El directorio rechazó la contraseña por su política de seguridad.'),
+    );
+    montar(usuario('ldap'));
+    const campo = screen.getByLabelText('Contraseña');
+    fireEvent.change(campo, { target: { value: NUEVA } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+    await waitFor(() => expect(campo.getAttribute('aria-invalid')).toBe('true'));
+    const ids = (campo.getAttribute('aria-describedby') ?? '').split(' ');
+    const textos = ids.map((id) => document.getElementById(id)?.textContent ?? '');
+    expect(textos.join(' ')).toMatch(/rechazó la contraseña/);
+  });
 });
