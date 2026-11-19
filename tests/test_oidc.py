@@ -464,13 +464,13 @@ def test_el_secreto_no_viaja_en_la_redireccion_ni_en_el_context(client, oidc):
 def test_context_con_oidc(client, oidc):
     assert client.get(f'{A}/context').get_json() == {
         'oidc_enabled': True, 'authenticated': False,
-        'emergency_available': True}
+        'emergency_available': True, 'local_login': False}
 
 
 def test_context_sin_oidc(client):
     assert client.get(f'{A}/context').get_json() == {
         'oidc_enabled': False, 'authenticated': False,
-        'emergency_available': True}
+        'emergency_available': True, 'local_login': False}
 
 
 def test_context_con_sesion(client, oidc):

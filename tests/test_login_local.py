@@ -261,3 +261,50 @@ def test_login_local_de_otro_sitio_da_403_sin_sesion(client, crear_usuario,
     assert respuesta.status_code == 403
     assert respuesta.get_json()['code'] == 'csrf_invalido'
     assert usuario_en_sesion(client) is None
+
+
+# FNC-158: con Authelia apagado (`OIDC_HABILITADO=false`) entra cualquier cuenta
+# LOCAL activa por /login; las de directorio u OIDC siguen sin poder entrar.
+@pytest.mark.parametrize('rol', [ROLE_USER, ROLE_AREA_ADMIN])
+def test_oidc_apagado_permite_cualquier_cuenta_local(client, crear_usuario,
+                                                     monkeypatch, rol):
+    monkeypatch.setenv('OIDC_HABILITADO', 'false')
+    usuario = crear_usuario(rol, contrasena=CONTRASENA_FICTICIA)
+
+    respuesta = iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA)
+
+    assert respuesta.status_code == 200
+    assert usuario_en_sesion(client) == usuario.email
+
+
+@pytest.mark.parametrize('origen', ['ldap', 'sso', 'oidc'])
+def test_oidc_apagado_no_deja_entrar_cuentas_no_locales(client, crear_usuario,
+                                                        monkeypatch, origen):
+    monkeypatch.setenv('OIDC_HABILITADO', 'false')
+    usuario = crear_usuario(ROLE_USER, contrasena=CONTRASENA_FICTICIA)
+    usuario.auth_source = origen
+    db.session.commit()
+
+    respuesta = iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA)
+
+    assert respuesta.status_code == 401
+    assert usuario_en_sesion(client) is None
+
+
+def test_oidc_apagado_no_deja_entrar_cuentas_inactivas(client, crear_usuario,
+                                                       monkeypatch):
+    monkeypatch.setenv('OIDC_HABILITADO', 'false')
+    usuario = crear_usuario(ROLE_USER, contrasena=CONTRASENA_FICTICIA)
+    usuario.is_active = False
+    db.session.commit()
+
+    respuesta = iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA)
+
+    assert respuesta.status_code == 401
+    assert usuario_en_sesion(client) is None
+
+
+@pytest.mark.parametrize('valor, esperado', [('false', True), ('', False), ('true', False)])
+def test_contexto_indica_login_local(client, monkeypatch, valor, esperado):
+    monkeypatch.setenv('OIDC_HABILITADO', valor)
+    assert client.get(f'{A}/context').get_json()['local_login'] is esperado
