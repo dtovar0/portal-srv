@@ -12,7 +12,7 @@
 - [ ] Todas las tareas incluidas están en `Hecha`, con pruebas y revisión.
 - [ ] `auditor-seguridad` en modo proyecto, sin hallazgos Críticos ni Altos abiertos.
 - [ ] Migraciones de BD probadas en pruebas, con un plan de reversión.
-- [ ] Despliegue: respaldo, `venv/bin/alembic upgrade head` y después reiniciar backend y worker (`systemctl restart <nombre>-backend <nombre>-worker`, FNC-067); reversión con `alembic downgrade <revisión anterior>` (`docs/backend/README.md` §7).
+- [ ] Despliegue: respaldo manual de la BD (no hay uno automático) y `sudo ./deploy/install.sh --actualizar`, que valida, detiene los servicios, migra (`alembic upgrade head`) y los arranca en ese orden (FNC-159); reversión con `alembic downgrade <revisión anterior>` (`docs/backend/README.md` §7).
 - [ ] Variables nuevas o cambiadas registradas en `docs/configuracion/` y en `.env.example`.
 - [ ] Respaldo previo hecho.
 - [ ] `CHANGELOG.md` y la etiqueta actualizados.

@@ -18,6 +18,7 @@ import type { InventoryParams } from '@/lib/access/types';
 import { useAsync } from '@/lib/use-async';
 import { rutaHistorialPlataforma } from '../audit/audit-routes';
 import { Button, ButtonLink } from '../form';
+import { Icono } from '../icono';
 import { valorPermitido } from './filtro-url';
 import { EmptyNote, ErrorNote, Skeleton } from '../ui';
 import {
@@ -86,68 +87,120 @@ export function Inventory() {
   }
 
   return (
-    <div className="space-y-4">
-      <InventoryFilters filtros={filtros} opciones={opciones} onChange={cambiar} />
+    <section aria-labelledby="inventario-titulo" className="flex h-full w-full flex-col gap-4 min-h-0">
+      {/* Grid de 1 columna y 2 filas (10/90): Fila 1 contenedor con botones, Fila 2 tabla al 100% */}
+      <div className="grid w-full flex-1 min-h-0 grid-cols-1 grid-rows-[auto_1fr] gap-4">
+        {/* Fila 1 (N columnas, 1 fila): Barra de botones estandarizada */}
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
+          {/* A LA IZQUIERDA: Filtros tipo barra de botones + total */}
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 id="inventario-titulo" className="sr-only">
+              Inventario de accesos
+            </h2>
+            <InventoryFilters filtros={filtros} opciones={opciones} onChange={cambiar} />
+            {data ? (
+              <span
+                className="text-xs font-bold text-body-text whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60"
+                aria-live="polite"
+              >
+                {recargando
+                  ? 'Recargando…'
+                  : `${data.total} ${data.total === 1 ? 'acceso' : 'accesos'}`}
+              </span>
+            ) : null}
+          </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-label" aria-live="polite">
-          {recargando
-            ? 'Recargando…'
-            : data ? `${data.total} ${data.total === 1 ? 'acceso' : 'accesos'}` : ''}
-        </p>
-        <div className="flex flex-wrap gap-3">
-          {/* DIS-020: con una plataforma elegida, su historial en Auditoría. */}
-          {plataformaElegida ? (
-            <ButtonLink
-              href={rutaHistorialPlataforma(plataformaElegida.id)}
-              variant="secondary"
-              aria-label={`Historial de ${plataformaElegida.name} en Auditoría`}
+          {/* A LA DERECHA: Botones de acción */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* DIS-020: con una plataforma elegida, su historial en Auditoría. */}
+            {plataformaElegida ? (
+              <ButtonLink
+                href={rutaHistorialPlataforma(plataformaElegida.id)}
+                variant="fila"
+                aria-label={`Historial de ${plataformaElegida.name} en Auditoría`}
+                className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+              >
+                <Icono nombre="auditoria" tamano="sm" ariaHidden={true} />
+                <span>Historial</span>
+              </ButtonLink>
+            ) : null}
+
+            {hayFiltros(filtros) ? (
+              <Button
+                variant="fila"
+                onClick={() => {
+                  setFiltros(FILTROS_INICIALES);
+                  setPage(1);
+                }}
+                aria-label="Restablecer filtros"
+                title="Restablecer filtros"
+                className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+              >
+                <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
+                <span>Limpiar</span>
+              </Button>
+            ) : null}
+
+            <div className="h-6 w-px bg-panel-border/80 self-center mx-1 shrink-0" aria-hidden="true" />
+
+            <Button
+              variant="fila"
+              onClick={recargar}
+              aria-disabled={lista.loading || undefined}
+              className="nx-btn-toolbar !px-2.5 aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary shadow-xs"
             >
-              Historial
-            </ButtonLink>
+              <Icono nombre="actividad" tamano="sm" ariaHidden={true} />
+              <span>Recargar</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Fila 2: La tabla ocupa el 100% de la altura disponible de forma responsiva */}
+        <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-hidden">
+          {lista.loading && !data ? (
+            <Skeleton variant="fila" count={5} ariaLabel="Cargando el inventario…" />
           ) : null}
-          {/* `aria-disabled` mientras carga: el foco se queda en el botón (con `disabled` caería en `body`). */}
-          <Button
-            variant="secondary"
-            onClick={recargar}
-            aria-disabled={lista.loading || undefined}
-            className="aria-disabled:opacity-40"
-          >
-            Recargar
-          </Button>
+
+          {lista.error ? (
+            <div className="space-y-3">
+              <ErrorNote message={lista.error} />
+              <Button
+                variant="fila"
+                onClick={lista.reload}
+                className="nx-btn-toolbar !px-2.5"
+              >
+                <Icono nombre="actividad" tamano="sm" ariaHidden={true} />
+                <span>Reintentar</span>
+              </Button>
+            </div>
+          ) : null}
+
+          {data ? (
+            data.items.length === 0 ? (
+              // Anunciado: el vacío suele llegar tras cambiar un filtro.
+              <div role="status" className="flex-1 h-full min-h-0 flex flex-col">
+                <EmptyNote
+                  message={hayFiltros(filtros) ? VACIO_CON_FILTROS : VACIO_SIN_FILTROS}
+                  className="flex-1 h-full min-h-72"
+                />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 h-full w-full overflow-y-auto flex flex-col justify-between">
+                <InventoryTable items={data.items} />
+                <div className="pt-3">
+                  <ListPager
+                    page={data.page}
+                    perPage={data.per_page}
+                    total={data.total}
+                    label="Páginas del inventario"
+                    onChange={setPage}
+                  />
+                </div>
+              </div>
+            )
+          ) : null}
         </div>
       </div>
-
-      {lista.loading && !data ? (
-        <Skeleton variant="fila" count={5} ariaLabel="Cargando el inventario…" />
-      ) : null}
-
-      {lista.error ? (
-        <div className="space-y-3">
-          <ErrorNote message={lista.error} />
-          <Button variant="secondary" onClick={lista.reload}>Reintentar</Button>
-        </div>
-      ) : null}
-
-      {data ? (
-        data.items.length === 0 ? (
-          // Anunciado: el vacío suele llegar tras cambiar un filtro.
-          <div role="status">
-            <EmptyNote message={hayFiltros(filtros) ? VACIO_CON_FILTROS : VACIO_SIN_FILTROS} />
-          </div>
-        ) : (
-          <>
-            <InventoryTable items={data.items} />
-            <ListPager
-              page={data.page}
-              perPage={data.per_page}
-              total={data.total}
-              label="Páginas del inventario"
-              onChange={setPage}
-            />
-          </>
-        )
-      ) : null}
-    </div>
+    </section>
   );
 }

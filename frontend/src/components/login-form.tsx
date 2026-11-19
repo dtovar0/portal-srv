@@ -5,6 +5,8 @@
  * Authelia por navegación completa (el portal nunca ve tokens). La cuenta de
  * emergencia vive en `/acceso-emergencia`, sin enlace desde aquí. Los errores
  * del callback llegan en `?error=<codigo>` y se muestran por toast.
+ * Con Authelia apagado (`OIDC_HABILITADO=false`, FNC-158) muestra usuario y
+ * contraseña: solo entran cuentas locales.
  */
 
 import { useEffect, useState } from 'react';
@@ -15,6 +17,7 @@ import { Button } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
 import { useToast } from './toast';
+import { FormularioLoginLocal } from './formulario-login-local';
 import { Card, Spinner } from './ui';
 
 /** Inicio del flujo OIDC: navegación completa, no `fetch`. */
@@ -47,6 +50,7 @@ export function LoginForm() {
       .catch(() => {
         if (active) setContext({
           oidc_enabled: false, authenticated: false, emergency_available: true,
+          local_login: false,
         });
       });
     return () => { active = false; };
@@ -78,7 +82,9 @@ export function LoginForm() {
         </div>
 
         <Card className="space-y-5 rounded-2xl border border-panel-border bg-panel-fill p-6 sm:p-8 shadow-2xl">
-          {context.oidc_enabled ? (
+          {context.local_login ? (
+            <FormularioLoginLocal />
+          ) : context.oidc_enabled ? (
             <Button
               // Única acción de la pantalla: el foco empieza en ella.
               autoFocus

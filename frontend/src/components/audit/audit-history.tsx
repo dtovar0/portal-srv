@@ -123,6 +123,18 @@ export function AuditHistory({
             opciones={opciones}
             conAlcance={mostrarAlcance}
             onChange={cambiar}
+            badge={
+              data ? (
+                <span
+                  className="text-xs font-bold text-body-text whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60"
+                  aria-live="polite"
+                >
+                  {recargando
+                    ? 'Recargando…'
+                    : `${data.total} ${data.total === 1 ? 'registro' : 'registros'}`}
+                </span>
+              ) : null
+            }
             acciones={
               <>
                 {hayFiltros(filtros) ? (
@@ -139,17 +151,6 @@ export function AuditHistory({
                     <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
                     <span>Limpiar</span>
                   </Button>
-                ) : null}
-
-                {data ? (
-                  <span
-                    className="text-xs font-bold text-label whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60"
-                    aria-live="polite"
-                  >
-                    {recargando
-                      ? 'Recargando…'
-                      : `${data.total} ${data.total === 1 ? 'registro' : 'registros'}`}
-                  </span>
                 ) : null}
 
                 <div className="h-6 w-px bg-panel-border/80 self-center mx-1 shrink-0" aria-hidden="true" />

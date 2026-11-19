@@ -86,6 +86,7 @@ export function AuditFilters({
   opciones,
   conAlcance,
   onChange,
+  badge,
   acciones,
 }: {
   filtros: FiltrosAuditoria;
@@ -93,6 +94,7 @@ export function AuditFilters({
   /** Área y plataforma: solo para quien administra (y no en el historial de una plataforma). */
   conAlcance: boolean;
   onChange: (cambio: Partial<FiltrosAuditoria>) => void;
+  badge?: React.ReactNode;
   acciones?: React.ReactNode;
 }) {
   const [borrador, setBorrador] = useState(filtros.q);
@@ -228,6 +230,8 @@ export function AuditFilters({
               onChange={onChange}
             />
           ) : null}
+
+          {badge}
         </div>
 
         {/* Acciones a la derecha */}

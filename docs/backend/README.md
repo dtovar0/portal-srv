@@ -12,7 +12,7 @@
 - **Extensiones:** Flask-SQLAlchemy (`pool_pre_ping`, `pool_recycle=3600`), Flask-Login, Flask-WTF, Flask-Compress.
 - **Zona horaria:** al importar `app` se fija `TZ` del proceso con `TZ_APP` (o `TZ`), por defecto `America/Mexico_City`.
 - **Redis:** `app/utils/redis_client.py` crea un cliente global (`registry`) y lo conecta al arrancar. Si falla solo imprime el error; **ningún módulo lo usa hoy**.
-- **Creación de esquema:** el esquema se versiona con Alembic (§7). `create_app()` sigue ejecutando `db.create_all()` en cada arranque y, si no existe ningún usuario, crea un administrador inicial con credenciales por defecto conocidas (ver deuda).
+- **Creación de esquema:** el esquema se versiona con Alembic (§7). Fuera de desarrollo **solo** las migraciones crean tablas (`alembic upgrade head`); `create_app()` ya no ejecuta `db.create_all()` salvo con `APP_ENV=development` (FNC-160). Sin cuentas, se crea el superadmin con `flask --app run:app cuentas superadmin`.
 - **URI de la BD:** `construir_uri_bd()` (`app/utils/uri_bd.py`) la arma desde `DB_*`; la usan `create_app()` y `migrations/env.py`.
 
 ### Estructura
