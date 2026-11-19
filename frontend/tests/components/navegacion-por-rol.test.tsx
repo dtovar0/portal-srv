@@ -42,16 +42,16 @@ function sesion(rol: Rol): Session {
   };
 }
 
-const COMUNES = ['Dashboard', 'Ajustes', 'Auditoría'];
+const COMUNES_ADMIN = ['Dashboard', 'Ajustes', 'Auditoría'];
 
 const ESPERADO: Record<Rol, string[]> = {
-  usuario: [...COMUNES, 'Mis solicitudes'],
+  usuario: ['Plataformas'],
   admin_area: [
-    ...COMUNES, 'Plataformas', 'Mis solicitudes', 'Áreas', 'Usuarios',
+    ...COMUNES_ADMIN, 'Plataformas', 'Áreas', 'Usuarios',
     'Auditoría usuarios', 'Ejecuciones',
   ],
   administrador: [
-    ...COMUNES, 'Plataformas', 'Conectores', 'Áreas', 'Usuarios',
+    ...COMUNES_ADMIN, 'Plataformas', 'Conectores', 'Áreas', 'Usuarios',
     'Auditoría usuarios', 'Ejecuciones',
   ],
 };

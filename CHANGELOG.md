@@ -8,6 +8,7 @@
 ### Agregado
 - Web: `/login` tiene un solo botón «Entrar con Authelia» (inicia el flujo OIDC); los errores del callback salen por toast y la URL se limpia; `/acceso-emergencia` (sin enlace visible) permite entrar a la cuenta de emergencia; el cierre de sesión sigue la URL de Authelia (FNC-142, 2026-11-18).
 - Despliegue: `preflight.sh` e `install.sh` revisan las `OIDC_*` (obligatorias fuera de desarrollo, https y nombre de host; el secreto nunca se imprime) con `deploy/oidc.sh`; guía `docs/operacion/AUTHELIA-OIDC.md` del cliente `portal` para Authelia 4.38 o mayor (FNC-143, 2026-11-18).
+- Responsiva de usuario: el usuario firma la carta responsiva en su primer ingreso antes de usar el sistema; las áreas muestran sus administradores (FNC-155, 2026-11-18).
 - Despliegue: install.sh --actualizar actualiza sin reinstalar; un nginx .conf editado a mano ya no se sobrescribe (pregunta o se conserva, con copia al reemplazar), y los servicios se reinician para tomar el código nuevo (FNC-153, 2026-11-18).
 - Base de datos: DB_TLS_CA_FILE opcional exige TLS verificado hacia una BD remota (FNC-151, 2026-11-18).
 - Despliegue: `install.sh` y `preflight.sh` detectan PostgreSQL de PGDG (`postgresql-NN.service`, la versión mayor) sin `--db-service` (FNC-148, 2026-11-17).

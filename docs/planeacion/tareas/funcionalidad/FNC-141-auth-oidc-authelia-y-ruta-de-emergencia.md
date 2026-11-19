@@ -103,7 +103,7 @@ Comandos (laptop con carga limitada: no se corrió la batería completa; sí lo 
 | Comando | Resultado |
 |---|---|
 | `python -m pytest tests/test_oidc.py tests/test_login_local.py tests/test_sesion_y_logout.py tests/test_humo.py tests/test_notificaciones.py tests/test_cuerpo_validado.py tests/users/test_contrasenas_locales.py tests/test_guardia_rutas.py tests/audit/test_regresion_seg25.py tests/test_arranque.py tests/test_rutas_retiradas.py` | 301 passed, salida 0 |
-| `python -m pytest tests/test_oidc_configuracion.py tests/test_migracion_0014.py` | 34 passed |
+| `python -m pytest tests/test_oidc_configuracion.py tests/test_migracion_0015_oidc.py` | 34 passed |
 | `python -m pytest tests/test_proteccion_por_rol.py -k auth` | 45 passed (matriz de las 7 rutas `/auth`) |
 | `python -m pytest tests/test_migraciones.py tests/demo tests/test_secretos_en_respuestas.py tests/test_respaldo.py tests/test_csrf.py tests/test_guardia_rutas.py tests/test_linea_base_cubre_sql_heredadas.py tests/test_proteccion_por_rol.py::test_entrada_invalida_devuelve_400` | 85 passed |
 | `python -m pytest tests/test_motor_bd_produccion.py` | 33 passed |
@@ -115,7 +115,7 @@ Pruebas retiradas y su reemplazo:
 | `tests/test_login_directorio.py` (LDAP: filtro escapado, mapeo de grupos, usuario sombra) | Sin reemplazo: el login LDAP se retiró (ADR-009). El cliente del directorio conserva sus pruebas propias |
 | Casos SSO y `method=directory` de `test_notificaciones.py`, `test_cuerpo_validado.py`, `users/test_contrasenas_locales.py` | Reescritos con el fixture `oidc` (aviso de bienvenida tolerante a fallos, enlace a `/login`, vinculación de la cuenta dada de alta por correo) |
 
-Casos de aceptación cubiertos en `tests/test_oidc.py`: callback sin `state`, `state` distinto o repetido, `nonce` distinto o ausente, token vencido, `aud` ajeno, `iss` ajeno, firma inválida, sin ID token, `sub` de userinfo distinto, error del endpoint de token, `access_denied`; petición de autorización con `S256`, `state`, `nonce` y sin `code_verifier`; canje con el verificador del desafío; secreto, `code`, `state` y token ausentes de la auditoría y de las respuestas; logout con `OIDC_LOGOUT_URL`, con `end_session_endpoint` y sin ninguno, ignorando el `Host`; fuera de desarrollo la app no arranca sin `OIDC_*` válidas (`tests/test_oidc_configuracion.py`); migración 0014 sube y baja (`tests/test_migracion_0014.py`).
+Casos de aceptación cubiertos en `tests/test_oidc.py`: callback sin `state`, `state` distinto o repetido, `nonce` distinto o ausente, token vencido, `aud` ajeno, `iss` ajeno, firma inválida, sin ID token, `sub` de userinfo distinto, error del endpoint de token, `access_denied`; petición de autorización con `S256`, `state`, `nonce` y sin `code_verifier`; canje con el verificador del desafío; secreto, `code`, `state` y token ausentes de la auditoría y de las respuestas; logout con `OIDC_LOGOUT_URL`, con `end_session_endpoint` y sin ninguno, ignorando el `Host`; fuera de desarrollo la app no arranca sin `OIDC_*` válidas (`tests/test_oidc_configuracion.py`); migración 0015 (antes 0014) sube y baja (`tests/test_migracion_0015_oidc.py`).
 
 No verificado: Authelia real (versión, claims reales de userinfo, `end_session_endpoint`, comportamiento de `rd`); PostgreSQL/MySQL con la migración 0014 (solo SQLite); suite completa (se evitó por carga). `auditor-seguridad` y `revisor`: se piden sobre la rama integrada (ver veredictos).
 

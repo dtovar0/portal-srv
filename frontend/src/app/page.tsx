@@ -1,10 +1,10 @@
 import { AppShell } from '@/components/app-shell';
-import { Dashboard } from '@/components/dashboard';
+import { DashboardGate } from '@/components/dashboard-gate';
 
 export default function Page() {
   return (
     <AppShell>
-      <Dashboard />
+      <DashboardGate />
     </AppShell>
   );
 }

@@ -7,11 +7,12 @@
  */
 
 import { Marco } from './marco/marco';
+import { PantallaResponsiva } from './responsiva/pantalla-responsiva';
 import { SessionProvider, useSession } from './session-provider';
 import { ErrorNote, Spinner } from './ui';
 
 function Frame({ children }: { children: React.ReactNode }) {
-  const { session, loading, error } = useSession();
+  const { session, loading, error, actualizarSesion, recargarSesion } = useSession();
 
   if (loading) {
     return (
@@ -30,6 +31,22 @@ function Frame({ children }: { children: React.ReactNode }) {
   }
 
   if (!session) return null;
+
+  // Si el usuario no ha firmado la responsiva, bloquea todo el portal y muestra la responsiva
+  if (session.responsiva_firmada === false) {
+    return (
+      <PantallaResponsiva
+        session={session}
+        onFirmado={() => {
+          if (actualizarSesion) {
+            actualizarSesion({ ...session, responsiva_firmada: true });
+          } else if (recargarSesion) {
+            void recargarSesion();
+          }
+        }}
+      />
+    );
+  }
 
   return <Marco session={session}>{children}</Marco>;
 }

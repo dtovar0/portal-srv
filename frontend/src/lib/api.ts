@@ -10,7 +10,7 @@ import type {
   Area, AreaInput, AppNotification, AuditEntry, AuthContext,
   EmailTemplate,
   DirectoryUser, InactiveUser, ManagedUser, Platform, PlatformInput, PlatformWarning,
-  Session, SmtpConfig, Stats,
+  ResponsivaData, Session, SmtpConfig, Stats,
   SystemSettings, UserInput,
 } from './types';
 import type { Access } from './access/types';
@@ -125,6 +125,12 @@ export { request as apiRequest };
 
 export const api = {
   session: () => request<Session>('/me'),
+  responsiva: () => request<ResponsivaData>('/responsiva'),
+  firmarResponsiva: () =>
+    request<{ status: string; message: string; firmada_at: string }>(
+      '/me/firmar-responsiva',
+      { method: 'POST' },
+    ),
   areas: () => request<Area[]>('/areas'),
   stats: () => request<Stats>('/stats'),
   users: () => request<ManagedUser[]>('/users'),
