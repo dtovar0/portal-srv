@@ -213,7 +213,6 @@ export default {
         contenido: 'var(--contenido-max)',
         formulario: 'var(--formulario-max)',
         dialogo: 'var(--dialogo-max)',
-        buscador: 'var(--marco-buscador-max)',
       },
       width: {
         lateral: 'var(--marco-lateral-ancho)',

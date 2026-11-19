@@ -1,6 +1,5 @@
-/** DIS-078: reglas puras del marco (menú por rol, ruta actual, comandos y atajo). */
+/** DIS-078: reglas puras del marco (menú por rol, ruta actual e iniciales; sin buscador global desde DIS-101). */
 import { describe, expect, it } from 'vitest';
-import { comandosDePantallas, esAtajoBusqueda, filtrarComandos, normalizar } from '@/components/marco/comandos';
 import { entradaDeRuta, entradasVisibles, iniciales, seccionesVisibles } from '@/components/marco/nav-items';
 
 const permisos = (admin: boolean, area: boolean) => ({
@@ -35,28 +34,6 @@ describe('entradaDeRuta', () => {
     expect(entradaDeRuta('/audit/platforms/4')?.label).toBe('Auditoría');
     expect(entradaDeRuta('/desconocida')).toBeNull();
     expect(entradaDeRuta(null)).toBeNull();
-  });
-});
-
-describe('comandos', () => {
-  const comandos = comandosDePantallas(entradasVisibles(permisos(true, false)));
-
-  it('normaliza acentos y mayúsculas', () => {
-    expect(normalizar('  Auditoría ')).toBe('auditoria');
-  });
-
-  it('filtra por todas las palabras y pone primero las que empiezan por la consulta', () => {
-    expect(filtrarComandos(comandos, '')).toHaveLength(comandos.length);
-    expect(filtrarComandos(comandos, 'plataformas').map((c) => c.etiqueta)).toEqual(['Plataformas']);
-    expect(normalizar(filtrarComandos(comandos, 'a').at(0)?.etiqueta ?? '').startsWith('a')).toBe(true);
-    expect(filtrarComandos(comandos, 'zzz')).toEqual([]);
-  });
-
-  it('el atajo es Ctrl K o ⌘K, no con Alt', () => {
-    expect(esAtajoBusqueda({ key: 'k', ctrlKey: true, metaKey: false, altKey: false })).toBe(true);
-    expect(esAtajoBusqueda({ key: 'K', ctrlKey: false, metaKey: true, altKey: false })).toBe(true);
-    expect(esAtajoBusqueda({ key: 'k', ctrlKey: true, metaKey: false, altKey: true })).toBe(false);
-    expect(esAtajoBusqueda({ key: 'k', ctrlKey: false, metaKey: false, altKey: false })).toBe(false);
   });
 });
 

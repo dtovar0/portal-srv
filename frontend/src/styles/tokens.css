@@ -365,7 +365,6 @@
   --marco-lateral-ancho: 264px;
   --marco-lateral-colapsada: 76px;
   --marco-superior-alto: 64px;
-  --marco-buscador-max: 520px;
   --contenido-max: 1280px;
   --formulario-max: 640px;
   --dialogo-max: 560px;
@@ -573,7 +572,6 @@
     --marco-lateral-ancho: 264px;
     --marco-lateral-colapsada: 76px;
     --marco-superior-alto: 64px;
-    --marco-buscador-max: 520px;
     --contenido-max: 1280px;
     --formulario-max: 640px;
     --dialogo-max: 560px;
@@ -777,7 +775,6 @@ html.dark {
   --marco-lateral-ancho: 264px;
   --marco-lateral-colapsada: 76px;
   --marco-superior-alto: 64px;
-  --marco-buscador-max: 520px;
   --contenido-max: 1280px;
   --formulario-max: 640px;
   --dialogo-max: 560px;
