@@ -6,6 +6,10 @@
 ## [Sin publicar]
 
 ### Agregado
+- Usuarios: el alta en el directorio exige una contraseña inicial que cumple la política (`PASSWORD_POLICY_*`) y la entrega por un Send de Vaultwarden con el enlace por correo; si falla queda «credenciales pendientes» y el worker reintenta con contraseña nueva; «Reenviar credenciales» (superadmin); `GET /users/password-policy`, `credentials_status` y migración 0015 (FNC-138, FNC-139, ADR-008, 2026-11-18).
+- Web: `/login` tiene un solo botón «Entrar con Authelia» (inicia el flujo OIDC); los errores del callback salen por toast y la URL se limpia; `/acceso-emergencia` (sin enlace visible) permite entrar a la cuenta de emergencia; el cierre de sesión sigue la URL de Authelia (FNC-142, 2026-11-18).
+- Despliegue: `preflight.sh` e `install.sh` revisan las `OIDC_*` (obligatorias fuera de desarrollo, https y nombre de host; el secreto nunca se imprime) con `deploy/oidc.sh`; guía `docs/operacion/AUTHELIA-OIDC.md` del cliente `portal` para Authelia 4.38 o mayor (FNC-143, 2026-11-18).
+- Responsiva de usuario: el usuario firma la carta responsiva en su primer ingreso antes de usar el sistema; las áreas muestran sus administradores (FNC-155, 2026-11-18).
 - Despliegue: install.sh --actualizar actualiza sin reinstalar; un nginx .conf editado a mano ya no se sobrescribe (pregunta o se conserva, con copia al reemplazar), y los servicios se reinician para tomar el código nuevo (FNC-153, 2026-11-18).
 - Base de datos: DB_TLS_CA_FILE opcional exige TLS verificado hacia una BD remota (FNC-151, 2026-11-18).
 - Despliegue: `install.sh` y `preflight.sh` detectan PostgreSQL de PGDG (`postgresql-NN.service`, la versión mayor) sin `--db-service` (FNC-148, 2026-11-17).
@@ -20,6 +24,8 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Despliegue: nginx ya no trae el bloque `auth_request` comentado (el acceso es OIDC); conserva el borrado de `Remote-*` (FNC-143, 2026-11-18).
+- Estilos: variables CSS inexistentes reemplazadas por tokens; vuelve a aplicarse el estilo de deshabilitado y las animaciones de entrada de modal y pestañas (DIS-095, 2026-11-18).
 - Pruebas: la del buscador global ya no falla bajo carga (esperaba al menú y no al buscador que escucha Ctrl K) (DIS-094, 2026-11-18).
 - Accesibilidad: bordes de tarjetas seleccionables y pestaña activa a 3:1; la barra del toast toma su duración de --toast-duracion (igual a TOAST_MS) (DIS-093, 2026-11-18).
 - Interfaz: la barra de progreso del toast se pausa con el cursor o el foco; el menú 'Log conectores' pasa a 'Ejecuciones'; los paneles de áreas avisan que quitar a alguien le retira sus accesos (DIS-092, 2026-11-18).
@@ -49,6 +55,9 @@
 - Texto mínimo de 12 px: insignias, botones, cabeceras de tabla, contador del tour, marca de las casillas, ejes de las gráficas del Inicio e iniciales de Administrar plataformas pasan de 9–11 px a 12 px (token `--text-xs`); se retira el token `--text-2xs` (10 px) y una prueba impide volver a bajar de 12 px (DIS-007, DIS-032, 2026-10-26).
 
 ### Seguridad
+- Entrega de credenciales (revisión de seguridad): una entrada huérfana en LDAP queda con contraseña aleatoria; en modo `bw` solo ids GUID tras `--` y el enlace debe ser del servidor configurado; Reenviar no compite con una entrega en curso (409); «Copiar» solo avisa si se copió (FNC-138, 2026-11-18).
+- OIDC (revisión de seguridad): `OIDC_LOGOUT_URL` obligatoria fuera de desarrollo; el `iss` del token se valida contra `OIDC_ISSUER_URL`; a la auditoría solo llegan códigos de error OAuth conocidos (FNC-141, 2026-11-18).
+- Seguridad (acceso): el inicio de sesión de las personas pasa por Authelia con OIDC (código de autorización con PKCE S256, `state` y `nonce`; ID token validado; cuenta enlazada por `sub`, migración 0014); `POST /auth/sso` (cabeceras `Remote-*`, suplantables) y el login por directorio se retiran (`410 endpoint_retirado`); queda `POST /auth/local` solo para la cuenta de emergencia, sin enlace visible y con el límite de intentos; variables `OIDC_*` obligatorias fuera de desarrollo, el rol nunca sale del token; Authlib 1.6.5 y requests 2.32.5 (FNC-140, FNC-141, ADR-009, 2026-11-18).
 - Seguridad (LDAP): la contraseña inicial y los cambios se fijan con Password Modify (RFC 3062): OpenLDAP la guarda cifrada en lugar de en texto claro (FNC-138, 2026-11-18).
 - Seguridad (respaldo): ya no exporta los hash de contraseñas; al importar ignora hashes de respaldos viejos y no crea superadmins (los omite e informa); la contraseña SMTP sale solo de SMTP_PASSWORD y la migración 0013 vacía la guardada en la BD (FNC-010, 2026-11-18).
 - Seguridad: la app no arranca sin SECRET_KEY ni con la clave publicada en el código; un DB_ENGINE desconocido detiene el arranque en vez de caer a SQLite; `python run.py` escucha solo en 127.0.0.1 y activa el depurador solo en desarrollo (FNC-009, 2026-11-18).

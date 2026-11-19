@@ -12,8 +12,9 @@ Acuerdos de API `/api/v1` del gestor de accesos (fase 3). Se integran a `develop
 | [accesos.md](accesos.md) | 1.1 (2026-10-20) | backend | web | FNC-054, FNC-058, FNC-059 |
 | [auditoria.md](auditoria.md) | 1 (2026-10-14) | backend | web | FNC-047, FNC-060 |
 | [conectores-y-ejecuciones.md](conectores-y-ejecuciones.md) | 1.4 (2026-10-26) | backend | web | FNC-061, FNC-062, FNC-051, FNC-052, FNC-053 |
-| [usuarios-directorio.md](usuarios-directorio.md) | 1 (2026-10-14) | backend | web | FNC-064 |
+| [usuarios-directorio.md](usuarios-directorio.md) | 2 (2026-11-18) | backend | web | FNC-064, FNC-135 |
 | [inicio.md](inicio.md) | 1 (2026-10-14) | backend | web | FNC-066 |
+| [autenticacion.md](autenticacion.md) | 1 (2026-11-18) | backend | web | FNC-141, FNC-142; despliegue FNC-143 |
 | [preferencias.md](preferencias.md) | 1 (2026-10-27, Propuesta) | backend | web | FNC-122, FNC-123; cambio en FNC-132, DIS-054 |
 
 Consumidor web: tipos y cliente en FNC-069; refresco en FNC-071.
@@ -99,7 +100,7 @@ Consumidor web: tipos y cliente en FNC-069; refresco en FNC-071.
 | ADR-003 | Redis + RQ | conectores-y-ejecuciones.md |
 | ADR-006 | Polling | Todos |
 | P7 (2026-10-14) | Revocar no requiere motivo | accesos.md |
-| P8 (2026-10-14) | El portal no maneja contraseñas de cuentas LDAP; la contraseña la maneja Authelia | usuarios-directorio.md |
+| P8 (2026-10-14; modificada 2026-11-18, ADR-008) | El portal fija solo la contraseña inicial de onboarding (alta y reenvío) y la entrega por un Send de Vaultwarden; el resto de su ciclo lo maneja Authelia | usuarios-directorio.md |
 | P10 (2026-10-14) | Aviso de fallo a admins del área y superadmin; reintento manual solo superadmin | conectores-y-ejecuciones.md |
 | P10 (2026-10-15) | El aviso de fallo respeta `pref_email_notifications` | conectores-y-ejecuciones.md |
 | P11 (2026-10-14) | Baja de áreas: admin (sus áreas) y superadmin; `409` con plataformas o accesos vigentes | areas-y-roles.md |
@@ -109,6 +110,8 @@ Consumidor web: tipos y cliente en FNC-069; refresco en FNC-071.
 |---|---|---|
 | `PUT /platforms/<id>/users` | P4: los accesos de NEXUS (`user_platforms`) se descartan; el acceso sale de solicitudes. Responde `410 endpoint_retirado` con `use: "POST /access-requests"` (cambio aditivo, FNC-065) | FNC-065 |
 | `PUT /users/<id>/platforms` | Igual | FNC-065 |
+| `POST /auth/sso` | ADR-009: el SSO por cabeceras `Remote-*` se reemplaza por OIDC. `410 endpoint_retirado` | FNC-141 |
+| `POST /auth/login` | ADR-009: sin login por directorio; la cuenta de emergencia usa `POST /auth/local`. `410 endpoint_retirado` | FNC-141 |
 
 ## Por confirmar (valor más seguro aplicado)
 | Pregunta | Valor aplicado | Dónde |
@@ -127,3 +130,5 @@ Consumidor web: tipos y cliente en FNC-069; refresco en FNC-071.
 | plataformas-integracion 1.1, areas-y-roles 2.1 | 2026-10-20 | Accesos automáticos de los admins: cambio de área con resincronización y efecto de asignar o quitar áreas (FNC-055) |
 | solicitudes 1.1 | 2026-10-20 | Justificación opcional (decisión del dueño); detalles del catálogo y `409 estado_invalido` (FNC-056) |
 | endpoints retirados | 2026-10-21 | `PUT /platforms/<id>/users` y `PUT /users/<id>/platforms` responden `410 endpoint_retirado` (aditivo; sin cambio de versión de los contratos; FNC-065) |
+| usuarios-directorio 2 | 2026-11-18 | **Incompatible**: `password` obligatorio (P8 modificada, ADR-008), política publicada, `credentials_status` y reenvío de credenciales (FNC-135) |
+| autenticacion 1 | 2026-11-18 | Contrato de OIDC con Authelia y ruta de emergencia (FNC-140); retira `/auth/sso` y `/auth/login` |

@@ -8,12 +8,12 @@
 | **Fase** | 8 (propuesta) |
 | **Módulo / Área** | auth (web) |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | En revisión |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
 | **Inicio** | |
 | **Finalizada** | |
-| **Estatus Git** | — |
+| **Estatus Git** | Rama `fnc/FNC-141-oidc-authelia` (commit local, sin push) |
 | **Rama** | `fnc/FNC-142-web-login-oidc` |
 | **Commits / PR** | |
 | **Requiere migración BD** | No |
@@ -75,6 +75,15 @@
 - Reversión junto con FNC-141.
 
 ## Verificación
+| Comando | Resultado |
+|---|---|
+| `npx tsc --noEmit` | salida 0 |
+| `npx vitest run tests/components/auth tests/lib/api.test.ts` | 17 passed |
+| `npx next lint` | sin errores; avisos previos ajenos a esta tarea |
+
+- Pruebas (`tests/components/auth/login-oidc.test.tsx`): botón que navega a `/api/v1/auth/oidc/login`, sin campos de contraseña ni enlace a emergencia, OIDC sin configurar, redirección con sesión, error del callback por toast y URL limpia, código desconocido genérico, formulario de emergencia (éxito y fallo único), logout hacia la URL de Authelia.
+- No verificado: contra un backend y un Authelia reales; tema claro/oscuro y móvil en navegador (solo componentes y tokens existentes, sin estilos nuevos); `auditor-accesibilidad` y `auditor-seguridad` pendientes.
+- Retirados: `ssoLogin`, `login(method)`, campos `sso_*` y `ldap_available`.
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -88,3 +97,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño B, 2026-11-17) |
+| 2026-11-18 | Implementada sobre la rama de FNC-141 (integración con el backend); sin Authelia real |

@@ -4,9 +4,12 @@
 - `PUT /api/v1/users/<id>/managed-areas`: solo el superadmin asigna las áreas
   que administra un `admin_area` (contrato `docs/contratos/areas-y-roles.md`).
 - `POST /api/v1/users/directory`: superadmin y admins (sus áreas) crean la
-  cuenta en OpenLDAP y en el portal (contrato
-  `docs/contratos/usuarios-directorio.md`); la lógica vive en
-  `directory_accounts.py`.
+  cuenta en OpenLDAP y en el portal con su contraseña inicial (contrato
+  `docs/contratos/usuarios-directorio.md` v2); la lógica vive en
+  `directory_accounts.py` y la entrega por Send en `entrega_credenciales.py`.
+- `GET /api/v1/users/password-policy`: política de la contraseña inicial.
+- `POST /api/v1/users/<id>/credentials`: «Reenviar credenciales» (solo el
+  superadmin; contraseña y Send nuevos).
 - Alta, edición y baja de cuentas y el endpoint retirado de plataformas
   (FNC-029, movidos de `api/crud.py`).
 """
@@ -31,9 +34,13 @@ from app.modules.core.models import Area
 from app.modules.users.areas_administradas import (CAMPO_AREAS,
                                                    asignar_areas_administradas,
                                                    validar_area_ids)
-from app.modules.users.directory_accounts import (CAMPOS_PERMITIDOS,
+from app.modules.users.directory_accounts import (CAMPO_CONTRASENA,
+                                                  CAMPOS_PERMITIDOS,
                                                   crear_cuenta_directorio,
                                                   validar_alta)
+from app.modules.users.entrega_credenciales import (ESTADO_ENVIADAS,
+                                                    reenviar_credenciales)
+from app.modules.users.politica_contrasena import cargar_politica
 from app.modules.users.roles import (CAMPOS_NO_PERMITIDOS, RESERVED_NAMES,
                                      cambiar_rol, es_el_mismo_rol,
                                      rol_asignable)
@@ -73,7 +80,7 @@ def set_managed_areas(user_id):
 @login_required
 @any_admin_required
 def create_directory_account():
-    """Crea la cuenta en OpenLDAP (sin contraseña) y en el portal."""
+    """Crea la cuenta en OpenLDAP (con su contraseña inicial) y en el portal."""
     datos, error = leer_cuerpo(CAMPOS_PERMITIDOS)
     if error is not None:
         return error
@@ -84,10 +91,40 @@ def create_directory_account():
         return validation_error(campos)
 
     cuenta, error = crear_cuenta_directorio(alta)
+    if error and error[1] == 422:  # `ppolicy` del directorio
+        return validation_error({CAMPO_CONTRASENA: error[0]})
     if error:
         return error_response(*error)
     return jsonify({'status': 'success',
                     'user': usuario_gestionado(cuenta)}), 201
+
+
+@users_api_bp.route('/users/password-policy', methods=['GET'])
+@login_required
+@any_admin_required
+def password_policy():
+    """Política de la contraseña inicial (la lee el generador del cliente)."""
+    return jsonify({'status': 'success',
+                    'policy': cargar_politica().publica()})
+
+
+@users_api_bp.route('/users/<int:user_id>/credentials', methods=['POST'])
+@login_required
+@admin_required
+def resend_credentials(user_id):
+    """Contraseña nueva y Send nuevo; `200` enviadas o `202` pendientes."""
+    _, error = leer_cuerpo()
+    if error is not None:
+        return error
+    cuenta = db.session.get(User, user_id)
+    if cuenta is None:
+        return error_response(*NO_ENCONTRADO)
+    estado, error = reenviar_credenciales(cuenta)
+    if error:
+        return error_response(*error)
+    return jsonify({'status': 'success',
+                    'user': usuario_gestionado(cuenta)}), \
+        200 if estado == ESTADO_ENVIADAS else 202
 
 
 @users_api_bp.route('/users', methods=['POST'])

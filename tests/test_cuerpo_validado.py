@@ -3,14 +3,11 @@
 - Los endpoints de escritura que antes de FNC-029 vivían en `crud.py` y
   `admin.py` leen el cuerpo con `leer_cuerpo`: un cuerpo que no es objeto
   responde `400 cuerpo_invalido`, no 500.
-- El aviso de bienvenida del login de directorio enlaza a `/login`.
+- El aviso de bienvenida del primer inicio por Authelia enlaza a `/login`.
 """
 
 import pytest
 
-from tests.directorio_falso import instalar_directorio
-from tests.matriz_proteccion import CONTRASENA_FICTICIA
-from tests.peticiones_auth import iniciar_sesion_api
 
 A = '/api/v1'
 CUERPOS_NO_OBJETO = ([1, 2], 'texto', 5)
@@ -62,25 +59,36 @@ def test_cuerpo_objeto_sigue_funcionando(cliente_admin):
     assert respuesta.status_code == 200
 
 
-def test_enlace_de_bienvenida_apunta_a_login(app, client, monkeypatch):
-    """El alta por login de directorio enlaza a la pantalla vigente."""
-    from app.modules.auth import services
+def test_enlace_de_bienvenida_apunta_a_login(client, oidc, monkeypatch):
+    """El alta por el primer inicio con Authelia enlaza a la pantalla vigente."""
+    from app.modules.api import auth
 
     monkeypatch.setenv('BASE_URL', 'https://portal.pruebas.local/')
     avisos = []
-    monkeypatch.setattr(services, 'avisar_usuario_creado',
+    monkeypatch.setattr(auth, 'avisar_usuario_creado',
                         lambda *args: avisos.append(args))
-    directorio = instalar_directorio(monkeypatch)
-    directorio.agregar('jperez', CONTRASENA_FICTICIA, nombre='Juan Pérez')
 
-    respuesta = iniciar_sesion_api(client, 'jperez', CONTRASENA_FICTICIA,
-                                   metodo='directory')
+    respuesta = oidc.entrar(client)
 
-    assert respuesta.status_code == 200
+    assert respuesta.status_code == 302
     assert len(avisos) == 1
     correo, nombre, base_url, enlace = avisos[0]
     assert base_url == 'https://portal.pruebas.local'
     assert enlace == 'https://portal.pruebas.local/login'
+
+
+def test_enlace_de_bienvenida_sin_base_url_sale_de_la_configuracion(
+        client, oidc, monkeypatch):
+    from app.modules.api import auth
+
+    avisos = []
+    monkeypatch.setattr(auth, 'avisar_usuario_creado',
+                        lambda *args: avisos.append(args))
+
+    oidc.entrar(client)
+
+    assert avisos[0][2] == 'https://portal.pruebas.invalid'
+    assert avisos[0][3] == 'https://portal.pruebas.invalid/login'
 
 
 def test_settings_con_logo_valido_guarda_y_da_200(cliente_admin):

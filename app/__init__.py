@@ -89,11 +89,20 @@ def _validar_configuracion():
     from app.modules.connectors.configuracion import (
         validar_al_arrancar as validar_conectores)
     validar_conectores()
+    # Fuera de dev, sin `OIDC_*` completas y con https la app no arranca;
+    # no se contacta a Authelia al arrancar (FNC-141, ADR-009).
+    from app.modules.auth.oidc_configuracion import (
+        validar_al_arrancar as validar_oidc)
+    validar_oidc()
     # Fuera de dev, `VAULTWARDEN_*` incompleta o insegura detiene el arranque
     # (FNC-068); no se conecta a Vaultwarden al arrancar.
     from app.modules.secretos.configuracion import (
         validar_al_arrancar as validar_secretos)
     validar_secretos()
+    # Variables PASSWORD_POLICY_* inválidas detienen el arranque (FNC-138).
+    from app.modules.users.politica_contrasena import (
+        validar_al_arrancar as validar_politica_contrasena)
+    validar_politica_contrasena()
 
 
 def _iniciar_extensiones(app):
@@ -179,6 +188,10 @@ def _registrar_cli_y_manejadores(app):
     # Proveedor `conector` del ejecutor y tipo `noop` en dev/pruebas (FNC-050).
     from app.modules.connectors import registrar as registrar_conectores
     registrar_conectores(app)
+    # El worker admite el reintento de entrega de credenciales (FNC-138).
+    from app.modules.users.entrega_credenciales import \
+        registrar as registrar_entregas
+    registrar_entregas()
 
 
 def _crear_tablas(app):
@@ -188,6 +201,7 @@ def _crear_tablas(app):
     from app.modules.audit.models import AuditLog
     from app.modules.notifications.models import SMTPConfig, NotificationTemplate
     from app.modules.auth.models import AuthConfig, User
+    from app.modules.users.models import EntregaCredenciales
 
     # Crear tablas automáticamente dentro del contexto de la app
     with app.app_context():

@@ -41,21 +41,8 @@ describe('CSS sin colores escondidos', () => {
   });
 });
 
-/**
- * Deuda conocida (fuera de DIS-084, propuesta aparte): variables usadas con respaldo o sin
- * definir. La prueba falla también si alguna ya quedó definida (hay que quitarla de aquí).
- */
-const DEUDA = [
-  '--borde-fuerte',
-  '--borde-sutil',
-  '--color-deshabilitado-borde',
-  '--color-deshabilitado-fondo',
-  '--color-deshabilitado-texto',
-  '--color-foco-anillo',
-  '--color-surface-bg',
-  '--curva-movimiento',
-  '--duracion-rapida',
-];
+/** Variables usadas sin definir: ninguna desde DIS-095. */
+const DEUDA: string[] = []; // DIS-095: sin deuda; toda var(--*) usada está definida.
 
 describe('variables CSS usadas están definidas', () => {
   const textos = archivos(RAIZ_SRC).map((r) => sinComentarios(readFileSync(r, 'utf8')));
@@ -64,5 +51,12 @@ describe('variables CSS usadas están definidas', () => {
 
   it('ninguna var(--*) apunta a una variable inexistente', () => {
     expect([...usadas].filter((v) => !definidas.has(v)).sort()).toEqual([...DEUDA].sort());
+  });
+});
+
+describe('clases de Tailwind inexistentes (DIS-095)', () => {
+  it('no se usa shadow-inner-soft (no existe en tailwind.config.ts)', () => {
+    const textos = archivos(RAIZ_SRC).map((r) => readFileSync(r, 'utf8'));
+    expect(textos.some((t) => t.includes('shadow-inner-soft'))).toBe(false);
   });
 });

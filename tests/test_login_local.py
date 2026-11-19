@@ -1,4 +1,4 @@
-"""Login con cuenta local: `POST /api/v1/auth/login` con `method: local` (FNC-022).
+"""Login con cuenta local: `POST /api/v1/auth/local` (FNC-022, FNC-141).
 
 Desde FNC-077 solo entra la cuenta de emergencia (superadmin local); con
 `LOGIN_LOCAL_TODAS_LAS_CUENTAS=true` y `APP_ENV=development`, cualquier cuenta
@@ -11,7 +11,7 @@ from app import db
 from app.authz import ROLE_ADMIN, ROLE_AREA_ADMIN, ROLE_USER
 from app.modules.audit.models import AuditLog
 from tests.matriz_proteccion import CONTRASENA_FICTICIA
-from tests.peticiones_auth import (MENSAJE_CREDENCIALES,
+from tests.peticiones_auth import (A, MENSAJE_CREDENCIALES,
                                    activar_login_local_de_todas, hay_auditoria,
                                    iniciar_sesion_api, usuario_en_sesion)
 
@@ -184,3 +184,55 @@ def test_pocos_fallos_no_bloquean(client, crear_usuario):
         iniciar_sesion_api(client, usuario.email, CONTRASENA_ERRONEA)
 
     assert iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA).status_code != 429
+
+
+@pytest.mark.parametrize('cuerpo', [{}, {'email': 'a@pruebas.invalid'},
+                                    {'password': 'x'},
+                                    {'email': '', 'password': ''}])
+def test_sin_correo_o_contrasena_da_400(client, cuerpo):
+    respuesta = client.post(f'{A}/local', json=cuerpo)
+
+    assert respuesta.status_code == 400
+    assert usuario_en_sesion(client) is None
+
+
+def test_el_campo_method_no_cambia_nada(client, crear_usuario):
+    """El login por directorio se retiró (FNC-141): `method` se ignora."""
+    usuario = crear_usuario(ROLE_USER, contrasena=CONTRASENA_FICTICIA)
+
+    respuesta = client.post(f'{A}/local', json={
+        'email': usuario.email, 'password': CONTRASENA_FICTICIA,
+        'method': 'directory'})
+
+    assert respuesta.status_code == 401
+    assert usuario_en_sesion(client) is None
+
+
+def test_la_sesion_previa_no_sobrevive_al_login_local(client, crear_usuario):
+    usuario = crear_usuario(ROLE_ADMIN, contrasena=CONTRASENA_FICTICIA)
+    with client.session_transaction() as sesion:
+        sesion['dato_previo'] = 'valor'
+
+    iniciar_sesion_api(client, usuario.email, CONTRASENA_FICTICIA)
+
+    with client.session_transaction() as sesion:
+        assert 'dato_previo' not in sesion
+
+
+@pytest.mark.parametrize('cabeceras', [
+    {'Origin': 'null'},
+    {'Referer': 'https://atacante.pruebas.invalid/pagina'},
+    {'Sec-Fetch-Site': 'cross-site'},
+])
+def test_login_local_de_otro_sitio_da_403_sin_sesion(client, crear_usuario,
+                                                     cabeceras):
+    """FNC-008 sigue vigente en la ruta de emergencia (FNC-142/ADR-009)."""
+    usuario = crear_usuario(ROLE_ADMIN, contrasena=CONTRASENA_FICTICIA)
+
+    respuesta = client.post(f'{A}/auth/local', headers=cabeceras,
+                            json={'email': usuario.email,
+                                  'password': CONTRASENA_FICTICIA})
+
+    assert respuesta.status_code == 403
+    assert respuesta.get_json()['code'] == 'csrf_invalido'
+    assert usuario_en_sesion(client) is None

@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
+import { usersApi } from '@/lib/access/users';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 import { useAsync } from '@/lib/use-async';
 import type { DirectoryUser, ManagedUser } from '@/lib/types';
@@ -15,6 +16,7 @@ import { PageHeader } from './page-header';
 import { useSession } from './session-provider';
 import { Badge, ErrorNote, RegionDeAviso } from './ui';
 import { AdminAreasDialog, RemoveAdminDialog } from './users/admin-role-dialog';
+import { avisoDeCredenciales, describeResendError, ETIQUETA_CREDENCIALES } from './users/estado-entrega';
 import { DirectoryAccountForm } from './users/directory-account-form';
 import { DirectoryPicker } from './users/directory-picker';
 import { PurgePanel } from './users/purge-panel';
@@ -57,6 +59,9 @@ export function UsersList() {
   // resultado se avisa con toast (DIS-091).
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [roleOf, setRoleOf] = useState<{ user: ManagedUser; action: 'areas' | 'quitar' } | null>(null);
+  // «Reenviar credenciales» (FNC-139, solo superadmin): confirmación y envío.
+  const [resendOf, setResendOf] = useState<ManagedUser | null>(null);
+  const [resending, setResending] = useState(false);
 
   const isAdmin = session?.permissions.is_admin ?? false;
   // El superadmin asigna cualquier área; el admin de área, solo las suyas.
@@ -92,6 +97,22 @@ export function UsersList() {
       if (disparadorAviso.current?.isConnected) disparadorAviso.current.focus();
       else document.getElementById('buscar-usuarios')?.focus();
     }, 0);
+  }
+
+  async function resendCredentials() {
+    if (!resendOf || resending) return;
+    setResending(true);
+    try {
+      const res = await usersApi.resendCredentials(resendOf.id);
+      const aviso = avisoDeCredenciales(res.user.credentials_status);
+      avisar(aviso.tipo, aviso.mensaje, 'Credenciales reenviadas');
+    } catch (err) {
+      avisar('error', describeResendError(err), 'Error al reenviar');
+    } finally {
+      setResending(false);
+      setResendOf(null);
+      users.reload();
+    }
   }
 
   async function remove() {
@@ -340,6 +361,18 @@ export function UsersList() {
                 <span className="sr-only">{activeLabel}</span>
               </Badge>
 
+              {/* Entrega de la contraseña inicial: con texto, no solo color (FNC-139) */}
+              {user.credentials_status ? (
+                <Badge
+                  tone={user.credentials_status === 'enviadas' ? 'success' : 'warning'}
+                  icon={user.credentials_status === 'enviadas' ? 'exito' : 'aviso'}
+                  title={ETIQUETA_CREDENCIALES[user.credentials_status]}
+                  className="!h-8 !px-3 inline-flex items-center text-xs font-semibold rounded-lg"
+                >
+                  {ETIQUETA_CREDENCIALES[user.credentials_status]}
+                </Badge>
+              ) : null}
+
               {/* Origen de cuenta */}
               <Badge
                 tone={user.auth_source === 'ldap' ? 'primary' : 'slate'}
@@ -449,7 +482,7 @@ export function UsersList() {
                   setPage(1);
                 }}
                 aria-label="Buscar usuarios"
-                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder shadow-inner-soft transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               {busqueda ? (
                 <button
@@ -474,33 +507,8 @@ export function UsersList() {
             ) : null}
           </div>
 
-          {/* A LA DERECHA: Botones solicitados: áreas, accesos, editar, eliminar y nuevo */}
+          {/* A LA DERECHA: Botones solicitados: accesos, áreas, editar, eliminar y nuevo */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Botón Áreas: activo si hay 1 o más usuarios seleccionados */}
-            <Button
-              variant="fila"
-              disabled={activeSelectedIds.size === 0}
-              onClick={(event) => {
-                if (selectedUsers.length === 0) return;
-                accessTrigger.current = event.currentTarget;
-                setAccessTab('areas');
-                setAccessUsers(selectedUsers);
-                setAccessOf(selectedUsers[0] ?? null);
-              }}
-              aria-label={effectiveSelectedUser ? `Áreas de ${effectiveSelectedUser.name}` : 'Áreas'}
-              title={
-                activeSelectedIds.size === 0
-                  ? 'Selecciona al menos 1 usuario para ver áreas'
-                  : selectedUsers.length > 1
-                  ? `Asignar áreas a ${selectedUsers.length} usuarios seleccionados`
-                  : `Áreas de ${effectiveSelectedUser?.name}`
-              }
-              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
-            >
-              <Icono nombre="areas" tamano="sm" ariaHidden={true} />
-              <span>Áreas</span>
-            </Button>
-
             {/* Botón Accesos: activo si hay 1 o más usuarios seleccionados y ninguno sin áreas (salvo superadmin) */}
             <Button
               variant="fila"
@@ -534,6 +542,31 @@ export function UsersList() {
               <span>Accesos</span>
             </Button>
 
+            {/* Botón Áreas: activo si hay 1 o más usuarios seleccionados */}
+            <Button
+              variant="fila"
+              disabled={activeSelectedIds.size === 0}
+              onClick={(event) => {
+                if (selectedUsers.length === 0) return;
+                accessTrigger.current = event.currentTarget;
+                setAccessTab('areas');
+                setAccessUsers(selectedUsers);
+                setAccessOf(selectedUsers[0] ?? null);
+              }}
+              aria-label={effectiveSelectedUser ? `Áreas de ${effectiveSelectedUser.name}` : 'Áreas'}
+              title={
+                activeSelectedIds.size === 0
+                  ? 'Selecciona al menos 1 usuario para ver áreas'
+                  : selectedUsers.length > 1
+                  ? `Asignar áreas a ${selectedUsers.length} usuarios seleccionados`
+                  : `Áreas de ${effectiveSelectedUser?.name}`
+              }
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="areas" tamano="sm" ariaHidden={true} />
+              <span>Áreas</span>
+            </Button>
+
             {/* Botón Editar: activo solo si se selecciona exactamente 1 fila */}
             <Button
               variant="fila"
@@ -552,6 +585,28 @@ export function UsersList() {
               <Icono nombre="editar" tamano="sm" ariaHidden={true} />
               <span>Editar</span>
             </Button>
+
+            {/* Reenviar credenciales: solo superadmin, 1 usuario con onboarding del portal */}
+            {isAdmin ? (
+              <Button
+                variant="fila"
+                disabled={!isSingleSelected || !effectiveSelectedUser?.credentials_status}
+                onClick={() => effectiveSelectedUser && setResendOf(effectiveSelectedUser)}
+                aria-label={
+                  effectiveSelectedUser ? `Reenviar credenciales a ${effectiveSelectedUser.name}` : 'Reenviar credenciales'
+                }
+                title={
+                  isSingleSelected && effectiveSelectedUser?.credentials_status
+                    ? `Reenviar credenciales a ${effectiveSelectedUser.name}`
+                    : 'Selecciona 1 usuario dado de alta desde el portal para reenviar sus credenciales'
+                }
+                className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+              >
+                <Icono nombre="exportar" tamano="sm" ariaHidden={true} />
+                {/* Texto corto: no cabe en el ancho fijo de la barra; el nombre accesible dice «credenciales». */}
+                <span>Reenviar</span>
+              </Button>
+            ) : null}
 
             {/* Botón Eliminar: activo si hay 1 o más filas seleccionadas */}
             <Button
@@ -683,6 +738,18 @@ export function UsersList() {
           user={editing} areas={areas.data ?? []} platforms={platforms.data ?? []}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); users.reload(); }}
+        />
+      ) : null}
+
+      {resendOf ? (
+        <ConfirmDialog
+          title="Reenviar credenciales"
+          message={`Se generará una contraseña nueva para ${resendOf.email}, se actualizará en el directorio y se enviará por correo un enlace nuevo. El enlace anterior dejará de servir.`}
+          confirmLabel="Reenviar"
+          type="pregunta"
+          onConfirm={resendCredentials}
+          onCancel={() => setResendOf(null)}
+          busy={resending}
         />
       ) : null}
 

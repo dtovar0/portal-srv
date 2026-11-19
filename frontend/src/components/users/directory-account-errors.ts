@@ -1,13 +1,16 @@
 /**
  * Validación y mensajes del alta en el directorio (DIS-019, `POST /users/directory`,
- * contrato `usuarios-directorio.md` v1). Las reglas son espejo de
+ * contrato `usuarios-directorio.md` v2). Las reglas son espejo de
  * `app/modules/users/directory_accounts.py`; el servidor vuelve a validarlas.
  * Nunca se muestra el texto del servidor: los mensajes salen de aquí por
- * `ApiError.code`, por campo o por estado HTTP.
+ * `ApiError.code`, por campo o por estado HTTP. Única excepción: los mensajes
+ * de `fields.password`, que son los fijos del contrato (por regla de la
+ * política y rechazo de la `ppolicy`), nunca con la contraseña.
  */
 
 import { ApiError } from '@/lib/api';
-import type { DirectoryAccountInput } from '@/lib/access/types';
+import type { DirectoryAccountInput, PasswordPolicy } from '@/lib/access/types';
+import { mensajeDeIncumplimiento } from '@/lib/contrasena';
 
 export const UID_MIN = 3;
 export const UID_MAX = 64;
@@ -18,8 +21,6 @@ export const CORREO_MAX = 120;
 const CORREO_PATRON = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const NOMBRE_MAX = 100;
 
-export const PASSWORD_MIN = 8;
-
 export type CampoAlta =
   | 'uid'
   | 'email'
@@ -27,7 +28,6 @@ export type CampoAlta =
   | 'surname'
   | 'fullName'
   | 'password'
-  | 'confirmPassword'
   | 'area_ids';
 
 export interface FormularioAlta {
@@ -38,7 +38,6 @@ export interface FormularioAlta {
   area_ids: number[];
   fullName?: string;
   password?: string;
-  confirmPassword?: string;
 }
 
 const OBLIGATORIO = 'Es obligatorio.';
@@ -50,8 +49,7 @@ export const MENSAJES_CAMPO: Record<CampoAlta, string> = {
   given_name: `De 1 a ${NOMBRE_MAX} caracteres.`,
   surname: `De 1 a ${NOMBRE_MAX} caracteres.`,
   fullName: `De 1 a ${NOMBRE_MAX} caracteres.`,
-  password: `Mínimo ${PASSWORD_MIN} caracteres.`,
-  confirmPassword: 'Las contraseñas no coinciden.',
+  password: 'La contraseña no cumple la política.',
   area_ids: 'Elige al menos un área de tu alcance.',
 };
 
@@ -74,14 +72,14 @@ const MENSAJES_POR_ESTADO: Record<number, string> = {
 const MENSAJE_GENERICO = 'No se pudo crear la cuenta. Inténtalo de nuevo.';
 
 /**
- * Validación exclusiva del Paso 1: Datos del usuario (nombre completo, correo, contraseña y confirmación).
+ * Validación exclusiva del Paso 1: Datos del usuario (nombre completo, correo y contraseña).
+ * `politica`: la de `GET /users/password-policy`; sin ella (no cargó) solo se exige
+ * que no esté vacía y el servidor valida el resto.
  */
-export function validarStep1(form: {
-  fullName?: string;
-  email: string;
-  password?: string;
-  confirmPassword?: string;
-}): Partial<Record<CampoAlta, string>> {
+export function validarStep1(
+  form: { fullName?: string; email: string; password?: string },
+  politica: PasswordPolicy | null = null,
+): Partial<Record<CampoAlta, string>> {
   const errores: Partial<Record<CampoAlta, string>> = {};
   const nombre = (form.fullName || '').trim();
   if (!nombre) {
@@ -97,19 +95,9 @@ export function validarStep1(form: {
     errores.email = MENSAJES_CAMPO.email;
   }
 
-  const pass = form.password || '';
-  if (!pass) {
-    errores.password = OBLIGATORIO;
-  } else if (pass.length < PASSWORD_MIN) {
-    errores.password = MENSAJES_CAMPO.password;
-  }
-
-  const conf = form.confirmPassword || '';
-  if (!conf) {
-    errores.confirmPassword = OBLIGATORIO;
-  } else if (pass !== conf) {
-    errores.confirmPassword = MENSAJES_CAMPO.confirmPassword;
-  }
+  const pass = form.password ?? '';
+  const problema = politica ? mensajeDeIncumplimiento(pass, politica) : (pass ? null : 'Es obligatoria.');
+  if (problema) errores.password = problema;
 
   return errores;
 }
@@ -151,8 +139,13 @@ export function cuerpoAlta(form: FormularioAlta): DirectoryAccountInput {
     given_name: form.given_name.trim(),
     surname: form.surname.trim(),
     area_ids: form.area_ids,
+    password: form.password ?? '',
   };
 }
+
+/** Mensajes de `fields.password` fijados por el contrato (se muestran tal cual). */
+const PATRON_MENSAJE_PASSWORD =
+  /^(Es obligatoria\.|Debe ser texto\.|Entre \d+ y \d+ caracteres\.|Falta al menos (una mayúscula|una minúscula|un número|un símbolo)\.|Usa solo letras, números y los símbolos permitidos\.|El directorio rechazó la contraseña por su política de seguridad\.)$/;
 
 export interface AltaErrorView {
   message: string;
@@ -174,7 +167,11 @@ export function describeDirectoryAccountError(err: unknown): AltaErrorView {
   if (err.status === 422) {
     const fields: Partial<Record<CampoAlta, string>> = {};
     for (const clave of Object.keys(err.fields)) {
-      if (esCampo(clave)) fields[clave] = MENSAJES_CAMPO[clave];
+      if (!esCampo(clave)) continue;
+      const del_servidor = err.fields[clave];
+      fields[clave] = clave === 'password' && PATRON_MENSAJE_PASSWORD.test(del_servidor)
+        ? del_servidor
+        : MENSAJES_CAMPO[clave];
     }
     return { message: MENSAJE_REVISA, fields };
   }

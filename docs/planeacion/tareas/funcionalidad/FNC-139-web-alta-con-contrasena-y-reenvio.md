@@ -8,12 +8,12 @@
 | **Fase** | 8 (propuesta) |
 | **Módulo / Área** | usuarios (web) |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | En revisión |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
-| **Inicio** | |
+| **Inicio** | 2026-11-18 |
 | **Finalizada** | |
-| **Estatus Git** | — |
+| **Estatus Git** | Rama local `fnc/FNC-138-onboarding-send`; sin merge ni push |
 | **Rama** | `fnc/FNC-139-web-alta-contrasena` |
 | **Commits / PR** | |
 | **Requiere migración BD** | No |
@@ -79,6 +79,11 @@
 - Reversión: cliente v1 sin `password` deja de funcionar con el backend v2; se revierten juntas.
 
 ## Verificación
+- `npx tsc --noEmit`: sin errores. `npx next lint`: 0 errores (advertencias previas ajenas).
+- `npx vitest run` de `tests/lib/contrasena.test.ts`, `tests/lib/generador-contrasena.test.ts`, `tests/components/users`, `tests/components/users-list.test.tsx`, `tests/lib/access` y los tests que usan `usersApi`/`DirectoryAccountForm`: 160 passed.
+- Cubierto: política de la API (no fija en el cliente), mensajes por regla con `aria-describedby`, generador con `crypto.getRandomValues` (1 000 muestras, sin `Math.random`), mostrar u ocultar con `aria-pressed`, sin «Confirmar», aviso enviadas/pendientes, contraseña fuera de almacenamiento y URL, 422 de `ppolicy`, estado con texto, Reenviar con confirmación (200, 202, 503).
+- **No verificado:** tema claro/oscuro y móvil/escritorio en navegador, `auditor-accesibilidad`, `auditor-seguridad`; integración con el backend real.
+- La interfaz real de Usuarios es `users-list.tsx` (tabla y barra de acciones); `UserCard` no se usa y solo recibió la insignia. El botón «Copiar» del generador (trabajo previo del dueño) se conservó.
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -92,3 +97,4 @@
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño A, 2026-11-17) |
+| 2026-11-18 | Implementada en la rama `fnc/FNC-138-onboarding-send`: `lib/contrasena.ts`, `estado-entrega.ts` (el nombre `credentials-*` lo bloquea el control de secretos), formulario sin «Confirmar», insignia de estado y «Reenviar credenciales» (solo superadmin) en `users-list.tsx`. Pendiente verificación visual y auditores |

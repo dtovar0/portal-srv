@@ -91,6 +91,8 @@ def test_arranque_fuera_de_dev_con_vaultwarden_incompleto_falla(monkeypatch):
     from app import create_app
     monkeypatch.setenv('APP_ENV', 'production')
     monkeypatch.setenv('DB_ENGINE', 'mysql')  # FNC-134: exigido fuera de dev
+    from tests.oidc_simulado import fijar_oidc_de_produccion
+    fijar_oidc_de_produccion(monkeypatch)  # para llegar a la revisión de Vaultwarden
     monkeypatch.setenv('VAULTWARDEN_URL', vf.URL)
     with pytest.raises(ErrorConfiguracionSecretos):
         create_app()

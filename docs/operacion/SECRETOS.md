@@ -38,6 +38,23 @@
 3. Ajustes → Directorio → Probar conexión.
 4. Esa referencia queda reservada: un conector no puede usarla (se rechaza al guardar y al ejecutar).
 
+## Sends de onboarding (FNC-136, ADR-008)
+
+El portal entrega la contraseña inicial de una cuenta nueva con un **Send de texto** de Vaultwarden (usuario, contraseña y URL del portal); el enlace va por correo y la llave del Send viaja solo en el fragmento `#` (el servidor de Vaultwarden no la ve). La cuenta de servicio es la misma (`VAULTWARDEN_*`, ADR-008 decisión 6A): el Send es personal, no usa la colección.
+
+| Punto | Decisión |
+|---|---|
+| Modo `api` (por defecto) | `VAULTWARDEN_SEND_MODO=api`: `POST /api/sends` con la cuenta de servicio; nombre y texto cifrados del lado del cliente (llave de 16 bytes → HKDF → AES-256-CBC + HMAC); la llave del Send va cifrada con la clave de usuario |
+| Modo `bw` | `VAULTWARDEN_SEND_MODO=bw`: CLI `bw` en el servidor, ya configurada (`bw config server`) y con la sesión desbloqueada en `VAULTWARDEN_BW_SESSION` (la pone una persona; caduca al bloquear la bóveda: hay que renovarla). El JSON entra por stdin; el hijo solo recibe un entorno mínimo |
+| Valores | `ONBOARDING_SEND_EXPIRATION_DAYS` (7), `ONBOARDING_SEND_MAX_ACCESS_COUNT` (3), `ONBOARDING_SEND_DELETION_DAYS` (7, máximo 31) |
+| Enlace | `<VAULTWARDEN_SEND_BASE_URL o VAULTWARDEN_URL>/#/send/<accessId>/<llave>` |
+| Fallos | Caído, sin red o `bw` sin respuesta → transitorio (la entrega queda pendiente y se reintenta); credencial, sesión de `bw`, TLS o rechazo → permanente (`rechazado`); política «Deshabilitar Send» → `send_deshabilitado` |
+
+Antes de usarlo:
+1. En la organización de la cuenta de servicio, **no** activar la política «Deshabilitar Send» (con ella todos los envíos quedan pendientes).
+2. Los usuarios nuevos deben alcanzar el dominio de Vaultwarden desde su red.
+3. Con `bw`: instalar la CLI, `bw login --apikey`, `bw unlock --raw` y poner el resultado en `VAULTWARDEN_BW_SESSION`.
+
 ## Rotación
 
 | Qué | Pasos |
@@ -45,6 +62,7 @@
 | Credencial de un conector | Cambiar en el destino y en el ítem → **Probar conexión** (vacía la caché de ese proceso) → esperar `CONNECTOR_CREDENTIAL_CACHE_SECONDS` o reiniciar backend y worker para el resto de procesos |
 | Contraseña de bind LDAP | Igual: ítem y OpenLDAP; los binds fallan hasta que vence la caché o se reinicia |
 | Llave de API de la cuenta de servicio | Rotar en Vaultwarden → nuevo `VAULTWARDEN_CLIENT_SECRET` en el `.env` → reiniciar |
+| Sesión de `bw` | Volver a ejecutar `bw unlock --raw` → `VAULTWARDEN_BW_SESSION` en el `.env` → reiniciar backend y worker |
 | Contraseña maestra | Cambiarla en Vaultwarden → `VAULTWARDEN_MASTER_PASSWORD` en el `.env` → reiniciar |
 
 `limpiar_cache()` es por proceso: la API lo llama al guardar, borrar o probar un conector (FNC-061), pero el worker y los demás workers de Gunicorn esperan a que venza la caché.
@@ -58,4 +76,5 @@
 
 - [ ] Resolver una credencial de prueba sin que su valor aparezca en `journalctl` ni en la bitácora.
 - [ ] Una rotación completa.
+- [ ] Sends (FNC-136): crear un Send con el modo `api` y con `bw` contra la versión real de Vaultwarden, abrir el enlace en el navegador y confirmar que muestra el texto; confirmar que la política «Deshabilitar Send» responde 400 con el texto que reconoce `es_politica_de_send`. Hoy solo está probado contra el servidor simulado (`tests/secretos/vaultwarden_falso.py`) y un doble de `subprocess.run`.
 - [ ] Confirmar contra la versión de Vaultwarden real que la respuesta del token trae `Key`/`PrivateKey`/`Kdf*` (si no, el cliente usa `prelogin` y el perfil de `sync`).

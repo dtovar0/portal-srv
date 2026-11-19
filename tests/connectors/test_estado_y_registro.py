@@ -48,6 +48,8 @@ def test_noop_solo_se_registra_en_dev_o_pruebas(monkeypatch, tmp_path):
     # reemplaza la URI de prueba.
     monkeypatch.setenv('DB_ENGINE', 'mysql')
     monkeypatch.delenv('APP_ENV', raising=False)
+    from tests.oidc_simulado import fijar_oidc_de_produccion
+    fijar_oidc_de_produccion(monkeypatch)  # fuera de dev el login es solo OIDC
     create_app({'SQLALCHEMY_DATABASE_URI': uri})
     assert registry.obtener_tipo(TIPO_NOOP) is None
 

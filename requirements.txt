@@ -18,3 +18,5 @@ gunicorn
 Flask-WTF==1.2.1
 alembic==1.20.0
 paramiko==5.1.0
+Authlib==1.6.5
+requests==2.32.5

@@ -198,7 +198,7 @@ export function AreaDualPicklist({
                 setCaptchaError(null);
               }}
               placeholder={`Escribe ${captchaWord}...`}
-              className="w-full h-11 rounded-xl border border-panel-border bg-fondo px-4 text-xs font-mono font-bold text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary shadow-inner-soft transition-colors"
+              className="w-full h-11 rounded-xl border border-panel-border bg-fondo px-4 text-xs font-mono font-bold text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
               autoFocus
             />
             {captchaError ? (
@@ -248,7 +248,7 @@ export function AreaDualPicklist({
               value={searchAvailable}
               onChange={(e) => setSearchAvailable(e.target.value)}
               aria-label="Filtrar áreas disponibles"
-              className="w-full h-10 rounded-xl border border-panel-border bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+              className="w-full h-10 rounded-xl border border-panel-border bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
             />
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
               <Icono nombre="buscar" tamano="xs" ariaHidden={true} />
@@ -334,7 +334,7 @@ export function AreaDualPicklist({
               value={searchAssigned}
               onChange={(e) => setSearchAssigned(e.target.value)}
               aria-label="Filtrar áreas asignadas"
-              className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner-soft transition-colors"
+              className="w-full h-10 rounded-xl border border-primary/30 bg-fondo pl-9 pr-3 text-xs text-body-text placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
             />
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-label" aria-hidden="true">
               <Icono nombre="buscar" tamano="xs" ariaHidden={true} />

@@ -26,7 +26,6 @@ ROLES_MATRIZ = (ANONIMO, ROLE_USER, ROLE_AREA_ADMIN, ROLE_ADMIN)
 CONTRASENA_FICTICIA = 'clave-ficticia-de-prueba'
 HOST_SMTP_FICTICIO = 'smtp.pruebas.invalid'
 HOST_LDAP_FICTICIO = 'ldap.pruebas.invalid'
-CORREO_SSO_FICTICIO = 'sso@pruebas.local'
 
 # --------------------------------------------------------------------------- #
 # Códigos esperados por rol
@@ -149,12 +148,6 @@ def _con_acceso_activo(esc, monkeypatch):
     monkeypatch.setattr(queue, 'cola', lambda conexion=None, **_: falsa)
 
 
-def _con_sso_activo(esc, monkeypatch):
-    # El cliente de pruebas llega desde loopback, que es proxy de confianza
-    # por defecto. Las reglas del SSO se prueban en FNC-022.
-    monkeypatch.setenv('AUTHELIA_ENABLED', 'true')
-
-
 # --------------------------------------------------------------------------- #
 # Peticiones
 # --------------------------------------------------------------------------- #
@@ -178,11 +171,12 @@ def _zip_respaldo(esc):
 
 def _login_local(esc):
     return {'json': {'email': esc.cuenta_local_email,
-                     'password': CONTRASENA_FICTICIA, 'method': 'local'}}
+                     'password': CONTRASENA_FICTICIA}}
 
 
-def _cabecera_sso(esc):
-    return {'headers': {'Remote-Email': CORREO_SSO_FICTICIO}}
+def _cabecera_remota(esc):
+    # Las cabeceras Remote-* ya no autentican (FNC-141): el retirado responde 410.
+    return {'headers': {'Remote-Email': 'sso@pruebas.local'}}
 
 
 def _nuevo_usuario(esc):
@@ -190,10 +184,48 @@ def _nuevo_usuario(esc):
                      'area_ids': [esc.area_id]}}
 
 
+# Contraseña inicial ficticia que cumple la política (FNC-138).
+CONTRASENA_ONBOARDING = 'Clave-De-Prueba-2026!x'
+
+
+def _con_entrega_de_credenciales(esc, monkeypatch):
+    """Cuenta `ldap` del escenario con su entrega; Send, correo y directorio
+    simulados (reenvío de credenciales, FNC-138)."""
+    from app.modules.auth.models import User
+    from app.modules.notifications import services
+    from app.modules.secretos.sends import SendCreado
+    from app.modules.users import entrega_credenciales
+    from app.modules.users.models import EntregaCredenciales
+
+    _con_directorio_simulado(esc, monkeypatch)
+    cuenta = db.session.get(User, esc.objetivo_id)
+    cuenta.auth_source = 'ldap'
+    if cuenta.credential_delivery is None:
+        db.session.add(EntregaCredenciales(
+            cuenta=cuenta, uid='objetivo', status='pendientes',
+            attempts_count=1, max_attempts=5))
+    db.session.commit()
+    monkeypatch.setenv('ENABLE_NOTIFICATIONS', 'true')
+    monkeypatch.setenv('BASE_URL', 'https://portal.pruebas.invalid')
+    monkeypatch.setattr(
+        entrega_credenciales, 'crear_send_texto',
+        lambda nombre, texto, entorno=None: SendCreado(
+            id='00000000-0000-4000-8000-000000000001',
+            enlace='https://vault.pruebas.invalid/#/send/a/k'))
+    monkeypatch.setattr(entrega_credenciales, 'borrar_send',
+                        lambda send_id, entorno=None: None)
+    monkeypatch.setattr(services, 'send_notification_by_slug',
+                        lambda *args, **kwargs: {'status': 'success'})
+    monkeypatch.setattr(
+        entrega_credenciales, 'fijar_contrasena_en_directorio',
+        lambda uid, contrasena: None)
+
+
 def _nueva_cuenta_directorio(esc):
     return {'json': {'uid': 'ana.ruiz', 'email': 'ana.ruiz@pruebas.local',
                      'given_name': 'Ana', 'surname': 'Ruiz',
-                     'area_ids': [esc.area_id]}}
+                     'area_ids': [esc.area_id],
+                     'password': CONTRASENA_ONBOARDING}}
 
 
 def _plataforma_solicitable(esc, monkeypatch):
@@ -323,14 +355,25 @@ A = '/api/v1'
 CASOS = (
     # ---- Autenticación (públicas, salvo logout) ----
     Caso('GET', f'{A}/auth/context', _fija(f'{A}/auth/context'), publica()),
-    Caso('POST', f'{A}/auth/sso', _fija(f'{A}/auth/sso'), publica(),
-         _cabecera_sso, _con_sso_activo),
-    Caso('POST', f'{A}/auth/login', _fija(f'{A}/auth/login'), publica(),
+    # Sin OIDC configurado en la matriz: vuelven a /login con un error (302).
+    Caso('GET', f'{A}/auth/oidc/login', _fija(f'{A}/auth/oidc/login'),
+         publica(302)),
+    Caso('GET', f'{A}/auth/oidc/callback', _fija(f'{A}/auth/oidc/callback'),
+         publica(302)),
+    Caso('POST', f'{A}/auth/local', _fija(f'{A}/auth/local'), publica(),
          _login_local),
+    Caso('POST', f'{A}/auth/sso', _fija(f'{A}/auth/sso'), publica(410),
+         _cabecera_remota, nota='Retirado (ADR-009)'),
+    Caso('POST', f'{A}/auth/login', _fija(f'{A}/auth/login'), publica(410),
+         _login_local, nota='Retirado (ADR-009): la emergencia usa /auth/local'),
     Caso('POST', f'{A}/auth/logout', _fija(f'{A}/auth/logout'), con_sesion()),
 
     # ---- Lectura (routes.py) ----
     Caso('GET', f'{A}/me', _fija(f'{A}/me'), con_sesion()),
+    # Responsiva de usuario (FNC-155): cualquier sesión.
+    Caso('GET', f'{A}/responsiva', _fija(f'{A}/responsiva'), con_sesion()),
+    Caso('POST', f'{A}/me/firmar-responsiva', _fija(f'{A}/me/firmar-responsiva'),
+         con_sesion()),
     Caso('GET', f'{A}/areas', _fija(f'{A}/areas'), con_sesion()),
     Caso('GET', f'{A}/areas/<int:area_id>', _area(), administradores()),
     Caso('GET', f'{A}/platforms', _fija(f'{A}/platforms'), con_sesion()),
@@ -430,6 +473,13 @@ CASOS = (
          _con_directorio_simulado,
          nota='FNC-064 (P2): superadmin y admins (sus áreas) crean cuentas '
               'en OpenLDAP'),
+    Caso('GET', f'{A}/users/password-policy',
+         _fija(f'{A}/users/password-policy'), administradores(),
+         nota='FNC-138: política de la contraseña inicial (contrato v2)'),
+    Caso('POST', f'{A}/users/<int:user_id>/credentials',
+         _objetivo('/credentials'), solo_superadmin(), _json({}),
+         _con_entrega_de_credenciales,
+         nota='FNC-138 (ADR-008 9): reenviar credenciales, solo superadmin'),
     Caso('PUT', f'{A}/me/preferences', _fija(f'{A}/me/preferences'),
          con_sesion(), _json({'tour_enabled': False})),
     Caso('GET', f'{A}/users/inactive', _fija(f'{A}/users/inactive'),
@@ -533,14 +583,14 @@ CASOS = (
 # Entradas inválidas: con un rol que pasa la protección, la validación
 # responde 400 con el formato estándar de error.
 CASOS_400 = (
-    ('POST', f'{A}/auth/login', _json({})),
+    ('POST', f'{A}/auth/local', _json({})),
     # POST y PUT /areas con datos inválidos: 422 `validacion` (FNC-045,
     # tests/areas/).
     # FNC-046: un campo vacío es `422 validacion`; el 400 es la lista blanca.
     ('POST', f'{A}/platforms', _json({'user_ids': []})),
     ('PUT', f'{A}/platforms/{{plataforma_id}}', _json({'visits': 0})),
     ('POST', f'{A}/users', _json({'email': ''})),
-    ('POST', f'{A}/users/directory', _json({'password': 'x'})),
+    ('POST', f'{A}/users/directory', _json({'role': 'usuario'})),
     ('PUT', f'{A}/me/preferences', _json({'refresh_interval': 'no-numero'})),
     ('POST', f'{A}/users/purge', _json({'days': 'no-numero'})),
     ('GET', f'{A}/me/access?status=otro', _sin_cuerpo),

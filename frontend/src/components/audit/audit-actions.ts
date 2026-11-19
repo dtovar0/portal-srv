@@ -35,6 +35,9 @@ export const ACCIONES: Record<string, string> = {
   ejecucion_reintentada: 'Reintento',
   ejecucion_cancelada: 'Cancelación',
   notificacion_fallida: 'Fallo aviso',
+  credenciales_enviadas: 'Credenciales enviadas',
+  credenciales_pendientes: 'Credenciales pendientes',
+  credenciales_reenviadas: 'Credenciales reenviadas',
 };
 
 const ACCIONES_LEGACY: Record<string, string> = {

@@ -346,6 +346,14 @@ distinto del previsto.
 - Las variables las pone una persona en `<carpeta>/.env` (640, `root:<grupo de servicio>`). Procedimiento completo, alta de ítems y rotación: [`docs/operacion/SECRETOS.md`](../docs/operacion/SECRETOS.md).
 - Prueba: `pytest tests/deploy/test_secretos_sh.py` (`.env` sintéticos).
 
+## Inicio de sesión con Authelia (OIDC, FNC-143)
+
+- El acceso de personas es solo por OIDC con Authelia (ADR-009), desde la app: nginx **no** usa `auth_request` y solo borra `Remote-*` si el cliente las envía (defensa).
+- `preflight.sh` e `install.sh` cargan `deploy/oidc.sh` (`revisar_oidc`): fuera de `APP_ENV=development` exigen `OIDC_ISSUER_URL`, `OIDC_CLIENT_SECRET` y `OIDC_REDIRECT_URI`, con `https` y nombre de host (nunca IP). `OIDC_CLIENT_SECRET` solo se comprueba que tenga valor: **nunca se imprime**. Con un `FALTA`, `install.sh` se detiene.
+- En desarrollo sin ninguna `OIDC_*` es normal: se entra por `/acceso-emergencia` (sin enlace visible).
+- Configuración del cliente `portal` en Authelia (**4.38 o mayor**; `authelia --version`), alta y rotación del secreto, prueba de humo y vuelta atrás: [`docs/operacion/AUTHELIA-OIDC.md`](../docs/operacion/AUTHELIA-OIDC.md). Nada de esto se ha probado contra un Authelia real.
+- Prueba: `pytest tests/deploy/test_oidc_sh.py` (`.env` sintéticos).
+
 ## Sesión y CSRF (FNC-008)
 
 - Fuera de desarrollo la cookie de sesión es `Secure`: el portal debe servirse por **HTTPS** (con http el navegador no la envía y no se puede iniciar sesión).
@@ -371,11 +379,10 @@ distinto del previsto.
 > (seguridad), hoy en pausa por decisión del dueño ([ROADMAP](../docs/planeacion/ROADMAP.md)).
 
 Los puertos de ambos servicios deben escuchar **solo en loopback**. El backend
-deduce la identidad SSO de las cabeceras `Remote-*`, y solo las acepta si la
-petición viene de un proxy declarado en `TRUSTED_PROXIES` (por defecto
-loopback). Nginx, además, borra esas cabeceras si las envía el cliente: sin
-eso, cualquiera que alcance el puerto podría enviar `Remote-Email: admin` y
-entrar como administrador.
+ya no deduce la identidad de cabeceras `Remote-*` (ADR-009): la sesión nace del
+flujo OIDC. Nginx las borra igualmente si las envía el cliente, como defensa.
+`TRUSTED_PROXIES` solo fija la IP real del cliente (auditoría y límite de
+intentos).
 
 ## Notas
 

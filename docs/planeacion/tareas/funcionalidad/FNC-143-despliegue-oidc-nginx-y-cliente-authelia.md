@@ -8,12 +8,12 @@
 | **Fase** | 8 (propuesta) |
 | **Módulo / Área** | deploy |
 | **Prioridad** | Alta |
-| **Estatus** | Propuesta |
+| **Estatus** | En revisión |
 | **Responsable** | |
 | **Creada** | 2026-11-17 |
 | **Inicio** | |
 | **Finalizada** | |
-| **Estatus Git** | — |
+| **Estatus Git** | Rama `fnc/FNC-141-oidc-authelia` (commit local, sin push) |
 | **Rama** | `fnc/FNC-143-despliegue-oidc` |
 | **Commits / PR** | |
 | **Requiere migración BD** | No |
@@ -91,6 +91,14 @@ identity_providers:
 - Reversión: la plantilla anterior queda en git.
 
 ## Verificación
+| Comando | Resultado |
+|---|---|
+| `python -m pytest tests/deploy` | 228 passed (incluye `test_oidc_sh.py` nuevo y `test_nginx_cabeceras.py`) |
+| `bash -n deploy/preflight.sh` | salida 0 |
+
+- `.env` sintéticos: el secreto de prueba nunca aparece en la salida; `FALTA` por variable ausente o vacía, http, IP, usuario en la URL y `openid` ausente.
+- No verificado: `nginx -t` (no hay nginx local); `shellcheck` (no instalado); Authelia real (bloque de la guía sin probar); `auditor-seguridad` pendiente.
+- Versión: la guía apunta a 4.38 o mayor e indica `authelia --version` y qué cambia en 4.37 o menor.
 
 ## Veredictos
 | Agente | Veredicto | Fecha |
@@ -103,3 +111,4 @@ identity_providers:
 | Fecha | Nota |
 |---|---|
 | 2026-11-17 | Creada (decisiones del dueño B, 2026-11-17) |
+| 2026-11-18 | Guía y `oidc.sh` (WIP 4ee5b49) revisados; nginx sin `auth_request`; preflight e install con `revisar_oidc`; README de deploy; pruebas |

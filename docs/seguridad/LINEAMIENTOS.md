@@ -6,8 +6,8 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 
 | ID | Regla | Verificación | Origen |
 |---|---|---|---|
-| SEC-AUTH-01 | Aceptar `Remote-*` solo si el origen está en `TRUSTED_PROXIES` **y** llega un secreto compartido (de Vaultwarden, comparado con `hmac.compare_digest`) | Prueba sin secreto, con secreto erróneo y con IP ajena: 401 | SEG-04 |
-| SEC-AUTH-02 | nginx borra `Remote-*` y el secreto en **cada** `location` (con `include`), y `/api` y `/auth` en cualquier combinación de mayúsculas nunca llegan a Next.js | Revisión de la plantilla y `curl` local a `/API/...` | SEG-04, 15 |
+| SEC-AUTH-01 | Las cabeceras `Remote-*` no autentican: el acceso de las personas es OIDC con Authelia (código de autorización con PKCE S256, `state` y `nonce`; ID token validado: firma, `iss`, `aud`, `exp`, `nonce`). Sustituye la regla del secreto compartido (FNC-006, sin objeto). Cuenta enlazada por `sub`; el rol nunca sale del token | `Remote-Email` en cualquier petición no abre sesión; callback sin `state`, con `state`, `nonce`, `aud`, `iss` o firma inválidos y token vencido: sin sesión (`tests/test_oidc.py`) | SEG-04, ADR-009 |
+| SEC-AUTH-02 | nginx borra `Remote-*` en **cada** `location` (con `include`; defensa, aunque el backend ya no las lea), sin `auth_request`, y `/api` y `/auth` en cualquier combinación de mayúsculas nunca llegan a Next.js | Revisión de la plantilla (`tests/deploy/test_nginx_cabeceras.py`) y `curl` local a `/API/...` | SEG-04, 15, ADR-009 |
 | SEC-AUTH-03 | Los rewrites de Next.js hacia la API existen solo en desarrollo | Revisión de `next.config.ts` | SEG-04 |
 | SEC-AUTH-04 | El login local solo se acepta con `auth_source='local'`; las cuentas `ldap` y `sso` tienen `password_hash` NULL | Prueba y consulta SQL | SEG-02 |
 | SEC-AUTH-05 | Sin contraseñas fijas, derivadas ni impresas en código, SQL, `utils/` ni semillas | `grep` y revisión | SEG-02, 03 |
@@ -18,7 +18,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-AUTH-10 | Límite de intentos por cuenta e IP, más estricto que el bloqueo de OpenLDAP (umbral *Por confirmar*) | Prueba: N+1 intentos dan 429 | SEG-11 |
 | SEC-AUTH-11 | Una cuenta inactiva pierde la sesión en la siguiente petición | Prueba | SEG-14 |
 | SEC-AUTH-12 | Contraseña local: hash scrypt o argon2, mínimo 12 caracteres (*Por confirmar*); solo la cambian el propio usuario o el superadmin | Prueba | SEG-05 |
-| SEC-AUTH-13 | El logout invalida la sesión y redirige al SLO con URLs de la configuración, nunca con `Host` | Prueba | — |
+| SEC-AUTH-13 | El logout invalida la sesión y redirige al cierre de Authelia con URLs de la configuración (`OIDC_LOGOUT_URL` o `end_session_endpoint`), nunca con `Host` | `tests/test_oidc.py` (logout) | ADR-009 4B |
 | SEC-AUTH-14 | MFA de Authelia para el superadmin y los admins (*Por confirmar*) | Configuración documentada | — |
 
 ## 2. Autorización
@@ -30,7 +30,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-AUTHZ-03 | Los recursos con área se cargan con `scoped_*` o `can_*`, y el área se lee de la BD, nunca de la petición | Prueba: admin de X sobre Y da 404 | SEG-16 |
 | SEC-AUTHZ-04 | Un recurso fuera de alcance responde 404; un rol insuficiente responde 403 | Prueba | — |
 | SEC-AUTHZ-05 | Solo el superadmin crea, eleva o degrada admins y les asigna áreas | Prueba | SEG-09 |
-| SEC-AUTHZ-06 | Un admin no gestiona a otros admins ni al superadmin, ni toca la contraseña de cuentas `ldap` o `sso` | Prueba con dos admins de áreas solapadas | SEG-05 |
+| SEC-AUTHZ-06 | Un admin no gestiona a otros admins ni al superadmin, ni toca la contraseña de cuentas `ldap` o `sso`; el portal solo fija la contraseña **inicial** (alta y «Reenviar credenciales», este último solo del superadmin; ADR-008, FNC-138) | Prueba con dos admins de áreas solapadas | SEG-05 |
 | SEC-AUTHZ-07 | Un admin aprueba, rechaza y revoca solo en sus áreas | Prueba | RF-03 |
 | SEC-AUTHZ-08 | Nadie aprueba su propia solicitud ni modifica sus propios accesos o rol | Prueba | — |
 | SEC-AUTHZ-09 | El actor sale de la sesión; cada endpoint tiene una lista blanca de campos y rechaza `role`, `is_active`, `auth_source` y `password_hash` | Prueba de *mass assignment* | SEG-09 |
@@ -49,7 +49,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-LDAP-06 | Escapar filtros (`escape_filter_chars`) y DN (`escape_rdn`); nunca concatenar | Prueba con `*`, `)(`, `,`, `\` | SEG-12 |
 | SEC-LDAP-07 | Solo se usa `MODIFY_ADD` o `MODIFY_DELETE` de un valor del atributo de membresía; nunca `REPLACE` ni atributos operativos | Doble que registra las operaciones | — |
 | SEC-LDAP-08 | Escritura idempotente: un miembro existente o ausente cuenta como "sin cambios" | Prueba de doble ejecución | — |
-| SEC-LDAP-09 | La contraseña inicial de una cuenta nueva nunca es fija, no se guarda y no se envía por correo (mecanismo *Por confirmar*) | Revisión | SEG-02 |
+| SEC-LDAP-09 | La contraseña inicial de una cuenta nueva cumple la política (`PASSWORD_POLICY_*`, validada siempre en el backend), se fija con Password Modify (RFC 3062), se entrega por un Send de Vaultwarden con el enlace por correo y nunca se guarda, se registra ni se envía en claro; cada reintento o reenvío genera una contraseña nueva (ADR-008, FNC-138) | Revisión | SEG-02 |
 | SEC-LDAP-10 | El rol se deriva por DN exacto normalizado; el directorio nunca otorga `administrador` | Prueba con DN parecidos | SEG-10 |
 | SEC-LDAP-11 | El bind sale del entorno o de Vaultwarden, nunca de la BD; la prueba de conexión usa solo el host configurado | `grep ldap_pass`; prueba | SEG-08, 22 |
 | SEC-LDAP-12 | Tiempos de espera registrados; los errores van al log | Revisión | SEG-21 |

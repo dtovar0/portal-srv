@@ -37,13 +37,13 @@ app/
     ├── access/        # Accesos otorgados: models, tipos, rules, services (otorgar/revocar), manejadores (resultado del ejecutor), consultas (FNC-054); api.py y serializacion.py (FNC-058); inventario e inventario_api (FNC-059)
     ├── provisioning/  # Ejecutor de aprovisionamiento: models, queue (encolar), ejecucion, worker, providers, ldap_provider, cli (FNC-049); api, consultas, serializacion y reintento (FNC-062)
     ├── demo/          # `flask demo cargar` (FNC-131): datos (qué se crea), carga (servicios y modelos, idempotente) y cli (solo `APP_ENV=development`; contraseñas del prompt, stdin o aleatorias)
-    ├── secretos/      # Vaultwarden (FNC-068): configuracion (VAULTWARDEN_*), cifrado (Bitwarden del lado del cliente), vaultwarden (cliente de solo lectura)
+    ├── secretos/      # Vaultwarden (FNC-068): configuracion (VAULTWARDEN_*), cifrado (Bitwarden del lado del cliente), vaultwarden (cliente: lectura y sesión), sends (Sends de texto, FNC-136)
     ├── connectors/    # Conectores (FNC-050): base (interfaz), registry (tipos), models (platform_connectors), validacion, credenciales (fuente y caché), provider (proveedor `conector`), consultas, noop (solo dev/pruebas), configuracion (CONNECTOR_*); api y prueba (FNC-061)
     ├── platforms/     # api.py (escritura de plataformas), validacion.py, grupos.py (DN), tipos.py, estado.py (puntos de extensión; `tiene_conector` desde FNC-050) (FNC-046)
     ├── audit/         # Modelo AuditLog y add_audit_log(); api.py (consulta e historiales), queries.py (alcance y filtros), parametros.py (FNC-060)
     ├── notifications/ # Modelos SMTP/plantillas/in-app, servicios de correo y avisos del gestor (access_notifications.py); api.py (SMTP, plantillas, notificaciones in-app; FNC-029)
     ├── settings/      # Modelo SystemConfig; api.py (`/settings`), logo.py (validación del logo), respaldo_api.py (`/backup`) (FNC-029)
-    ├── users/         # api.py (alta, edición y baja de cuentas, `/users/<id>/platforms` retirado, managed-areas, alta en directorio), preferencias_api.py (`/me/preferences`), higiene_api.py (`/users/inactive`, `/users/purge`) (FNC-029), directory_accounts.py (FNC-064), roles.py, areas_administradas.py, serializacion.py (FNC-044), correos.py (FNC-043); routes.py heredadas
+    ├── users/         # api.py (alta, edición y baja de cuentas, `/users/<id>/platforms` retirado, managed-areas, alta en directorio), preferencias_api.py (`/me/preferences`), higiene_api.py (`/users/inactive`, `/users/purge`) (FNC-029), directory_accounts.py (FNC-064), politica_contrasena.py, entrega_credenciales.py y models.py (FNC-138), roles.py, areas_administradas.py, serializacion.py (FNC-044), correos.py (FNC-043); routes.py heredadas
     ├── areas/         # api.py (alta, edición y baja; `PUT /areas/<id>/users`, FNC-029), validacion.py, baja.py (FNC-045)
     └── home/          # Inicio: services.py (resumen por rol) y api.py (`/home/summary`) (FNC-066)
 alembic.ini            # Configuración de Alembic (sin URL ni secretos)
@@ -84,6 +84,7 @@ Las tablas las crean las migraciones de Alembic (§7); `db.create_all()` sigue a
 | `platform_access_grants` | `access.models.PlatformAccessGrant` | FNC-054 (0007): `user_id`, `platform_id` (FK sin `ON DELETE`), `level` (`usuario`/`admin`), `origin` (`solicitud`/`admin_de_area`), `request_id` (sin FK; la tabla de solicitudes existe desde FNC-056, FK propuesta en FNC-088), `granted_by`/`revoked_by` (FK `SET NULL`; nulo = sistema), `granted_at`, `status`, `revoked_at`, `revoke_reason` (500), `last_job_id`, `updated_at`; únicos `slot_vigente` (usuario, plataforma, nivel) y `slot_ocupante` (usuario, plataforma: P5). Nunca se borra |
 | `platform_access_requests` | `access_requests.models.PlatformAccessRequest` | FNC-056 (0008): `user_id`, `platform_id` (FK sin `ON DELETE`), `level`, `justification` (opcional, 500), `status` (`pendiente`/`aprobada`/`rechazada`), `current_level` (nivel ocupado al solicitar), `created_at`, `decided_by` (FK `SET NULL`), `decided_at`, `rejection_reason` (500); único `slot_pendiente` (usuario, plataforma): una pendiente por plataforma también ante carreras |
 | `platform_connectors` | `connectors.models.PlatformConnector` | FNC-050 (0009): `platform_id` (FK única, `ON DELETE CASCADE`), `type` (20), `host` (253, nombre de la lista blanca), `port`, `params` (JSON sin secretos), `credential_ref` (200, referencia del gestor; nunca el valor), `credential_status` (`ok`/`no_encontrada`/`sin_verificar`; cambiar `host` o `credential_ref` la deja `sin_verificar`), `active`, `created_at`, `updated_at` |
+| `credential_deliveries` | `users.models.EntregaCredenciales` | FNC-138 (0016): `user_id` (FK única, `ON DELETE CASCADE`), `uid`, `status` (`pendientes`/`enviadas`), `attempts_count`, `max_attempts`, `next_attempt_at`, `locked_at`/`locked_by` (reserva del worker), `send_id` (no secreto), `last_sent_at`, `last_error` (código corto), fechas. Nunca guarda la contraseña ni el enlace |
 | `user_favorites` | tabla de relación | `user_id`, `platform_id` |
 | `audit_logs` | `audit.models.AuditLog` | `timestamp`, `user` (correo o `sistema`, 255), `action` (150), `module`, `target` (255), `detail`, `ip_address`, `status` (`success`/`error`/`warning`/`info`); FNC-047: `actor_id`, `target_user_id`, `area_id`, `platform_id` (FK `SET NULL`), `before_state`/`after_state` (JSON), `request_id`, `grant_id`; índices por fecha, actor, usuario afectado, área y plataforma. Inmutable desde el ORM |
 | `auth_config` | `auth.models.AuthConfig` | **Obsoleta** (FNC-043): nada la lee; solo viaja en el respaldo. `ldap_pass` vacía (migración 0004) y el modelo rechaza escribirla. Resto: `ldap_host`, `ldap_port`, `ldap_ssl`, `ldap_base_dn`, `ldap_user`, `ldap_user_attr`, `ldap_group_admin`, `ldap_group_user`, `ldap_role_mappings` |
@@ -101,10 +102,14 @@ Todos devuelven JSON. Errores con forma `{"status": "error", "message": "..."}`.
 
 | Método y ruta | Protección | Qué hace |
 |---|---|---|
-| `GET /context` | Pública | Indica si el SSO está activo, la identidad SSO (solo si la petición viene de `TRUSTED_PROXIES`), si ya hay sesión y si LDAP está disponible (siempre `true`). |
-| `POST /sso` | Pública; exige `AUTHELIA_ENABLED=true` y origen en `TRUSTED_PROXIES` | Crea o actualiza el usuario a partir de las cabeceras de Authelia (nuevo: rol `usuario`; existente: conserva su rol; `Remote-Groups` no se usa, FNC-042), inicia sesión y audita. Si es nuevo, envía la plantilla `usuario_creado`. |
-| `POST /login` | Pública | `method=directory` → LDAP (`authenticate_user_ldap`); `method=local` → contraseña local, solo para la cuenta de emergencia (superadmin con `auth_source=local`); otra cuenta → 401 (FNC-077, `auth/acceso_local.py`). En desarrollo, `APP_ENV=development` + `LOGIN_LOCAL_TODAS_LAS_CUENTAS=true` admite cualquier cuenta local. Audita éxitos y fallos (el motivo solo en la auditoría). Todo fallo, incluida la cuenta desactivada, responde 401 `Credenciales incorrectas.` (FNC-042). |
-| `POST /logout` | Sesión | Cierra la sesión y audita; con SSO devuelve la URL de cierre de Authelia (`AUTHELIA_SLO_URL?rd=BASE_URL/login`). |
+| `GET /context` | Pública | `oidc_enabled` (hay `OIDC_*`), `authenticated` y `emergency_available` (siempre `true`; la ruta de emergencia no tiene enlace visible). |
+| `GET /oidc/login` | Pública | Redirige a Authelia: código de autorización con PKCE S256, `state` y `nonce` guardados en la sesión firmada (Authlib, `auth/oidc.py`). Sin configuración o con Authelia caído: `302 /login?error=oidc_no_disponible`. |
+| `GET /oidc/callback` | Pública | Valida `state`, canjea el `code` con el `code_verifier`, valida el ID token (firma JWKS, `iss`, `aud`, `exp`, `nonce`), lee `sub`, `email` y `name` de userinfo y vincula o crea la cuenta (`auth/oidc_cuentas.py`); abre la sesión (`session.clear()` antes) y responde `302 /`. Todo fallo: `302 /login?error=<codigo>` y `ACCESO OIDC FALLIDO` en la auditoría, sin tokens, `code` ni `state`. |
+| `POST /local` | Pública | Contraseña local, solo para la cuenta de emergencia (superadmin con `auth_source=local`); otra cuenta → 401 (FNC-077, `auth/acceso_local.py`). En desarrollo, `APP_ENV=development` + `LOGIN_LOCAL_TODAS_LAS_CUENTAS=true` admite cualquier cuenta local. Límite de intentos (FNC-014). Audita éxitos y fallos (el motivo solo en la auditoría). Todo fallo, incluida la cuenta desactivada, responde 401 `Credenciales incorrectas.` |
+| `POST /sso`, `POST /login` | Públicas | Retiradas (ADR-009): `410 endpoint_retirado` con `use`. Las cabeceras `Remote-*` ya no autentican. |
+| `POST /logout` | Sesión | Cierra la sesión y audita; devuelve `redirect`: `OIDC_LOGOUT_URL?rd=<portal>/login` o el `end_session_endpoint` de Authelia, nunca del `Host`; `null` si no hay. |
+
+Contrato: [`docs/contratos/autenticacion.md`](../contratos/autenticacion.md).
 
 ### 4.2 Lectura — `app/modules/api/routes.py` (`/api/v1`)
 
@@ -182,7 +187,9 @@ Contrato `docs/contratos/plataformas-integracion.md`. Respuesta de `POST`/`PUT`:
 | Método y ruta | Protección | Qué hace |
 |---|---|---|
 | `PUT /users/<id>/managed-areas` | `admin_required` | Reemplaza `area_admins` de un `admin_area` con `{"area_ids": [...]}` (0–50, existentes, sin repetidos; si no → `422 validacion`). Destino sin rol `admin_area` → `409 rol_no_admin`. Audita `admin_asignado`/`admin_retirado` por área en la misma transacción. Responde `{"status": "success", "user": ManagedUser}`. |
-| `POST /users/directory` | `any_admin_required`; admin solo sus áreas | FNC-064, contrato `usuarios-directorio.md`. Lista blanca `uid`, `email`, `given_name`, `surname`, `area_ids` (otro, incluido `password` o `role` → `400 campo_no_permitido`). Admin: `area_ids` 1–50 de sus áreas (ajena o inexistente → `404`); superadmin: cualquiera o vacío. `422 validacion` por campo (correo ≤ 120, la columna). Correo solo ASCII. Duplicados (auditados `warning`): uid en el directorio, reservado o cuenta heredada → `409 uid_duplicado`; correo en el portal o en el directorio (`ClienteDirectorio.buscar_por_correo`; ambiguo también) → `409 correo_duplicado`. Reserva el correo con la fila de `users` sin confirmar (UNIQUE: dos altas simultáneas, una gana), busca el `mail` justo antes de escribir, crea la entrada sin contraseña (`EscritorDirectorio.create_user`) y confirma la cuenta `usuario` `auth_source=ldap` sin `password_hash`; fallo del directorio (o sin configurar) → `503 directorio_no_disponible` sin tocar la BD; fallo parcial (`commit`) → `500 error_interno`, rollback, auditoría `warning` con el DN (entrada para revisión) y la persona se registra en su primer acceso. Audita `cuenta_directorio_creada` (éxito en la misma transacción; fallos `error`/`warning`). Responde `201 {"status": "success", "user": ManagedUser}`. |
+| `POST /users/directory` | `any_admin_required`; admin solo sus áreas | FNC-064, contrato `usuarios-directorio.md`. Lista blanca `uid`, `email`, `given_name`, `surname`, `area_ids`, `password` (otro, p. ej. `role` → `400 campo_no_permitido`). `password` obligatoria y validada siempre con la política (`politica_contrasena.py`, `422 fields.password`; el texto nunca la incluye). Admin: `area_ids` 1–50 de sus áreas (ajena o inexistente → `404`); superadmin: cualquiera o vacío. `422 validacion` por campo (correo ≤ 120, la columna). Correo solo ASCII. Duplicados (auditados `warning`): uid en el directorio, reservado o cuenta heredada → `409 uid_duplicado`; correo en el portal o en el directorio (`ClienteDirectorio.buscar_por_correo`; ambiguo también) → `409 correo_duplicado`. Reserva el correo con la fila de `users` sin confirmar (UNIQUE: dos altas simultáneas, una gana), busca el `mail` justo antes de escribir, crea la entrada y fija la contraseña con Password Modify (`EscritorDirectorio.create_user`; rechazo de `ppolicy` → `422 fields.password` con mensaje propio, se retira la entrada y no se crea nada) y confirma, con su fila de `credential_deliveries` en la misma transacción, la cuenta `usuario` `auth_source=ldap` sin `password_hash`; fallo del directorio (o sin configurar) → `503 directorio_no_disponible` sin tocar la BD; fallo parcial (`commit`) → `500 error_interno`, rollback, auditoría `warning` con el DN (entrada para revisión) y la persona se registra en su primer acceso. Audita `cuenta_directorio_creada` (éxito en la misma transacción; fallos `error`/`warning`). Tras el `commit`, primer intento síncrono (`entrega_credenciales.completar_alta`: Send + correo con solo el enlace) → `credentials_status` `enviadas` o `pendientes` (nunca falla el alta; auditoría `credenciales_enviadas`/`credenciales_pendientes`). Responde `201 {"status": "success", "user": ManagedUser}`. |
+| `GET /users/password-policy` | `any_admin_required` | FNC-138: `{status, policy: {min_length, max_length, required_classes, symbols}}` desde `PASSWORD_POLICY_*` (validadas al arrancar). |
+| `POST /users/<id>/credentials` | `admin_required` (solo superadmin) | FNC-138 «Reenviar credenciales»: sin cuerpo (`400 campo_no_permitido`); `404` cuenta inexistente; `409 credenciales_no_aplicables` si no es `ldap` con entrega del portal; contraseña nueva en LDAP (`503 directorio_no_disponible` si falla) + Send nuevo + correo; borra el Send anterior. `200` `enviadas` o `202` `pendientes` (reintento del worker); audita `credenciales_reenviadas`/`credenciales_pendientes`. |
 
 ### 4.3.2 Áreas — `app/modules/areas/api.py` (`/api/v1`, FNC-045)
 
@@ -303,6 +310,12 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - Log de fallos de escritura: solo tipo y código de resultado (`registrar_error(..., con_detalle=False)`), sin DN de la persona.
 - Llamadores: `provisioning/ldap_provider.py` (FNC-049, membresía; valida que el grupo sea el de la plataforma) y FNC-064 (alta de cuentas, pendiente).
 
+### Entrega de credenciales iniciales (`app/modules/users/entrega_credenciales.py`, FNC-138, ADR-008)
+- Un intento = contraseña en LDAP (Password Modify) → Send de texto (`secretos/sends.py`, modo `VAULTWARDEN_SEND_MODO`) → correo `credenciales_iniciales` con solo el enlace. Sin notificaciones activas o sin `BASE_URL` no se crea Send; si el correo falla se borra el Send creado; al éxito de un reenvío se borra el anterior.
+- Reintento: tipo de trabajo `entrega_credenciales.ejecutar_entrega` registrado en `provisioning/tipos_de_trabajo` (lo admite y barre el mismo worker); reserva atómica por `UPDATE`, *backoff* de accesos, `PROVISIONING_MAX_ATTEMPTS`; cada reintento genera contraseña nueva (`secrets`). Agotados: sigue `pendientes`, sin barrido, aviso `credenciales_no_entregadas` a superadmins.
+- `last_error`: `notificaciones_desactivadas`, `base_url_no_configurada`, `gestor_no_disponible`, `gestor_mal_configurado`, `send_deshabilitado`, `correo_no_enviado`, `directorio_no_disponible`, `contrasena_rechazada`, `error_inesperado`.
+- La contraseña vive solo en variables locales del intento: `AltaDirectorio.password` y `DatosCuenta.password` no salen en `repr`.
+
 ### Ejecutor de aprovisionamiento (`app/modules/provisioning/`, FNC-049)
 - Cola: Redis + RQ (ADR-003, dueño). La BD es la cola persistente (*outbox*); Redis solo despierta al worker.
 - `queue.encolar(operacion, usuario_id, plataforma, nivel, clave_idempotencia, access_id=None)`: agrega el trabajo **sin commit** (va en la transacción del llamador); tras el commit despierta al worker. Sin Redis, espera al barrido. Clave repetida → mismo trabajo.
@@ -316,7 +329,8 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - `fallido`: después del commit y en `try`, `notificar_aprovisionamiento_fallido` (FNC-048).
 - Proveedores (`providers.py`): `Provisioner` con `otorgar`/`revocar`/`consultar(Operacion)` → `ResultadoProveedor` (SEC-CON-01); `registrar_proveedor(tipo, fabrica)`. `ldap` registrado en el módulo; `conector` lo registra `connectors.registrar(app)` en `create_app()` (FNC-050).
 - `ProveedorLdap`: grupo del nivel de la plataforma, bajo `LDAP_GROUPS_BASE_DN` (SEC-LDAP-04); persona con `ClienteDirectorio.buscar_por_correo` (filtro exacto `(mail=…)`, cualquier valor; varias → `persona_ambigua`); usa `EscritorDirectorio`.
-- Mensajes RQ en JSON (`SERIALIZADOR_RQ`); el worker descarta sin ejecutar todo mensaje que no sea `ejecutar_trabajo(<int>)`. Despertar desde la web: tiempo de espera de 0,5 s.
+- Mensajes RQ en JSON (`SERIALIZADOR_RQ`); el worker descarta sin ejecutar todo mensaje que no sea una función **registrada** con un único `<int>` (sin kwargs ni *callbacks*). Despertar desde la web: tiempo de espera de 0,5 s.
+- Tipos de trabajo (`tipos_de_trabajo.py`, FNC-137, ADR-008 3B): la lista blanca es un registro `registrar_tipo_de_trabajo(funcion, vencidos)`; `ejecutar_trabajo` (accesos) se registra solo en `worker.py` y otros módulos (entrega de credenciales) se registran al iniciar la app. `barrer()` recorre todos los tipos (uno que falla no frena a los demás) y `queue.enviar(cola, id, funcion)` solo envía funciones registradas. Sin cambios en `provisioning_jobs` ni en Ejecuciones.
 - Reintento manual (FNC-062): `ejecucion.reabrir(trabajo, cfg)` sube `max_attempts` con `UPDATE … WHERE status = 'fallido'` (un segundo reintento simultáneo → `EstadoInvalido`); `queue.despertar_tras_commit(id)` avisa al worker tras el commit.
 - Worker: `flask provisioning worker` (§6). `SimpleWorker` de RQ sin *fork*; cada vuelta barre la BD (vencidos y reservas vencidas) y trabaja hasta quedar ocioso `PROVISIONING_POLL_INTERVAL_SECONDS`. `SIGTERM`/`SIGINT`: termina el intento y sale.
 - Exige `REDIS_PASS` y `REDIS_HOST` como nombre de host; variables `PROVISIONING_*` validadas en `create_app()`.
@@ -357,6 +371,7 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - `configuracion.py`: `VAULTWARDEN_*`; fuera de dev y con alguna definida se valida todo en `create_app()` (sin conectar).
 - `cifrado.py`: descifrado Bitwarden del lado del cliente (PBKDF2/Argon2id con `LIMITES_KDF`, HKDF, tipo 2 AES-CBC+HMAC, tipos 3/4 RSA-OAEP); rechaza el tipo 0 y los 5/6.
 - `vaultwarden.py`: `ClienteVaultwarden.leer(referencia)` → `ItemSecreto`; sesión por llave de API, `sync` y búsqueda por nombre en `VAULTWARDEN_COLLECTION_ID`. Errores `SecretoNoEncontrado`/`SecretoAmbiguo`/`GestorCaido`/`GestorMalConfigurado`, sin valores. `transporte` inyectable (pruebas: `tests/secretos/vaultwarden_falso.py`).
+- `sends.py` (FNC-136, ADR-008): `crear_send_texto(nombre, texto)` → `SendCreado(id, enlace)` y `borrar_send(id)` (idempotente). Modo `api` (`ClienteVaultwarden.sesion_de_usuario` y `pedir_autenticado`; cifrado del lado del cliente con `cifrado.cifrar_simetrico` y `derivar_clave_send`) o `bw` (CLI por stdin, entorno mínimo), con `VAULTWARDEN_SEND_MODO`; valores de `ONBOARDING_SEND_*`. Transitorio → `GestorCaido`; permanente → `GestorMalConfigurado`/`SendRechazado` (`motivo`: `send_deshabilitado` o `rechazado`). Ningún valor en `repr`, errores ni logs.
 - Bind LDAP: con `LDAP_BIND_PASSWORD_REF` (solo fuera de dev; reservada para conectores: `credenciales.referencia_reservada`, en `validacion.py` y `provider.py`), `ClienteDirectorio._contrasena_bind()` la pide al conectar; gestor caído → `ErrorDirectorio` transitorio (`LDAPCommunicationError`).
 - Operación: `docs/operacion/SECRETOS.md`.
 
@@ -390,25 +405,22 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - Cambiar `area_id` con solo accesos automáticos ya no da 409 (`platforms.estado.accesos_que_impiden_mover`, `consultas.contar_vigentes_no_automaticos`); tipo y grupos siguen dando 409 (FNC-085).
 - Pendiente: desactivar una cuenta no revoca (FNC-084); plataformas existentes al desplegar (FNC-086); `DELETE /platforms/<id>` con accesos falla por FK (FNC-083).
 
-### Login de directorio (`authenticate_user_ldap`, FNC-042)
-- Usa el cliente centralizado y `LDAP_*`; sin `LDAP_URL` el login de directorio falla siempre.
-- Flujo: `buscar_usuario` (filtro escapado por `LDAP_USER_ATTR`, por defecto `uid`) → `verificar_contrasena` → cuenta local por el `mail` del directorio.
-- Sin `mail` no hay acceso: la cuenta nunca se busca por lo escrito.
-- Cuenta nueva: rol `usuario`, `auth_source=ldap`, sin contraseña; existente: conserva el rol y el origen.
-- Cuenta `local`, con contraseña local o desactivada: 401 único y aviso `ACCESO BLOQUEADO`; no se modifica (también en SSO).
-- Correo normalizado (`strip().lower()`) y búsqueda sin distinguir mayúsculas, en directorio y SSO.
-- Una cuenta `sso` entra por directorio y una `ldap` por SSO: Authelia usa el mismo OpenLDAP (requisitos de `mail` en `docs/operacion/ENTORNOS.md`).
-- Nunca borra cuentas; todo fallo devuelve `MENSAJE_CREDENCIALES` y el motivo va a la auditoría.
+### Login de directorio (retirado, FNC-141)
+- `authenticate_user_ldap` y el login por LDAP desde el portal se retiraron (ADR-009); FNC-002 y FNC-042 quedan reducidas. El cliente de directorio (`directory/ldap_client.py`) sigue para las altas y los grupos.
+- Authelia usa este mismo OpenLDAP: una cuenta `ldap` o `sso` entra por OIDC y se vincula por correo (requisitos de `mail` en `docs/operacion/ENTORNOS.md`).
 
 ### LDAP heredado (`auth_config`)
 - Obsoleta desde FNC-043: la API ya no la edita y nada la lee; `ldap_pass` vacía (migración 0004).
 - `validate_ldap_connection` retirada (FNC-043); `DEBUG_LDAP` pasó a `directory/depuracion.py`.
 - `utils/test_ldap.py` y `utils/nexus_health.py`, que la importaban, se retiraron en FNC-028.
 
-### Authelia (SSO por cabeceras)
-- Nginx consulta Authelia (`auth_request`, comentado en la plantilla) y reinyecta `Remote-Email`, `Remote-Name`, `Remote-Groups`; antes borra esas cabeceras si vienen del cliente.
-- El backend solo las acepta si `request.remote_addr` está en `TRUSTED_PROXIES` (por defecto loopback) y `AUTHELIA_ENABLED=true`.
-- El rol no sale de los grupos (FNC-042, RF-04): cuenta nueva `usuario`; existente, conserva su rol. `AUTHELIA_GROUP_ADMIN` y `AUTHELIA_HEADER_GROUPS` obsoletas.
+### Authelia (OIDC, FNC-141, ADR-009)
+- Cliente OIDC con Authlib (`auth/oidc.py`) contra Authelia 4.38 o mayor; configuración y validación al arrancar en `auth/oidc_configuracion.py` (`OIDC_*`; fuera de desarrollo, completas y con `https`, o la app no arranca).
+- Cuenta por `sub` (`users.oidc_sub`, migración `0014`); la primera vez se vincula por correo con `motivo_de_bloqueo` (cuenta local, con contraseña local o desactivada → rechazo auditado; correo ya vinculado a otro `sub` → rechazo). Cuenta nueva: rol `usuario`, `auth_source='sso'`.
+- El rol no sale del token (SEG-10, RF-04): `groups` no se pide y los claims `groups`/`role` se ignoran.
+- nginx ya no consulta a Authelia (sin `auth_request`); solo conserva el borrado de `Remote-*` como defensa. `TRUSTED_PROXIES` sirve solo para la IP real del cliente.
+- Desarrollo sin Authelia: sin `OIDC_*` se entra por `/acceso-emergencia`.
+- Retirados: `POST /auth/sso`, `method=directory`, `authenticate_user_ldap` y `AUTHELIA_*`.
 
 ### SMTP y plantillas
 - `resolve_smtp_settings()`: con `SMTP_FORCE_ENV=true` manda el entorno (y si falta `SMTP_SERVER` no envía); si no, manda la BD y el entorno es respaldo.
@@ -460,7 +472,7 @@ venv/bin/python run.py        # API en el puerto 5001
   Sin `REDIS_PASS` o sin Redis, el comando sale con código 1 y el motivo.
 - Sin Authelia: entra la cuenta de emergencia (`admin`) con el login local; otras cuentas locales solo con `APP_ENV=development` y `LOGIN_LOCAL_TODAS_LAS_CUENTAS=true` (ver `docs/operacion/ENTORNOS.md`, FNC-077).
 - El frontend se arranca aparte (ver `docs/frontend/README.md`); su `rewrite` reenvía `/api/*` y `/auth/*` a este backend.
-- Sin scripts sueltos: `scratch/` y `utils/` se retiraron en FNC-028 (31 archivos heredados de PSX5K). El esquema se gestiona con Alembic (§7). El primer superadmin y el reinicio de la cuenta de emergencia quedan para un comando Flask CLI de FNC-003 (fase 5); la prueba de SMTP es `POST /api/v1/smtp/test`; el SSO se activa con `AUTHELIA_ENABLED`.
+- Sin scripts sueltos: `scratch/` y `utils/` se retiraron en FNC-028 (31 archivos heredados de PSX5K). El esquema se gestiona con Alembic (§7). El primer superadmin y el reinicio de la cuenta de emergencia quedan para un comando Flask CLI de FNC-003 (fase 5); la prueba de SMTP es `POST /api/v1/smtp/test`; el inicio de sesión es OIDC con Authelia (`OIDC_*`, FNC-141).
 - **Pruebas** (FNC-019): suite pytest en `tests/`, sin `.env` ni servicios externos.
   ```bash
   venv/bin/pip install -r requirements.txt -r requirements-dev.txt
@@ -475,6 +487,7 @@ venv/bin/python run.py        # API en el puerto 5001
   - `tests/test_alcance_por_area.py` (FNC-021): alcance por área con áreas A y B y 5 actores, y escalada con ids ajenos (SEG-05 y SEG-09 sin `xfail` desde FNC-044; queda el de FNC-015).
   - Roles y áreas administradas (FNC-044): `tests/users/test_roles_y_areas_administradas.py`.
   - Alta de cuentas en OpenLDAP (FNC-064): `tests/users/test_alta_directorio.py` (directorio simulado de `tests/directorio_falso.py`).
+  - Onboarding por Send (FNC-138): `tests/users/test_politica_contrasena.py`, `tests/users/test_entrega_credenciales.py` (dobles de Vaultwarden y correo en `tests/users/conftest.py`), `tests/test_migracion_0016_entregas.py`.
   - Contraseñas locales y cuenta de emergencia (FNC-077): `tests/users/test_contrasenas_locales.py`; `peticiones_auth.activar_login_local_de_todas(monkeypatch, entorno)`.
   - Alta, edición y baja de áreas por el admin (FNC-045): `tests/areas/test_alta_y_baja_por_admin.py`.
   - Ejecutor de aprovisionamiento (FNC-049): `tests/provisioning/` (encolado, reintentos, permanentes, reserva, idempotencia, saneo, proveedor LDAP sobre `MOCK_SYNC`, worker y comando). `conftest.py`: `cola_falsa` (cola RQ en el mismo proceso, como `is_async=False`, sin Redis), `proveedor_simulado`, `avisos`.
@@ -492,7 +505,7 @@ venv/bin/python run.py        # API en el puerto 5001
   - Servicios (FNC-023): `test_notificaciones.py`, `test_auditoria_crud.py`, `test_respaldo.py`, `test_secretos_en_respuestas.py`, `test_rutas_retiradas.py` (FNC-027), `test_csrf.py`, `test_arranque.py`, `test_cuerpo_validado.py` (FNC-119); 13 `xfail` con su tarea (lista en la ficha).
   - `tests/smtp_falso.py`: `instalar_smtp(monkeypatch)` simula `smtplib` (mensajes enviados, conexiones, logins, fallo con `.error`).
   - `test_arranque.py` llama `create_app()` sin overrides; `instance/` va a un directorio temporal.
-  - SSO en pruebas: el cliente llega desde loopback (de confianza por defecto); otro origen se simula con `TRUSTED_PROXIES` y `REMOTE_ADDR` ficticios.
+  - OIDC en pruebas (FNC-141): fixture `oidc` (`tests/oidc_simulado.py`) simula Authelia sin red: descubrimiento, JWKS, canje del `code` y userinfo, con ID tokens firmados de verdad (RS256).
   - Línea base (FNC-028): `tests/test_linea_base_cubre_sql_heredadas.py` comprueba que `0001` ya incluye las columnas `pref_*` y no trae lo que quitaron 002 y 004.
   - `create_app(config_overrides=None)`: el parámetro opcional solo lo usan las pruebas; sin él no cambia nada.
 
