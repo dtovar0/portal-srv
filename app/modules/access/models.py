@@ -62,6 +62,9 @@ class PlatformAccessGrant(db.Model):
     revoked_at = db.Column(db.DateTime, nullable=True)
     revoke_reason = db.Column(db.String(LARGO_MOTIVO), nullable=True)
     last_job_id = db.Column(db.Integer, nullable=True)
+    responsiva_firmada = db.Column(db.Boolean, nullable=False, default=False,
+                                   server_default=db.false())
+    responsiva_firmada_at = db.Column(db.DateTime, nullable=True)
     updated_at = db.Column(db.DateTime, nullable=False, default=ahora)
     slot_vigente = db.Column(db.SmallInteger, nullable=True)
     slot_ocupante = db.Column(db.SmallInteger, nullable=True)

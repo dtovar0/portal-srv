@@ -5,9 +5,13 @@
 
 ## [Sin publicar]
 
+### Corregido
+- Migración 0014 (responsiva de usuario): el valor por defecto de `responsiva_firmada` era `DEFAULT 1`, que PostgreSQL rechaza y detenía `alembic upgrade`; ahora `DEFAULT true`. Prueba nueva que genera el SQL de PostgreSQL de la migración (FNC-155, 2026-11-18).
+
 ### Agregado
 - Web: el botón de confirmar de `ConfirmDialog` es de peligro solo en acciones destructivas (`type` aviso o error); «Reenviar credenciales» pasa a primario; `variant` opcional para forzarlo (DIS-097, 2026-11-18).
 - Web: los botones deshabilitados de las barras de Áreas, Usuarios, Plataformas y Conectores quedan `aria-disabled` (enfocables) con el motivo asociado por `aria-describedby`, visible al foco y descartable con Esc; `Button` acepta `motivoDeshabilitado` (DIS-096, 2026-11-18).
+- Responsiva en accesos: modal sobre el portal; un acceso otorgado sin responsiva firmada no se aprovisiona hasta que el usuario firma; `RESPONSIVA_MODO` `global` (firma única) o `por_plataforma`; migración 0017 (FNC-156, 2026-11-18).
 - Usuarios: el alta en el directorio exige una contraseña inicial que cumple la política (`PASSWORD_POLICY_*`) y la entrega por un Send de Vaultwarden con el enlace por correo; si falla queda «credenciales pendientes» y el worker reintenta con contraseña nueva; «Reenviar credenciales» (superadmin); `GET /users/password-policy`, `credentials_status` y migración 0015 (FNC-138, FNC-139, ADR-008, 2026-11-18).
 - Web: `/login` tiene un solo botón «Entrar con Authelia» (inicia el flujo OIDC); los errores del callback salen por toast y la URL se limpia; `/acceso-emergencia` (sin enlace visible) permite entrar a la cuenta de emergencia; el cierre de sesión sigue la URL de Authelia (FNC-142, 2026-11-18).
 - Despliegue: `preflight.sh` e `install.sh` revisan las `OIDC_*` (obligatorias fuera de desarrollo, https y nombre de host; el secreto nunca se imprime) con `deploy/oidc.sh`; guía `docs/operacion/AUTHELIA-OIDC.md` del cliente `portal` para Authelia 4.38 o mayor (FNC-143, 2026-11-18).
@@ -26,6 +30,7 @@
 - Retirados `docs/business_rules.md` y `docs/ARCHITECTURE.md` (contradecían el sistema: prohibían `/api/v1` y SSH); README raíz reescrito para el gestor de accesos y `deploy/README.md` corregido (plantillas reales, sin IPs, `SMTP_*` en VARIABLES.md) (FNC-035, 2026-10-27).
 
 ### Corregido
+- Seguridad: la cuenta de emergencia (`POST /auth/local`) ya no se bloquea por 10 fallos de cuenta (cualquiera que supiera su nombre podía dejarla fuera con Authelia caído); solo cuenta el límite por IP; el resto de cuentas, sin cambio (FNC-154, 2026-11-18).
 - Despliegue: nginx ya no trae el bloque `auth_request` comentado (el acceso es OIDC); conserva el borrado de `Remote-*` (FNC-143, 2026-11-18).
 - Estilos: variables CSS inexistentes reemplazadas por tokens; vuelve a aplicarse el estilo de deshabilitado y las animaciones de entrada de modal y pestañas (DIS-095, 2026-11-18).
 - Pruebas: la del buscador global ya no falla bajo carga (esperaba al menú y no al buscador que escucha Ctrl K) (DIS-094, 2026-11-18).

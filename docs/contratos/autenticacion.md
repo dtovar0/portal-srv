@@ -66,7 +66,7 @@ Se retiran `sso_enabled`, `sso_user` y `ldap_available`.
 | 200 | `{"status":"success","role":"administrador"}` | Cuenta de emergencia (o, solo con `APP_ENV=development`, cualquier cuenta local con la bandera de FNC-077) |
 | 400 | `{"status":"error","message":"Indica usuario y contraseña."}` | Falta un campo |
 | 401 | `{"status":"error","message":"Credenciales incorrectas."}` | Cualquier otro fallo (respuesta única, SEC-AUTH-09); el motivo va solo a la auditoría |
-| 429 | `{"status":"error","message":"Demasiados intentos fallidos..."}` | Límite de intentos (FNC-014) |
+| 429 | `{"status":"error","message":"Demasiados intentos fallidos..."}` | Límite de intentos (FNC-014): por cuenta e IP; la cuenta de emergencia solo por IP (FNC-154) |
 
 ## `POST /auth/logout`
 - Cuerpo vacío. `200 {"status":"success","redirect": "<url>" | null}`.
