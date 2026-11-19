@@ -1,11 +1,10 @@
 'use client';
 
 /**
- * Barra superior del marco (DIS-078), 64 px: botón de menú, ruta de navegación (sin buscador
- * global desde DIS-101),
- * tema claro/oscuro, notificaciones con indicador y ayuda (el menú de usuario va en el pie de la
- * barra lateral, DIS-080). Bajo `md` el botón
- * de menú abre el cajón (`MobileMenu`).
+ * Barra superior del marco (DIS-078), 64 px: botón de menú, ruta de navegación, tema
+ * claro/oscuro, notificaciones con indicador y ayuda. Sin buscador global (DIS-101). El menú
+ * de usuario va en el pie de la barra lateral (DIS-080). Bajo `md` el botón de menú abre el
+ * cajón (`MobileMenu`).
  */
 
 import Link from 'next/link';

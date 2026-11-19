@@ -48,7 +48,7 @@ export function AyudaMarco() {
               <dd><kbd className="rounded-md border border-b-2 border-borde bg-superficie-hundida px-2.5 py-1 font-mono text-xs font-bold text-body-text shadow-xs">Esc</kbd></dd>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-xl border border-panel-border/80 bg-superficie p-3.5 shadow-xs transition-colors hover:border-primary/40">
-              <dt className="font-medium text-body-text">Moverse por los resultados y los menús</dt>
+              <dt className="font-medium text-body-text">Moverse por las opciones de los menús</dt>
               <dd><kbd className="rounded-md border border-b-2 border-borde bg-superficie-hundida px-2.5 py-1 font-mono text-xs font-bold text-body-text shadow-xs">↑ ↓</kbd></dd>
             </div>
           </dl>

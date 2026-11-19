@@ -1,6 +1,6 @@
 /**
  * Entradas del menú del marco (FNC-070, DIS-078): una sola lista para la barra lateral, el
- * cajón móvil, la ruta de navegación y el buscador global. Cada rol ve lo que `requires` permite.
+ * cajón móvil y la ruta de navegación. Cada rol ve lo que `requires` permite.
  */
 
 import type { NombreIcono } from '../icono';
