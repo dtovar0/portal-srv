@@ -6,8 +6,8 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 
 | ID | Regla | Verificación | Origen |
 |---|---|---|---|
-| SEC-AUTH-01 | Aceptar `Remote-*` solo si el origen está en `TRUSTED_PROXIES` **y** llega un secreto compartido (de Vaultwarden, comparado con `hmac.compare_digest`) | Prueba sin secreto, con secreto erróneo y con IP ajena: 401 | SEG-04 |
-| SEC-AUTH-02 | nginx borra `Remote-*` y el secreto en **cada** `location` (con `include`), y `/api` y `/auth` en cualquier combinación de mayúsculas nunca llegan a Next.js | Revisión de la plantilla y `curl` local a `/API/...` | SEG-04, 15 |
+| SEC-AUTH-01 | Las cabeceras `Remote-*` no autentican: el acceso de las personas es OIDC con Authelia (código de autorización con PKCE S256, `state` y `nonce`; ID token validado: firma, `iss`, `aud`, `exp`, `nonce`). Sustituye la regla del secreto compartido (FNC-006, sin objeto). Cuenta enlazada por `sub`; el rol nunca sale del token | `Remote-Email` en cualquier petición no abre sesión; callback sin `state`, con `state`, `nonce`, `aud`, `iss` o firma inválidos y token vencido: sin sesión (`tests/test_oidc.py`) | SEG-04, ADR-009 |
+| SEC-AUTH-02 | nginx borra `Remote-*` en **cada** `location` (con `include`; defensa, aunque el backend ya no las lea), sin `auth_request`, y `/api` y `/auth` en cualquier combinación de mayúsculas nunca llegan a Next.js | Revisión de la plantilla (`tests/deploy/test_nginx_cabeceras.py`) y `curl` local a `/API/...` | SEG-04, 15, ADR-009 |
 | SEC-AUTH-03 | Los rewrites de Next.js hacia la API existen solo en desarrollo | Revisión de `next.config.ts` | SEG-04 |
 | SEC-AUTH-04 | El login local solo se acepta con `auth_source='local'`; las cuentas `ldap` y `sso` tienen `password_hash` NULL | Prueba y consulta SQL | SEG-02 |
 | SEC-AUTH-05 | Sin contraseñas fijas, derivadas ni impresas en código, SQL, `utils/` ni semillas | `grep` y revisión | SEG-02, 03 |
@@ -18,7 +18,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-AUTH-10 | Límite de intentos por cuenta e IP, más estricto que el bloqueo de OpenLDAP (umbral *Por confirmar*) | Prueba: N+1 intentos dan 429 | SEG-11 |
 | SEC-AUTH-11 | Una cuenta inactiva pierde la sesión en la siguiente petición | Prueba | SEG-14 |
 | SEC-AUTH-12 | Contraseña local: hash scrypt o argon2, mínimo 12 caracteres (*Por confirmar*); solo la cambian el propio usuario o el superadmin | Prueba | SEG-05 |
-| SEC-AUTH-13 | El logout invalida la sesión y redirige al SLO con URLs de la configuración, nunca con `Host` | Prueba | — |
+| SEC-AUTH-13 | El logout invalida la sesión y redirige al cierre de Authelia con URLs de la configuración (`OIDC_LOGOUT_URL` o `end_session_endpoint`), nunca con `Host` | `tests/test_oidc.py` (logout) | ADR-009 4B |
 | SEC-AUTH-14 | MFA de Authelia para el superadmin y los admins (*Por confirmar*) | Configuración documentada | — |
 
 ## 2. Autorización

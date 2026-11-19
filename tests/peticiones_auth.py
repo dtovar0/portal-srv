@@ -10,11 +10,10 @@ RUTA_ME = '/api/v1/me'
 MENSAJE_CREDENCIALES = 'Credenciales incorrectas.'
 
 
-def iniciar_sesion_api(cliente, email, contrasena, metodo='local'):
-    """`POST /api/v1/auth/login` real (no arma la sesión a mano)."""
-    return cliente.post(f'{A}/login', json={'email': email,
-                                            'password': contrasena,
-                                            'method': metodo})
+def iniciar_sesion_api(cliente, email, contrasena):
+    """`POST /api/v1/auth/local` real (no arma la sesión a mano)."""
+    return cliente.post(f'{A}/local', json={'email': email,
+                                            'password': contrasena})
 
 
 def usuario_en_sesion(cliente):

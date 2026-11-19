@@ -16,7 +16,7 @@ import dotenv
 dotenv.load_dotenv = lambda *args, **kwargs: False
 
 # Variables que apuntan a servicios externos: se quitan del entorno heredado.
-PREFIJOS_EXTERNOS = ('DB_', 'REDIS_', 'SMTP_', 'AUTHELIA_', 'LDAP_', 'NOTIFY_',
+PREFIJOS_EXTERNOS = ('DB_', 'REDIS_', 'SMTP_', 'OIDC_', 'AUTHELIA_', 'LDAP_', 'NOTIFY_',
                      'DEBUG_', 'CONNECTOR_', 'VAULTWARDEN_')
 VARIABLES_EXTERNAS = ('TRUSTED_PROXIES', 'FRONTEND_URL', 'BASE_URL',
                       'ENABLE_NOTIFICATIONS', 'APP_ENV',
@@ -28,7 +28,6 @@ VARIABLES_PRUEBA = {
     'DB_ENGINE': 'sqlite',
     # SQLite solo se admite con APP_ENV=development (FNC-134).
     'APP_ENV': 'development',
-    'AUTHELIA_ENABLED': 'false',
     'ENABLE_NOTIFICATIONS': 'false',
     'NOTIFY_USER_CREATED': 'false',
 }
@@ -137,6 +136,16 @@ def cliente_de_rol(app, cliente_como):
         usuario = fabricas.crear_usuario_de_rol(rol)
         return cliente_como(usuario), usuario
     return _cliente_de_rol
+
+
+@pytest.fixture
+def oidc(app, monkeypatch):
+    """Authelia simulado (sin red) con las variables `OIDC_*` de prueba (FNC-141)."""
+    from app.modules.auth import oidc as modulo_oidc
+    from tests.oidc_simulado import ProveedorOidc
+    modulo_oidc.reiniciar_clientes()
+    yield ProveedorOidc().instalar(monkeypatch)
+    modulo_oidc.reiniciar_clientes()
 
 
 @pytest.fixture

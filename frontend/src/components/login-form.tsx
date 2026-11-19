@@ -1,28 +1,39 @@
 'use client';
 
 /**
- * Pantalla de acceso.
- *
- * La sesión la sigue emitiendo Flask: aquí solo se recogen las credenciales y
- * se llama a /api/v1/auth. Con SSO activo, Authelia ya ha identificado al
- * visitante mediante cabeceras y basta confirmar la entrada.
+ * Pantalla de acceso (ADR-009): un solo botón que inicia el flujo OIDC con
+ * Authelia por navegación completa (el portal nunca ve tokens). La cuenta de
+ * emergencia vive en `/acceso-emergencia`, sin enlace desde aquí. Los errores
+ * del callback llegan en `?error=<codigo>` y se muestran por toast.
  */
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { mensajeErrorOidc } from '@/lib/errores-oidc';
 import type { AuthContext } from '@/lib/types';
-import { Button, Checkbox, Field, TextInput } from './form';
+import { Button } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
-import { Card, ErrorNote, Spinner } from './ui';
+import { useToast } from './toast';
+import { Card, Spinner } from './ui';
+
+/** Inicio del flujo OIDC: navegación completa, no `fetch`. */
+export const URL_INICIO_OIDC = '/api/v1/auth/oidc/login';
 
 export function LoginForm() {
+  const { avisar } = useToast();
   const [context, setContext] = useState<AuthContext | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [useDirectory, setUseDirectory] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Muestra el error del callback y limpia la URL para que no quede en el historial.
+    const params = new URLSearchParams(window.location.search);
+    const codigo = params.get('error');
+    if (codigo !== null) {
+      avisar('error', mensajeErrorOidc(codigo));
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -35,39 +46,11 @@ export function LoginForm() {
       })
       .catch(() => {
         if (active) setContext({
-          sso_enabled: false, sso_user: null,
-          authenticated: false, ldap_available: true,
+          oidc_enabled: false, authenticated: false, emergency_available: true,
         });
       });
     return () => { active = false; };
   }, []);
-
-  async function submit(event?: React.FormEvent) {
-    event?.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await api.login(email, password, useDirectory ? 'directory' : 'local');
-      window.location.href = '/';
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function enterWithSso() {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.ssoLogin();
-      window.location.href = '/';
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo validar el acceso');
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (!context) {
     return (
@@ -95,70 +78,21 @@ export function LoginForm() {
         </div>
 
         <Card className="space-y-5 rounded-2xl border border-panel-border bg-panel-fill p-6 sm:p-8 shadow-2xl">
-          {error ? <ErrorNote message={error} /> : null}
-
-          {context.sso_user ? (
-            <div className="space-y-3">
-              <p className="text-sm">
-                Identificado como{' '}
-                <strong className="font-medium">{context.sso_user}</strong> en el
-                portal corporativo.
-              </p>
-              <Button
-                onClick={enterWithSso}
-                disabled={busy}
-                className="w-full py-2 shadow-xs"
-              >
-                <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
-                {busy ? 'Entrando…' : 'Entrar'}
-              </Button>
-            </div>
+          {context.oidc_enabled ? (
+            <Button
+              // Única acción de la pantalla: el foco empieza en ella.
+              autoFocus
+              onClick={() => { window.location.href = URL_INICIO_OIDC; }}
+              className="w-full py-2 shadow-xs"
+            >
+              <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+              Entrar con Authelia
+            </Button>
           ) : (
-            <form onSubmit={submit} className="space-y-4">
-              <Field label="Usuario">
-                <TextInput
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="username"
-                  autoFocus
-                  required
-                />
-              </Field>
-
-              <Field label="Contraseña">
-                <TextInput
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-              </Field>
-
-              <Checkbox
-                label="Usar directorio corporativo"
-                checked={useDirectory}
-                onChange={(e) => setUseDirectory(e.target.checked)}
-              />
-
-              <Button
-                type="submit"
-                disabled={busy || !email || !password}
-                className="w-full py-2 shadow-xs"
-              >
-                <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
-                {busy ? 'Comprobando…' : 'Iniciar sesión'}
-              </Button>
-            </form>
-          )}
-
-          {context.sso_enabled && !context.sso_user ? (
-            <p className="border-t border-panel-border pt-3 text-xs text-label">
-              El acceso único está activo pero el portal no ha enviado tu
-              identidad. Usa tus credenciales o accede desde el portal
-              corporativo.
+            <p className="text-sm text-label" role="status">
+              El inicio de sesión con Authelia no está disponible por ahora.
             </p>
-          ) : null}
+          )}
         </Card>
       </div>
     </div>

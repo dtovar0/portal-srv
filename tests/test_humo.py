@@ -25,7 +25,8 @@ def test_contexto_de_acceso_responde_sin_sesion(client):
     assert respuesta.status_code == 200
     datos = respuesta.get_json()
     assert datos['authenticated'] is False
-    assert datos['sso_enabled'] is False
+    assert datos['oidc_enabled'] is False
+    assert datos['emergency_available'] is True
 
 
 def test_endpoint_protegido_sin_sesion_devuelve_401(client):

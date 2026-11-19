@@ -89,6 +89,11 @@ def _validar_configuracion():
     from app.modules.connectors.configuracion import (
         validar_al_arrancar as validar_conectores)
     validar_conectores()
+    # Fuera de dev, sin `OIDC_*` completas y con https la app no arranca;
+    # no se contacta a Authelia al arrancar (FNC-141, ADR-009).
+    from app.modules.auth.oidc_configuracion import (
+        validar_al_arrancar as validar_oidc)
+    validar_oidc()
     # Fuera de dev, `VAULTWARDEN_*` incompleta o insegura detiene el arranque
     # (FNC-068); no se conecta a Vaultwarden al arrancar.
     from app.modules.secretos.configuracion import (

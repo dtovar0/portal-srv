@@ -442,6 +442,14 @@ if ! salida_vw="$(revisar_vaultwarden "$PREFIX/.env")"; then
     die "Corregir las variables de Vaultwarden del .env (ver deploy/README.md)."
 fi
 printf '%s\n' "$salida_vw" | sed 's/^/    /'
+# OIDC_* de Authelia (FNC-143): mismas reglas que preflight; el secreto no se imprime.
+# shellcheck source=deploy/oidc.sh
+. "$PREFIX/deploy/oidc.sh"
+if ! salida_oidc="$(revisar_oidc "$PREFIX/.env")"; then
+    printf '%s\n' "$salida_oidc" | sed 's/^/    /'
+    die "Corregir las variables OIDC_* del .env (ver docs/operacion/AUTHELIA-OIDC.md)."
+fi
+printf '%s\n' "$salida_oidc" | sed 's/^/    /'
 # Fuera de desarrollo la BD debe ser MySQL o PostgreSQL (FNC-134, FNC-146);
 # mismo criterio que preflight.
 if ! salida_motor="$(revisar_motor_bd "$PREFIX/.env")"; then

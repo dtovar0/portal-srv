@@ -44,6 +44,9 @@ warnings=0
 # Revisión de VAULTWARDEN_* y del bind LDAP (FNC-068).
 # shellcheck source=deploy/secretos.sh
 . "$(dirname "${BASH_SOURCE[0]}")/secretos.sh"
+# Variables OIDC_* de Authelia (FNC-143).
+# shellcheck source=deploy/oidc.sh
+. "$(dirname "${BASH_SOURCE[0]}")/oidc.sh"
 # Motor de BD: fuera de desarrollo debe ser MySQL o PostgreSQL (FNC-134, FNC-146).
 # shellcheck source=deploy/motor_bd.sh
 . "$(dirname "${BASH_SOURCE[0]}")/motor_bd.sh"
@@ -313,6 +316,14 @@ if [[ -f .env ]]; then
             *) bad "$texto" ;;
         esac
     done < <(revisar_vaultwarden .env)
+    # OIDC_* (FNC-143): obligatorias fuera de desarrollo; el secreto nunca se imprime.
+    while read -r nivel texto; do
+        case "$nivel" in
+            OK) ok "$texto" ;;
+            AVISO) warn "$texto" ;;
+            *) bad "$texto" ;;
+        esac
+    done < <(revisar_oidc .env)
     # DB_ENGINE mysql o postgresql fuera de desarrollo (FNC-134, FNC-146); solo se lee esa clave.
     while read -r nivel texto; do
         case "$nivel" in

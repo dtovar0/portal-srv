@@ -260,12 +260,11 @@ export const api = {
 
   // --- Autenticación ---
   authContext: () => request<AuthContext>('/auth/context'),
-  ssoLogin: () =>
-    request<{ status: string; role: string }>('/auth/sso', { method: 'POST' }),
-  login: (email: string, password: string, method: 'directory' | 'local') =>
-    request<{ status: string; role: string }>('/auth/login', {
+  /** Cuenta de emergencia (ADR-009 6A): única entrada con contraseña. */
+  loginLocal: (email: string, password: string) =>
+    request<{ status: string; role: string }>('/auth/local', {
       method: 'POST',
-      body: JSON.stringify({ email, password, method }),
+      body: JSON.stringify({ email, password }),
     }),
   logout: () =>
     request<{ status: string; redirect: string | null }>(

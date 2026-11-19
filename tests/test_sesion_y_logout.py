@@ -5,12 +5,12 @@ import pytest
 from app import db
 from app.authz import ROLE_ADMIN
 from tests.matriz_proteccion import CONTRASENA_FICTICIA
+from tests.oidc_simulado import VARIABLES as VARIABLES_OIDC
 from tests.peticiones_auth import (A, hay_auditoria, iniciar_sesion_api,
                                    usuario_en_sesion)
 
 COOKIE_SESION = 'nexus_session'
-URL_SLO_FICTICIA = 'https://auth.pruebas.invalid/logout'
-URL_BASE_FICTICIA = 'https://portal.pruebas.invalid'
+URL_CIERRE_FICTICIA = 'https://auth.pruebas.invalid/logout'
 
 
 @pytest.fixture
@@ -75,23 +75,31 @@ def test_logout_sin_sesion_da_401(client):
     assert client.post(f'{A}/logout').status_code == 401
 
 
-def test_logout_con_sso_devuelve_la_url_de_cierre_de_authelia(
+def test_logout_con_oidc_devuelve_la_url_de_cierre_de_authelia(
         cliente_con_login, monkeypatch):
-    monkeypatch.setenv('AUTHELIA_ENABLED', 'true')
-    monkeypatch.setenv('AUTHELIA_SLO_URL', URL_SLO_FICTICIA)
-    monkeypatch.setenv('BASE_URL', URL_BASE_FICTICIA)
+    for clave, valor in VARIABLES_OIDC.items():
+        monkeypatch.setenv(clave, valor)
+    monkeypatch.setenv('OIDC_LOGOUT_URL', URL_CIERRE_FICTICIA)
 
     respuesta = cliente_con_login.post(f'{A}/logout')
 
-    assert respuesta.get_json()['redirect'] == \
-        f'{URL_SLO_FICTICIA}?rd={URL_BASE_FICTICIA}/login'
+    assert respuesta.get_json()['redirect'] == (
+        f'{URL_CIERRE_FICTICIA}?rd=https%3A%2F%2Fportal.pruebas.invalid%2Flogin')
     assert usuario_en_sesion(cliente_con_login) is None
 
 
-def test_logout_con_sso_sin_url_de_cierre_no_redirige(cliente_con_login,
-                                                      monkeypatch):
-    monkeypatch.setenv('AUTHELIA_ENABLED', 'true')
+def test_logout_con_oidc_sin_url_de_cierre_no_redirige(cliente_con_login,
+                                                       monkeypatch):
+    for clave, valor in VARIABLES_OIDC.items():
+        monkeypatch.setenv(clave, valor)
+    from app.modules.auth import oidc
+    oidc.reiniciar_clientes()
+    # Sin red: el descubrimiento falla y no hay a dónde redirigir.
+    from tests.oidc_simulado import ProveedorOidc
+    proveedor = ProveedorOidc().instalar(monkeypatch)
+    proveedor.metadatos = lambda: (_ for _ in ()).throw(RuntimeError('sin red'))
 
     respuesta = cliente_con_login.post(f'{A}/logout')
 
     assert respuesta.get_json()['redirect'] is None
+    oidc.reiniciar_clientes()
