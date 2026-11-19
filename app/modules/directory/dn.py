@@ -60,3 +60,25 @@ def bajo_base(dn, base, incluir_base=False):
     if len(rdns) == len(rdns_base) and not incluir_base:
         return False
     return rdns[-len(rdns_base):] == rdns_base
+
+
+def separar_dn(dn):
+    """`(rdn, padre)` de un DN, o `None` si no es válido o no tiene padre.
+
+    El RDN conserva su escritura original (con escapes y multivalor) para
+    reutilizarlo tal cual en un ModifyDN (FNC-163).
+    """
+    if not dn:
+        return None
+    try:
+        partes = parse_dn(dn)
+    except LDAPInvalidDnError:
+        return None
+    rdn = ''
+    for i, (atributo, valor, separador) in enumerate(partes):
+        rdn += f'{atributo}={valor}'
+        if separador != SEPARADOR_MULTIVALOR:
+            padre = ''.join(f'{a}={v}{s}' for a, v, s in partes[i + 1:])
+            return (rdn, padre) if padre else None
+        rdn += SEPARADOR_MULTIVALOR
+    return None

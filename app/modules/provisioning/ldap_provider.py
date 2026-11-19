@@ -3,7 +3,8 @@
 - El grupo sale de la plataforma (`ldap_group_user_dn` o `ldap_group_admin_dn`
   según el nivel): el ejecutor solo escribe en grupos registrados en una
   plataforma y debajo de `LDAP_GROUPS_BASE_DN` (SEC-LDAP-04; el escritor
-  vuelve a validar la base).
+  vuelve a validar la base). Si el grupo está movido a la OU de inactivos
+  (FNC-163), se usa su DN actual.
 - La persona se identifica por el correo de su cuenta del portal, igual que el
   login de directorio (FNC-042): filtro exacto `(mail=…)` del cliente único
   (`buscar_por_correo`; cualquier valor de un `mail` multivalor). Ninguna o
@@ -26,6 +27,7 @@ from app.modules.directory.errors import (MOTIVO_DIRECTORIO,
 from app.modules.directory.ldap_client import (ClienteDirectorio,
                                                ErrorDirectorio, PersonaAmbigua)
 from app.modules.directory.writer import EscritorDirectorio
+from app.modules.platforms import ubicacion_grupos
 from app.modules.platforms.grupos import dn_en_base
 from app.modules.platforms.tipos import CAMPOS_DN, TIPO_LDAP
 from app.modules.provisioning.providers import (Provisioner,
@@ -103,7 +105,10 @@ class ProveedorLdap(Provisioner):
             raise _Fallo(permanente(MOTIVO_GRUPO_NO_CONFIGURADO))
         if not dn_en_base(configuracion, dn):
             raise _Fallo(permanente(MOTIVO_FUERA_DE_BASE))
-        return dn
+        # Con la plataforma inactiva el grupo puede estar en la OU de
+        # inactivos (FNC-163): se opera donde está hoy.
+        return ubicacion_grupos.dn_actual(plataforma, operacion.nivel,
+                                          configuracion)
 
     def _persona(self, operacion, cliente):
         usuario = (db.session.get(User, operacion.usuario_id)

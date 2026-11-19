@@ -192,6 +192,10 @@ def _registrar_cli_y_manejadores(app):
     from app.modules.users.entrega_credenciales import \
         registrar as registrar_entregas
     registrar_entregas()
+    # El worker admite el traslado de grupos de plataformas inactivas (FNC-163).
+    from app.modules.platforms.traslado_grupos import \
+        registrar as registrar_traslados
+    registrar_traslados()
 
 
 def _crear_tablas(app):
@@ -208,6 +212,7 @@ def _crear_tablas(app):
     from app.modules.notifications.models import SMTPConfig, NotificationTemplate
     from app.modules.auth.models import AuthConfig, User
     from app.modules.users.models import EntregaCredenciales
+    from app.modules.platforms.models import TrasladoGrupos
 
     # Crear tablas automáticamente dentro del contexto de la app
     with app.app_context():

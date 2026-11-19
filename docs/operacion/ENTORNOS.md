@@ -111,6 +111,7 @@ Una sola cuenta (`LDAP_BIND_DN`) lee y escribe (decisión del dueño, 2026-10-15
 |---|---|
 | Atributo de membresía (`LDAP_GROUP_MEMBER_ATTR`) de las entradas bajo `LDAP_GROUPS_BASE_DN` | `write` (agregar y quitar valores) |
 | Resto de atributos de los grupos | `read` |
+| Mover grupos entre `LDAP_GROUPS_BASE_DN` y `LDAP_GROUPS_INACTIVE_BASE_DN` (FNC-163; solo si se enciende) | `add`/`delete` de entradas hijas en ambas OU (ModifyDN) y `write` en el atributo de membresía de la OU de inactivos |
 | Crear entradas hijas de `LDAP_USERS_BASE_DN` (`entry` + `children` de la OU) | `add` (sin `delete`) |
 | `userPassword` en cualquier entrada | sin acceso (`none`) |
 | Personas bajo `LDAP_USERS_BASE_DN` | `read` (búsqueda y perfil) |

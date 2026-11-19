@@ -68,6 +68,9 @@ class Platform(db.Model):
     area = db.relationship('Area', backref=db.backref('platforms', lazy=True))
 
     def to_dict(self):
+        # Import diferido: el traslado de grupos carga el modelo de `platforms` (FNC-163).
+        from app.modules.platforms.ubicacion_grupos import resumen
+        ubicacion_grupos, estado_traslado = resumen(self)
         return {
             'id': self.id,
             'name': self.name,
@@ -86,6 +89,8 @@ class Platform(db.Model):
             'ldap_group_user_dn': self.ldap_group_user_dn,
             'ldap_group_admin_dn': self.ldap_group_admin_dn,
             'groups_status': self.groups_status,
+            'groups_location': ubicacion_grupos,
+            'groups_move_status': estado_traslado,
             'has_connector': tiene_conector(self),
             'active_grants': accesos_vigentes(self),
             # `user_ids` ya no se expone (contrato plataformas-integracion v1).

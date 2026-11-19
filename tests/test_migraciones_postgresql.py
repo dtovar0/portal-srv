@@ -17,7 +17,7 @@ RAIZ = pathlib.Path(__file__).resolve().parents[1]
 ALEMBIC = pathlib.Path(sys.executable).with_name('alembic')
 
 # Tramos (desde:hasta) que se pueden generar offline y agregan booleanos.
-TRAMOS = ['0013:0014', '0016:0017']
+TRAMOS = ['0013:0014', '0016:0017', '0017:0018']
 
 BOOLEANO_CON_DEFAULT_ENTERO = re.compile(r'BOOLEAN\s+DEFAULT\s+[01]\b', re.I)
 
@@ -34,5 +34,5 @@ def sql_postgresql(tramo):
 @pytest.mark.parametrize('tramo', TRAMOS)
 def test_booleanos_sin_default_entero_en_postgresql(tramo):
     sql = sql_postgresql(tramo)
-    assert 'ALTER TABLE' in sql
+    assert 'ALTER TABLE' in sql or 'CREATE TABLE' in sql
     assert not BOOLEANO_CON_DEFAULT_ENTERO.search(sql), sql
