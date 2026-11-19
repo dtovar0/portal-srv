@@ -22,6 +22,7 @@ from app.modules.api.helpers import endpoint_retirado
 from app.modules.audit.services import add_audit_log
 from app.modules.auth import oidc
 from app.modules.auth.acceso_local import (es_cuenta_de_emergencia,
+                                           login_local_por_oidc_apagado,
                                            motivo_rechazo_login_local)
 from app.modules.auth.limite_intentos import MENSAJE_BLOQUEO, bloqueado
 from app.modules.auth.models import User
@@ -69,6 +70,8 @@ def context():
         'authenticated': current_user.is_authenticated,
         # La ruta de emergencia siempre existe, pero no tiene enlace visible (ADR-009 6A).
         'emergency_available': True,
+        # Authelia apagado (FNC-158): `/login` muestra usuario y contraseña (solo cuentas locales).
+        'local_login': login_local_por_oidc_apagado(),
     })
 
 
