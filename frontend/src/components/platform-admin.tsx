@@ -675,9 +675,9 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
               <div
                 role="group"
                 aria-label="Cuadrícula de áreas (filas × columnas)"
-                className="inline-flex h-12 min-h-12 items-center gap-1 rounded-xl border border-panel-border bg-fondo p-1 shadow-xs"
+                className="inline-flex h-12 min-h-12 items-stretch overflow-hidden rounded-xl border border-panel-border bg-fondo shadow-xs"
               >
-                <Icono nombre="panel" tamano="sm" ariaHidden={true} className="mx-1.5 shrink-0 text-primary-text" />
+                <Icono nombre="panel" tamano="sm" ariaHidden={true} className="mx-3 shrink-0 self-center text-primary-text" />
                 {CUADRICULAS.map((x) => {
                   const etiqueta = `${x.f}×${x.c}`;
                   const activa = gridFilas === x.f && gridColumnas === x.c;
@@ -688,7 +688,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                       onClick={() => actualizarGridPreset(x.f, x.c)}
                       aria-pressed={activa}
                       aria-label={`${x.f} filas por ${x.c} columnas`}
-                      className={`flex h-10 min-w-12 items-center justify-center rounded-lg px-3 text-xs font-bold tabular-nums transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      className={`flex min-h-12 min-w-12 items-center justify-center border-l border-panel-border px-3.5 text-xs font-bold tabular-nums transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${
                         activa ? 'bg-primary text-on-primary shadow-xs' : 'text-label hover:bg-superficie hover:text-body-text'
                       }`}
                     >
