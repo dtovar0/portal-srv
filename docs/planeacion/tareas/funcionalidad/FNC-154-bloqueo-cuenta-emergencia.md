@@ -45,3 +45,6 @@
 | `limite_intentos.bloqueado` (parámetro opcional nuevo) | función | solo `POST /auth/local`; con el valor por defecto se comporta igual | ☐ |
 
 `impacto.py` marcó `bloqueado` como usado en `frontend/src` y `tests`: falso positivo por coincidir con la palabra común; la importación real de `limite_intentos` es solo `app/modules/api/auth.py`.
+
+## Auditoría de seguridad
+- Pendiente: el dueño decidió (2026-11-19) hacerla al terminar la plataforma, en una auditoría completa. Integrada sin ella.
