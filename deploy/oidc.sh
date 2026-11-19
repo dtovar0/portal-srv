@@ -57,11 +57,11 @@ revisar_oidc() {
         _oidc_tiene_valor "$env" "$var" && alguna=1
     done
 
-    # OIDC_HABILITADO=false (FNC-157): instalar sin Authelia; solo emergencia.
+    # OIDC_HABILITADO=false (FNC-157): instalar sin Authelia; login solo de cuentas locales (FNC-158).
     valor="$(_oidc_valor "$env" OIDC_HABILITADO | tr '[:upper:]' '[:lower:]')"
     case "$valor" in
         false|0|no)
-            echo "AVISO OIDC_HABILITADO=false: Authelia apagado; solo entra la cuenta de emergencia por /acceso-emergencia"
+            echo "AVISO OIDC_HABILITADO=false: Authelia apagado; en /login entran solo las cuentas locales"
             return 0 ;;
         ""|true|1|si|sí|yes) ;;
         *)

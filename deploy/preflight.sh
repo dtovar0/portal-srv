@@ -6,10 +6,24 @@
 # decisiones habrá que tomar. Ejecutarlo antes de install.sh.
 #
 #   sudo ./deploy/preflight.sh
+#   sudo ./deploy/preflight.sh --actualizar   # lo llama install.sh --actualizar
 #
-# Salida: 0 si se puede instalar, 1 si hay algo que resolver antes.
+# --actualizar (FNC-159): validación previa a actualizar una instalación en
+# marcha. Las unidades deben existir y los puertos pueden estar en uso por los
+# propios servicios; venv y node_modules existentes son lo normal.
+#
+# Salida: 0 si se puede instalar, 1 si hay algo que resolver antes, 2 si la
+# opción no es válida.
 
 set -uo pipefail
+
+MODO_ACTUALIZAR=0
+case "${1:-}" in
+    "") ;;
+    --actualizar) MODO_ACTUALIZAR=1 ;;
+    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+    *) echo "Opción desconocida: $1 (única opción: --actualizar)" >&2; exit 2 ;;
+esac
 
 # --- Requisitos del proyecto -------------------------------------------------
 # El proyecto funciona con Python 3.11 o superior; no exige 3.12. Se usa el
@@ -356,11 +370,18 @@ if (( puertos_ok )) && (( API_PORT == WEB_PORT )); then
     puertos_ok=0
 fi
 (( puertos_ok )) && ok "puertos elegidos: frontend ${WEB_PORT}, backend ${API_PORT}"
-for p in "$API_PORT" "$WEB_PORT"; do
+for par in "${API_PORT}:${APP_NAME}-backend" "${WEB_PORT}:${APP_NAME}-frontend"; do
+    p="${par%%:*}"; unidad_puerto="${par#*:}"
     [[ -n "$p" ]] || continue
     if ss -ltn 2>/dev/null | grep -q ":${p}\b"; then
         who=$(ss -ltnp 2>/dev/null | grep ":${p}\b" | grep -oP 'users:\(\("\K[^"]+' | head -1)
-        bad "puerto ${p} ocupado por ${who:-otro proceso}"
+        # Al actualizar, el puerto lo ocupa el propio servicio en marcha
+        # (FNC-159): se detiene antes de arrancar la versión nueva.
+        if (( MODO_ACTUALIZAR )) && systemctl is-active --quiet "$unidad_puerto" 2>/dev/null; then
+            ok "puerto ${p} en uso por ${unidad_puerto} (se detiene al actualizar)"
+        else
+            bad "puerto ${p} ocupado por ${who:-otro proceso}"
+        fi
     else
         ok "puerto ${p} libre"
     fi
@@ -418,7 +439,13 @@ printf "  registros: /var/log/%s\n" "$APP_NAME"
 printf "  nginx:     /etc/nginx/conf.d/%s.conf\n" "$APP_NAME"
 for u in "${APP_NAME}-backend" "${APP_NAME}-frontend" "${APP_NAME}-worker"; do
     if systemctl list-unit-files "$u.service" 2>/dev/null | grep -q "$u"; then
-        warn "$u.service ya existe; la instalación lo sobrescribirá"
+        if (( MODO_ACTUALIZAR )); then
+            ok "$u.service instalado"
+        else
+            warn "$u.service ya existe; la instalación lo sobrescribirá"
+        fi
+    elif (( MODO_ACTUALIZAR )); then
+        bad "$u.service no existe: no hay instalación previa (instalar sin --actualizar)"
     fi
 done
 printf "  cambiar con: APP_NAME=otro ./deploy/preflight.sh\n"
@@ -438,10 +465,15 @@ printf "  cambiar con: SVC_USER=otro ./deploy/preflight.sh\n"
 head2 "Proyecto"
 [[ -f run.py && -d app ]] && ok "backend presente" || bad "no parece la raíz del proyecto"
 [[ -f frontend/package.json ]] && ok "frontend presente" || bad "falta frontend/package.json"
-[[ -d venv ]] && warn "existe un venv; se recreará (el de desarrollo no es portable)" \
-              || printf "  venv: se creará\n"
-[[ -d frontend/node_modules ]] && warn "existe node_modules; 'npm ci' lo reemplazará" \
-                              || printf "  node_modules: se instalará\n"
+if (( MODO_ACTUALIZAR )); then
+    # Al actualizar, venv y node_modules existentes son lo normal (FNC-159).
+    printf "  venv y node_modules: se actualizan (pip install y npm ci)\n"
+else
+    [[ -d venv ]] && warn "existe un venv; se recreará (el de desarrollo no es portable)" \
+                  || printf "  venv: se creará\n"
+    [[ -d frontend/node_modules ]] && warn "existe node_modules; 'npm ci' lo reemplazará" \
+                                  || printf "  node_modules: se instalará\n"
+fi
 
 # --- Resumen -----------------------------------------------------------------
 printf "\n%sResumen%s\n" "$c_bold" "$c_off"
@@ -450,5 +482,9 @@ if (( problems > 0 )); then
     printf "\n  %sResolver los puntos marcados FALTA antes de instalar.%s\n" "$c_bad" "$c_off"
     exit 1
 fi
-printf "\n  %sSe puede continuar:%s sudo ./deploy/install.sh\n" "$c_ok" "$c_off"
+if (( MODO_ACTUALIZAR )); then
+    printf "\n  %sSe puede continuar:%s sudo ./deploy/install.sh --actualizar\n" "$c_ok" "$c_off"
+else
+    printf "\n  %sSe puede continuar:%s sudo ./deploy/install.sh\n" "$c_ok" "$c_off"
+fi
 exit 0

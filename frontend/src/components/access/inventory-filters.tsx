@@ -8,12 +8,13 @@
  * - Los selectores aplican al cambiar; la búsqueda, al enviar (Enter o "Buscar").
  * - El texto se limpia antes de enviarlo: sin caracteres de control (el
  *   servidor responde 400) y como máximo `BUSQUEDA_MAX` caracteres.
+ * - Integrado en la barra de herramientas estandarizada de tres secciones.
  */
 
 import { useState } from 'react';
 import type { AccessLevel, AccessOrigin, InventoryParams } from '@/lib/access/types';
-import { FilterBar, FilterBarGrid, FilterBarSearch } from '../filter-bar';
-import { Field, Option, Select, TextInput } from '../form';
+import { Button, Option, Select, TextInput } from '../form';
+import { Icono } from '../icono';
 import { NIVELES } from './access-status-badge';
 import { FILTROS } from './my-access';
 import { type OpcionesAlcance, ScopeSelects } from './scope-filters';
@@ -86,61 +87,101 @@ export function InventoryFilters({
   }
 
   return (
-    <FilterBar label="Filtros del inventario" layout="stack">
-      <FilterBarSearch onSubmit={buscar}>
-        <TextInput
-          type="search"
-          value={borrador}
-          maxLength={BUSQUEDA_MAX}
-          onChange={(event) => setBorrador(event.target.value)}
-          placeholder="Nombre o correo del usuario…"
-          aria-label="Buscar en el inventario por nombre o correo del usuario"
-        />
-      </FilterBarSearch>
+    <div role="search" aria-label="Filtros del inventario" className="flex flex-wrap items-center gap-2">
+      <form onSubmit={buscar} className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+        <div className="relative min-w-0 flex-1 sm:w-72 sm:flex-none md:w-80 max-w-sm">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-label">
+            <Icono nombre="buscar" tamano="md" ariaHidden={true} />
+          </div>
+          <TextInput
+            type="search"
+            value={borrador}
+            maxLength={BUSQUEDA_MAX}
+            onChange={(event) => setBorrador(event.target.value)}
+            placeholder="Nombre o correo del usuario…"
+            aria-label="Buscar en el inventario por nombre o correo del usuario"
+            className="h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-12 text-sm font-semibold text-body-text placeholder:text-placeholder transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          {borrador ? (
+            <button
+              type="button"
+              onClick={() => {
+                setBorrador('');
+                onChange({ q: '' });
+              }}
+              aria-label="Borrar término de búsqueda"
+              className="min-h-12 min-w-12 absolute inset-y-0 right-0 flex items-center justify-center text-label hover:text-body-text transition-colors"
+            >
+              <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
+            </button>
+          ) : null}
+        </div>
+        <Button type="submit" variant="fila" className="nx-btn-toolbar !px-3 shadow-xs">
+          <Icono nombre="buscar" tamano="sm" ariaHidden={true} />
+          <span>Buscar</span>
+        </Button>
+      </form>
 
-      <FilterBarGrid>
-        <ScopeSelects
-          areaId={filtros.areaId}
-          platformId={filtros.platformId}
-          opciones={opciones}
-          areaSelectId={FILTRO_AREA_ID}
-          onChange={onChange}
-        />
-        <Field label="Estado">
-          <Select
-            value={filtros.status}
-            onChange={(event) => onChange({ status: event.target.value as FiltroEstado })}
-          >
-            {FILTROS.map((filtro) => (
-              <Option key={filtro.valor} value={filtro.valor}>{filtro.texto}</Option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Nivel">
-          <Select
-            value={filtros.level ?? ''}
-            onChange={(event) =>
-              onChange({ level: (event.target.value || null) as AccessLevel | null })}
-          >
-            <Option value="">Todos los niveles</Option>
-            {(Object.keys(NIVELES) as AccessLevel[]).map((nivel) => (
-              <Option key={nivel} value={nivel}>{NIVELES[nivel]}</Option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Origen">
-          <Select
-            value={filtros.origin ?? ''}
-            onChange={(event) =>
-              onChange({ origin: (event.target.value || null) as AccessOrigin | null })}
-          >
-            <Option value="">Todos los orígenes</Option>
-            {(Object.keys(ORIGENES_INVENTARIO) as AccessOrigin[]).map((origen) => (
-              <Option key={origen} value={origen}>{ORIGENES_INVENTARIO[origen]}</Option>
-            ))}
-          </Select>
-        </Field>
-      </FilterBarGrid>
-    </FilterBar>
+      <ScopeSelects
+        areaId={filtros.areaId}
+        platformId={filtros.platformId}
+        opciones={opciones}
+        areaSelectId={FILTRO_AREA_ID}
+        variant="inline"
+        onChange={onChange}
+      />
+
+      {/* Estado */}
+      <div className="relative">
+        <label htmlFor="inventario-filtro-estado" className="sr-only">Estado</label>
+        <Select
+          id="inventario-filtro-estado"
+          aria-label="Estado"
+          value={filtros.status}
+          onChange={(event) => onChange({ status: event.target.value as FiltroEstado })}
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border bg-fondo px-3 py-2 text-xs font-semibold text-body-text transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          {FILTROS.map((filtro) => (
+            <Option key={filtro.valor} value={filtro.valor}>{filtro.texto}</Option>
+          ))}
+        </Select>
+      </div>
+
+      {/* Nivel */}
+      <div className="relative">
+        <label htmlFor="inventario-filtro-nivel" className="sr-only">Nivel</label>
+        <Select
+          id="inventario-filtro-nivel"
+          aria-label="Nivel"
+          value={filtros.level ?? ''}
+          onChange={(event) =>
+            onChange({ level: (event.target.value || null) as AccessLevel | null })}
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border bg-fondo px-3 py-2 text-xs font-semibold text-body-text transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <Option value="">Todos los niveles</Option>
+          {(Object.keys(NIVELES) as AccessLevel[]).map((nivel) => (
+            <Option key={nivel} value={nivel}>{NIVELES[nivel]}</Option>
+          ))}
+        </Select>
+      </div>
+
+      {/* Origen */}
+      <div className="relative">
+        <label htmlFor="inventario-filtro-origen" className="sr-only">Origen</label>
+        <Select
+          id="inventario-filtro-origen"
+          aria-label="Origen"
+          value={filtros.origin ?? ''}
+          onChange={(event) =>
+            onChange({ origin: (event.target.value || null) as AccessOrigin | null })}
+          className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border bg-fondo px-3 py-2 text-xs font-semibold text-body-text transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <Option value="">Todos los orígenes</Option>
+          {(Object.keys(ORIGENES_INVENTARIO) as AccessOrigin[]).map((origen) => (
+            <Option key={origen} value={origen}>{ORIGENES_INVENTARIO[origen]}</Option>
+          ))}
+        </Select>
+      </div>
+    </div>
   );
 }

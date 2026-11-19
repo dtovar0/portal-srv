@@ -66,6 +66,21 @@ describe('LoginForm', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('FNC-158: Authelia apagado muestra usuario y contraseña y entra por /auth/local', async () => {
+    ctx.mockResolvedValue({
+      oidc_enabled: false, authenticated: false, emergency_available: true, local_login: true,
+    });
+    loginLocal.mockResolvedValue({ status: 'success', role: 'usuario' } as never);
+    render(<LoginForm />);
+    const usuario = await screen.findByLabelText(/Usuario/);
+    fireEvent.change(usuario, { target: { value: 'persona@ejemplo.test' } });
+    fireEvent.change(screen.getByLabelText(/Contraseña/), { target: { value: 'clave' } });
+    expect(screen.queryByRole('button', { name: /Authelia/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Iniciar sesión/ }));
+    await waitFor(() => expect(loginLocal).toHaveBeenCalledWith('persona@ejemplo.test', 'clave'));
+    await waitFor(() => expect(window.location.href).toBe('/'));
+  });
+
   it('con sesión válida redirige a /', async () => {
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: true, emergency_available: true });
     render(<LoginForm />);
