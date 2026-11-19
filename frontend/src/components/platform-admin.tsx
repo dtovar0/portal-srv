@@ -204,8 +204,6 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
   });
   const gridFilas = cuadricula.f;
   const gridColumnas = cuadricula.c;
-  const [menuGridAbierto, setMenuGridAbierto] = useState(false);
-  const gridRef = useRef<HTMLDivElement>(null);
 
   const actualizarGridPreset = useCallback((f: number, c: number) => {
     setCuadricula({ f, c });
@@ -216,20 +214,16 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
 
   // Cerrar menús con click fuera o Escape
   useEffect(() => {
-    if (!menuEstadoAbierto && !menuGridAbierto) return;
+    if (!menuEstadoAbierto) return;
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node;
       if (menuEstadoAbierto && estadoRef.current && !estadoRef.current.contains(target)) {
         setMenuEstadoAbierto(false);
       }
-      if (menuGridAbierto && gridRef.current && !gridRef.current.contains(target)) {
-        setMenuGridAbierto(false);
-      }
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         setMenuEstadoAbierto(false);
-        setMenuGridAbierto(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -238,7 +232,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [menuEstadoAbierto, menuGridAbierto]);
+  }, [menuEstadoAbierto]);
 
   const AREAS_PER_PAGE = gridFilas * gridColumnas;
 
@@ -567,7 +561,6 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                   type="button"
                   onClick={() => {
                     setMenuEstadoAbierto((prev) => !prev);
-                    setMenuGridAbierto(false);
                   }}
                   aria-haspopup="listbox"
                   aria-expanded={menuEstadoAbierto}
@@ -678,77 +671,31 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                 ) : null}
               </div>
 
-              {/* Botón 2: Configurar cuadrícula (2..4 filas x 2..4 columnas) */}
-              <div ref={gridRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuGridAbierto((prev) => !prev);
-                    setMenuEstadoAbierto(false);
-                  }}
-                  aria-haspopup="true"
-                  aria-expanded={menuGridAbierto}
-                  aria-label={`Configurar cuadrícula: ${gridFilas} filas por ${gridColumnas} columnas`}
-                  title="Configurar cuadrícula"
-                  className={`inline-flex h-12 min-h-12 w-48 min-w-48 items-center justify-between gap-2 rounded-xl border px-3.5 text-xs font-semibold shadow-xs transition-all duration-rapida cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                    menuGridAbierto
-                      ? 'border-primary bg-primary/10 text-primary-text ring-2 ring-primary/20 shadow-1'
-                      : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:shadow-1'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Icono nombre="panel" tamano="sm" ariaHidden={true} className="text-primary-text shrink-0" />
-                    <span className="flex items-center gap-1.5 whitespace-nowrap">
-                      <span className="text-label font-medium">Cuadrícula:</span>
-                      <span className="font-bold text-body-text tabular-nums">{gridFilas}×{gridColumnas}</span>
-                    </span>
-                  </div>
-                  <Icono
-                    nombre="chevron-abajo"
-                    tamano="xs"
-                    ariaHidden={true}
-                    className={`shrink-0 transition-transform duration-rapida ${
-                      menuGridAbierto ? 'rotate-180 text-primary-text' : 'text-label'
-                    }`}
-                  />
-                </button>
-
-                {menuGridAbierto ? (
-                  <div
-                    role="region"
-                    aria-label="Configurar cuadrícula"
-                    className="absolute right-0 top-full mt-1.5 z-50 w-72 rounded-xl border border-panel-border bg-panel-fill p-3 shadow-2 backdrop-blur-md space-y-3"
-                  >
-                    <div className="flex items-center justify-between border-b border-panel-border/50 pb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-label">
-                        Cuadrícula
-                      </span>
-                      <span className="text-xs font-bold text-primary-text tabular-nums">
-                        {gridFilas * gridColumnas} slots ({gridFilas}×{gridColumnas})
-                      </span>
-                    </div>
-
-                    {/* Combinaciones (filas × columnas) */}
-                    <div>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {CUADRICULAS.map((x) => ({ ...x, l: `${x.f}×${x.c}` })).map((p) => (
-                          <button
-                            key={p.l}
-                            type="button"
-                            onClick={() => actualizarGridPreset(p.f, p.c)}
-                            className={`flex min-h-12 items-center justify-center px-3 text-xs font-semibold rounded-lg transition-colors ${
-                              gridFilas === p.f && gridColumnas === p.c
-                                ? 'bg-primary/20 text-primary-text font-bold'
-                                : 'text-label hover:text-body-text hover:bg-superficie-hundida'
-                            }`}
-                          >
-                            {p.l}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
+              {/* Cuadrícula: las 3 opciones directo en la barra, sin menú (DIS-110, pedido del dueño) */}
+              <div
+                role="group"
+                aria-label="Cuadrícula de áreas (filas × columnas)"
+                className="inline-flex h-12 min-h-12 items-center gap-1 rounded-xl border border-panel-border bg-fondo p-1 shadow-xs"
+              >
+                <Icono nombre="panel" tamano="sm" ariaHidden={true} className="mx-1.5 shrink-0 text-primary-text" />
+                {CUADRICULAS.map((x) => {
+                  const etiqueta = `${x.f}×${x.c}`;
+                  const activa = gridFilas === x.f && gridColumnas === x.c;
+                  return (
+                    <button
+                      key={etiqueta}
+                      type="button"
+                      onClick={() => actualizarGridPreset(x.f, x.c)}
+                      aria-pressed={activa}
+                      aria-label={`${x.f} filas por ${x.c} columnas`}
+                      className={`flex h-10 min-w-12 items-center justify-center rounded-lg px-3 text-xs font-bold tabular-nums transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                        activa ? 'bg-primary text-on-primary shadow-xs' : 'text-label hover:bg-superficie hover:text-body-text'
+                      }`}
+                    >
+                      {etiqueta}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
