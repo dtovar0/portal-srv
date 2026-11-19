@@ -120,7 +120,22 @@ El correo (`email`) debe existir en el usuario de Authelia (su fuente de usuario
 | Authelia muestra «invalid_redirect_uri» | El cliente no tiene exactamente esa `redirect_uris` |
 | Authelia con CA interna | Apuntar `REQUESTS_CA_BUNDLE` (variable estándar de la biblioteca `requests`) al PEM de la CA en el `.env` del portal; el certificado siempre se valida |
 
-## 7. Vuelta atrás
+## 7. Authelia en Docker
+
+| Paso | Comando |
+|---|---|
+| Nombre del contenedor | `docker ps --format '{{.Names}}\t{{.Image}}'` |
+| Versión | `docker exec <contenedor> authelia --version` (o la etiqueta de la imagen, p. ej. `authelia/authelia:4.38`) |
+| Generar secreto y digest (paso 4) | `docker exec <contenedor> authelia crypto hash generate pbkdf2 --variant sha512 --random --random.length 72 --random.charset rfc3986` |
+| Llave de firma `jwks` (si aún no tiene) | `docker exec <contenedor> authelia crypto pair rsa generate --directory /config/keys` (queda en el volumen montado) |
+| Editar la configuración | `configuration.yml` en el volumen montado (`docker inspect <contenedor>` → `Mounts`), no dentro de la imagen |
+| Aplicar cambios | `docker restart <contenedor>` (o `docker compose restart authelia`) y revisar `docker logs --tail 50 <contenedor>` |
+
+- **Alcance desde el portal:** el backend del portal (no el navegador) descarga el descubrimiento, las llaves y el token de `OIDC_ISSUER_URL`. Debe ser la URL **pública con https** de Authelia, resoluble y alcanzable **desde el servidor del portal**; nunca el nombre interno del contenedor ni `localhost` (el certificado se valida contra el nombre).
+- **Certificado:** debe ser de una CA que el sistema del portal ya confíe (como el certificado del dominio). Con una CA interna, el backend no podrá validarla.
+- **Prueba rápida desde el servidor del portal:** `curl -s https://auth.<dominio>/.well-known/openid-configuration | head -c 300` debe devolver JSON con `issuer` igual a `OIDC_ISSUER_URL`.
+
+## 8. Vuelta atrás
 
 - Volver a la versión anterior del portal devuelve `/auth/sso` y el login por directorio. Las variables `AUTHELIA_*` retiradas están en [HISTORIAL.md](../configuracion/HISTORIAL.md).
 - La migración `0014` (columna `users.oidc_sub`) se revierte con `alembic downgrade 0013`: se pierden los vínculos por `sub` y se rehacen por correo al volver a subir.
