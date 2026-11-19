@@ -70,6 +70,8 @@ warnings=0
 # Puertos de backend y frontend (FNC-127).
 # shellcheck source=deploy/puertos.sh
 . "$(dirname "${BASH_SOURCE[0]}")/puertos.sh"
+# unidad_systemd_existe (FNC-159): sin falso negativo por pipefail.
+. "$(dirname "${BASH_SOURCE[0]}")/unidades.sh"
 
 # Color solo en terminal: al redirigir a un fichero o a un pipe, texto plano.
 if [[ -t 1 ]]; then
@@ -186,7 +188,7 @@ if command -v node >/dev/null 2>&1; then
     command -v npm >/dev/null 2>&1 && ok "npm $(npm --version)" || bad "npm no está instalado"
 else
     bad "Node.js no está instalado (se instalará el módulo nodejs:${NODE_MAJOR})"
-    dnf module list nodejs 2>/dev/null | grep -q "^nodejs *${NODE_MAJOR}" \
+    dnf module list nodejs 2>/dev/null | grep "^nodejs *${NODE_MAJOR}" >/dev/null \
         && ok "el módulo nodejs:${NODE_MAJOR} está disponible" \
         || warn "el módulo nodejs:${NODE_MAJOR} no aparece; se usará el repo de NodeSource"
 fi
@@ -373,7 +375,7 @@ fi
 for par in "${API_PORT}:${APP_NAME}-backend" "${WEB_PORT}:${APP_NAME}-frontend"; do
     p="${par%%:*}"; unidad_puerto="${par#*:}"
     [[ -n "$p" ]] || continue
-    if ss -ltn 2>/dev/null | grep -q ":${p}\b"; then
+    if ss -ltn 2>/dev/null | grep ":${p}\b" >/dev/null; then
         who=$(ss -ltnp 2>/dev/null | grep ":${p}\b" | grep -oP 'users:\(\("\K[^"]+' | head -1)
         # Al actualizar, el puerto lo ocupa el propio servicio en marcha
         # (FNC-159): se detiene antes de arrancar la versión nueva.
@@ -419,7 +421,7 @@ fi
 
 if systemctl is-active --quiet firewalld 2>/dev/null; then
     ok "firewalld activo"
-    firewall-cmd --list-services 2>/dev/null | grep -qw https \
+    firewall-cmd --list-services 2>/dev/null | grep -w https >/dev/null \
         && ok "https permitido" \
         || warn "https no está permitido en la zona activa (el script lo añade)"
 else
@@ -438,7 +440,7 @@ printf "  prefijo:   %s (en sitio)\n" "$RAIZ_CODIGO"
 printf "  registros: /var/log/%s\n" "$APP_NAME"
 printf "  nginx:     /etc/nginx/conf.d/%s.conf\n" "$APP_NAME"
 for u in "${APP_NAME}-backend" "${APP_NAME}-frontend" "${APP_NAME}-worker"; do
-    if systemctl list-unit-files "$u.service" 2>/dev/null | grep -q "$u"; then
+    if unidad_systemd_existe "$u"; then
         if (( MODO_ACTUALIZAR )); then
             ok "$u.service instalado"
         else

@@ -61,3 +61,6 @@
 ## Bitácora
 - 2026-11-19: implementada en el worktree del agente devops; pruebas que fallan antes del cambio; docs y tablero.
 - 2026-11-19: retomada tras corte por límite de uso; batería completa rehecha (3052 passed, exit 0) y commit.
+
+## Corrección tras la primera prueba real (2026-11-19)
+- En el servidor del dueño `--actualizar` dio `FALTA portal-backend.service no existe` con la unidad activa. Causa: `systemctl list-unit-files X | grep -q X` con `set -o pipefail`: grep sale en la primera coincidencia y systemctl muere por SIGPIPE al escribir el pie. Arreglo: `deploy/unidades.sh` (`unidad_systemd_existe`, guarda la salida antes de buscar) y `grep … >/dev/null` en las otras tuberías del preflight. Regresión: `tests/deploy/test_unidades_sh.py` (reproduce el falso negativo con el patrón viejo).
