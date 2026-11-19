@@ -13,9 +13,10 @@ export default function Page() {
   return (
     <AppShell>
       <RequireRole requires="any_admin">
-        <div className="space-y-6">
+        <div className="flex h-full w-full flex-col gap-4 min-h-0">
           <PageHeader
             title="Auditoría usuarios"
+            className="shrink-0"
           />
           <Suspense fallback={<Skeleton variant="fila" count={5} ariaLabel="Cargando inventario…" />}>
             <Inventory />
