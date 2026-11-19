@@ -18,10 +18,11 @@ Reglas:
 - Sin notificaciones activas o sin `BASE_URL` no se crea ningún Send (no queda
   un Send huérfano): la entrega queda `pendientes`.
 - Si el correo falla, el Send recién creado se borra (mejor esfuerzo); si
-  tiene éxito, se borra el Send anterior (reenvío).
+  tiene éxito, se borra el Send anterior.
 - Reintentos: `PROVISIONING_MAX_ATTEMPTS` y el *backoff* de los accesos
   (`segundos_de_espera`). Agotados, el estado sigue `pendientes`, no hay más
-  barrido y se avisa a los superadmins; «Reenviar» vuelve a abrir los intentos.
+  barrido y se avisa a los superadmins (el administrador fija la contraseña
+  desde «Editar usuario», FNC-161).
 """
 import logging
 import os
@@ -82,17 +83,6 @@ CODIGO_DIRECTORIO = 'directorio_no_disponible'
 CODIGO_CONTRASENA_RECHAZADA = 'contrasena_rechazada'
 CODIGO_INESPERADO = 'error_inesperado'
 CODIGO_AGOTADOS = 'intentos_agotados'
-
-NO_APLICABLE = ('Esta cuenta no admite el reenvío de credenciales.', 409,
-                'credenciales_no_aplicables')
-ENTREGA_EN_CURSO = ('Ya hay una entrega de credenciales en curso para esta cuenta; '
-                    'inténtalo en unos minutos.', 409, 'entrega_en_curso')
-# Quién toma la reserva en un reenvío (mismo campo que el worker).
-RESERVA_REENVIO = 'reenvio'
-DIRECTORIO_NO_DISPONIBLE_REENVIO = (
-    'No se pudo actualizar la contraseña en el directorio.', 503,
-    'directorio_no_disponible')
-
 
 def url_del_portal():
     """URL del portal para el Send y el correo: solo de `BASE_URL`."""
@@ -270,79 +260,6 @@ def completar_alta(cuenta, contrasena):
         db.session.rollback()
         logger.error('Credenciales: no se registró el primer intento (%s); '
                      'queda el reintento del worker.', type(exc).__name__)
-
-
-def _tomar_para_reenvio(entrega_id, cfg):
-    momento = ahora()
-    vencida = momento - timedelta(seconds=cfg.vencimiento_reserva)
-    sentencia = (
-        update(EntregaCredenciales)
-        .where(EntregaCredenciales.id == entrega_id,
-               or_(EntregaCredenciales.locked_at.is_(None),
-                   EntregaCredenciales.locked_at < vencida))
-        .values(locked_at=momento, locked_by=RESERVA_REENVIO, updated_at=momento)
-        .execution_options(synchronize_session=False))
-    tomada = db.session.execute(sentencia).rowcount == 1
-    db.session.commit()
-    return tomada
-
-
-def _liberar_reenvio(entrega_id):
-    db.session.execute(
-        update(EntregaCredenciales)
-        .where(EntregaCredenciales.id == entrega_id,
-               EntregaCredenciales.locked_by == RESERVA_REENVIO)
-        .values(locked_at=None, locked_by=None)
-        .execution_options(synchronize_session=False))
-    db.session.commit()
-
-
-def reenviar_credenciales(cuenta):
-    """«Reenviar»: contraseña nueva, Send nuevo y borrado del anterior.
-
-    Devuelve `(estado, None)` con `enviadas` o `pendientes`, o
-    `(None, (mensaje, HTTP, code))`. La contraseña nueva se fija en LDAP antes
-    del Send: si el Send falla queda `pendientes` y el worker reintenta con otra.
-    """
-    entrega = cuenta.credential_delivery
-    if cuenta.auth_source != 'ldap' or entrega is None:
-        return None, NO_APLICABLE
-    cfg = cargar_configuracion()
-    entrega_id, uid, send_anterior = entrega.id, entrega.uid, entrega.send_id
-    correo, nombre = cuenta.email, cuenta.nombre
-    db.session.rollback()
-
-    # Reserva atómica, como el worker: si un reintento está en curso, dos
-    # contraseñas y dos Sends confundirían el onboarding (revisión de seguridad).
-    if not _tomar_para_reenvio(entrega_id, cfg):
-        return None, ENTREGA_EN_CURSO
-
-    contrasena = generar()
-    codigo = fijar_contrasena_en_directorio(uid, contrasena)
-    if codigo:
-        _liberar_reenvio(entrega_id)
-        return None, DIRECTORIO_NO_DISPONIBLE_REENVIO
-    codigo, send_id = enviar_credenciales(correo, nombre, uid, contrasena,
-                                          send_anterior)
-    del contrasena
-
-    entrega = db.session.get(EntregaCredenciales, entrega_id,
-                             populate_existing=True)
-    momento = ahora()
-    entrega.max_attempts = cfg.max_intentos
-    if codigo is None:
-        entrega.attempts_count = 0
-        marcar_enviada(entrega, send_id, momento,
-                       Evento.CREDENCIALES_REENVIADAS, False)
-        estado = ESTADO_ENVIADAS
-    else:
-        entrega.attempts_count = 1
-        marcar_pendiente(entrega, codigo, momento, cfg)
-        _auditar(Evento.CREDENCIALES_PENDIENTES, entrega.cuenta, 'warning',
-                 f'Reenvío pendiente: {codigo}.', entrega, False)
-        estado = ESTADO_PENDIENTES
-    db.session.commit()
-    return estado, None
 
 
 # --------------------------------------------------------------------------- #

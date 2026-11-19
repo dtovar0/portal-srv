@@ -241,19 +241,20 @@ def test_admin_area_cambia_contrasena_local_de_su_usuario(escena, como,
     assert _cuenta(escena['usuario_a']).check_password(CONTRASENA_NUEVA)
 
 
-def test_admin_area_no_cambia_contrasena_de_cuenta_no_local(escena, como):
+def test_admin_area_no_cambia_contrasena_de_cuenta_de_directorio(escena, como):
+    """FNC-161: el cambio en LDAP es solo del superadmin (antes: 400)."""
     cuenta = _cuenta(escena['usuario_a'])
     cuenta.auth_source = 'ldap'
     db.session.commit()
     respuesta = como(escena['admin_a']).put(
         f"{A}/users/{escena['usuario_a']}", json={'password': CONTRASENA_NUEVA})
-    _codigo(respuesta, 400, 'campo_no_permitido')
+    _codigo(respuesta, 403, 'solo_superadmin')
     assert _cuenta(escena['usuario_a']).check_password(CONTRASENA_FICTICIA)
 
 
-@pytest.mark.parametrize('origen', ('ldap', 'sso'))
-def test_nadie_cambia_la_contrasena_de_cuentas_no_locales(escena, como,
-                                                          origen):
+@pytest.mark.parametrize('origen', ('sso', 'oidc'))
+def test_nadie_cambia_la_contrasena_de_cuentas_de_sso(escena, como,
+                                                      origen):
     cuenta = _cuenta(escena['usuario_a'])
     cuenta.auth_source = origen
     db.session.commit()

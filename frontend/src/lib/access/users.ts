@@ -23,12 +23,6 @@ export const usersApi = {
       '/users/password-policy', undefined,
       () => ({ status: 'success', policy: MOCK_PASSWORD_POLICY })),
 
-  /** Contraseña nueva y Send nuevo (solo superadmin): `200` enviadas o `202` pendientes. */
-  resendCredentials: (userId: number) =>
-    accessRequest<UserWriteResult>(
-      `/users/${userId}/credentials`, jsonBody('POST', {}),
-      () => ({ status: 'success', user: { ...MOCK_USER, id: userId, credentials_status: 'enviadas' } })),
-
   /** Crea la cuenta en el directorio y en el portal con su contraseña inicial (rol `usuario`). */
   createDirectoryAccount: (input: DirectoryAccountInput) =>
     accessRequest<UserWriteResult>(

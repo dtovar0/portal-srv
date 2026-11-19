@@ -5,7 +5,11 @@
 
 ## [Sin publicar]
 
+### Eliminado
+- Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
+
 ### Corregido
+- Web: la ventana de la carta responsiva ya no muestra la ✕ «Cerrar» (no cerraba: la carta es obligatoria); `Modal` acepta `cerrable={false}` y las demás ventanas siguen igual (DIS-098, 2026-11-19).
 - Web: barra de botones de Inventario y Auditoría reordenada (contador junto a los filtros); el contador cumple AA en oscuro y la búsqueda de Inventario no desborda en móvil (DIS-099, 2026-11-19).
 - Base de datos: fuera de desarrollo la app ya no crea tablas al arrancar (solo `alembic upgrade head`); la migración 0016 recrea `credential_deliveries` si el arranque la dejó vacía y se detiene si tiene filas. Evita el DuplicateTable al actualizar (FNC-160, 2026-11-19).
 - Despliegue: `install.sh --actualizar` ya no deja arrancar el código nuevo antes de migrar (la app creaba la tabla nueva y `alembic upgrade head` fallaba con DuplicateTable). Orden nuevo con mensajes `[n/6]`: validaciones previas (incluido `preflight.sh --actualizar`) sin tocar nada → detener backend, worker y frontend → dependencias → migraciones → arrancar y comprobar que queden activos y que el backend responda (journal de la unidad que falle). Si falla la migración o las dependencias, los servicios quedan detenidos y se indica cómo reintentar; nunca se borran datos (FNC-159, 2026-11-19).
@@ -14,6 +18,7 @@
 - Migración 0014 (responsiva de usuario): el valor por defecto de `responsiva_firmada` era `DEFAULT 1`, que PostgreSQL rechaza y detenía `alembic upgrade`; ahora `DEFAULT true`. Prueba nueva que genera el SQL de PostgreSQL de la migración (FNC-155, 2026-11-18).
 
 ### Agregado
+- Usuarios: «Editar usuario» cambia la contraseña según el origen de la cuenta: `local` guarda el hash en la base (cualquier cuenta local gestionable) y `ldap` la cambia en el directorio con Password Modify y la política `PASSWORD_POLICY_*` (solo superadmin; nunca queda hash en la base); `sso` se rechaza. El formulario muestra el campo con su ayuda y la política. Contrato `areas-y-roles` v3 (FNC-161, 2026-11-19).
 - Web: el botón de confirmar de `ConfirmDialog` es de peligro solo en acciones destructivas (`type` aviso o error); «Reenviar credenciales» pasa a primario; `variant` opcional para forzarlo (DIS-097, 2026-11-18).
 - Web: los botones deshabilitados de las barras de Áreas, Usuarios, Plataformas y Conectores quedan `aria-disabled` (enfocables) con el motivo asociado por `aria-describedby`, visible al foco y descartable con Esc; `Button` acepta `motivoDeshabilitado` (DIS-096, 2026-11-18).
 - Responsiva en accesos: modal sobre el portal; un acceso otorgado sin responsiva firmada no se aprovisiona hasta que el usuario firma; `RESPONSIVA_MODO` `global` (firma única) o `por_plataforma`; migración 0017 (FNC-156, 2026-11-18).

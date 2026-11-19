@@ -22,7 +22,7 @@ vi.mock('@/lib/api', async (original) => ({
 }));
 vi.mock('@/lib/access/users', () => ({
   usersApi: {
-    setManagedAreas: vi.fn(), createDirectoryAccount: vi.fn(), passwordPolicy: vi.fn(), resendCredentials: vi.fn(),
+    setManagedAreas: vi.fn(), createDirectoryAccount: vi.fn(), passwordPolicy: vi.fn(),
   },
 }));
 vi.mock('@/components/session-provider', () => ({
@@ -91,14 +91,14 @@ describe('UsersList: alta y edición con las reglas de FNC-044 y DIS-019', () =>
     expect(api.createUser).not.toHaveBeenCalled();
   });
 
-  it('edición: sin rol, áreas administradas ni contraseña; no envía role ni managed_area_ids', async () => {
+  it('edición: sin rol ni áreas administradas; la contraseña (cuenta local, FNC-161) vacía no se envía; no envía role ni managed_area_ids', async () => {
     render(<UsersList />);
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar a Luis Paz' }));
     fireEvent.click(await screen.findByText('Editar'));
     const modal = dialogo();
     expect(modal.queryByLabelText('Rol')).toBeNull();
     expect(modal.queryByText('Áreas que administra')).toBeNull();
-    expect(modal.queryByLabelText(/Contraseña/)).toBeNull();
+    expect(modal.getByLabelText(/Contraseña/)).toBeTruthy();
     fireEvent.click(modal.getByText('Guardar'));
 
     await waitFor(() => expect(api.updateUser).toHaveBeenCalled());
@@ -313,52 +313,10 @@ describe('UsersList: credenciales iniciales (FNC-139)', () => {
     expect(screen.getAllByText(/^Credenciales (enviadas|pendientes)$/)).toHaveLength(2);
   });
 
-  it('Reenviar solo se habilita con 1 usuario con onboarding', async () => {
-    render(<UsersList />);
-    await screen.findByText('Ana Ruiz');
-    const boton = screen.getByRole('button', { name: 'Reenviar credenciales' }) as HTMLButtonElement;
-    expect(boton.disabled || boton.getAttribute('aria-disabled') === 'true').toBe(true);
-
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar a Luis Paz' }));
-    expect(screen.getByRole('button', { name: 'Reenviar credenciales a Luis Paz' })
-      .getAttribute('aria-disabled')).toBe('true');
-  });
-
-  it('pide confirmación, reenvía, avisa «enviadas» y recarga la lista', async () => {
-    vi.mocked(usersApi.resendCredentials).mockResolvedValue(
-      { status: 'success', user: { ...ONBOARDING, credentials_status: 'enviadas' } });
+  it('FNC-161: ya no hay botón «Reenviar credenciales» (la contraseña se cambia en Editar)', async () => {
     render(<UsersList />);
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar a Ana Ruiz' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Reenviar credenciales a Ana Ruiz' }));
-
-    const modal = within(screen.getByRole('alertdialog'));
-    expect(modal.getByText('Reenviar credenciales')).toBeTruthy();
-    expect(usersApi.resendCredentials).not.toHaveBeenCalled();
-    // DIS-097: reenviar no es destructivo, el botón de confirmar no es de peligro
-    expect(modal.getByRole('button', { name: 'Reenviar' }).className).not.toContain('nexus-btn-danger');
-    fireEvent.click(modal.getByText('Reenviar'));
-
-    await waitFor(() => expect(usersApi.resendCredentials).toHaveBeenCalledWith(8));
-    await waitFor(() => expect(api.users).toHaveBeenCalledTimes(2));
-    expect(screen.queryByRole('alertdialog')).toBeNull();
-  });
-
-  it('un reenvío pendiente (202) y un error (503) se avisan sin romper la lista', async () => {
-    vi.mocked(usersApi.resendCredentials)
-      .mockResolvedValueOnce({ status: 'success', user: ONBOARDING })
-      .mockRejectedValueOnce(new ApiError(503, 'detalle interno', { code: 'directorio_no_disponible' }));
-    render(<UsersList />);
-    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar a Ana Ruiz' }));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Reenviar credenciales a Ana Ruiz' }));
-    fireEvent.click(within(screen.getByRole('alertdialog')).getByText('Reenviar'));
-    await waitFor(() => expect(usersApi.resendCredentials).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Reenviar credenciales a Ana Ruiz' }));
-    fireEvent.click(within(screen.getByRole('alertdialog')).getByText('Reenviar'));
-    await waitFor(() => expect(usersApi.resendCredentials).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
-    expect(screen.queryByText('detalle interno')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Reenviar credenciales/ })).toBeNull();
+    expect(screen.getByText('Credenciales pendientes')).toBeTruthy();
   });
 });
