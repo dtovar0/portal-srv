@@ -154,7 +154,8 @@ No son configuración del proyecto ni van en `.env`/`.env.example`.
 
 | Variable | Dónde | Propósito | Alta |
 |---|---|---|---|
-| `PATH` | `tests/deploy/test_servicio_bd_sh.py`, `tests/deploy/test_reinstalar_sh.py` (FNC-129) | Anteponer un `systemctl` falso al PATH del sistema (el resto de herramientas siguen siendo las reales) | FNC-125, 2026-10-27 |
+| `PATH` | `tests/deploy/test_servicio_bd_sh.py`, `tests/deploy/test_reinstalar_sh.py` (FNC-129), `tests/deploy/test_actualizar_sh.py` (FNC-159: también `journalctl`, `curl` y `sleep` falsos) | Anteponer un `systemctl` falso al PATH del sistema (el resto de herramientas siguen siendo las reales) | FNC-125, 2026-10-27 |
+| `REG`, `EST`, `FALLA_VALIDAR`, `FALLA_DEPENDENCIAS`, `FALLA_MIGRAR`, `FALLA_ARRANQUE`, `CODIGO_SALUD` | `tests/deploy/test_actualizar_sh.py` | Registro de llamadas, estado de las unidades falsas y fallos simulados de cada paso de `--actualizar` | FNC-159, 2026-11-19 |
 
 ## Plantilla anterior retirada
 
@@ -177,6 +178,11 @@ La versión inicial de este registro (estructura genérica) listaba `APP_ENV`, `
 | `LOGDIR_BASE` | Base del directorio de registros (por defecto `<base>/<nombre>`); con `--force`, el logdir debe estar debajo (SEG-3) | `/var/log` | ruta | `deploy/install.sh` | FNC-129, 2026-10-27 (antes, literal; mismo valor) | Vigente |
 | `DATOS_SERVICIO` | Directorios del prefijo que escribe la cuenta de servicio: se le entregan si existen y no se exigen de root (SEG-1) | `instance`, `uploads`, `storage`, `backups` | rutas relativas | `deploy/install.sh` | FNC-129, 2026-10-27 | Vigente |
 | `NGINX_CONF_DIR` | Dónde `install.sh` escribe (y `--force` borra) `<nombre>.conf` | `/etc/nginx/conf.d` | ruta | `deploy/install.sh` | FNC-129, 2026-10-27 (antes, literal; mismo valor) | Vigente |
+| `ACTUALIZAR_INTENTOS_ARRANQUE` / `ACTUALIZAR_PAUSA_SEG` | `--actualizar`: cuántas veces y cada cuánto se mira que una unidad quede activa (también la pausa entre chequeos de salud) | `15` / `2` | intentos / s | `deploy/actualizar.sh` | FNC-159, 2026-11-19 (antes, `sleep 3` fijo y una sola mirada) | Vigente |
+| `ACTUALIZAR_ESTABILIZACION_SEG` | `--actualizar`: espera tras quedar activas antes de volver a mirar (una unidad con `Restart=on-failure` puede caer enseguida) | `3` | s | `deploy/actualizar.sh` | FNC-159, 2026-11-19 | Vigente |
+| `ACTUALIZAR_LINEAS_JOURNAL` | Líneas del journal que se muestran de una unidad que no arrancó o de un backend sin salud | `30` | líneas | `deploy/actualizar.sh` | FNC-159, 2026-11-19 (antes, `-n 20` literal) | Vigente |
+| `ACTUALIZAR_HOST_SALUD` / `ACTUALIZAR_RUTA_SALUD` | Chequeo de salud del backend tras actualizar (ruta pública de la pantalla de acceso; loopback por nombre) | `localhost` / `/api/v1/auth/context` | host / ruta | `deploy/actualizar.sh` | FNC-159, 2026-11-19 | Vigente |
+| `ACTUALIZAR_INTENTOS_SALUD` / `ACTUALIZAR_TIEMPO_MAX_SALUD_SEG` | Intentos del chequeo de salud y tiempo máximo de cada petición | `15` / `5` | intentos / s | `deploy/actualizar.sh` | FNC-159, 2026-11-19 | Vigente |
 | `engines.node` | Rango de Node del frontend; los tres valores de arriba deben dar el mismo | `^22.13.0 \|\| >=24.0.0` | rango semver | `frontend/package.json` (y su lock) | FNC-073, 2026-10-27 | Vigente |
 | `WTF_CSRF_TIME_LIMIT` | Caducidad del token CSRF | sin límite | — | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
 | `pool_recycle` | Reciclado de conexiones de BD | 3600 | s | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
