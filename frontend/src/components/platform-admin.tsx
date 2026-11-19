@@ -36,6 +36,12 @@ const CLASES_COLS: Record<number, string> = {
   4: 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4',
 };
 
+const CLASES_ROWS: Record<number, string> = {
+  2: 'lg:grid-rows-2',
+  3: 'lg:grid-rows-3',
+  4: 'lg:grid-rows-4',
+};
+
 export const CLAVE_GRID_FILAS = 'portal_grid_filas';
 export const CLAVE_GRID_COLUMNAS = 'portal_grid_columnas';
 
@@ -291,8 +297,8 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     const start = (pageAreas - 1) * AREAS_PER_PAGE;
     return areasFiltradas.slice(start, start + AREAS_PER_PAGE);
   }, [areasFiltradas, pageAreas, AREAS_PER_PAGE]);
-  // DIS-102: solo se completa la última fila (antes se rellenaba toda la rejilla de filas fijas)
-  const huecosUltimaFila = displayAreas.length % gridColumnas === 0 ? 0 : gridColumnas - (displayAreas.length % gridColumnas);
+  // La rejilla ocupa todo el alto con filas fijas; los huecos completan la página (DIS-102, pedido del dueño).
+  const ghostCountAreas = Math.max(0, AREAS_PER_PAGE - displayAreas.length);
 
   // Plataformas filtradas del área seleccionada (admin de área solo ve donde es admin)
   const plataformasFiltradas = useMemo(() => {
@@ -799,9 +805,13 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
           {/* Fila 2: Body con Grid configurable */}
           <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-y-auto p-1">
             {areas.loading && !areas.data ? (
-              <div className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} content-start gap-4 p-1`}>
+              <div
+                className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} ${
+                  CLASES_ROWS[gridFilas] ?? 'lg:grid-rows-2'
+                } gap-4 flex-1 h-full min-h-0 p-1`}
+              >
                 {Array.from({ length: AREAS_PER_PAGE }).map((_, i) => (
-                  <div key={i} className="min-h-56 rounded-xl border border-panel-border/60 bg-panel-fill p-5 animate-pulse" />
+                  <div key={i} className="min-h-56 h-full rounded-xl border border-panel-border/60 bg-panel-fill p-5 animate-pulse" />
                 ))}
               </div>
             ) : null}
@@ -835,11 +845,13 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
 
             {displayAreas.length > 0 ? (
               <div className="flex flex-col flex-1 min-h-0 h-full w-full justify-between gap-4">
-                {/* Grid configurable: el alto de cada fila lo da el contenido de las tarjetas (DIS-102) */}
+                {/* Grid configurable: filas fijas que ocupan todo el alto; la tarjeta se reparte (DIS-102) */}
                 <div
                   role="region"
                   aria-label="Catálogo de áreas"
-                  className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} content-start gap-4 p-1`}
+                  className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} ${
+                    CLASES_ROWS[gridFilas] ?? 'lg:grid-rows-2'
+                  } gap-4 flex-1 h-full min-h-0 auto-rows-fr p-1`}
                 >
                   {displayAreas.map((area) => (
                     <TarjetaArea
@@ -852,11 +864,11 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                   ))}
 
                   {/* Huecos que completan solo la última fila (en escritorio); las filas vacías ya no se dibujan */}
-                  {Array.from({ length: huecosUltimaFila }).map((_, idx) => (
+                  {Array.from({ length: ghostCountAreas }).map((_, idx) => (
                     <div
                       key={`ghost-area-${idx}`}
                       aria-hidden="true"
-                      className="relative hidden rounded-xl border border-dashed border-panel-border/70 bg-superficie/60 select-none pointer-events-none lg:block"
+                      className="relative hidden min-h-56 h-full rounded-xl border border-dashed border-panel-border/70 bg-superficie/60 select-none pointer-events-none lg:block"
                     />
                   ))}
                 </div>

@@ -44,3 +44,7 @@
 - Seguridad: es la primera vez que la interfaz pinta `logo_url` (`<img>` de hosts https externos: revela la IP del cliente y puede chocar con una CSP). **Pendiente**: `auditor-seguridad` en modo cambio / decisión del dueño sobre logos externos.
 - Lint: `eslint-disable-next-line @next/next/no-img-element` con motivo (como `portal-tab.tsx`), sin avisos nuevos.
 - **No verificado**: captura visual en tema claro/oscuro, móvil y escritorio (no se levantó la app con navegador); hover y reducción de movimiento solo comprobados por CSS en prueba.
+
+## Ajustes tras revisión del dueño (2026-11-19)
+- «Me quitaste el grid responsivo, ya no utiliza todo el ancho»: se restaura la rejilla de filas fijas que ocupa todo el alto (`CLASES_ROWS`, `auto-rows-fr`) con los huecos de toda la página; la tarjeta llena su celda y las cifras se centran en el espacio sobrante (sin hueco vacío).
+- «No veo el efecto de color»: halo fuerte del color del área alrededor del icono (se apaga antes del texto), sombra del color bajo el icono y en el hover. El color es el que se elige en Diseño al crear el área (`area.color`). Contraste de la descripción medido en el peor caso (área blanca en oscuro): 4.95:1.
