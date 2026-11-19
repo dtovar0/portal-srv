@@ -100,7 +100,7 @@ export function Inventory() {
             <InventoryFilters filtros={filtros} opciones={opciones} onChange={cambiar} />
             {data ? (
               <span
-                className="text-xs font-bold text-label whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60"
+                className="text-xs font-bold text-body-text whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60"
                 aria-live="polite"
               >
                 {recargando

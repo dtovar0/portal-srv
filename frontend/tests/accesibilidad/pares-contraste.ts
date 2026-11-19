@@ -73,6 +73,9 @@ export const PARES: ParContraste[] = [
   { ...texto('alert-aviso/cerrar-80', '--color-texto-sobre-aviso', '--color-aviso-relleno'), alfaTexto: 0.8, minimo: MIN_NO_TEXTO },
   { ...texto('alert-aviso/titulo-degradado-95', '--color-texto-sobre-aviso', '--color-aviso-relleno', '--color-superficie'), alfaFondo: 0.95 },
   texto('alert-error/titulo', '--color-on-error', '--color-error-solid'),
+  // DIS-099: contador de Inventario y Auditoría (`text-body-text bg-panel-border/30` sobre la barra).
+  { ...texto('contador/superficie', '--color-body-text', '--color-panel-border', '--color-superficie'), alfaFondo: 0.3 },
+  { ...texto('contador/superficie-hundida', '--color-body-text', '--color-panel-border', '--color-superficie-hundida'), alfaFondo: 0.3 },
   { ...texto('alert-error/cerrar-80', '--color-on-error', '--color-error-solid'), alfaTexto: 0.8, minimo: MIN_NO_TEXTO },
   { ...texto('alert-error/titulo-degradado-95', '--color-on-error', '--color-error-solid', '--color-superficie'), alfaFondo: 0.95 },
   // DIS-002: texto de estado sobre panel (mensajes, estrella de favorito).

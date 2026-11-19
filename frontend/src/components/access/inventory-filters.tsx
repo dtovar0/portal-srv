@@ -88,8 +88,8 @@ export function InventoryFilters({
 
   return (
     <div role="search" aria-label="Filtros del inventario" className="flex flex-wrap items-center gap-2">
-      <form onSubmit={buscar} className="flex items-center gap-2">
-        <div className="relative w-full sm:w-72 md:w-80 max-w-sm">
+      <form onSubmit={buscar} className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+        <div className="relative min-w-0 flex-1 sm:w-72 sm:flex-none md:w-80 max-w-sm">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-label">
             <Icono nombre="buscar" tamano="md" ariaHidden={true} />
           </div>
@@ -100,7 +100,7 @@ export function InventoryFilters({
             onChange={(event) => setBorrador(event.target.value)}
             placeholder="Nombre o correo del usuario…"
             aria-label="Buscar en el inventario por nombre o correo del usuario"
-            className="h-12 w-full rounded-xl border border-panel-border bg-fondo pl-10 pr-9 text-xs font-semibold text-body-text placeholder:text-label transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-12 text-sm font-semibold text-body-text placeholder:text-placeholder transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
           {borrador ? (
             <button

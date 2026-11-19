@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Web: barra de botones de Inventario y Auditoría reordenada (contador junto a los filtros); el contador cumple AA en oscuro y la búsqueda de Inventario no desborda en móvil (DIS-099, 2026-11-19).
 - Despliegue: `install.sh --actualizar` ya no deja arrancar el código nuevo antes de migrar (la app creaba la tabla nueva y `alembic upgrade head` fallaba con DuplicateTable). Orden nuevo con mensajes `[n/6]`: validaciones previas (incluido `preflight.sh --actualizar`) sin tocar nada → detener backend, worker y frontend → dependencias → migraciones → arrancar y comprobar que queden activos y que el backend responda (journal de la unidad que falle). Si falla la migración o las dependencias, los servicios quedan detenidos y se indica cómo reintentar; nunca se borran datos (FNC-159, 2026-11-19).
 - Despliegue: `OIDC_HABILITADO=false` permite instalar y arrancar sin Authelia (solo entra la cuenta de emergencia por `/acceso-emergencia`); `preflight.sh`/`install.sh` lo muestran como AVISO en vez de FALTA (FNC-157, 2026-11-19).
 - Migración 0014 (responsiva de usuario): el valor por defecto de `responsiva_firmada` era `DEFAULT 1`, que PostgreSQL rechaza y detenía `alembic upgrade`; ahora `DEFAULT true`. Prueba nueva que genera el SQL de PostgreSQL de la migración (FNC-155, 2026-11-18).
