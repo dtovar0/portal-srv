@@ -127,7 +127,7 @@ export function TarjetaArea({
             </Badge>
           ) : null}
           {plataformas.length > 0 ? (
-            <div className="flex items-center" aria-hidden="true">
+            <div className="nx-area-card__logos flex items-center" aria-hidden="true">
               {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
                 <LogoPlataforma key={p.id} plataforma={p} />
               ))}
