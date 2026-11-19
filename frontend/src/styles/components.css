@@ -1071,7 +1071,7 @@ select::-ms-expand {
    Tres diseños aprobados (brillo, segmentos, medidor). El color de cada indicador sale
    de los tokens `--color-indicador-*` por su clase `nx-ind--*`. El texto nunca usa el
    color tal cual: `--nx-ind-legible` lo mezcla 35 % con el texto del tema (>= 4.5:1,
-   medido en tests/components/dashboard-tarjetas-indicador.test.tsx).
+   medido en tests/accesibilidad/indicadores-contraste.test.ts, junto con trazos, extremos -fin y el trazo del resto).
    ========================================================================== */
 .nx-ind--areas {
     --ind-c: var(--color-indicador-areas);
@@ -1152,8 +1152,8 @@ select::-ms-expand {
     stroke-linecap: round;
 }
 .nx-ind__resto {
+    /* Sin opacidad: texto-tenue ya da >= 3:1 contra panel-fill en ambos temas. */
     stroke: rgb(var(--color-texto-tenue));
-    opacity: 0.55;
 }
 .nx-ind__tono {
     stop-color: var(--nx-ind);
@@ -1271,6 +1271,9 @@ select::-ms-expand {
     border: 2px solid rgb(var(--color-panel-border));
     background: rgb(var(--color-superficie-hundida));
     transition: border-color var(--duracion-corta) var(--curva);
+}
+.nx-ind-opcion__marca {
+    color: rgb(var(--color-accion-texto));
 }
 .nx-ind-opcion[aria-pressed='true'] {
     border-color: rgb(var(--color-accion));

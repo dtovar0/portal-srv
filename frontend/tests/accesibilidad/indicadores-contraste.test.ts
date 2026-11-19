@@ -5,12 +5,15 @@
  * tema, sobre superficie, sobre el tinte del badge (13 %) y sobre los resplandores (<= 10 %).
  * Texto >= 4.5:1; icono blanco sobre su caja de color >= 3:1 (no textual).
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { cargarContextos, resolver, type NombreContexto } from '../utils/tokens-css';
 import { MIN_NO_TEXTO, MIN_TEXTO, componer, parseColor, razonContraste, type Rgba } from '../utils/wcag';
 
 const INDICADORES = ['areas', 'plataformas', 'solicitudes', 'visitas', 'usuarios'];
 const contextos = cargarContextos();
+const CSS = readFileSync(resolve(import.meta.dirname, '../../src/styles/components.css'), 'utf8');
 
 const mezclar = (a: Rgba, b: Rgba, parteA: number): Rgba => ({
   r: a.r * parteA + b.r * (1 - parteA),
@@ -33,6 +36,21 @@ for (const tema of Object.keys(contextos) as NombreContexto[]) {
       expect(razonContraste(etiqueta, superficie)).toBeGreaterThanOrEqual(MIN_TEXTO);
     });
 
+    it('el trazo del segundo segmento (texto-tenue, sin opacidad) contra panel-fill >= 3:1', () => {
+      const panel = tok('--color-panel-fill');
+      expect(razonContraste(tenue, panel)).toBeGreaterThanOrEqual(MIN_NO_TEXTO);
+    });
+
+    it('«Elegido» del selector (accion-texto) sobre el tinte de la opción >= 4.5:1', () => {
+      const fondo = componer(tok('--color-accion-tenue'), tok('--color-superficie-hundida'));
+      expect(razonContraste(tok('--color-accion-texto'), fondo)).toBeGreaterThanOrEqual(MIN_TEXTO);
+    });
+
+    it('components.css no vuelve a atenuar el trazo del resto con opacity', () => {
+      const bloque = CSS.match(/\.nx-ind__resto\s*\{[^}]*\}/g)?.join('') ?? '';
+      expect(bloque).not.toMatch(/opacity/);
+    });
+
     for (const nombre of INDICADORES) {
       const color = tok(`--color-indicador-${nombre}`);
       const legible = mezclar(color, texto, 0.35);
@@ -52,8 +70,11 @@ for (const tema of Object.keys(contextos) as NombreContexto[]) {
         expect(razonContraste(blanco, oscuro)).toBeGreaterThanOrEqual(MIN_NO_TEXTO);
       });
 
-      it(`${nombre}: el trazo sobre la superficie >= 3:1`, () => {
-        expect(razonContraste(componer(color, superficie), superficie)).toBeGreaterThanOrEqual(MIN_NO_TEXTO);
+      it(`${nombre}: el trazo y su extremo -fin contra panel-fill >= 3:1`, () => {
+        const panel = tok('--color-panel-fill');
+        const fin = tok(`--color-indicador-${nombre}-fin`);
+        expect(razonContraste(componer(color, panel), panel)).toBeGreaterThanOrEqual(MIN_NO_TEXTO);
+        expect(razonContraste(componer(fin, panel), panel)).toBeGreaterThanOrEqual(MIN_NO_TEXTO);
       });
     }
   });

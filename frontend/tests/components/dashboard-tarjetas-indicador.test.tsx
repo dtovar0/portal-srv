@@ -41,7 +41,7 @@ describe('DIS-112: los tres diseños', () => {
     expect(within(tarjeta).getByText('Solicitudes').className).toContain('badge-titulo');
     expect(within(tarjeta).getByText('12')).toBeTruthy();
     expect(within(tarjeta).getByText('75 %')).toBeTruthy();
-    const filas = within(tarjeta).getAllByRole('listitem');
+    const filas = Array.from(tarjeta.querySelectorAll('li'));
     expect(filas.map((f) => f.textContent)).toEqual(['resueltas9', 'pendientes3']);
     expect(container.querySelector('.nx-ind__valor')).toBeTruthy();
     expect(container.querySelector('.nx-ind__resto')).toBeTruthy();
@@ -177,5 +177,43 @@ describe('DIS-112: selector de diseño', () => {
       // la vista previa no se anuncia dos veces: el nombre sale solo del título
       expect(opcion.querySelector('[aria-hidden="true"] [role="group"]')).toBeTruthy();
     }
+  });
+
+  it('la opción elegida lleva una marca no cromática («Elegido» con icono) y el foco inicial va a la actual', () => {
+    render(<SelectorDisenoTarjetas actual="medidor" onAplicar={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Diseño de tarjetas' }));
+    const dialogo = screen.getByRole('dialog');
+    const actual = within(dialogo).getByRole('button', { name: 'Medidor', pressed: true });
+    expect(document.activeElement).toBe(actual);
+    expect(actual.textContent).toContain('Elegido');
+    expect(actual.querySelector('svg')).toBeTruthy();
+    const otra = within(dialogo).getByRole('button', { name: 'Anillo con brillo', pressed: false });
+    expect(otra.textContent).not.toContain('Elegido');
+    fireEvent.click(otra);
+    expect(otra.textContent).toContain('Elegido');
+    expect(actual.textContent).not.toContain('Elegido');
+  });
+});
+
+describe('DIS-112: lector de pantalla y recortes', () => {
+  it.each(DISENOS_TARJETA)('%s: dice las dos partes y de qué es el porcentaje', (diseno) => {
+    render(<TarjetaIndicador indicador="areas" valor={12} desglose={DESGLOSE} diseno={diseno} />);
+    const texto = screen.getByRole('group', { name: 'Áreas' }).textContent ?? '';
+    expect(texto).toMatch(/9 activas/);
+    expect(texto).toMatch(/3 inactivas/);
+    expect(texto).toMatch(/75 %\s*activas/);
+  });
+
+  it('el badge puede truncar y conserva el texto completo en title', () => {
+    const { container } = render(<TarjetaIndicador indicador="platforms" valor={12} desglose={DESGLOSE} diseno="segmentos" />);
+    expect(container.querySelector('.badge-titulo')?.getAttribute('title')).toBe('Plataformas');
+    expect(container.querySelector('.badge-titulo')?.className).toContain('truncate');
+  });
+
+  it('la fila pasa a 5 columnas solo en 2xl (con menos ancho la tarjeta se recortaría)', () => {
+    const { container } = render(<TarjetasIndicadores contadores={[{ indicador: 'areas', valor: 1 }]} desglose={undefined} diseno="brillo" />);
+    const clases = (container.firstElementChild?.className ?? '').split(' ');
+    expect(clases).toContain('2xl:grid-cols-5');
+    expect(clases).not.toContain('xl:grid-cols-5');
   });
 });

@@ -68,10 +68,19 @@ export function SelectorDisenoTarjetas({
                   aria-pressed={elegido === diseno}
                   aria-labelledby={idTitulo}
                   onClick={() => setElegido(diseno)}
+                  autoFocus={diseno === actual}
                   className="nx-ind-opcion foco-visible grid min-h-12 gap-3 rounded-xl p-3 text-left"
                 >
-                  <span id={idTitulo} className="text-sm font-bold text-body-text">
-                    {DISENOS[diseno].nombre}
+                  <span className="flex items-center justify-between gap-2">
+                    <span id={idTitulo} className="text-sm font-bold text-body-text">
+                      {DISENOS[diseno].nombre}
+                    </span>
+                    {elegido === diseno ? (
+                      <span className="nx-ind-opcion__marca flex shrink-0 items-center gap-1 text-xs font-bold" aria-hidden="true">
+                        <Icono nombre="aprobar" tamano="sm" />
+                        Elegido
+                      </span>
+                    ) : null}
                   </span>
                   <span className="pointer-events-none" aria-hidden="true">
                     <TarjetaIndicador indicador="areas" valor={EJEMPLO.valor} desglose={EJEMPLO.desglose} diseno={diseno} />

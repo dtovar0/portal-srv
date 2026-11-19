@@ -46,14 +46,35 @@ function SoloCifra({ indicador, valor }: { indicador: ClaveIndicador; valor: num
   );
 }
 
+/** Las dos partes para el lector de pantalla (el anillo y el porcentaje son visuales). */
+function ResumenPartes({ indicador, desglose }: { indicador: ClaveIndicador; desglose: DesgloseIndicador }) {
+  const { partes } = INDICADORES[indicador];
+  return (
+    <span className="sr-only">
+      {formatoCifra(desglose.parte)} {partes[0]}, {formatoCifra(desglose.resto)} {partes[1]}.
+    </span>
+  );
+}
+
+/** Porcentaje con la parte que mide, también para el lector: «92 % activas». */
+function Porcentaje({ indicador, desglose, className }: { indicador: ClaveIndicador; desglose: DesgloseIndicador; className: string }) {
+  return (
+    <strong className={className}>
+      {textoPorcentaje(desglose)}
+      <span className="sr-only"> {INDICADORES[indicador].partes[0]}</span>
+    </strong>
+  );
+}
+
 function Brillo({ indicador, valor, desglose }: { indicador: ClaveIndicador; valor: number; desglose: DesgloseIndicador }) {
   const def = INDICADORES[indicador];
   return (
-    <div className="relative flex items-center justify-between gap-3">
-      <div className="grid min-w-0 flex-1 gap-1.5">
+    <div className="relative flex flex-wrap items-center justify-between gap-3">
+      <ResumenPartes indicador={indicador} desglose={desglose} />
+      <div className="grid min-w-32 flex-1 gap-1.5">
         <div className="flex items-center gap-2">
           <CajaIcono icono={def.icono} className="size-7 rounded-lg" />
-          <p className="nx-ind__etq truncate text-xs font-bold uppercase tracking-wide">{def.etiqueta}</p>
+          <p title={def.etiqueta} className="nx-ind__etq truncate text-xs font-bold uppercase tracking-wide">{def.etiqueta}</p>
         </div>
         <p className="text-3xl font-extrabold leading-none tabular-nums text-body-text">{formatoCifra(valor)}</p>
         <p className="text-xs text-label">
@@ -62,7 +83,7 @@ function Brillo({ indicador, valor, desglose }: { indicador: ClaveIndicador; val
       </div>
       <div className="nx-ind__anillo nx-ind__anillo--brillo">
         <AnilloIndicador desglose={desglose} grosor={GROSOR_BRILLO} />
-        <strong className="nx-ind__pct relative text-base font-extrabold tabular-nums">{textoPorcentaje(desglose)}</strong>
+        <Porcentaje indicador={indicador} desglose={desglose} className="nx-ind__pct relative text-base font-extrabold tabular-nums" />
       </div>
     </div>
   );
@@ -76,22 +97,29 @@ function Segmentos({ indicador, valor, desglose }: { indicador: ClaveIndicador; 
   ];
   return (
     <div className="relative grid gap-3.5">
-      <div className="flex items-center gap-3.5">
+      <ResumenPartes indicador={indicador} desglose={desglose} />
+      <div className="flex flex-wrap items-center gap-3.5">
         <div className="nx-ind__anillo nx-ind__anillo--segmentos">
           <AnilloIndicador desglose={desglose} grosor={GROSOR_SEGMENTOS} dosSegmentos />
           <span className="nx-ind__icono-aro relative grid place-items-center">
             <Icono nombre={def.icono} tamano="lg" />
           </span>
         </div>
-        <div className="grid min-w-0 gap-1">
-          <span className="badge-titulo inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wide">
+        <div className="grid min-w-24 flex-1 gap-1">
+          <span
+            title={def.etiqueta}
+            className="badge-titulo inline-flex w-fit max-w-full items-center truncate rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wide"
+          >
             {def.etiqueta}
           </span>
           <p className="text-3xl font-extrabold leading-none tabular-nums text-body-text">{formatoCifra(valor)}</p>
-          <p className="text-xs font-bold tabular-nums text-label">{textoPorcentaje(desglose)}</p>
+          <p className="text-xs font-bold tabular-nums text-label">
+            {textoPorcentaje(desglose)}
+            <span className="sr-only"> {def.partes[0]}</span>
+          </p>
         </div>
       </div>
-      <ul className="nx-ind__leyenda grid gap-1.5 pt-3">
+      <ul className="nx-ind__leyenda grid gap-1.5 pt-3" aria-hidden="true">
         {partes.map(([nombre, cantidad, claseCita]) => (
           <li key={nombre} className="flex items-center gap-2 text-xs text-label">
             <span className={`${claseCita} size-2.5 rounded-sm`} aria-hidden="true" />
@@ -108,6 +136,7 @@ function Medidor({ indicador, valor, desglose }: { indicador: ClaveIndicador; va
   const def = INDICADORES[indicador];
   return (
     <div className="relative grid justify-items-center gap-1.5 text-center">
+      <ResumenPartes indicador={indicador} desglose={desglose} />
       <div className="nx-ind__medidor">
         <MedidorIndicador desglose={desglose} />
         <CajaIcono icono={def.icono} className="nx-ind__icono--medidor rounded-xl" />
