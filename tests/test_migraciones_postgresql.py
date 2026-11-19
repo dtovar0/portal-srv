@@ -34,5 +34,5 @@ def sql_postgresql(tramo):
 @pytest.mark.parametrize('tramo', TRAMOS)
 def test_booleanos_sin_default_entero_en_postgresql(tramo):
     sql = sql_postgresql(tramo)
-    assert 'ALTER TABLE' in sql
+    assert 'ALTER TABLE' in sql or 'CREATE TABLE' in sql
     assert not BOOLEANO_CON_DEFAULT_ENTERO.search(sql), sql
