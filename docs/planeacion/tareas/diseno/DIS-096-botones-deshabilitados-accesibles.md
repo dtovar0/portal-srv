@@ -32,6 +32,13 @@
 - Se agregó el motivo «No tienes permisos para editar esta área» (antes «Editar» deshabilitado por permisos no tenía motivo).
 - El motivo se ancla a la derecha del botón (`right: 0`, máx. 18 rem) por estar las barras a la derecha; no verificado en móvil muy estrecho.
 
+## Correcciones de la auditoría de accesibilidad independiente (2026-11-19)
+- M1: el motivo desbordaba por la izquierda en botones al inicio de la fila. `Button` mide el envoltorio al enfocar o pasar el puntero y, si no cabe a la izquierda (18 rem o 80% del ancho), marca `data-lado="inicio"` y el CSS lo ancla a la izquierda.
+- M2: el motivo es hoverable (puente `::before` sobre el hueco y `pointer-events: auto` solo al estar visible) y Esc lo descarta también con solo el puntero encima.
+- M3: Esc en fase de captura de `document` con el motivo visible hace `stopPropagation` (no cierra un diálogo padre); el segundo Esc sí llega.
+- Regresión que falló primero: 3 de las 5 pruebas nuevas de `boton-deshabilitado-accesible.test.tsx` (M1, M2, M3 con padre); las demás cubren los casos complementarios.
+- No verificado en navegador (posición real del motivo en 360 px).
+
 ## Impacto en elementos compartidos (validar)
 - `Button` (`components/button.tsx`, prop nueva opcional; sin ella nada cambia): lo usan ~58 archivos; solo cambia el comportamiento en los botones que reciben `motivoDeshabilitado`.
 - Vistas con botones afectados: Áreas (`areas-list`), Usuarios (`users-list`), Plataformas (`platform-admin`), Conectores (`connectors-admin`).

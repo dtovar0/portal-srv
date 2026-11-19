@@ -825,7 +825,7 @@ select::-ms-expand {
     position: absolute;
     top: calc(100% + 0.25rem);
     right: 0;
-    max-width: min(18rem, 80vw);
+    max-width: min(18rem, 80vw); /* igual a ANCHO_MAXIMO_MOTIVO_PX en button.tsx */
     border-radius: var(--radio-control, 0.5rem);
     border-style: solid;
     border-color: rgb(var(--color-panel-border) / 0.5);
@@ -846,6 +846,22 @@ select::-ms-expand {
     border-width: 0;
 }
 
+/* Desde el inicio cuando el botón está cerca del borde izquierdo (lo decide Button por JS). */
+.nexus-btn-con-motivo[data-lado='inicio'] .nexus-motivo-boton {
+    right: auto;
+    left: 0;
+}
+
+/* Puente sobre el hueco con el botón: el puntero puede pasar al motivo sin que se cierre (WCAG 1.4.13). */
+.nexus-motivo-boton::before {
+    content: '';
+    position: absolute;
+    top: -0.25rem;
+    left: 0;
+    right: 0;
+    height: 0.25rem;
+}
+
 .nexus-btn-con-motivo:not([data-motivo-descartado='true']):hover .nexus-motivo-boton,
 .nexus-btn-con-motivo:not([data-motivo-descartado='true']) .nexus-btn:focus-visible + .nexus-motivo-boton {
     clip-path: none;
@@ -854,6 +870,7 @@ select::-ms-expand {
     width: max-content;
     padding: 0.25rem 0.625rem;
     border-width: 1px;
+    pointer-events: auto;
 }
 
 

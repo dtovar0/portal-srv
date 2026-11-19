@@ -15,6 +15,9 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   motivoDeshabilitado?: string;
 }
 
+/** Ancho máximo del motivo (18 rem a 16 px); debe coincidir con `.nexus-motivo-boton` en components.css. */
+const ANCHO_MAXIMO_MOTIVO_PX = 288;
+
 export const CLASES_VARIANTE_BOTON: Record<ButtonVariant, string> = {
   primary: 'nexus-btn-primary',
   secondary: 'nexus-btn-secondary',
@@ -46,8 +49,35 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
   ref,
 ) {
   const idMotivo = React.useId();
+  const envoltorioRef = React.useRef<HTMLSpanElement>(null);
   const [motivoDescartado, setMotivoDescartado] = React.useState(false);
+  const [sobre, setSobre] = React.useState(false);
+  const [enfocado, setEnfocado] = React.useState(false);
+  const [lado, setLado] = React.useState<'fin' | 'inicio'>('fin');
   const motivo = disabled && motivoDeshabilitado ? motivoDeshabilitado : undefined;
+  const motivoVisible = Boolean(motivo) && (sobre || enfocado);
+
+  // Esc descarta el motivo (también con solo el puntero encima) y, mientras estaba visible, no llega
+  // al diálogo padre; el siguiente Esc sí (WCAG 1.4.13; DIS-096).
+  React.useEffect(() => {
+    if (!motivoVisible || motivoDescartado) return undefined;
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      setMotivoDescartado(true);
+    };
+    document.addEventListener('keydown', alTeclear, true);
+    return () => document.removeEventListener('keydown', alTeclear, true);
+  }, [motivoVisible, motivoDescartado]);
+
+  /** Elige el lado desde el que se despliega el motivo para que no salga de la pantalla. */
+  const elegirLado = () => {
+    const caja = envoltorioRef.current?.getBoundingClientRect();
+    if (!caja) return;
+    const ancho = Math.min(ANCHO_MAXIMO_MOTIVO_PX, window.innerWidth * 0.8);
+    setLado(caja.right >= ancho ? 'fin' : 'inicio');
+  };
+
   const ariaDisabled = Boolean(props['aria-disabled']) || busy || Boolean(motivo);
   const isDisabled = Boolean(disabled) && !motivo;
   const describedBy = [props['aria-describedby'], motivo ? idMotivo : undefined].filter(Boolean).join(' ') || undefined;
@@ -72,12 +102,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
       aria-disabled={ariaDisabled ? 'true' : undefined}
       aria-busy={busy ? 'true' : props['aria-busy']}
       onClick={handleClick}
-      onKeyDown={(e) => {
-        if (motivo && e.key === 'Escape') setMotivoDescartado(true);
-        props.onKeyDown?.(e);
+      onFocus={(e) => {
+        if (motivo) {
+          elegirLado();
+          setEnfocado(true);
+        }
+        props.onFocus?.(e);
       }}
       onBlur={(e) => {
-        setMotivoDescartado(false);
+        setEnfocado(false);
+        if (!sobre) setMotivoDescartado(false);
         props.onBlur?.(e);
       }}
       className={`nexus-btn ${CLASES_VARIANTE_BOTON[variant]} ${sizeClasses} ${isDisabled || ariaDisabled ? 'estado-deshabilitado' : ''} ${className}`.trim()}
@@ -96,9 +130,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
 
   return (
     <span
+      ref={envoltorioRef}
       className="nexus-btn-con-motivo"
+      data-lado={lado === 'inicio' ? 'inicio' : undefined}
       data-motivo-descartado={motivoDescartado ? 'true' : undefined}
-      onMouseLeave={() => setMotivoDescartado(false)}
+      onMouseEnter={() => {
+        elegirLado();
+        setSobre(true);
+      }}
+      onMouseLeave={() => {
+        setSobre(false);
+        if (!enfocado) setMotivoDescartado(false);
+      }}
     >
       {boton}
       <span id={idMotivo} role="tooltip" className="nexus-motivo-boton">

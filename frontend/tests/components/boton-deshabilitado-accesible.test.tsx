@@ -71,3 +71,61 @@ describe('Button con motivoDeshabilitado (DIS-096)', () => {
     expect(screen.getByRole('button', { name: 'Guardar' }).hasAttribute('disabled')).toBe(true);
   });
 });
+
+describe('Button con motivoDeshabilitado: correcciones de la auditoría (DIS-096)', () => {
+  const rect = (izquierda: number, ancho: number): DOMRect =>
+    ({ left: izquierda, right: izquierda + ancho, top: 0, bottom: 40, width: ancho, height: 40, x: izquierda, y: 0, toJSON: () => ({}) }) as DOMRect;
+
+  it('M1: un botón al inicio de la fila ancla el motivo al inicio para no salir por la izquierda', () => {
+    vi.stubGlobal('innerWidth', 360);
+    render(<Button disabled motivoDeshabilitado={MOTIVO}>Editar</Button>);
+    const boton = screen.getByRole('button', { name: 'Editar' });
+    const envoltorio = boton.parentElement as HTMLElement;
+    vi.spyOn(envoltorio, 'getBoundingClientRect').mockReturnValue(rect(16, 90));
+    fireEvent.focus(boton);
+    expect(envoltorio.getAttribute('data-lado')).toBe('inicio');
+  });
+
+  it('M1: un botón al final de la fila conserva el anclaje al final', () => {
+    vi.stubGlobal('innerWidth', 360);
+    render(<Button disabled motivoDeshabilitado={MOTIVO}>Editar</Button>);
+    const boton = screen.getByRole('button', { name: 'Editar' });
+    const envoltorio = boton.parentElement as HTMLElement;
+    vi.spyOn(envoltorio, 'getBoundingClientRect').mockReturnValue(rect(250, 90));
+    fireEvent.focus(boton);
+    expect(envoltorio.getAttribute('data-lado')).toBeNull();
+  });
+
+  it('M2: Esc descarta el motivo con el puntero encima y sin foco', () => {
+    render(<Button disabled motivoDeshabilitado={MOTIVO}>Editar</Button>);
+    const envoltorio = screen.getByRole('button', { name: 'Editar' }).parentElement as HTMLElement;
+    fireEvent.mouseEnter(envoltorio);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(envoltorio.getAttribute('data-motivo-descartado')).toBe('true');
+    fireEvent.mouseLeave(envoltorio);
+    expect(envoltorio.getAttribute('data-motivo-descartado')).toBeNull();
+  });
+
+  it('M3: Esc con el motivo visible no llega al diálogo padre; el segundo Esc sí', () => {
+    const alEscape = vi.fn();
+    document.addEventListener('keydown', alEscape);
+    render(<Button disabled motivoDeshabilitado={MOTIVO}>Editar</Button>);
+    const boton = screen.getByRole('button', { name: 'Editar' });
+    fireEvent.focus(boton);
+    fireEvent.keyDown(boton, { key: 'Escape' });
+    expect(alEscape).not.toHaveBeenCalled();
+    fireEvent.keyDown(boton, { key: 'Escape' });
+    expect(alEscape).toHaveBeenCalledTimes(1);
+    document.removeEventListener('keydown', alEscape);
+  });
+
+  it('M3: sin motivo visible, Esc llega al padre', () => {
+    const alEscape = vi.fn();
+    document.addEventListener('keydown', alEscape);
+    render(<Button disabled motivoDeshabilitado={MOTIVO}>Editar</Button>);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(alEscape).toHaveBeenCalledTimes(1);
+    document.removeEventListener('keydown', alEscape);
+  });
+});
+

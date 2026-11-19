@@ -40,4 +40,10 @@ describe('CSS del motivo (DIS-096)', () => {
     expect(css).toContain('.nexus-btn:focus-visible + .nexus-motivo-boton');
     expect(css).toContain(":not([data-motivo-descartado='true'])");
   });
+  it('es hoverable: puente sobre el hueco y puntero permitido solo cuando está visible (WCAG 1.4.13)', () => {
+    expect(css).toContain('.nexus-motivo-boton::before');
+    expect(css).toMatch(/\.nexus-btn-con-motivo\[data-lado='inicio'\] \.nexus-motivo-boton/);
+    const visible = css.slice(css.indexOf(":not([data-motivo-descartado='true']):hover .nexus-motivo-boton"));
+    expect(visible.slice(0, visible.indexOf('}'))).toContain('pointer-events: auto');
+  });
 });
