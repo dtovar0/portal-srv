@@ -29,6 +29,8 @@ AREA_CON_OTROS_ADMINS = ('El área tiene otros administradores; solo el '
                          'area_con_otros_admins')
 # Endpoint que reemplaza a la asignación directa de plataformas (FNC-065).
 REEMPLAZO_ASIGNACION = 'POST /access-requests'
+# Reemplazo del reenvío de credenciales (FNC-161).
+REEMPLAZO_CONTRASENA = 'PUT /users/<id>'
 MENSAJE_VALIDACION = 'Revisa los campos marcados.'
 
 

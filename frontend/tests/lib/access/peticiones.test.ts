@@ -92,8 +92,6 @@ describe.each([
       password: 'Clave-De-Prueba-2026!x' }],
   ['política de contraseña', () => usersApi.passwordPolicy(),
     '/api/v1/users/password-policy', 'GET', undefined],
-  ['reenviar credenciales', () => usersApi.resendCredentials(31),
-    '/api/v1/users/31/credentials', 'POST', {}],
   ['configuración del directorio', () => directoryApi.config(),
     '/api/v1/auth-config', 'GET', undefined],
   ['recargar configuración (PUT {})', () => directoryApi.reload(),

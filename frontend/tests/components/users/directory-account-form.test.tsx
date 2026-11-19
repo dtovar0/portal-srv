@@ -16,7 +16,7 @@ import type { Area, ManagedUser } from '@/lib/types';
 
 vi.mock('@/lib/access/users', () => ({
   usersApi: {
-    setManagedAreas: vi.fn(), createDirectoryAccount: vi.fn(), passwordPolicy: vi.fn(), resendCredentials: vi.fn(),
+    setManagedAreas: vi.fn(), createDirectoryAccount: vi.fn(), passwordPolicy: vi.fn(),
   },
 }));
 vi.mock('@/lib/api', async (original) => ({

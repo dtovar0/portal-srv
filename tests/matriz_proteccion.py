@@ -188,39 +188,6 @@ def _nuevo_usuario(esc):
 CONTRASENA_ONBOARDING = 'Clave-De-Prueba-2026!x'
 
 
-def _con_entrega_de_credenciales(esc, monkeypatch):
-    """Cuenta `ldap` del escenario con su entrega; Send, correo y directorio
-    simulados (reenvío de credenciales, FNC-138)."""
-    from app.modules.auth.models import User
-    from app.modules.notifications import services
-    from app.modules.secretos.sends import SendCreado
-    from app.modules.users import entrega_credenciales
-    from app.modules.users.models import EntregaCredenciales
-
-    _con_directorio_simulado(esc, monkeypatch)
-    cuenta = db.session.get(User, esc.objetivo_id)
-    cuenta.auth_source = 'ldap'
-    if cuenta.credential_delivery is None:
-        db.session.add(EntregaCredenciales(
-            cuenta=cuenta, uid='objetivo', status='pendientes',
-            attempts_count=1, max_attempts=5))
-    db.session.commit()
-    monkeypatch.setenv('ENABLE_NOTIFICATIONS', 'true')
-    monkeypatch.setenv('BASE_URL', 'https://portal.pruebas.invalid')
-    monkeypatch.setattr(
-        entrega_credenciales, 'crear_send_texto',
-        lambda nombre, texto, entorno=None: SendCreado(
-            id='00000000-0000-4000-8000-000000000001',
-            enlace='https://vault.pruebas.invalid/#/send/a/k'))
-    monkeypatch.setattr(entrega_credenciales, 'borrar_send',
-                        lambda send_id, entorno=None: None)
-    monkeypatch.setattr(services, 'send_notification_by_slug',
-                        lambda *args, **kwargs: {'status': 'success'})
-    monkeypatch.setattr(
-        entrega_credenciales, 'fijar_contrasena_en_directorio',
-        lambda uid, contrasena: None)
-
-
 def _nueva_cuenta_directorio(esc):
     return {'json': {'uid': 'ana.ruiz', 'email': 'ana.ruiz@pruebas.local',
                      'given_name': 'Ana', 'surname': 'Ruiz',
@@ -477,9 +444,8 @@ CASOS = (
          _fija(f'{A}/users/password-policy'), administradores(),
          nota='FNC-138: política de la contraseña inicial (contrato v2)'),
     Caso('POST', f'{A}/users/<int:user_id>/credentials',
-         _objetivo('/credentials'), solo_superadmin(), _json({}),
-         _con_entrega_de_credenciales,
-         nota='FNC-138 (ADR-008 9): reenviar credenciales, solo superadmin'),
+         _objetivo('/credentials'), solo_superadmin(410), _json({}),
+         nota='FNC-161: retirado, responde 410 (la protección por rol se conserva)'),
     Caso('PUT', f'{A}/me/preferences', _fija(f'{A}/me/preferences'),
          con_sesion(), _json({'tour_enabled': False})),
     Caso('GET', f'{A}/users/inactive', _fija(f'{A}/users/inactive'),

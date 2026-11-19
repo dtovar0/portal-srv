@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 2 (2026-11-18) — **incompatible** con la v1 |
+| Versión | 3 (2026-11-19) |
 | Proveedor | backend (FNC-064; cliente FNC-040, FNC-041; v2: FNC-138) |
 | Consumidores | web (FNC-069; pantalla DIS-019; v2: FNC-139) |
 | Solicitudes | — |
@@ -16,9 +16,9 @@ Convenciones comunes: [README.md](README.md). P2: superadmin y admins (para sus 
 |---|---|---|---|---|
 | `POST /users/directory` | 403 | 201 | 404 (`area_ids` ajenas) | 201 |
 | `GET /users/password-policy` | 403 | 200 | 200 | 200 |
-| `POST /users/<id>/credentials` (reenviar) | 403 | 403 | 403 | 200 / 202 |
+| `POST /users/<id>/credentials` (retirado, v3) | 403 | 403 | 403 | 410 |
 
-- Reenviar es solo del superadmin (SEC-AUTHZ-06 sin cambio, ADR-008 decisión 9); un admin recibe `403`. Una cuenta inexistente es `404`.
+- El reenvío está retirado (v3, FNC-161): conserva la protección por rol (un admin recibe `403`) y el superadmin recibe `410 endpoint_retirado` con `use: "PUT /users/<id>"`.
 
 ## `POST /users/directory`
 | Campo | Tipo | Obligatorio | Regla |
@@ -52,10 +52,9 @@ Lo lee el generador y la validación del formulario web (sin valores fijos en el
 - `required_classes`: subconjunto de `mayusculas`, `minusculas`, `digitos`, `simbolos`.
 - Solo se admiten letras ASCII, dígitos y los `symbols` publicados (sin espacios ni comillas).
 
-## `POST /users/<id>/credentials` (Reenviar credenciales)
-- Sin cuerpo (cualquier campo → `400 campo_no_permitido`). Genera una contraseña nueva en el servidor, la fija en OpenLDAP, crea un Send nuevo, borra el anterior y manda el correo con el enlace.
-- Solo cuentas `ldap` dadas de alta desde el portal (con registro de entrega); otra cosa → `409 credenciales_no_aplicables`.
-- `200 {"status": "success", "user": ManagedUser}` con `credentials_status: "enviadas"`; `202` con `"pendientes"` si Vaultwarden o el correo fallaron (queda el reintento). Auditoría `credenciales_reenviadas` (o `credenciales_pendientes`).
+## `POST /users/<id>/credentials` (retirado, v3)
+- `410 endpoint_retirado` (`use: "PUT /users/<id>"`): la contraseña de una cuenta del directorio la cambia el superadmin en «Editar usuario» ([areas-y-roles.md](areas-y-roles.md) v3).
+- Quedan el alta con Send y el worker de entregas automáticas; `credentials_status` sigue en `ManagedUser`.
 
 ## Errores
 | HTTP | `code` | Mensaje |
@@ -65,9 +64,7 @@ Lo lee el generador y la validación del formulario web (sin valores fijos en el
 | 422 | `validacion` | `fields.uid`: "Usa minúsculas, números, punto, guion o guion bajo." |
 | 422 | `validacion` | `fields.password` (v2): "Es obligatoria.", "Entre {min} y {max} caracteres.", "Falta al menos una mayúscula / minúscula / un número / un símbolo.", "Usa solo letras, números y los símbolos permitidos." |
 | 422 | `validacion` | `fields.password` (v2): "El directorio rechazó la contraseña por su política de seguridad." (rechazo de `ppolicy`; sin el texto del servidor; no se crea nada) |
-| 409 | `credenciales_no_aplicables` | Esta cuenta no admite el reenvío de credenciales. (solo reenviar) |
-| 404 | `no_encontrado` | La cuenta no existe. (solo reenviar) |
-| 503 | `directorio_no_disponible` | No se pudo crear la cuenta en el directorio; intenta más tarde. (en reenviar: "No se pudo actualizar la contraseña en el directorio.") |
+| 503 | `directorio_no_disponible` | No se pudo crear la cuenta en el directorio; intenta más tarde. |
 
 `503 gestor_no_disponible` no existe: la caída de Vaultwarden o del correo no falla la petición, deja `credentials_status: "pendientes"`.
 
@@ -112,3 +109,4 @@ Solo superadmin (resto: 401/403). Fuente única: variables `LDAP_*` (ADR-004); s
 | 1 | 2026-10-18 | Sección "Configuración del directorio" agregada (FNC-043): documenta endpoints que no tenían contrato. **Aditivo** para el contrato (sigue v1): no cambia ningún endpoint ya contratado. Sí cambia la forma heredada de NEXUS que lee `settings-panel.tsx`; la adapta DIS-023. Decisión del orquestador (pendiente de validar en la prueba de concepto) |
 | 1 | 2026-10-19 | `email` ≤ 120 en lugar de ≤ 254 (motivo: `users.email` es `String(120)`; más largo daría 500 en Postgres), solo ASCII y único también en el directorio (FNC-064, revisión de seguridad). **Restrictivo** (un valor antes válido ahora da `422`/`409`); sigue v1 porque ningún cliente lo usaba en producción (FNC-069 solo en simulado). Decisión del orquestador (pendiente de validar en la prueba de concepto) |
 | 2 | 2026-11-18 | **Incompatible**: `password` pasa de prohibido (`400 campo_no_permitido`, P8) a obligatorio; nuevos `GET /users/password-policy`, `POST /users/<id>/credentials`, `credentials_status` y `credentials_sent_at` en `ManagedUser`. Motivo: ADR-008 (onboarding con Send de Vaultwarden), aprobado por el dueño el 2026-11-18. El cliente v1 deja de funcionar sin `password`: FNC-138 (backend) y FNC-139 (web) se integran juntas (FNC-135) |
+| 3 | 2026-11-19 | FNC-161 (pedido del dueño): `POST /users/<id>/credentials` (reenviar) se retira (`410`); su función la cumple el cambio de contraseña de `PUT /users/<id>`. **Incompatible** para quien llamaba la ruta (solo la web, ya ajustada). Decisión del orquestador (pendiente de validar) |

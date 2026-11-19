@@ -30,7 +30,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-AUTHZ-03 | Los recursos con área se cargan con `scoped_*` o `can_*`, y el área se lee de la BD, nunca de la petición | Prueba: admin de X sobre Y da 404 | SEG-16 |
 | SEC-AUTHZ-04 | Un recurso fuera de alcance responde 404; un rol insuficiente responde 403 | Prueba | — |
 | SEC-AUTHZ-05 | Solo el superadmin crea, eleva o degrada admins y les asigna áreas | Prueba | SEG-09 |
-| SEC-AUTHZ-06 | Un admin no gestiona a otros admins ni al superadmin, ni toca la contraseña de cuentas `ldap` o `sso`; el portal solo fija la contraseña **inicial** (alta y «Reenviar credenciales», este último solo del superadmin; ADR-008, FNC-138) | Prueba con dos admins de áreas solapadas | SEG-05 |
+| SEC-AUTHZ-06 | Un admin no gestiona a otros admins ni al superadmin, ni toca la contraseña de cuentas `sso`; la de cuentas `ldap` solo la cambia el superadmin (Password Modify con la política; FNC-161) y la de cuentas `local`, quien las gestiona (hash en la BD) | Prueba con dos admins de áreas solapadas | SEG-05 |
 | SEC-AUTHZ-07 | Un admin aprueba, rechaza y revoca solo en sus áreas | Prueba | RF-03 |
 | SEC-AUTHZ-08 | Nadie aprueba su propia solicitud ni modifica sus propios accesos o rol | Prueba | — |
 | SEC-AUTHZ-09 | El actor sale de la sesión; cada endpoint tiene una lista blanca de campos y rechaza `role`, `is_active`, `auth_source` y `password_hash` | Prueba de *mass assignment* | SEG-09 |

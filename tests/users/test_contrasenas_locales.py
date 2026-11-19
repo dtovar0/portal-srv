@@ -1,6 +1,8 @@
 """Contraseñas locales en `POST /users` y `PUT /users/<id>` (FNC-077, SEG-02).
 
-- El portal no fija contraseñas locales: `password` -> `400 campo_no_permitido`.
+- `POST /users` no fija contraseñas locales: `password` -> `400 campo_no_permitido`.
+- `PUT /users/<id>` (FNC-161): toda cuenta local gestionable guarda hash;
+  el cambio de cuentas del directorio está en `test_contrasena_local_o_ldap.py`.
 - Excepción: la cuenta de emergencia (superadmin local).
 - En desarrollo, con `LOGIN_LOCAL_TODAS_LAS_CUENTAS=true` y
   `APP_ENV=development`, se aceptan para cuentas locales del alcance.
@@ -151,14 +153,14 @@ def test_alta_con_contrasena_y_bandera_en_desarrollo(app, escena, como,
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.parametrize('actor', ('super', 'admin_a'))
-def test_no_se_cambia_la_contrasena_de_una_cuenta_local_comun(escena, como,
-                                                              actor):
-    """Regresión FNC-077: superadmin y admin de área la cambiaban."""
+def test_se_cambia_la_contrasena_de_una_cuenta_local_comun(escena, como,
+                                                           actor):
+    """FNC-161 (antes 400 por FNC-077): toda cuenta local gestionable guarda hash."""
     respuesta = como(escena[actor]).put(
         f"{A}/users/{escena['usuario_a']}", json={'password': CONTRASENA_NUEVA})
 
-    _campo_no_permitido(respuesta)
-    assert _cuenta(escena['usuario_a']).check_password(CONTRASENA_FICTICIA)
+    assert respuesta.status_code == 200, respuesta.get_data(as_text=True)
+    assert _cuenta(escena['usuario_a']).check_password(CONTRASENA_NUEVA)
 
 
 def test_superadmin_cambia_la_contrasena_de_la_cuenta_de_emergencia(
