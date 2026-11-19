@@ -240,6 +240,8 @@ export interface AuthContext {
   authenticated: boolean;
   /** La ruta `/auth/local` existe; no hay enlace visible (ADR-009 6A). */
   emergency_available: boolean;
+  /** Authelia apagado (`OIDC_HABILITADO=false`, FNC-158): `/login` pide usuario y contraseña (cuentas locales). */
+  local_login?: boolean;
 }
 
 export interface InactiveUser {

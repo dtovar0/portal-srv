@@ -8,6 +8,10 @@ Para la prueba de concepto sin Authelia, `LOGIN_LOCAL_TODAS_LAS_CUENTAS=true`
 permite el login local de cualquier cuenta local, pero **solo** si
 `APP_ENV=development`; en cualquier otro entorno (o sin `APP_ENV`) se ignora.
 
+Con Authelia apagado (`OIDC_HABILITADO=false`, FNC-158, decisión del dueño
+2026-11-19) cualquier cuenta **local** activa entra por `/login`; las cuentas de
+directorio u OIDC no tienen forma de entrar hasta que se active Authelia.
+
 Las mismas reglas deciden si el portal fija una contraseña local en
 `POST /users` y `PUT /users/<id>`, y el origen de las cuentas de `POST /users`.
 """
@@ -49,11 +53,22 @@ def login_local_de_todas_habilitado():
     return bandera == VALOR_ACTIVO and _entorno_de_desarrollo()
 
 
+def login_local_por_oidc_apagado():
+    """True con `OIDC_HABILITADO=false` (FNC-157/158). Valor inválido = False."""
+    from app.modules.auth.oidc_configuracion import (ErrorConfiguracionOidc,
+                                                     oidc_apagado)
+    try:
+        return oidc_apagado()
+    except ErrorConfiguracionOidc:
+        return False
+
+
 def motivo_rechazo_login_local(cuenta):
     """Por qué `cuenta` no puede usar el login local, o `None` si puede."""
     if not es_origen_local(cuenta):
         return MOTIVO_ORIGEN_NO_LOCAL
-    if es_cuenta_de_emergencia(cuenta) or login_local_de_todas_habilitado():
+    if (es_cuenta_de_emergencia(cuenta) or login_local_de_todas_habilitado()
+            or login_local_por_oidc_apagado()):
         return None
     return MOTIVO_SOLO_EMERGENCIA
 

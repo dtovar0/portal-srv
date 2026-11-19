@@ -28,6 +28,7 @@ Convenciones comunes: [README.md](README.md). Prefijo `/api/v1/auth`. La sesión
 | `oidc_enabled` | bool | `OIDC_*` completas: la web muestra «Entrar con Authelia» |
 | `authenticated` | bool | Hay sesión válida |
 | `emergency_available` | bool | La ruta `/auth/local` existe (siempre `true`; no hay enlace visible, ADR-009 6A) |
+| `local_login` | bool | `true` con `OIDC_HABILITADO=false` (FNC-158): `/login` pide usuario y contraseña y `/auth/local` acepta cualquier cuenta **local** activa; las de directorio u OIDC no entran |
 
 Se retiran `sso_enabled`, `sso_user` y `ldap_available`.
 
