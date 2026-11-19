@@ -380,3 +380,21 @@ describe('Modal: hallazgos de auditor-accesibilidad (H3–H6)', () => {
     expect(document.activeElement).toBe(screen.getByRole('main'));
   });
 });
+
+describe('Modal: sin botón Cerrar (DIS-098)', () => {
+  it('con cerrable={false} no pinta la ✕', () => {
+    render(
+      <Modal title="Obligatorio" onClose={vi.fn()} cerrable={false}>
+        <p>Debes decidir.</p>
+      </Modal>,
+      { container: raiz },
+    );
+    expect(screen.getByRole('dialog', { name: 'Obligatorio' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Cerrar' })).toBeNull();
+  });
+
+  it('por defecto sí pinta la ✕', () => {
+    render(<Modal title="Normal" onClose={vi.fn()}><p>Hola</p></Modal>, { container: raiz });
+    expect(screen.getByRole('button', { name: 'Cerrar' })).toBeTruthy();
+  });
+});
