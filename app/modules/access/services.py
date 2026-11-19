@@ -115,18 +115,27 @@ def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None,
     if reemplazado is not None:
         _pedir_revocacion(reemplazado, actor, MOTIVO_REEMPLAZO, momento,
                           manual=manual)
+    from app.modules.access.configuracion import responsiva_por_plataforma
+    if responsiva_por_plataforma():
+        ya_firmo = False
+    else:
+        ya_firmo = bool(getattr(usuario, 'responsiva_firmada', True))
     acceso = PlatformAccessGrant(
         user_id=usuario.id, platform_id=plataforma.id, level=nivel,
         origin=origen, request_id=request_id,
         granted_by=actor.id if actor is not None else None,
         granted_at=momento,
         status=ESTADO_ACTIVO if manual else ESTADO_EN_PROCESO,
+        responsiva_firmada=ya_firmo,
+        responsiva_firmada_at=momento if ya_firmo else None,
         updated_at=momento)
     acceso.sincronizar_slots()
     db.session.add(acceso)
     db.session.flush()
     if not manual:
-        _encolar(acceso, OPERACION_OTORGAR, plataforma)
+        # Aprovisionamiento condicionado a la firma de la responsiva única de TI
+        if ya_firmo:
+            _encolar(acceso, OPERACION_OTORGAR, plataforma)
     detalle = (f'sistema dio permisos de acceso a admin {usuario.email}'
                if origen == ORIGEN_ADMIN_DE_AREA else
                f'Acceso nivel {nivel} a {plataforma.name} otorgado.')

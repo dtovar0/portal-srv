@@ -1065,3 +1065,106 @@ Un administrador de área da de alta a "Pedro" y le asigna el área de "Operacio
 
 ### Impacto
 Afecta a [pantalla-responsiva.tsx](../frontend/src/components/responsiva/pantalla-responsiva.tsx), [app-shell.tsx](../frontend/src/components/app-shell.tsx), [session-provider.tsx](../frontend/src/components/session-provider.tsx), [routes.py](../app/modules/api/routes.py), [models.py](../app/modules/auth/models.py), [types.ts](../frontend/src/lib/types.ts), [api.ts](../frontend/src/lib/api.ts), [0014_responsiva_de_usuario.py](../migrations/versions/0014_responsiva_de_usuario.py) y las suites de pruebas [responsiva.test.tsx](../frontend/tests/components/responsiva.test.tsx) y [test_responsiva.py](../tests/test_responsiva.py).
+
+
+## Modal Integrado de Responsiva y Aprovisionamiento Condicionado (Deferred Provisioning)
+
+## Autenticación, Accesos y Cumplimiento
+
+### Regla
+1. **Modal Directo en el Portal (Sin Páginas Ni Rutas Separadas)**:
+   - La carta responsiva opera directamente sobre el marco del portal (`Marco` en [app-shell.tsx](../frontend/src/components/app-shell.tsx)) mediante el componente unificado [modal-responsiva.tsx](../frontend/src/components/responsiva/modal-responsiva.tsx).
+   - No se crean páginas externas, rutas nuevas (`/responsiva`) ni elementos huérfanos de navegación: el usuario se autentica e ingresa a su portal institucional con normalidad, desplegándose de inmediato el diálogo modal con fondo desenfocado sobre el catálogo de plataformas.
+   - El diálogo no permite cierre accidental (clic fuera o tecla Escape muestran aviso de firma obligatoria) y ofrece la opción explícita de "Cerrar sesión" si el usuario no desea aceptar los términos en ese momento.
+2. **Aprovisionamiento Condicionado en Backend (Deferred Provisioning)**:
+   - Cuando un administrador otorga o asigna plataformas a un usuario que tiene `responsiva_firmada = False`, el acceso se registra en base de datos en estado `en_proceso` pero **se retiene el despacho del trabajo de aprovisionamiento** en [services.py](../app/modules/access/services.py) (`acceso.last_job_id = None`).
+   - El usuario **no es insertado en los grupos de LDAP ni en los conectores de las plataformas** mientras la responsiva permanezca pendiente.
+   - Si el usuario intentara navegar directamente por URL externa hacia la plataforma (ej. `https://jira.empresa.local`), Authelia consulta al directorio LDAP y al verificar que el usuario no pertenece al grupo de la plataforma, deniega el paso con código HTTP 403 Forbidden.
+   - Los enlaces directos (`direct_link`) se enmascaran como `null` en `GET /api/v1/platforms` para usuarios sin responsiva firmada.
+3. **Liberación Atómica de Aprovisionamiento**:
+   - Al marcar la casilla de aceptación y pulsar "Firmar y acceder al portal" en el modal, se ejecuta `POST /api/v1/me/firmar-responsiva` en [routes.py](../app/modules/api/routes.py).
+   - El backend marca `responsiva_firmada = True`, registra la fecha y la auditoría, e **inicia de inmediato el encolado de aprovisionamiento** (`queue.encolar`) para todas las plataformas pendientes del usuario.
+   - La sesión reactiva del frontend cierra el modal y el usuario queda de inmediato interactuando con su catálogo en el portal.
+
+### Ejemplo
+Un empleado de nuevo ingreso recibe sus credenciales e ingresa al portal institucional. Al autenticarse con Authelia, llega a su pantalla habitual de plataformas en el portal. En ese instante, sobre el portal se despliega el modal de Carta Responsiva informándole las plataformas pre-asignadas. En LDAP, el usuario aún no forma parte de los grupos, por lo que no puede eludir el control ingresando directo a los enlaces externos. Al leer los lineamientos, marcar la casilla y pulsar "Firmar y acceder al portal", el modal se cierra fluidamente, se encola su alta en LDAP/conectores y el portal queda 100% activo y operativo. En ingresos posteriores, el modal ya no vuelve a mostrarse.
+
+### Impacto
+Afecta a [modal-responsiva.tsx](../frontend/src/components/responsiva/modal-responsiva.tsx), [app-shell.tsx](../frontend/src/components/app-shell.tsx), [services.py](../app/modules/access/services.py), [routes.py](../app/modules/api/routes.py), [test_responsiva.py](../tests/test_responsiva.py) y [responsiva.test.tsx](../frontend/tests/components/responsiva.test.tsx).
+
+
+## Detección de Nuevos Accesos Aprobados y Exigencia de Responsiva al Ingreso al Portal
+
+## Solicitudes, Accesos y Cumplimiento
+
+### Regla
+1. **Detección de Accesos Aprobados Pendientes**:
+   - Cada vez que un usuario solicita una plataforma y la solicitud es aprobada por un administrador (o cuando un administrador le otorga una nueva plataforma directamente), el nuevo registro en `platform_access_grants` nace con `responsiva_firmada = False` y aprovisionamiento retenido (`last_job_id = None`).
+   - Al ingresar o navegar en el portal institucional, `GET /api/v1/me` evalúa si el usuario cuenta con accesos vigentes pendientes de firma (`responsiva_firmada is False`).
+   - Si se detectan accesos aprobados pendientes, la sesión reporta `responsiva_firmada: false`, activando de forma automática el modal de responsiva [modal-responsiva.tsx](../frontend/src/components/responsiva/modal-responsiva.tsx) sobre el catálogo de plataformas.
+2. **Contexto Visual de Aprobación de Accesos**:
+   - El modal adapta su título y mensaje explicativo:  
+     *Título*: *"Carta Responsiva: Aprobación de Nuevos Accesos a Plataformas"*.  
+     *Encabezado*: *"Nuevos Accesos Aprobados • Confirmación Requerida"*.  
+     *Detalle*: *"Tus solicitudes de acceso a las siguientes herramientas han sido aprobadas. Por favor lee y confirma la responsiva para activar su uso en tu cuenta"*.  
+     *Botón de acción*: *"Firmar y activar accesos"*.
+   - El modal lista únicamente las plataformas recientemente aprobadas que motivan la confirmación.
+3. **Aprovisionamiento y Desbloqueo Inmediato**:
+   - Al marcar la casilla y pulsar "Firmar y activar accesos", `POST /api/v1/me/firmar-responsiva` marca `responsiva_firmada = True` en el otorgamiento y despacha los trabajos de aprovisionamiento a los grupos de LDAP y conectores correspondientes.
+   - La sesión del frontend se actualiza, el modal se retira y las tarjetas de las nuevas plataformas quedan disponibles con sus enlaces directos habilitados.
+
+### Ejemplo
+"Laura" ya trabaja en la empresa y firmó su responsiva marco hace tres meses. Hoy solicita acceso a "SAP ERP" para tareas de contabilidad. El administrador de área aprueba su solicitud en la bandeja de aprobaciones. Cuando Laura ingresa al portal institucional, el sistema detecta que tiene un acceso aprobado pendiente de confirmación de responsiva. De inmediato se despliega el modal informándole: "¡Tus solicitudes de acceso han sido aprobadas! Plataforma: SAP ERP". Laura marca la casilla y presiona "Firmar y activar accesos". En ese momento, el backend encola su alta en el grupo LDAP de SAP, el modal se cierra y Laura puede ingresar a SAP ERP sin contratiempos.
+
+### Impacto
+Afecta a [modal-responsiva.tsx](../frontend/src/components/responsiva/modal-responsiva.tsx), [routes.py](../app/modules/api/routes.py), [services.py](../app/modules/access/services.py), [models.py](../app/modules/access/models.py), [0017_responsiva_en_accesos.py](../migrations/versions/0017_responsiva_en_accesos.py), [test_responsiva.py](../tests/test_responsiva.py) y [responsiva.test.tsx](../frontend/tests/components/responsiva.test.tsx).
+
+
+## Firma Única Vitalicia de Responsiva Condicionada al Primer Otorgamiento de Plataformas
+
+## Accesos, Solicitudes y Cumplimiento Normativo
+
+### Regla
+1. **Firma Única Vitalicia**: La carta responsiva de seguridad de la información y plataformas de TI se firma **UNA SOLA VEZ** en la vida del usuario dentro de la organización (`user.responsiva_firmada = True`). Una vez firmada, el usuario nunca vuelve a firmar una responsiva, sin importar cuántas plataformas solicite o le sean aprobadas en el futuro.
+2. **Primer Ingreso Sin Plataformas Asignadas (Navegación y Solicitud Libre)**:
+   - Si un usuario ingresa al portal institucional sin plataformas asignadas previamente (0 plataformas), el portal **no le muestra ningún modal ni bloquea su navegación**.
+   - El usuario puede navegar libremente, ver las áreas y plataformas de su catálogo, y enviar solicitudes de acceso (`POST /api/v1/access-requests`).
+3. **Exigencia de Responsiva al Primer Otorgamiento (Aprobación o Pre-asignación)**:
+   - La responsiva se activa y se exige **únicamente cuando el usuario tiene al menos una plataforma otorgada/aprobada** y su responsiva vitalicia aún no ha sido firmada (`user.responsiva_firmada is False` y `grants_count > 0`).
+   - *Caso A (Onboarding con plataformas)*: Si en el alta del usuario el administrador le pre-asignó plataformas, al entrar por primera vez al portal se le muestra la responsiva de primer ingreso antes de poder acceder a ellas.
+   - *Caso B (Solicitud y Aprobación)*: Si el usuario solicitó una plataforma y el administrador aprueba la solicitud, al entrar al portal se detecta el nuevo acceso aprobado y se le despliega el modal notificándole que se le otorgó el acceso y que debe firmar la responsiva.
+   - Mientras no firme, el aprovisionamiento en LDAP y conectores se retiene (`last_job_id = None`) y no se expone el enlace directo de acceso.
+4. **Desbloqueo y Flujo de Plataformas Posteriores**:
+   - Al marcar la casilla y firmar en el modal (`POST /api/v1/me/firmar-responsiva`), se guarda `user.responsiva_firmada = True`, se despacha el aprovisionamiento de las plataformas pendientes a LDAP y se desbloquea el portal.
+   - A partir de este momento, la responsiva queda **firmada de forma permanente**.
+   - Las demás plataformas que el usuario solicite en el futuro siguen el flujo habitual (solicitar y esperar aprobación, o que el admin se la otorgue directamente). Si no se la aprueban, no puede ingresar; pero una vez aprobada, el acceso se aprovisiona y queda activo de inmediato **sin volver a firmar la responsiva jamás**.
+
+### Ejemplo
+Carlos ingresa a la empresa y se le da de alta sin plataformas pre-asignadas. Al ingresar por primera vez a su portal, navega normalmente por el catálogo y solicita acceso a "Jira Software". La solicitud llega al administrador, quien la aprueba. Cuando Carlos entra a su portal, el sistema detecta que tiene su primer acceso aprobado y que aún no ha firmado su responsiva vitalicia: se despliega el modal indicándole que se le otorgó el acceso a Jira Software y que debe firmar la responsiva. Carlos lee, acepta los términos y firma; en ese instante Jira se aprovisiona y queda listo para usarse. Dos meses después, Carlos solicita "Figma" y el administrador lo aprueba. Al ingresar al portal, como Carlos ya firmó su responsiva en el pasado, el acceso a Figma se activa inmediatamente y el portal no le vuelve a pedir firmar ninguna responsiva.
+
+### Impacto
+Afecta a [routes.py](../app/modules/api/routes.py), [services.py](../app/modules/access/services.py), [modal-responsiva.tsx](../frontend/src/components/responsiva/modal-responsiva.tsx), [test_responsiva.py](../tests/test_responsiva.py) y [responsiva.test.tsx](../frontend/tests/components/responsiva.test.tsx).
+
+
+## Modalidad Configurable de Responsiva (Global vs Por Plataforma) vía Variable de Entorno
+
+## Configuración del Sistema y Cumplimiento de Accesos
+
+### Regla
+1. **Variable de Configuración en `.env`**:
+   - Se incorpora la variable de entorno `RESPONSIVA_MODO` (o alternativamente `RESPONSIVA_POR_PLATAFORMA`) para definir la política de aceptación de responsivas institucional:
+     - `RESPONSIVA_MODO=global` (valor por defecto si está vacío o no configurado): La responsiva se firma **una sola vez en la vida del usuario** (al primer otorgamiento). Los accesos aprobados subsecuentes se activan de inmediato sin requerir firma adicional.
+     - `RESPONSIVA_MODO=por_plataforma`: Cada vez que se aprueba o asigna una nueva plataforma, el sistema exige al usuario firmar la responsiva específicamente para esa herramienta antes de que se aprovisione y quede activa en el portal.
+2. **Alternativa Booleana Soportada**:
+   - `RESPONSIVA_POR_PLATAFORMA=false` (equivale a `global`).
+   - `RESPONSIVA_POR_PLATAFORMA=true` (equivale a `por_plataforma`).
+3. **Comportamiento en Backend**:
+   - Evaluado mediante la función `responsiva_por_plataforma()` en [configuracion.py](../app/modules/access/configuracion.py).
+   - En [services.py](../app/modules/access/services.py), `otorgar()` consulta dicha bandera: si está en `por_plataforma`, cada nuevo acceso nace con `responsiva_firmada = False` y retiene el encolado de aprovisionamiento hasta que el usuario firme en el modal.
+   - En [routes.py](../app/modules/api/routes.py), las rutas `check_responsiva()` y `me()` bloquean o exigen firma según la presencia de accesos pendientes en la tabla `platform_access_grants`.
+
+### Ejemplo
+Una empresa del sector financiero con políticas estrictas de segregación de responsabilidades configura `RESPONSIVA_MODO=por_plataforma` en su archivo `.env`. Cuando a un colaborador se le aprueba "SAP", firma la responsiva de SAP y se le activa el acceso. Semanas después solicita "Salesforce"; al ingresar al portal, el sistema le despliega el modal solicitándole la firma de responsiva correspondiente a Salesforce antes de permitirle abrirla. Por otro lado, una empresa que prefiere menor fricción define `RESPONSIVA_MODO=global`: el colaborador firma únicamente la primera vez y todas las aprobaciones posteriores quedan disponibles de inmediato.
+
+### Impacto
+Afecta a [.env.example](../.env.example), [configuracion.py](../app/modules/access/configuracion.py), [services.py](../app/modules/access/services.py), [routes.py](../app/modules/api/routes.py) y [test_responsiva.py](../tests/test_responsiva.py).
