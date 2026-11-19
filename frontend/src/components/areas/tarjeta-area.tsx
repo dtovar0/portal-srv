@@ -50,12 +50,12 @@ function LogoPlataforma({ plataforma }: { plataforma: Platform }) {
 
 function Cifra({ icono, valor, etiqueta }: { icono: NombreIcono; valor: number; etiqueta: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-panel-border bg-superficie-hundida p-3">
+    <div className="nx-area-card__cifra flex min-w-0 items-center gap-3 rounded-xl border p-3">
       <span className="nx-area-card__mini grid size-8 shrink-0 place-items-center rounded-lg" aria-hidden="true">
         <Icono nombre={icono} tamano="sm" />
       </span>
       <div className="min-w-0">
-        <p className="text-xl font-extrabold leading-none tabular-nums text-body-text">{valor}</p>
+        <p className="nx-area-card__valor text-xl font-extrabold leading-none tabular-nums">{valor}</p>
         <p className="mt-1 truncate text-xs font-semibold uppercase tracking-wide text-label">{etiqueta}</p>
       </div>
     </div>
@@ -119,7 +119,7 @@ export function TarjetaArea({
         <Cifra icono="plataformas" valor={conteo} etiqueta={conteo === 1 ? 'Plataforma' : 'Plataformas'} />
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-3 border-t border-panel-border px-5 py-3">
+      <div className="nx-area-card__pie mt-auto flex items-center justify-between gap-3 border-t px-5 py-3">
         <div className="flex min-w-0 items-center gap-2">
           {inactiva ? (
             <Badge tone="warning" dot>
@@ -141,7 +141,7 @@ export function TarjetaArea({
             <span className="text-xs text-label">Sin plataformas</span>
           )}
         </div>
-        <span className="nx-area-card__ir inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-bold">
+        <span className="nx-area-card__ir inline-flex min-h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-bold">
           Ver plataformas
           <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} className="nx-area-card__flecha" />
         </span>
