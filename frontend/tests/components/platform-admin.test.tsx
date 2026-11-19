@@ -340,10 +340,10 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(screen.getByRole('button', { name: /Filtrar por estado/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Configurar cuadrícula/i })).toBeTruthy();
     expect(screen.getByText('Finanzas')).toBeTruthy();
-    expect(screen.getByText('1 plataforma')).toBeTruthy();
-    // 7 ghost cards para completar la cuadrícula 4x2 (8 cards en total)
+    expect(screen.getByLabelText('Área Finanzas, 1 plataforma. Ver plataformas.')).toBeTruthy();
+    // DIS-102: solo se completa la última fila (4 columnas: 1 real + 3 huecos)
     const ghostCards = container.querySelectorAll('.border-dashed[aria-hidden="true"]');
-    expect(ghostCards).toHaveLength(7);
+    expect(ghostCards).toHaveLength(3);
   });
 
   it('el botón de filtrar por estado permite alternar entre Todos, Activas e Inactivas', async () => {
@@ -373,17 +373,17 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     const { container } = render(<PlatformAdmin />);
     await screen.findByText('Finanzas');
 
-    // Inicialmente 2x4 (8 slots: 1 real + 7 ghost)
-    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(7);
-
-    // Abrir configuración de cuadrícula y cambiar a 2 columnas (2x2: 4 slots -> 1 real + 3 ghost)
-    fireEvent.click(screen.getByRole('button', { name: /Configurar cuadrícula/i }));
-    fireEvent.click(screen.getByRole('button', { name: '2 columnas' }));
+    // Inicialmente 4 columnas: 1 real + 3 huecos en la última fila
     expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(3);
 
-    // Cambiar a 3x3 (9 slots: 1 real + 8 ghost) y verificar persistencia en localStorage
+    // Abrir configuración de cuadrícula y cambiar a 2 columnas (2 columnas: 1 real + 1 hueco)
+    fireEvent.click(screen.getByRole('button', { name: /Configurar cuadrícula/i }));
+    fireEvent.click(screen.getByRole('button', { name: '2 columnas' }));
+    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(1);
+
+    // Cambiar a 3x3 (3 columnas: 1 real + 2 huecos) y verificar persistencia en localStorage
     fireEvent.click(screen.getByRole('button', { name: '3×3' }));
-    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(8);
+    expect(container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(2);
     expect(window.localStorage.getItem('portal_grid_filas')).toBe('3');
     expect(window.localStorage.getItem('portal_grid_columnas')).toBe('3');
 
@@ -391,7 +391,7 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     cleanup();
     const segundo = render(<PlatformAdmin />);
     await segundo.findByText('Finanzas');
-    expect(segundo.container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(8);
+    expect(segundo.container.querySelectorAll('.border-dashed[aria-hidden="true"]')).toHaveLength(2);
   });
 
   it('el buscador de áreas filtra la cuadrícula', async () => {
@@ -474,7 +474,7 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(await screen.findByText('Operaciones')).toBeTruthy();
     expect(screen.getByText('Inactiva')).toBeTruthy();
     expect(screen.getByLabelText(/Área Operaciones \(Inactiva\)/)).toBeTruthy();
-    expect(screen.getByText('Ver plataformas (Inactiva)')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Área Operaciones \(Inactiva\)/ }).getAttribute('data-state')).toBe('inactiva');
   });
 });
 
