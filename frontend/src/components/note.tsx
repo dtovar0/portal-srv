@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card } from './ui';
 import { Icono, NombreIcono } from './icono';
 import { PremiumEmptyState } from './premium-message';
 

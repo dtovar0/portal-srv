@@ -17,7 +17,6 @@ import type { Stats } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { useTokenColors } from '@/lib/use-token-colors';
 import { ActividadReciente } from './home/actividad-reciente';
-import { Icono } from './icono';
 import { useSession } from './session-provider';
 import { Card, ErrorNote, PanelHeader, PremiumEmptyState, RegionDeAviso, Skeleton, StatTile } from './ui';
 import { DataTable } from './data-table';

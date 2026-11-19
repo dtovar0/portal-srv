@@ -30,7 +30,7 @@ export function normalizarEnlaceDirecto(valor: string | null | undefined): strin
 }
 
 /** Validación previa al envío; el backend vuelve a validar todo. */
-export function validate(form: PlatformInput, integration: IntegrationValue, isEdit: boolean) {
+export function validate(form: PlatformInput, integration: IntegrationValue) {
   const errors: Record<string, string> = {};
   const name = form.name?.trim() ?? '';
   if (name.length < NOMBRE_MIN || name.length > NOMBRE_MAX) {
