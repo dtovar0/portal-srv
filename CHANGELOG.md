@@ -8,6 +8,9 @@
 ### Eliminado
 - Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
 
+### Cambiado
+- Web: la tarjeta de área de Admin › Plataformas se rediseña (icono a la izquierda con degradado del color del área, cifras de personas y plataformas, logos de las primeras 3 plataformas y «Ver plataformas»); ya no se estira al alto de la rejilla (DIS-102, 2026-11-19).
+
 ### Corregido
 - Web: se quita el buscador global de la barra superior (botón «Buscar», atajo Ctrl K y paleta de comandos) y su mención en la Ayuda; token `--marco-buscador-max` retirado (DIS-101, 2026-11-19).
 - Despliegue: `install.sh --actualizar` decía «portal-backend.service no existe» con la unidad activa: `systemctl … | grep -q` bajo `pipefail` daba falso negativo (SIGPIPE). Ahora `deploy/unidades.sh` guarda la salida antes de buscar; mismo arreglo en las demás tuberías del preflight (FNC-159, 2026-11-19).

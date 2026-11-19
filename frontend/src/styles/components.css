@@ -875,3 +875,78 @@ select::-ms-expand {
 
 
 
+
+/* ==========================================================================
+   TARJETA DE ÁREA (DIS-102)
+   El color del área es un dato: llega como `--area-color` (variablesCss) y estas
+   clases lo consumen. El texto nunca usa el color libre tal cual: el del icono se
+   elige por luminancia (`data-texto`) y el de «Ver plataformas» mezcla un 35 % del
+   color con el texto del tema, lo que asegura >= 4,5:1 con cualquier color.
+   Inactiva (`data-state='inactiva'`): sin color del área, en neutro.
+   ========================================================================== */
+.nx-area-card {
+    --nx-area: var(--area-color, rgb(var(--color-accion)));
+    --nx-area-legible: color-mix(in srgb, var(--nx-area) 35%, var(--color-body-text));
+    transition:
+        transform var(--duracion-corta) var(--curva),
+        box-shadow var(--duracion-corta) var(--curva),
+        border-color var(--duracion-corta) var(--curva);
+}
+.nx-area-card[data-state='inactiva'] {
+    --nx-area: rgb(var(--color-neutro-relleno));
+}
+.nx-area-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-2);
+    border-color: color-mix(in srgb, var(--nx-area) 55%, transparent);
+}
+/* Resplandor suave del color del área en la esquina del encabezado. */
+.nx-area-card__cabecera::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(70% 140% at 0% 0%, color-mix(in srgb, var(--nx-area) 8%, transparent), transparent 70%);
+}
+[data-state='inactiva'] > .nx-area-card__cabecera::before {
+    display: none;
+}
+/* Cuadro del icono: degradado del color del área; el texto lo decide `data-texto` (DIS-048). */
+.nx-area-card__icono {
+    --nx-area-extremo: rgb(var(--color-texto-sobre-fondo-claro));
+    background: linear-gradient(145deg, var(--nx-area), color-mix(in srgb, var(--nx-area) 72%, var(--nx-area-extremo)));
+    color: rgb(var(--color-texto-sobre-accion));
+}
+.nx-area-card__icono[data-texto='sobre-oscuro'] {
+    color: rgb(var(--color-texto-sobre-fondo-oscuro));
+}
+.nx-area-card__icono[data-texto='sobre-claro'] {
+    --nx-area-extremo: rgb(var(--color-texto-sobre-fondo-oscuro));
+    color: rgb(var(--color-texto-sobre-fondo-claro));
+}
+[data-state='inactiva'] .nx-area-card__icono {
+    background: rgb(var(--color-neutro-tenue));
+    color: rgb(var(--color-neutro-texto));
+}
+.nx-area-card__mini {
+    background: color-mix(in srgb, var(--nx-area) 14%, transparent);
+    color: var(--nx-area-legible);
+}
+.nx-area-card__ir {
+    color: var(--nx-area-legible);
+}
+.nx-area-card__flecha {
+    transition: transform var(--duracion-corta) var(--curva);
+}
+.nx-area-card:hover .nx-area-card__flecha {
+    transform: translateX(3px);
+}
+@media (prefers-reduced-motion: reduce) {
+    .nx-area-card,
+    .nx-area-card:hover,
+    .nx-area-card__flecha,
+    .nx-area-card:hover .nx-area-card__flecha {
+        transition: none;
+        transform: none;
+    }
+}

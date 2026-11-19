@@ -13,10 +13,11 @@ import { useAsync } from '@/lib/use-async';
 import type { Area, Platform, PlatformWarning } from '@/lib/types';
 import { AreaAdminsPanel } from './areas/area-admins-panel';
 import { AreaForm } from './areas/area-form';
+import { TarjetaArea } from './areas/tarjeta-area';
 import { mensajeDeError } from './areas/area-errors';
 import { DataTable } from './data-table';
 import { Button, ConfirmDialog } from './form';
-import { Icono, type NombreIcono } from './icono';
+import { Icono } from './icono';
 import { PageHeader } from './page-header';
 import { columnasPlataformas } from './platforms/platform-columns';
 import { MissingLinkNote } from './platforms/missing-link-note';
@@ -26,19 +27,13 @@ import { describeDeleteError } from './platforms/platform-save-errors';
 import { RequireRole } from './require-role';
 import { useSession } from './session-provider';
 import { useToast } from './toast';
-import { Badge, EmptyNote, ErrorNote } from './ui';
+import { EmptyNote, ErrorNote } from './ui';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 
 const CLASES_COLS: Record<number, string> = {
   2: 'sm:grid-cols-2 lg:grid-cols-2',
   3: 'sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3',
   4: 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4',
-};
-
-const CLASES_ROWS: Record<number, string> = {
-  2: 'lg:grid-rows-2',
-  3: 'lg:grid-rows-3',
-  4: 'lg:grid-rows-4',
 };
 
 export const CLAVE_GRID_FILAS = 'portal_grid_filas';
@@ -254,6 +249,17 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     return mapa;
   }, [platforms.data, isSuperadmin, hasManagedAreasExplicit, managedAreaIds]);
 
+  // DIS-102: plataformas del área (mismo alcance que el conteo) para los logos del pie de la tarjeta
+  const plataformasPorArea = useMemo(() => {
+    const mapa: Record<number, Platform[]> = {};
+    for (const p of platforms.data ?? []) {
+      if (isSuperadmin || !hasManagedAreasExplicit || managedAreaIds.has(p.area_id)) {
+        (mapa[p.area_id] ??= []).push(p);
+      }
+    }
+    return mapa;
+  }, [platforms.data, isSuperadmin, hasManagedAreasExplicit, managedAreaIds]);
+
   // Áreas gestionables según el rol (superadmin ve todas; admin de área solo las suyas)
   const assignableAreas = useMemo(() => {
     if (isSuperadmin || !hasManagedAreasExplicit) return areas.data ?? [];
@@ -285,7 +291,8 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     const start = (pageAreas - 1) * AREAS_PER_PAGE;
     return areasFiltradas.slice(start, start + AREAS_PER_PAGE);
   }, [areasFiltradas, pageAreas, AREAS_PER_PAGE]);
-  const ghostCountAreas = Math.max(0, AREAS_PER_PAGE - displayAreas.length);
+  // DIS-102: solo se completa la última fila (antes se rellenaba toda la rejilla de filas fijas)
+  const huecosUltimaFila = displayAreas.length % gridColumnas === 0 ? 0 : gridColumnas - (displayAreas.length % gridColumnas);
 
   // Plataformas filtradas del área seleccionada (admin de área solo ve donde es admin)
   const plataformasFiltradas = useMemo(() => {
@@ -792,13 +799,9 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
           {/* Fila 2: Body con Grid configurable */}
           <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-y-auto p-1">
             {areas.loading && !areas.data ? (
-              <div
-                className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} ${
-                  CLASES_ROWS[gridFilas] ?? 'lg:grid-rows-2'
-                } gap-4 flex-1 h-full min-h-0 p-1`}
-              >
+              <div className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} content-start gap-4 p-1`}>
                 {Array.from({ length: AREAS_PER_PAGE }).map((_, i) => (
-                  <div key={i} className="min-h-36 h-full rounded-xl border border-panel-border/60 bg-panel-fill p-5 animate-pulse" />
+                  <div key={i} className="min-h-56 rounded-xl border border-panel-border/60 bg-panel-fill p-5 animate-pulse" />
                 ))}
               </div>
             ) : null}
@@ -832,106 +835,28 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
 
             {displayAreas.length > 0 ? (
               <div className="flex flex-col flex-1 min-h-0 h-full w-full justify-between gap-4">
-                {/* Grid configurable */}
+                {/* Grid configurable: el alto de cada fila lo da el contenido de las tarjetas (DIS-102) */}
                 <div
                   role="region"
                   aria-label="Catálogo de áreas"
-                  className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} ${
-                    CLASES_ROWS[gridFilas] ?? 'lg:grid-rows-2'
-                  } gap-4 flex-1 h-full min-h-0 auto-rows-fr p-1`}
+                  className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-4'} content-start gap-4 p-1`}
                 >
-                  {displayAreas.map((area) => {
-                    const conteo = conteoPorArea[area.id] ?? 0;
-                    const isInactiva = area.status === 'Inactivo';
-                    return (
-                      <div
-                        key={area.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleSelectArea(area)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            handleSelectArea(area);
-                          }
-                        }}
-                        aria-label={`Área ${area.name}${isInactiva ? ' (Inactiva)' : ''}, ${conteo} ${conteo === 1 ? 'plataforma' : 'plataformas'}. Ver plataformas.`}
-                        className={`group relative flex flex-col justify-between rounded-xl border p-5 shadow-1 transition-all duration-corta cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-36 h-full text-left select-none ${
-                          isInactiva
-                            ? 'border-warning/40 bg-superficie hover:border-warning/70 hover:shadow-2 hover:-translate-y-0.5'
-                            : 'border-panel-border bg-panel-fill hover:border-primary/60 hover:shadow-2 hover:-translate-y-0.5'
-                        }`}
-                      >
-                        {/* Cabecera de la card: Icono de área y Badges (Estado + Plataformas) */}
-                        <div className="flex items-center justify-between gap-2 shrink-0">
-                          <span
-                            aria-hidden="true"
-                            className={`flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-xs transition-transform duration-corta group-hover:scale-105 ${
-                              isInactiva
-                                ? 'border-warning/30 bg-warning/10 text-warning-text'
-                                : 'border-primary/20 bg-primary/10 text-primary-text'
-                            }`}
-                          >
-                            <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano="md" />
-                          </span>
-                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                            {isInactiva ? (
-                              <Badge tone="warning" dot>
-                                Inactiva
-                              </Badge>
-                            ) : null}
-                            <Badge tone={isInactiva ? 'slate' : 'primary'} icon="plataformas">
-                              {conteo} {conteo === 1 ? 'plataforma' : 'plataformas'}
-                            </Badge>
-                          </div>
-                        </div>
+                  {displayAreas.map((area) => (
+                    <TarjetaArea
+                      key={area.id}
+                      area={area}
+                      conteo={conteoPorArea[area.id] ?? 0}
+                      plataformas={plataformasPorArea[area.id] ?? []}
+                      onSelect={handleSelectArea}
+                    />
+                  ))}
 
-                        {/* Nombre del área y descripción */}
-                        <div className="my-auto min-w-0 flex-1 py-2">
-                          <h3
-                            className={`text-base font-bold tracking-tight truncate transition-colors ${
-                              isInactiva
-                                ? 'text-label group-hover:text-warning-text'
-                                : 'text-body-text group-hover:text-primary-text'
-                            }`}
-                            title={area.name}
-                          >
-                            {area.name}
-                          </h3>
-                          <p
-                            className="mt-1 text-xs text-label line-clamp-2 sm:line-clamp-3 leading-relaxed"
-                            title={area.description ?? ''}
-                          >
-                            {area.description || 'Área organizativa del sistema.'}
-                          </p>
-                        </div>
-
-                        {/* Pie interactivo */}
-                        <div
-                          className={`flex items-center justify-between border-t border-panel-border/40 pt-3 text-xs font-bold shrink-0 ${
-                            isInactiva
-                              ? 'text-label group-hover:text-warning-text'
-                              : 'text-primary-text'
-                          }`}
-                        >
-                          <span>{isInactiva ? 'Ver plataformas (Inactiva)' : 'Ver plataformas'}</span>
-                          <Icono
-                            nombre="chevron-der"
-                            tamano="sm"
-                            ariaHidden={true}
-                            className="transition-transform duration-corta group-hover:translate-x-1"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Ghost cards de simetría para completar la cuadrícula de 4 columnas x 2 filas (8 cards) */}
-                  {Array.from({ length: ghostCountAreas }).map((_, idx) => (
+                  {/* Huecos que completan solo la última fila (en escritorio); las filas vacías ya no se dibujan */}
+                  {Array.from({ length: huecosUltimaFila }).map((_, idx) => (
                     <div
                       key={`ghost-area-${idx}`}
                       aria-hidden="true"
-                      className="relative rounded-xl border border-dashed border-panel-border/70 bg-superficie/60 min-h-36 h-full select-none pointer-events-none"
+                      className="relative hidden rounded-xl border border-dashed border-panel-border/70 bg-superficie/60 select-none pointer-events-none lg:block"
                     />
                   ))}
                 </div>
