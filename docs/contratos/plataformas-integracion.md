@@ -110,5 +110,5 @@ En la misma transacción:
 | 1 | 2026-10-14 | Versión inicial (FNC-038) |
 | 1 | 2026-10-19 | Aditivo (FNC-046): nota de plataformas heredadas (0005), URL guardadas no válidas como `null`, `409 grupo_en_uso`; cambiar `integration_type` en `PUT` solo superadmin (`403 dn_solo_superadmin`) |
 | 1.1 | 2026-10-20 | FNC-055: cambiar `area_id` ya no da 409 por accesos `admin_de_area` (se resincronizan); sin acceso automático para admins inactivos ni plataformas `ldap` sin grupo (decisión del orquestador, pendiente de validar en la PoC). Sin cambios de forma |
-| 1.3 | 2026-11-19 | FNC-163: aditivo `groups_location` y `groups_move_status`; `409 grupos_en_inactivos` en `PUT`; el cambio de `status` de plataforma o área (`PUT /areas/<id>`) mueve los grupos por el worker |
 | 1.2 | 2026-11-17 | FNC-144: `DELETE /platforms/<id>` con `409 plataforma_con_accesos` y limpieza del historial cerrado |
+| 1.3 | 2026-11-19 | FNC-163: aditivo `groups_location` y `groups_move_status`; `409 grupos_en_inactivos` en `PUT`; el cambio de `status` de plataforma o área (`PUT /areas/<id>`) mueve los grupos por el worker |

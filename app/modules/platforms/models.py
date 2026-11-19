@@ -16,6 +16,7 @@ from app.modules.provisioning.reloj import ahora
 AL_BORRAR_PLATAFORMA = 'CASCADE'
 UBICACION_ACTIVOS = 'activos'
 UBICACION_INACTIVOS = 'inactivos'
+UBICACION_PARCIAL = 'parcial'  # solo en la API: un grupo movido y otro no
 UBICACIONES = (UBICACION_ACTIVOS, UBICACION_INACTIVOS)
 ESTADO_PENDIENTE = 'pendiente'
 ESTADO_HECHO = 'hecho'

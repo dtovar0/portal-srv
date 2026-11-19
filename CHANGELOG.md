@@ -5,6 +5,9 @@
 
 ## [Sin publicar]
 
+### Agregado
+- Plataformas y áreas: al pasar a Inactivo, el worker mueve sus grupos LDAP a la OU `LDAP_GROUPS_INACTIVE_BASE_DN` y los regresa al reactivar (vacía = sin cambios); la API de plataformas expone `groups_location` y `groups_move_status`; migración 0018; guía `docs/operacion/GRUPOS-INACTIVOS.md` (FNC-163, 2026-11-19).
+
 ### Eliminado
 - Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
 

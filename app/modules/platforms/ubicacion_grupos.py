@@ -10,7 +10,7 @@
 from app import db
 from app.modules.core.models import Area
 from app.modules.directory.dn import separar_dn
-from app.modules.platforms.models import (UBICACION_ACTIVOS,
+from app.modules.platforms.models import (UBICACION_ACTIVOS, UBICACION_PARCIAL,
                                           UBICACION_INACTIVOS, TrasladoGrupos)
 from app.modules.platforms.tipos import (CAMPOS_DN, NIVEL_ADMIN, NIVEL_USUARIO,
                                          TIPO_LDAP)
@@ -81,5 +81,5 @@ def resumen(plataforma):
     niveles = [ubicacion_actual(plataforma, n) for n in NIVELES
                if dn_original(plataforma, n)] or [UBICACION_ACTIVOS]
     if len(set(niveles)) > 1:
-        return 'parcial', traslado.status
+        return UBICACION_PARCIAL, traslado.status
     return niveles[0], traslado.status

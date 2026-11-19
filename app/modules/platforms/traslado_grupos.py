@@ -42,6 +42,7 @@ from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
 from app.modules.directory.errors import Resultado
 from app.modules.directory.writer import EscritorDirectorio
 from app.modules.platforms import ubicacion_grupos as ubicacion
+from app.modules.platforms.tipos import NIVEL_USUARIO
 from app.modules.platforms.models import (ESTADO_FALLIDO, ESTADO_HECHO,
                                           ESTADO_PENDIENTE,
                                           LARGO_RESERVADO_POR,
@@ -94,6 +95,17 @@ def _hay_que_mover(plataforma, deseada):
                for n in _niveles_con_grupo(plataforma))
 
 
+def _reserva_viva(traslado, cfg):
+    """`True` si un worker lo tiene reservado y su reserva no venció.
+
+    Pendiente sin reserva viva (p. ej. intentos agotados por una caída del
+    worker al cerrar) se rearma al guardar de nuevo."""
+    if traslado.locked_at is None:
+        return False
+    return traslado.locked_at >= ahora() - timedelta(
+        seconds=cfg.vencimiento_reserva)
+
+
 def conciliar(plataformas):
     """Deja `pendiente` el traslado de las plataformas cuyos grupos no están
     donde deben (sin `commit`); devuelve los ids a despertar tras el `commit`.
@@ -112,8 +124,9 @@ def conciliar(plataformas):
         if not _hay_que_mover(plataforma, deseada):
             continue
         traslado = plataforma.group_move
-        if traslado is not None and traslado.status == ESTADO_PENDIENTE:
-            continue  # ya está en cola; el worker recalcula lo deseado
+        if (traslado is not None and traslado.status == ESTADO_PENDIENTE
+                and _reserva_viva(traslado, cfg)):
+            continue  # un worker lo tiene; recalcula lo deseado al cerrar
         if traslado is None:
             traslado = TrasladoGrupos(plataforma=plataforma,
                                       max_attempts=cfg.max_intentos)
@@ -317,7 +330,7 @@ def ejecutar_traslado(traslado_id, worker=None):
         db.session.rollback()  # sin transacción abierta durante la red
 
         if cfg_directorio is None:  # se apagó la función tras el pedido
-            resultados = {'user': (False, CODIGO_SIN_CONFIGURAR, False)}
+            resultados = {NIVEL_USUARIO: (False, CODIGO_SIN_CONFIGURAR, False)}
         else:
             resultados = _mover(pasos)
 

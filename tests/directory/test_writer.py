@@ -535,7 +535,8 @@ def test_operaciones_publicas_del_escritor():
                 if not nombre.startswith('_')}
 
     assert publicos == {'add_member', 'remove_member', 'create_user',
-                        'delete_user', 'change_password', 'set_password'}
+                        'delete_user', 'change_password', 'set_password',
+                        'mover_grupo'}  # FNC-163, revisado por seguridad
 
 
 def test_alta_de_cuenta_con_contrasena(directorio, escritor, operaciones):

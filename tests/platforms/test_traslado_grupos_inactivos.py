@@ -266,15 +266,19 @@ def test_plataforma_sin_grupo_ldap_no_aplica(directorio, superadmin):
 # Idempotencia y fallos
 # --------------------------------------------------------------------------- #
 
-def test_si_el_grupo_ya_esta_donde_debe_no_falla(directorio, superadmin):
+def test_si_el_grupo_ya_esta_donde_debe_no_falla(directorio):
+    _grupo(directorio, 'g1')
+    escritor = EscritorDirectorio()
+    assert escritor.mover_grupo(_dn('g1'), INACTIVOS).resultado is Resultado.HECHO
+    # Pedir lo mismo con el grupo ya en su lugar es idempotente.
+    repetido = escritor.mover_grupo(_dn('g1', INACTIVOS), INACTIVOS)
+    assert repetido.resultado is Resultado.YA_ESTABA
+
+
+def test_un_traslado_hecho_no_se_vuelve_a_ejecutar(directorio, superadmin):
     plataforma = _plataforma(directorio, fabricas.crear_area())
-    EscritorDirectorio().mover_grupo(_dn('wiki-usuario'), INACTIVOS)
-
     _cambiar(superadmin, f'/platforms/{plataforma.id}', status='Inactivo')
-
     assert _ejecutar(plataforma.id) == 'hecho'
-    assert _ubicacion(directorio, 'wiki-usuario') == 'inactivos'
-    assert _ubicacion(directorio, 'wiki-admin') == 'inactivos'
     # Un traslado ya hecho no se vuelve a ejecutar.
     assert traslado_grupos.ejecutar_traslado(
         _traslado(plataforma.id).id) is None
@@ -481,3 +485,49 @@ def test_separar_dn_conserva_el_rdn_con_escapes():
 def test_el_tipo_de_trabajo_esta_registrado_en_el_worker(app):
     from app.modules.provisioning.tipos_de_trabajo import funciones_permitidas
     assert traslado_grupos.FUNCION_TRASLADO in funciones_permitidas()
+
+
+def test_destino_con_el_mismo_cn_de_otra_plataforma_no_se_adopta(directorio):
+    """Auditor-seguridad: con el origen inexistente, un grupo homónimo en la
+    OU de inactivos (de otra plataforma) no se da por movido ni se mueve."""
+    _grupo(directorio, 'g1')
+    escritor = EscritorDirectorio()
+    escritor.mover_grupo(_dn('g1'), INACTIVOS)       # el grupo de la plataforma A
+    ou_b = f'ou=b,{GRUPOS_BASE_DN}'
+    directorio._agregar(ou_b, objectClass='organizationalUnit', ou='b')
+
+    resultado = escritor.mover_grupo(f'cn=g1,{ou_b}', INACTIVOS)  # B sin grupo
+
+    assert resultado.resultado is Resultado.NO_EXISTE
+    assert _en(directorio, _dn('g1', INACTIVOS))     # el de A sigue en su sitio
+
+
+def test_el_rdn_de_grupo_debe_ser_unico_con_la_funcion_encendida(directorio,
+                                                                 superadmin):
+    area = fabricas.crear_area()
+    _plataforma(directorio, area, 'wiki')
+    ou = f'ou=otra,{GRUPOS_BASE_DN}'
+    otra = fabricas.crear_plataforma(area, nombre='otra')
+
+    respuesta = superadmin.put(f'{A}/platforms/{otra.id}', json={
+        'integration_type': 'ldap',
+        'ldap_group_user_dn': f'cn=wiki-usuario,{ou}',
+        'ldap_group_admin_dn': f'cn=otra-admin,{ou}'})
+
+    assert respuesta.status_code == 409
+    assert respuesta.get_json()['code'] == 'grupo_en_uso'
+
+
+def test_un_pendiente_con_intentos_agotados_sin_reserva_se_rearma(
+        directorio, superadmin):
+    plataforma = _plataforma(directorio, fabricas.crear_area())
+    _cambiar(superadmin, f'/platforms/{plataforma.id}', status='Inactivo')
+    traslado = _traslado(plataforma.id)
+    traslado.attempts_count = traslado.max_attempts  # el worker cayó al cerrar
+    db.session.commit()
+    assert _ejecutar(plataforma.id) is None  # nadie lo toma
+
+    _cambiar(superadmin, f'/platforms/{plataforma.id}', status='Inactivo')
+
+    assert _traslado(plataforma.id).attempts_count == 0
+    assert _ejecutar(plataforma.id) == 'hecho'

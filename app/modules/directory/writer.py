@@ -152,7 +152,7 @@ class EscritorDirectorio:
             return guardado == valor
         return mismo_dn(guardado, valor)
 
-    def grupo_en_base(self, group_dn):
+    def _grupo_en_base(self, group_dn):
         """Grupo bajo la base de activos o, si está configurada, bajo la de
         inactivos (FNC-163: un grupo movido sigue siendo del portal)."""
         cfg = self.configuracion
@@ -162,7 +162,7 @@ class EscritorDirectorio:
 
     def _fuera_de_base(self, group_dn, usuario):
         cfg = self.configuracion
-        return not (self.grupo_en_base(group_dn)
+        return not (self._grupo_en_base(group_dn)
                     and bajo_base(usuario.dn, cfg.usuarios_base_dn)
                     and valor_de_membresia(cfg, usuario))
 
@@ -299,8 +299,9 @@ class EscritorDirectorio:
         """Mueve el grupo `group_dn` debajo de `nuevo_padre` (ModifyDN con
         `new_superior`, mismo RDN: el `cn` no cambia ni se tocan los miembros).
 
-        Idempotente: ya bajo `nuevo_padre` → `YA_ESTABA`; si el origen no está
-        pero el destino sí (movido antes) también. Sin `LDAP_GROUPS_INACTIVE_
+        Idempotente: ya bajo `nuevo_padre` → `YA_ESTABA`. Origen inexistente →
+        `NO_EXISTE` aunque haya algo en el destino (puede ser el grupo de otra
+        plataforma con el mismo `cn`; auditor-seguridad). Sin `LDAP_GROUPS_INACTIVE_
         BASE_DN` no se mueve nada. El resultado lleva el DN **final**.
         """
         cfg = self.configuracion
@@ -308,7 +309,7 @@ class EscritorDirectorio:
             return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
                                       MOTIVO_MOVER_NO_CONFIGURADO)
         partes = separar_dn(group_dn)
-        if (partes is None or not self.grupo_en_base(group_dn)
+        if (partes is None or not self._grupo_en_base(group_dn)
                 or not self._destino_valido(nuevo_padre)):
             return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
                                       MOTIVO_FUERA_DE_BASE)
@@ -319,8 +320,8 @@ class EscritorDirectorio:
 
         def mover(conexion):
             if not _existe(conexion, group_dn):
-                if _existe(conexion, destino):
-                    return ResultadoEscritura(Resultado.YA_ESTABA, destino)
+                # Estricto: que el destino exista no prueba que sea este grupo
+                # (otro con el mismo cn); ya movido lo sabe el registro.
                 return ResultadoEscritura(Resultado.NO_EXISTE, group_dn,
                                           MOTIVO_GRUPO_INEXISTENTE)
             if not _existe(conexion, nuevo_padre):

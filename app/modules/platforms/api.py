@@ -33,7 +33,7 @@ from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
 from app.modules.connectors.credenciales import limpiar_cache
 from app.modules.core.models import Area, Platform
-from app.modules.directory.dn import mismo_dn
+from app.modules.directory.dn import mismo_dn, separar_dn
 from app.modules.platforms import baja, grupos, traslado_grupos
 from app.modules.platforms.ubicacion_grupos import ubicacion_actual
 from app.modules.platforms.estado import (accesos_que_impiden_mover,
@@ -115,7 +115,12 @@ def _validar(datos, alta):
     return limpios
 
 
-def _grupo_de_otra_plataforma(dns, plataforma_id):
+def _solo_rdn(dn):
+    partes = separar_dn(dn)
+    return partes[0] if partes else dn
+
+
+def _grupo_de_otra_plataforma(dns, plataforma_id, rdn_unico=False):
     """`True` si algún DN ya es grupo de otra plataforma (RDN normalizados).
 
     Se compara en Python con `mismo_dn` (mayúsculas, escapes, multivalor); el
@@ -127,6 +132,11 @@ def _grupo_de_otra_plataforma(dns, plataforma_id):
                Platform.ldap_group_admin_dn.isnot(None)))
     usados = [dn for p in otras for dn in (p.ldap_group_user_dn,
                                             p.ldap_group_admin_dn) if dn]
+    if rdn_unico:
+        # Con la OU de inactivos todos los grupos comparten una sola OU: el RDN
+        # debe ser único entre plataformas (FNC-163).
+        dns = {n: _solo_rdn(dn) for n, dn in dns.items() if dn}
+        usados = [_solo_rdn(usado) for usado in usados]
     return any(mismo_dn(dn, usado) for dn in dns.values() if dn
                for usado in usados)
 
@@ -157,7 +167,8 @@ def _resolver_grupos(tipo, dns_pedidos, nombre, area, plataforma_id=None):
         raise Rechazo(validation_error(errores))
     if mismo_dn(dns[NIVEL_USUARIO], dns[NIVEL_ADMIN]):
         raise Rechazo(error_response(*GRUPOS_IGUALES))
-    if _grupo_de_otra_plataforma(dns, plataforma_id):
+    if _grupo_de_otra_plataforma(dns, plataforma_id, bool(
+            configuracion.grupos_inactivos_base_dn)):
         raise Rechazo(error_response(*GRUPO_EN_USO))
     return configuracion, dns
 
