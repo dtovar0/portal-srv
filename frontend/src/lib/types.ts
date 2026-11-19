@@ -42,6 +42,7 @@ export interface ResponsivaData {
   firmada_at: string | null;
   titulo: string;
   contenido: string;
+  es_aprobacion?: boolean;
   areas: AreaRef[];
   plataformas: {
     id: number;
