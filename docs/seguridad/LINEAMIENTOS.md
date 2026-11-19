@@ -15,7 +15,7 @@ Son reglas obligatorias para toda tarea y sirven de criterio de revisión para `
 | SEC-AUTH-07 | Un solo `administrador`: ni SSO, ni LDAP, ni mapeos, ni respaldo, ni API lo asignan | Prueba por cada vía | SEG-10, 06, 17 |
 | SEC-AUTH-08 | Un intento de login nunca crea, borra ni modifica cuentas | Prueba con un usuario inexistente | SEG-01 |
 | SEC-AUTH-09 | Respuesta de login idéntica en todos los fallos; rechazar la contraseña vacía antes del bind | Prueba que compara las respuestas | SEG-12 |
-| SEC-AUTH-10 | Límite de intentos por cuenta e IP, más estricto que el bloqueo de OpenLDAP (umbral *Por confirmar*) | Prueba: N+1 intentos dan 429 | SEG-11 |
+| SEC-AUTH-10 | Límite de intentos por cuenta e IP, más estricto que el bloqueo de OpenLDAP (umbral *Por confirmar*); la cuenta de emergencia solo se limita por IP, para que nadie la bloquee a propósito (FNC-154) | Prueba: N+1 intentos dan 429; la cuenta de emergencia no se bloquea por cuenta | SEG-11 |
 | SEC-AUTH-11 | Una cuenta inactiva pierde la sesión en la siguiente petición | Prueba | SEG-14 |
 | SEC-AUTH-12 | Contraseña local: hash scrypt o argon2, mínimo 12 caracteres (*Por confirmar*); solo la cambian el propio usuario o el superadmin | Prueba | SEG-05 |
 | SEC-AUTH-13 | El logout invalida la sesión y redirige al cierre de Authelia con URLs de la configuración (`OIDC_LOGOUT_URL` o `end_session_endpoint`), nunca con `Host` | `tests/test_oidc.py` (logout) | ADR-009 4B |
