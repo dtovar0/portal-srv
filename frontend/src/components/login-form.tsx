@@ -80,6 +80,8 @@ export function LoginForm() {
         <Card className="space-y-5 rounded-2xl border border-panel-border bg-panel-fill p-6 sm:p-8 shadow-2xl">
           {context.oidc_enabled ? (
             <Button
+              // Única acción de la pantalla: el foco empieza en ella.
+              autoFocus
               onClick={() => { window.location.href = URL_INICIO_OIDC; }}
               className="w-full py-2 shadow-xs"
             >
@@ -87,7 +89,7 @@ export function LoginForm() {
               Entrar con Authelia
             </Button>
           ) : (
-            <p className="text-sm text-label">
+            <p className="text-sm text-label" role="status">
               El inicio de sesión con Authelia no está disponible por ahora.
             </p>
           )}

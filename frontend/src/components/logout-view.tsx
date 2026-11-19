@@ -30,7 +30,7 @@ export function LogoutView() {
   return (
     <div className="grid min-h-screen place-items-center p-4">
       <Card className="w-full max-w-sm text-center">
-        <p className="font-medium">
+        <p className="font-medium" role="status">
           {done ? 'Sesión cerrada' : 'Cerrando sesión…'}
         </p>
         {done ? (
