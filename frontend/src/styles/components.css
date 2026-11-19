@@ -897,16 +897,25 @@ select::-ms-expand {
 }
 .nx-area-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--sombra-2);
+    box-shadow: var(--sombra-2), 0 14px 30px -18px var(--nx-area);
     border-color: color-mix(in srgb, var(--nx-area) 55%, transparent);
 }
-/* Resplandor suave del color del área en la esquina del encabezado. */
+/* Resplandor del color del área (DIS-102, más visible a pedido del dueño). Halo fuerte alrededor del
+   icono (centro: x 44px = padding 20 + mitad de 48; y al 50 % porque el icono va centrado) que se apaga a 36px del centro, justo antes del texto,
+   más un tinte amplio del 6 %: la descripción conserva >=4.5:1 aun con áreas blancas en oscuro (4.95). */
 .nx-area-card__cabecera::before {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(70% 140% at 0% 0%, color-mix(in srgb, var(--nx-area) 8%, transparent), transparent 70%);
+    background:
+        radial-gradient(circle 52px at 44px 50%, color-mix(in srgb, var(--nx-area) 38%, transparent), transparent 70%),
+        radial-gradient(90% 160% at 0% 0%, color-mix(in srgb, var(--nx-area) 6%, transparent), transparent 75%);
+    transition: opacity var(--duracion-corta) var(--curva);
+    opacity: 0.85;
+}
+.nx-area-card:hover .nx-area-card__cabecera::before {
+    opacity: 1;
 }
 [data-state='inactiva'] > .nx-area-card__cabecera::before {
     display: none;
@@ -916,6 +925,10 @@ select::-ms-expand {
     --nx-area-extremo: rgb(var(--color-texto-sobre-fondo-claro));
     background: linear-gradient(145deg, var(--nx-area), color-mix(in srgb, var(--nx-area) 72%, var(--nx-area-extremo)));
     color: rgb(var(--color-texto-sobre-accion));
+    /* Sombra del color del área bajo el icono, como en el mockup aprobado. */
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, rgb(var(--color-texto-sobre-accion)) 35%, transparent),
+        0 10px 22px -10px var(--nx-area);
 }
 .nx-area-card__icono[data-texto='sobre-oscuro'] {
     color: rgb(var(--color-texto-sobre-fondo-oscuro));

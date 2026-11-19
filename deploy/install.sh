@@ -9,6 +9,13 @@
 #                            [--web-port 3000] [--api-port 5001]
 #                            [--nginx-conf conservar|reemplazar]
 #   sudo ./deploy/install.sh --actualizar      # tras un git pull (FNC-153)
+#   sudo ./deploy/install.sh --actualizar-frontend   # solo el frontend (FNC-162)
+#
+# --actualizar-frontend (FNC-162): tras un `git pull` que solo cambia el
+# frontend. Valida, detiene SOLO el frontend, npm ci + build + estáticos y lo
+# arranca comprobando que quede activo. Backend, worker, BD, nginx, unidades y
+# .env no se tocan. El `git pull` lo haces tú antes: el script no se actualiza
+# a sí mismo mientras corre.
 #
 # --actualizar (FNC-153, FNC-159), en este orden y sin tocar paquetes, usuario,
 # unidades systemd, nginx, firewall ni .env; exige una instalación previa:
@@ -115,6 +122,7 @@ NODE_NEXT_MAJOR=24             # primera mayor posterior que se acepta completa
 NODE_RANGO="^${NODE_MAJOR}.${NODE_MIN_MINOR}.0 || >=${NODE_NEXT_MAJOR}.0.0"
 SKIP_PKGS=0
 ACTUALIZAR=0
+ACTUALIZAR_FRONTEND=0
 NGINX_MODO="${NGINX_MODO:-}"
 # Servicio systemd de la BD local para After=/Wants= (FNC-125). Vacío: se
 # detecta; --db-service o DB_SERVICE lo fuerzan.
@@ -147,8 +155,9 @@ while [[ $# -gt 0 ]]; do
         --api-port) API_PORT="$2"; shift 2 ;;
         --skip-packages) SKIP_PKGS=1; shift ;;
         --actualizar) ACTUALIZAR=1; SKIP_PKGS=1; shift ;;
+        --actualizar-frontend) ACTUALIZAR_FRONTEND=1; SKIP_PKGS=1; shift ;;
         --nginx-conf) NGINX_MODO="$2"; shift 2 ;;
-        -h|--help) sed -n '2,73p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,80p' "$0"; exit 0 ;;
         *) echo "Opción desconocida: $1" >&2; exit 2 ;;
     esac
 done
@@ -156,6 +165,9 @@ done
 # --actualizar no reinstala: no se combina con --force (FNC-153).
 if (( ACTUALIZAR )) && (( FORCE )); then
     echo "ERROR: --actualizar y --force no se combinan" >&2; exit 2
+fi
+if (( ACTUALIZAR_FRONTEND )) && (( ACTUALIZAR || FORCE )); then
+    echo "ERROR: --actualizar-frontend no se combina con --actualizar ni con --force" >&2; exit 2
 fi
 if [[ -n "$NGINX_MODO" && "$NGINX_MODO" != conservar && "$NGINX_MODO" != reemplazar ]]; then
     echo "ERROR: --nginx-conf debe ser conservar o reemplazar" >&2; exit 2
@@ -245,6 +257,10 @@ DB_MOTOR="$(motor_bd_de_env "$PREFIX/.env")"
 . "$PREFIX/deploy/actualizar.sh"
 if (( ACTUALIZAR )); then
     ACTUALIZAR_REINTENTO="sudo $PREFIX/deploy/install.sh --actualizar  (con las mismas opciones)"
+    ACTUALIZAR_FASE=validacion
+    trap actualizar_aviso_salida EXIT
+elif (( ACTUALIZAR_FRONTEND )); then
+    ACTUALIZAR_REINTENTO="sudo $PREFIX/deploy/install.sh --actualizar-frontend  (con las mismas opciones)"
     ACTUALIZAR_FASE=validacion
     trap actualizar_aviso_salida EXIT
 fi
@@ -500,6 +516,12 @@ instalar_dependencias() {
     note "venv listo en $PREFIX/venv"
 
     # --- 5. Frontend -------------------------------------------------------------
+    construir_frontend
+}
+
+# Frontend: npm ci, next build y estáticos (instalación, --actualizar y
+# --actualizar-frontend, FNC-162).
+construir_frontend() {
     log "Frontend (dependencias y build)"
     pushd "$PREFIX/frontend" >/dev/null
     # A npm también se le pasa el proxy por línea de órdenes.
@@ -521,6 +543,25 @@ instalar_dependencias() {
     popd >/dev/null
     note "build en $PREFIX/frontend/.next/standalone"
 }
+
+# --- Solo el frontend (--actualizar-frontend, FNC-162) --------------------------
+if (( ACTUALIZAR_FRONTEND )); then
+    actualizar_frontend_validar() {
+        [[ -f "${SYSTEMD_DIR}/${FRONTEND_UNIT}.service" ]] \
+            || die "no hay instalación previa (falta ${FRONTEND_UNIT}.service): correr install.sh sin opciones"
+        [[ -f "$PREFIX/frontend/package-lock.json" ]] \
+            || die "falta frontend/package-lock.json (¿hiciste git pull en $PREFIX?)"
+    }
+    actualizar_frontend_construir() { construir_frontend; }
+    trap 'die "falló en la línea $LINENO."' ERR
+    actualizar_frontend_despliegue "$FRONTEND_UNIT"
+    cat <<FIN
+
+Frontend actualizado y en marcha. Backend, worker, base de datos, nginx,
+unidades systemd y .env no se tocaron.
+FIN
+    exit 0
+fi
 
 # --- Actualización (--actualizar, FNC-159) ------------------------------------
 # validar → detener → dependencias → migrar → arrancar (deploy/actualizar.sh).
