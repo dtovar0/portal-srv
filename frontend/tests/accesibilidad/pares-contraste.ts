@@ -67,6 +67,14 @@ export const PARES: ParContraste[] = [
   { ...texto('primary-text/primary-15', '--color-primary-text', '--color-primary', '--color-panel-fill'), alfaFondo: 0.15 },
   { ...texto('primary-text/primary-10', '--color-primary-text', '--color-primary', '--color-panel-fill'), alfaFondo: 0.1 },
   texto('on-primary/primary-solid', '--color-on-primary', '--color-primary-solid'),
+  // DIS-097: encabezado de AlertDialog. Aviso/pregunta: texto oscuro sobre el relleno de aviso (título y
+  // icono 4,5:1; cerrar al 80%, no textual, 3:1). Error: blanco sobre `error-solid`.
+  texto('alert-aviso/titulo', '--color-texto-sobre-aviso', '--color-aviso-relleno'),
+  { ...texto('alert-aviso/cerrar-80', '--color-texto-sobre-aviso', '--color-aviso-relleno'), alfaTexto: 0.8, minimo: MIN_NO_TEXTO },
+  { ...texto('alert-aviso/titulo-degradado-95', '--color-texto-sobre-aviso', '--color-aviso-relleno', '--color-superficie'), alfaFondo: 0.95 },
+  texto('alert-error/titulo', '--color-on-error', '--color-error-solid'),
+  { ...texto('alert-error/cerrar-80', '--color-on-error', '--color-error-solid'), alfaTexto: 0.8, minimo: MIN_NO_TEXTO },
+  { ...texto('alert-error/titulo-degradado-95', '--color-on-error', '--color-error-solid', '--color-superficie'), alfaFondo: 0.95 },
   // DIS-002: texto de estado sobre panel (mensajes, estrella de favorito).
   ...TONOS_ESTADO.map((tono) =>
     texto(`${tono}-text/panel`, `--color-${tono}-text`, '--color-panel-fill')),

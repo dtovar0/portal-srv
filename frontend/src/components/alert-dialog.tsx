@@ -121,12 +121,18 @@ export function AlertDialog({
 
   const config = TYPE_CONFIG[type];
   const botonVariante = confirmVariant ?? config.defaultVariant;
+  const encabezadoAviso = botonVariante !== 'danger' && (type === 'aviso' || type === 'pregunta');
   const headerGradient =
     botonVariante === 'danger'
-      ? 'bg-gradient-to-r from-error/95 via-error to-error'
-      : type === 'aviso' || type === 'pregunta'
+      ? 'bg-gradient-to-r from-error-solid/95 via-error-solid to-error-solid'
+      : encabezadoAviso
       ? 'bg-gradient-to-r from-warning/95 via-warning to-warning'
       : 'bg-gradient-to-r from-primary via-brand to-accent';
+  // Texto del encabezado: oscuro sobre ámbar (el blanco da 2,15:1), blanco sobre error y marca (DIS-097).
+  const textoEncabezado = encabezadoAviso ? 'text-texto-sobre-aviso' : 'text-texto-sobre-accion';
+  const cerrarEncabezado = encabezadoAviso
+    ? 'text-texto-sobre-aviso/80 hover:text-texto-sobre-aviso'
+    : 'text-texto-sobre-accion/80 hover:text-texto-sobre-accion';
 
   return createPortal(
     <div
@@ -150,10 +156,10 @@ export function AlertDialog({
         {/* HEADER: Estandarizado con degradado y badge */}
         <div className={`flex h-18 shrink-0 items-center justify-between border-b border-superficie/10 ${headerGradient} px-6 py-4`}>
           <div className="flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-superficie/25 bg-superficie/15 text-texto-sobre-accion shadow-sm backdrop-blur-xs" aria-hidden="true">
+            <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl border border-superficie/25 bg-superficie/15 ${textoEncabezado} shadow-sm backdrop-blur-xs`} aria-hidden="true">
               <Icono nombre={config.icono} tamano="md" ariaHidden={true} />
             </span>
-            <h2 id={titleId} className="text-base font-bold tracking-tight text-texto-sobre-accion truncate">
+            <h2 id={titleId} className={`text-base font-bold tracking-tight ${textoEncabezado} truncate`}>
               {title}
             </h2>
           </div>
@@ -162,7 +168,7 @@ export function AlertDialog({
             onClick={onClose}
             disabled={busy}
             aria-label="Cerrar"
-            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl text-texto-sobre-accion/80 transition-colors hover:bg-superficie/15 hover:text-texto-sobre-accion focus-visible:ring-2 focus-visible:ring-superficie"
+            className={`flex min-h-12 min-w-12 items-center justify-center rounded-xl ${cerrarEncabezado} transition-colors hover:bg-superficie/15 focus-visible:ring-2 focus-visible:ring-superficie`}
           >
             <Icono nombre="cerrar" tamano="md" ariaHidden={true} />
           </button>

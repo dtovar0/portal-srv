@@ -186,8 +186,8 @@ describe('lista de plataformas', () => {
     const btnEliminar = screen.getByRole('button', { name: 'Eliminar' });
     const btnNuevo = screen.getByRole('button', { name: 'Nuevo conector' });
 
-    expect((btnEditar as HTMLButtonElement).disabled).toBe(true);
-    expect((btnEliminar as HTMLButtonElement).disabled).toBe(true);
+    expect(btnEditar.getAttribute('aria-disabled')).toBe('true');
+    expect(btnEliminar.getAttribute('aria-disabled')).toBe('true');
     expect((btnNuevo as HTMLButtonElement).disabled).toBe(false);
 
     // Seleccionar Contabilidad (tiene conector)

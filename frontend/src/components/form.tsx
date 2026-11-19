@@ -327,6 +327,9 @@ export function Modal({
   );
 }
 
+/** Tipos de ConfirmDialog que piden confirmar una acción destructiva (botón de peligro). */
+const TIPOS_DESTRUCTIVOS: AlertDialogType[] = ['aviso', 'error'];
+
 export function ConfirmDialog({
   title,
   message,
@@ -336,6 +339,7 @@ export function ConfirmDialog({
   busy = false,
   type = 'aviso',
   role = 'alertdialog',
+  variant,
 }: {
   title: string;
   message: string;
@@ -345,7 +349,10 @@ export function ConfirmDialog({
   busy?: boolean;
   type?: AlertDialogType;
   role?: 'alertdialog' | 'dialog';
+  /** Variante del botón de confirmar. Por defecto según `type` (DIS-097): peligro solo en 'aviso' y 'error'. */
+  variant?: 'primary' | 'danger';
 }) {
+  const confirmVariant = variant ?? (TIPOS_DESTRUCTIVOS.includes(type) ? 'danger' : 'primary');
   const confirmText = busy
     ? (confirmLabel === 'Eliminar' ? 'Eliminando…' : `${confirmLabel}…`)
     : confirmLabel;
@@ -359,7 +366,7 @@ export function ConfirmDialog({
       role={role}
       confirmLabel={confirmText}
       cancelLabel="Cancelar"
-      confirmVariant="danger"
+      confirmVariant={confirmVariant}
       onConfirm={onConfirm}
       onClose={onCancel}
       busy={busy}

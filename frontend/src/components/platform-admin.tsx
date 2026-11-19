@@ -1053,6 +1053,11 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                 <Button
                   variant="fila"
                   disabled={!isSinglePlatformSelected}
+                  motivoDeshabilitado={
+                    activeSelectedPlatformIds.size > 1
+                      ? 'Solo se pueden gestionar accesos de 1 plataforma a la vez'
+                      : 'Selecciona 1 plataforma para gestionar accesos'
+                  }
                   onClick={(e) => {
                     if (effectiveSelectedPlatform) {
                       open(e, () => setManagingAccess(effectiveSelectedPlatform));
@@ -1082,6 +1087,11 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                 <Button
                   variant="fila"
                   disabled={!isSinglePlatformSelected}
+                  motivoDeshabilitado={
+                    activeSelectedPlatformIds.size > 1
+                      ? 'Solo se puede editar 1 plataforma a la vez'
+                      : 'Selecciona 1 plataforma para editar'
+                  }
                   onClick={(e) => {
                     if (effectiveSelectedPlatform) {
                       open(e, () => setEditing(effectiveSelectedPlatform));
@@ -1111,6 +1121,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                 <Button
                   variant="fila-peligro"
                   disabled={activeSelectedPlatformIds.size === 0}
+                  motivoDeshabilitado="Selecciona al menos 1 plataforma para eliminar"
                   onClick={(e) => {
                     if (selectedPlatforms.length > 0) {
                       open(e, () => setRemoving(selectedPlatforms));

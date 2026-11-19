@@ -27,9 +27,6 @@ import { useToast } from './toast';
 import { Badge, EmptyNote, ErrorNote, Spinner } from './ui';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 
-/** Sin rol de administración muestra el estado "sin permiso" y no llama a la API. */
-const ID_MOTIVO_ELIMINAR = 'areas-eliminar-motivo';
-
 export function AreasList() {
   return (
     <RequireRole requires="any_admin">
@@ -165,7 +162,7 @@ function AreasScreen() {
     selectedAreas.length > 0 &&
     (isAdmin || selectedAreas.every((a) => managedIds.has(a.id)));
 
-  /** Por qué «Eliminar» está deshabilitado (DIS-089): también va en texto sr-only, no solo en `title`. */
+  /** Por qué «Eliminar» está deshabilitado (DIS-089, DIS-096): Button lo asocia con aria-describedby. */
   const motivoEliminarDeshabilitado =
     selectedAreas.length === 0
       ? 'Selecciona al menos 1 área para eliminar'
@@ -388,6 +385,13 @@ function AreasScreen() {
             <Button
               variant="fila"
               disabled={!isSingleSelected || (!isAdmin && !managedIds.has(effectiveSelectedArea?.id ?? -1))}
+              motivoDeshabilitado={
+                !isSingleSelected
+                  ? activeSelectedIds.size > 1
+                    ? 'Solo se pueden gestionar accesos de 1 área a la vez'
+                    : 'Selecciona 1 área para gestionar accesos'
+                  : 'No tienes permisos para gestionar accesos de esta área'
+              }
               onClick={() => effectiveSelectedArea && setManagingUsersOf(effectiveSelectedArea)}
               aria-label={effectiveSelectedArea ? `Accesos de ${effectiveSelectedArea.name}` : 'Accesos'}
               title={
@@ -410,6 +414,11 @@ function AreasScreen() {
               <Button
                 variant="fila"
                 disabled={!isSingleSelected}
+                motivoDeshabilitado={
+                  activeSelectedIds.size > 1
+                    ? 'Solo se puede ver administradores de 1 área a la vez'
+                    : 'Selecciona 1 área para ver administradores'
+                }
                 onClick={() => effectiveSelectedArea && setAssigning(effectiveSelectedArea)}
                 aria-label={effectiveSelectedArea ? `Administradores de ${effectiveSelectedArea.name}` : 'Administradores del área'}
                 title={
@@ -430,6 +439,13 @@ function AreasScreen() {
             <Button
               variant="fila"
               disabled={!isSingleSelected || (!isAdmin && !managedIds.has(effectiveSelectedArea?.id ?? -1))}
+              motivoDeshabilitado={
+                !isSingleSelected
+                  ? activeSelectedIds.size > 1
+                    ? 'Solo se puede editar 1 área a la vez'
+                    : 'Selecciona 1 área para editar'
+                  : 'No tienes permisos para editar esta área'
+              }
               onClick={() => effectiveSelectedArea && setEditing(effectiveSelectedArea)}
               aria-label={effectiveSelectedArea ? `Editar ${effectiveSelectedArea.name}` : 'Editar'}
               title={
@@ -449,7 +465,7 @@ function AreasScreen() {
             <Button
               variant="fila-peligro"
               disabled={!canDeleteSelected}
-              aria-describedby={motivoEliminarDeshabilitado ? ID_MOTIVO_ELIMINAR : undefined}
+              motivoDeshabilitado={motivoEliminarDeshabilitado ?? undefined}
               onClick={() => selectedAreas.length > 0 && setRemoving(selectedAreas)}
               aria-label={
                 selectedAreas.length === 1
@@ -472,11 +488,6 @@ function AreasScreen() {
               <Icono nombre="eliminar" tamano="sm" ariaHidden={true} />
               <span>Eliminar</span>
             </Button>
-            {motivoEliminarDeshabilitado ? (
-              <span id={ID_MOTIVO_ELIMINAR} className="sr-only">
-                {motivoEliminarDeshabilitado}
-              </span>
-            ) : null}
 
             {/* Línea de separación vertical a la izquierda del botón Nuevo */}
             <div className="h-6 w-px bg-panel-border/80 self-center mx-1 shrink-0" aria-hidden="true" />
