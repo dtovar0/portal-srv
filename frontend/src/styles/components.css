@@ -930,7 +930,6 @@ select::-ms-expand {
     pointer-events: none;
     background:
         radial-gradient(circle 52px at 44px 50%, color-mix(in srgb, var(--nx-area) 38%, transparent), transparent 70%),
-        radial-gradient(90% 160% at 0% 0%, color-mix(in srgb, var(--nx-area) 6%, transparent), transparent 75%),
         linear-gradient(180deg, color-mix(in srgb, var(--nx-area) 5%, transparent), transparent);
     transition: opacity var(--duracion-corta) var(--curva);
     opacity: 0.85;
@@ -983,32 +982,24 @@ select::-ms-expand {
 }
 /* Efectos de color (DIS-105, pedido del dueño: «le faltan más efectos de color»).
    El texto no cambia de fondo útil: los efectos van en el borde, la sombra, la esquina
-   superior derecha (centro a 10px del borde, pico 10 %: la descripción queda <= 8 % y
-   conserva >= 4.5:1 con áreas blancas en oscuro) y el icono. */
-/* Borde en degradado: el color del área en la esquina del icono que se apaga hacia el lado opuesto. */
+   parte superior (centrado, DIS-107) y el icono. */
+/* Borde del color del área, igual en los cuatro lados (DIS-107: simétrico), y halo de color
+   permanente bajo la tarjeta. */
 .nx-area-card[data-state='activa'] {
-    border-color: transparent;
-    background:
-        linear-gradient(rgb(var(--color-panel-fill)), rgb(var(--color-panel-fill))) padding-box,
-        linear-gradient(135deg,
-            color-mix(in srgb, var(--nx-area) 75%, transparent),
-            color-mix(in srgb, var(--nx-area) 22%, rgb(var(--color-panel-border))) 45%,
-            rgb(var(--color-panel-border))) border-box;
-    /* Halo de color permanente bajo la tarjeta. */
+    border-color: color-mix(in srgb, var(--nx-area) 40%, rgb(var(--color-panel-border)));
     box-shadow: var(--sombra-1), 0 12px 28px -20px var(--nx-area);
 }
-/* Aurora en la esquina superior derecha, detrás del contenido. */
+/* Resplandor centrado a todo lo ancho de la parte superior (DIS-107: antes era una mancha en
+   una esquina). Pico 8 % al borde superior: la descripción queda <= 6 % y conserva >= 4.5:1. */
 .nx-area-card::after {
     content: '';
     position: absolute;
-    top: -80px;
-    right: -80px;
-    width: 180px;
-    height: 180px;
-    border-radius: 9999px;
+    inset: 0 0 auto 0;
+    height: 70%;
     pointer-events: none;
-    background: radial-gradient(circle, color-mix(in srgb, var(--nx-area) 10%, transparent), transparent 68%);
-    transition: transform calc(var(--duracion-media) * 1.6) var(--curva), opacity var(--duracion-corta) var(--curva);
+    background: radial-gradient(60% 100% at 50% 0%, color-mix(in srgb, var(--nx-area) 8%, transparent), transparent 100%);
+    transition: opacity var(--duracion-corta) var(--curva);
+    opacity: 0.8;
 }
 .nx-area-card[data-state='inactiva']::after {
     display: none;
@@ -1018,10 +1009,11 @@ select::-ms-expand {
     z-index: 1;
 }
 .nx-area-card[data-state='activa']:hover {
+    border-color: color-mix(in srgb, var(--nx-area) 70%, rgb(var(--color-panel-border)));
     box-shadow: var(--sombra-2), 0 18px 36px -16px var(--nx-area);
 }
 .nx-area-card:hover::after {
-    transform: translate(-14px, 14px) scale(1.18);
+    opacity: 1;
 }
 /* Icono: brillo que lo cruza al pasar el ratón y leve elevación. */
 .nx-area-card__icono {
