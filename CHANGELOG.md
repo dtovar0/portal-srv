@@ -5,6 +5,9 @@
 
 ## [Sin publicar]
 
+### Agregado
+- API: `GET /api/v1/stats` suma la clave `desglose` con `parte`/`resto` de áreas, plataformas, solicitudes, visitas y usuarios (este último solo para administradores), con el mismo alcance de cada contador; contrato `inicio` v1.1 (FNC-164, 2026-11-19).
+
 ### Eliminado
 - Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
 
