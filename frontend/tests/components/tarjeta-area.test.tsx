@@ -124,6 +124,16 @@ describe('TarjetaArea: CSS y contraste (AA en ambos temas)', () => {
     }
   });
 
+  it('DIS-108: en un área inactiva los logos de sus plataformas se ven inactivos', () => {
+    expect(CSS).toMatch(/\.nx-area-card\[data-state='inactiva'\] \.nx-area-card__logos > \*\s*\{[^}]*grayscale\(1\)[^}]*opacity/);
+    const { container } = render(
+      <TarjetaArea area={{ ...AREA, status: 'Inactivo' }} conteo={2} plataformas={PLATAFORMAS} onSelect={vi.fn()} />,
+    );
+    const tarjeta = container.firstElementChild as HTMLElement;
+    expect(tarjeta.dataset.state).toBe('inactiva');
+    expect(tarjeta.querySelector('.nx-area-card__logos')?.children.length).toBeGreaterThan(0);
+  });
+
   it('hover eleva y respeta prefers-reduced-motion; el foco usa la clase común', () => {
     expect(CSS).toMatch(/\.nx-area-card:hover\s*\{[^}]*translateY\(-2px\)/);
     expect(CSS).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.nx-area-card,[\s\S]*?transform: none/);
