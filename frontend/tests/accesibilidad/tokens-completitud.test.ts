@@ -22,6 +22,7 @@ const SEMANTICOS_ESPERADOS = [
   '--color-texto-tenue',
   '--color-texto-sobre-accion',
   '--color-texto-sobre-peligro',
+  '--color-texto-sobre-aviso',
   '--color-texto-enlace',
   '--color-borde',
   '--color-borde-sutil',

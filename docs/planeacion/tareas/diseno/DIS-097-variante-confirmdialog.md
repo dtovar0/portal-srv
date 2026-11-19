@@ -30,6 +30,14 @@
 | Vaciar notificaciones, Purgar cuentas, Quitar administradores | por defecto `aviso` | peligro (sin cambio) |
 | Reenviar credenciales (`users-list`) | `pregunta` | primario (**cambia**; antes peligro) |
 
+## Correcciones de la auditoría de accesibilidad independiente (2026-11-19)
+- B1 (bloqueante): encabezado de aviso/pregunta con texto blanco sobre ámbar 2,15:1. Token nuevo `--color-texto-sobre-aviso` (`--p-noche-900` en claro y oscuro; utilidad `texto-sobre-aviso`) para título, icono y cerrar. Medido: título 8,43:1; cerrar al 80% 5,86:1; con el degradado al 95%: 8,74:1 claro, 7,72:1 oscuro.
+- B2 (preexistente): encabezado de error con `error` (239 68 68) y blanco 3,76:1. Ahora relleno `error-solid` (220 38 38): título 4,83:1; cerrar al 80% 3,52:1 (no textual, 3:1); degradado al 95%: 4,59:1 claro, 5,20:1 oscuro.
+- Pares nuevos en `tests/accesibilidad/pares-contraste.ts` (`alert-aviso/*`, `alert-error/*`, en los 3 contextos de tema), token en `tokens-completitud` y registro en `VARIABLES.md`.
+- Regresión: `tests/components/alert-dialog-encabezado.test.tsx` (4 pruebas; fallaban antes) y 3 pares de aviso que fallaban por token inexistente.
+- `AlertDialog` es compartido (`alert-dialog.tsx`): cambia solo el color de texto del encabezado de aviso/pregunta y el relleno del de peligro; lo usan `ConfirmDialog`, aprobar, rechazar, eliminar conector y demás diálogos.
+- Propuesta DIS-098: `Modal` compartido con ✕ que no cierra (M7).
+
 ## Decisiones del orquestador (pendiente de validar)
 - El valor por defecto de `AlertDialog` para `pregunta` es peligro (`TYPE_CONFIG`); no se cambió porque lo usan otros diálogos (aprobar, etc.): la decisión vive solo en `ConfirmDialog`.
 - Lista `TIPOS_DESTRUCTIVOS = ['aviso', 'error']` en `form.tsx`; un tipo nuevo no es destructivo salvo que se agregue.
