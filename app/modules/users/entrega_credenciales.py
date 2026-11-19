@@ -85,6 +85,10 @@ CODIGO_AGOTADOS = 'intentos_agotados'
 
 NO_APLICABLE = ('Esta cuenta no admite el reenvío de credenciales.', 409,
                 'credenciales_no_aplicables')
+ENTREGA_EN_CURSO = ('Ya hay una entrega de credenciales en curso para esta cuenta; '
+                    'inténtalo en unos minutos.', 409, 'entrega_en_curso')
+# Quién toma la reserva en un reenvío (mismo campo que el worker).
+RESERVA_REENVIO = 'reenvio'
 DIRECTORIO_NO_DISPONIBLE_REENVIO = (
     'No se pudo actualizar la contraseña en el directorio.', 503,
     'directorio_no_disponible')
@@ -268,6 +272,31 @@ def completar_alta(cuenta, contrasena):
                      'queda el reintento del worker.', type(exc).__name__)
 
 
+def _tomar_para_reenvio(entrega_id, cfg):
+    momento = ahora()
+    vencida = momento - timedelta(seconds=cfg.vencimiento_reserva)
+    sentencia = (
+        update(EntregaCredenciales)
+        .where(EntregaCredenciales.id == entrega_id,
+               or_(EntregaCredenciales.locked_at.is_(None),
+                   EntregaCredenciales.locked_at < vencida))
+        .values(locked_at=momento, locked_by=RESERVA_REENVIO, updated_at=momento)
+        .execution_options(synchronize_session=False))
+    tomada = db.session.execute(sentencia).rowcount == 1
+    db.session.commit()
+    return tomada
+
+
+def _liberar_reenvio(entrega_id):
+    db.session.execute(
+        update(EntregaCredenciales)
+        .where(EntregaCredenciales.id == entrega_id,
+               EntregaCredenciales.locked_by == RESERVA_REENVIO)
+        .values(locked_at=None, locked_by=None)
+        .execution_options(synchronize_session=False))
+    db.session.commit()
+
+
 def reenviar_credenciales(cuenta):
     """«Reenviar»: contraseña nueva, Send nuevo y borrado del anterior.
 
@@ -283,9 +312,15 @@ def reenviar_credenciales(cuenta):
     correo, nombre = cuenta.email, cuenta.nombre
     db.session.rollback()
 
+    # Reserva atómica, como el worker: si un reintento está en curso, dos
+    # contraseñas y dos Sends confundirían el onboarding (revisión de seguridad).
+    if not _tomar_para_reenvio(entrega_id, cfg):
+        return None, ENTREGA_EN_CURSO
+
     contrasena = generar()
     codigo = fijar_contrasena_en_directorio(uid, contrasena)
     if codigo:
+        _liberar_reenvio(entrega_id)
         return None, DIRECTORIO_NO_DISPONIBLE_REENVIO
     codigo, send_id = enviar_credenciales(correo, nombre, uid, contrasena,
                                           send_anterior)

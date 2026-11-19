@@ -50,6 +50,7 @@
 - Texto mínimo de 12 px: insignias, botones, cabeceras de tabla, contador del tour, marca de las casillas, ejes de las gráficas del Inicio e iniciales de Administrar plataformas pasan de 9–11 px a 12 px (token `--text-xs`); se retira el token `--text-2xs` (10 px) y una prueba impide volver a bajar de 12 px (DIS-007, DIS-032, 2026-10-26).
 
 ### Seguridad
+- Entrega de credenciales (revisión de seguridad): una entrada huérfana en LDAP queda con contraseña aleatoria; en modo `bw` solo ids GUID tras `--` y el enlace debe ser del servidor configurado; Reenviar no compite con una entrega en curso (409); «Copiar» solo avisa si se copió (FNC-138, 2026-11-18).
 - Seguridad (LDAP): la contraseña inicial y los cambios se fijan con Password Modify (RFC 3062): OpenLDAP la guarda cifrada en lugar de en texto claro (FNC-138, 2026-11-18).
 - Seguridad (respaldo): ya no exporta los hash de contraseñas; al importar ignora hashes de respaldos viejos y no crea superadmins (los omite e informa); la contraseña SMTP sale solo de SMTP_PASSWORD y la migración 0013 vacía la guardada en la BD (FNC-010, 2026-11-18).
 - Seguridad: la app no arranca sin SECRET_KEY ni con la clave publicada en el código; un DB_ENGINE desconocido detiene el arranque en vez de caer a SQLite; `python run.py` escucha solo en 127.0.0.1 y activa el depurador solo en desarrollo (FNC-009, 2026-11-18).

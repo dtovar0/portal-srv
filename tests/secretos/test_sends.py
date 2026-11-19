@@ -234,6 +234,9 @@ def test_ningun_valor_aparece_en_logs_ni_errores(servidor, caplog):
 
 # ---------------------------------------------------------------- modo bw
 
+# Id con forma de GUID, como los de `bw` (los demás se rechazan).
+ID_SEND_BW = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
+
 class CliFalsa:
     """Doble de `subprocess.run` que imita `bw send create` y `bw send delete`."""
 
@@ -251,7 +254,7 @@ class CliFalsa:
         salida = self.stdout
         if salida is None and argumentos[1:3] == ['send', 'create']:
             salida = json.dumps({
-                'id': 'abc', 'accessUrl': 'https://vault.pruebas.invalid/'
+                'id': ID_SEND_BW, 'accessUrl': 'https://vault.pruebas.invalid/'
                                           '#/send/acc/llave'})
         return subprocess.CompletedProcess(argumentos, self.codigo,
                                            salida or '', self.stderr)
@@ -270,7 +273,7 @@ def _cfg_bw(**cambios):
 def test_bw_crea_el_send_con_el_json_por_stdin_y_la_sesion_en_el_entorno(cli):
     send = sends.SendsPorCli(_cfg_bw(), ejecutor=cli).crear_texto(
         NOMBRE, TEXTO, ahora=AHORA)
-    assert send.id == 'abc' and '#/send/acc/llave' in send.enlace
+    assert send.id == ID_SEND_BW and '#/send/acc/llave' in send.enlace
 
     argumentos, opciones = cli.llamadas[0]
     assert argumentos == ['/usr/bin/bw', 'send', 'create']
@@ -327,13 +330,13 @@ def test_bw_respuesta_inesperada_se_rechaza(cli, salida):
 
 def test_bw_borrar_es_idempotente(cli):
     servicio = sends.SendsPorCli(_cfg_bw(), ejecutor=cli)
-    servicio.borrar('abc')
-    assert cli.llamadas[0][0] == ['/usr/bin/bw', 'send', 'delete', 'abc']
+    servicio.borrar(ID_SEND_BW)
+    assert cli.llamadas[0][0] == ['/usr/bin/bw', 'send', 'delete', '--', ID_SEND_BW]
     cli.codigo, cli.stderr = 1, 'Not found.'
-    servicio.borrar('abc')
+    servicio.borrar(ID_SEND_BW)
     cli.stderr = 'Error: connect ECONNRESET'
     with pytest.raises(GestorCaido):
-        servicio.borrar('abc')
+        servicio.borrar(ID_SEND_BW)
 
 
 def test_bw_nada_sensible_en_logs_ni_repr(cli, caplog):
@@ -398,3 +401,26 @@ def test_validar_al_arrancar_revisa_las_variables_del_send_siempre():
     with pytest.raises(ErrorConfiguracionSecretos):
         validar_al_arrancar({'ONBOARDING_SEND_MAX_ACCESS_COUNT': '99'})
     assert validar_al_arrancar({}) is None
+
+
+# --- Revisión de seguridad (FNC-138) -----------------------------------------
+
+@pytest.mark.parametrize('send_id', ['-x', '--help', 'abc', ''])
+def test_bw_borrar_rechaza_ids_que_no_son_guid(cli, send_id):
+    """Un id que empieza con `-` se volvería opción de `bw`."""
+    with pytest.raises(sends.GestorMalConfigurado):
+        sends.SendsPorCli(_cfg_bw(), ejecutor=cli).borrar(send_id)
+    assert cli.llamadas == []
+
+
+def test_bw_rechaza_un_enlace_de_otro_servidor(cli):
+    cli.stdout = json.dumps({'id': ID_SEND_BW,
+                             'accessUrl': 'https://otro.pruebas.invalid/#/send/acc/llave'})
+    servicio = sends.SendsPorCli(_cfg_bw(base_url='https://vault.pruebas.invalid'), ejecutor=cli)
+    with pytest.raises(sends.GestorMalConfigurado):
+        servicio.crear_texto(NOMBRE, TEXTO, ahora=AHORA)
+
+
+def test_bw_acepta_el_enlace_del_servidor_configurado(cli):
+    servicio = sends.SendsPorCli(_cfg_bw(base_url='https://vault.pruebas.invalid'), ejecutor=cli)
+    assert servicio.crear_texto(NOMBRE, TEXTO, ahora=AHORA).id == ID_SEND_BW

@@ -130,7 +130,8 @@ describe('DirectoryAccountForm - Flujo de 2 pasos', () => {
     const campo = screen.getByLabelText('Contraseña inicial');
     expect(screen.getByText('Entre 16 y 128 caracteres.')).toBeTruthy();
     const error = screen.getByText('Entre 16 y 128 caracteres.');
-    expect(campo.getAttribute('aria-describedby')).toBe(error.id);
+    // La política (visible siempre) y el error describen el campo.
+    expect(campo.getAttribute('aria-describedby')).toBe(`alta-directorio-contrasena-politica ${error.id}`);
     expect(campo.getAttribute('aria-invalid')).toBe('true');
     expect(usersApi.createDirectoryAccount).not.toHaveBeenCalled();
 
@@ -166,12 +167,12 @@ describe('DirectoryAccountForm - Flujo de 2 pasos', () => {
     // Se muestra para que el administrador la vea.
     expect(inputPass.type).toBe('text');
 
-    const btnOcultar = screen.getByRole('button', { name: /ocultar contraseña/i });
-    expect(btnOcultar.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(btnOcultar);
+    // Etiqueta fija «Mostrar contraseña»; el estado lo da aria-pressed.
+    const btnMostrar = screen.getByRole('button', { name: 'Mostrar contraseña' });
+    expect(btnMostrar.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(btnMostrar);
     expect(inputPass.type).toBe('password');
-    const btnVer = screen.getByRole('button', { name: /ver contraseña/i });
-    expect(btnVer.getAttribute('aria-pressed')).toBe('false');
+    expect(btnMostrar.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('el generador no usa Math.random', async () => {

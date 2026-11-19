@@ -31,6 +31,7 @@ Contrato: `POST /users/directory` en `docs/contratos/usuarios-directorio.md`.
   los fallos del directorio como `error`.
 """
 import logging
+import secrets
 import re
 from dataclasses import dataclass, field
 
@@ -63,6 +64,8 @@ from app.modules.users.roles import MODULO_AUDITORIA
 from app.utils.naming import _CONTROL as CARACTERES_DE_CONTROL
 from app.utils.naming import sanitize_display_name
 
+# Bytes de la contraseña aleatoria con que se invalida una entrada huérfana.
+LARGO_CONTRASENA_DESCARTADA = 48
 logger = logging.getLogger(__name__)
 
 # Lista blanca del cuerpo (SEC-AUTHZ-09); cualquier otro campo es
@@ -333,6 +336,12 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
     except SQLAlchemyError:
         logger.exception('Alta de cuenta: la entrada quedó en el directorio '
                          'y falló el registro en el portal')
+        # La entrada huérfana no se queda con la contraseña que conoce quien dio
+        # el alta: se le pone una aleatoria que nadie sabe (revisión de seguridad).
+        try:
+            escritor.change_password(resultado.dn, secrets.token_urlsafe(LARGO_CONTRASENA_DESCARTADA))
+        except Exception:  # nunca oculta la respuesta del alta
+            logger.error('Alta de cuenta: no se pudo invalidar la contraseña de la entrada huérfana')
         try:
             # Sin borrado en v1: la entrada queda marcada para revisión.
             _descartar_reserva(

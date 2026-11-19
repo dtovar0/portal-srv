@@ -603,7 +603,8 @@ export function UsersList() {
                 className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
               >
                 <Icono nombre="exportar" tamano="sm" ariaHidden={true} />
-                <span>Reenviar credenciales</span>
+                {/* Texto corto: no cabe en el ancho fijo de la barra; el nombre accesible dice «credenciales». */}
+                <span>Reenviar</span>
               </Button>
             ) : null}
 

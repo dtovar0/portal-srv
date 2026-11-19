@@ -599,3 +599,41 @@ def test_borrar_la_cuenta_borra_su_entrega(escena, directorio, cliente_como,
     db.session.delete(cuenta)
     db.session.commit()
     assert EntregaCredenciales.query.count() == 0
+
+
+# --- Revisión de seguridad (FNC-138) -----------------------------------------
+
+def test_reenviar_con_una_entrega_en_curso_responde_409_sin_tocar_nada(
+        escena, directorio, cliente_como, entrega):
+    """Si el worker está entregando, Reenviar no compite (dos contraseñas y dos
+    Sends confundirían el onboarding)."""
+    cuenta = _cuenta_con_entrega(escena, directorio, cliente_como)
+    fila = _entrega()
+    fila.locked_at, fila.locked_by = ahora(), 'worker-1'
+    db.session.commit()
+    sends_antes = len(entrega.sends)
+
+    r = _reenviar(cliente_como(escena['super']), cuenta.id)
+
+    assert r.status_code == 409
+    assert r.get_json()['code'] == 'entrega_en_curso'
+    assert len(entrega.sends) == sends_antes
+
+
+def test_si_falla_el_registro_en_el_portal_la_entrada_huerfana_no_conserva_la_contrasena(
+        escena, directorio, cliente_como, entrega, monkeypatch):
+    """Quien dio el alta no se queda con una credencial válida de una cuenta
+    que el portal no registró."""
+    from sqlalchemy.exc import SQLAlchemyError
+    from app.modules.users import directory_accounts
+
+    def falla(*args, **kwargs):
+        raise SQLAlchemyError('fallo simulado')
+
+    monkeypatch.setattr(directory_accounts, 'nueva_entrega', falla)
+
+    r = _alta(escena, cliente_como)
+
+    assert r.status_code >= 500
+    claves = _clave_ldap()
+    assert claves and claves != [directorio_falso.cifrado_simulado(CONTRASENA)]

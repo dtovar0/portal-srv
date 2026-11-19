@@ -19,6 +19,7 @@ idempotente: un Send que ya no existe no es un error.
 """
 import base64
 import json
+from urllib.parse import urlsplit
 import logging
 import os
 import re
@@ -213,12 +214,20 @@ class SendsPorCli:
                 from None
         if (not isinstance(enlace, str) or not isinstance(send_id, str)
                 or not enlace.startswith(ESQUEMA_ENLACE)
-                or MARCA_ENLACE_SEND not in enlace):
+                or MARCA_ENLACE_SEND not in enlace
+                or not PATRON_ID_SEND.fullmatch(send_id)):
             raise GestorMalConfigurado('bw: enlace de Send inesperado.')
+        # Si se configuró la base de los Sends, el enlace debe ser de ese host:
+        # un `bw config server` ajeno no manda a la gente a otro sitio.
+        if self._cfg.base_url and urlsplit(enlace).hostname != urlsplit(self._cfg.base_url).hostname:
+            raise GestorMalConfigurado('bw: el enlace del Send no es del servidor configurado.')
         return SendCreado(id=send_id, enlace=enlace)
 
     def borrar(self, send_id):
-        proceso = self._correr(['send', 'delete', send_id])
+        # Solo ids con forma de Send y tras `--`: un valor con `-` no se vuelve opción.
+        if not isinstance(send_id, str) or not PATRON_ID_SEND.fullmatch(send_id):
+            raise GestorMalConfigurado('bw: id de Send inválido.')
+        proceso = self._correr(['send', 'delete', '--', send_id])
         if proceso.returncode == 0:
             return
         if any(s in (proceso.stderr or '').lower()

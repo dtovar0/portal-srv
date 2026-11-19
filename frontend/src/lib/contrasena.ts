@@ -31,6 +31,20 @@ const FALTA: Record<ClasePassword, string> = {
 export const MENSAJE_RECHAZO_DIRECTORIO =
   'El directorio rechazó la contraseña por su política de seguridad.';
 
+const NOMBRE_CLASE: Record<ClasePassword, string> = {
+  mayusculas: 'mayúsculas',
+  minusculas: 'minúsculas',
+  digitos: 'números',
+  simbolos: 'símbolos',
+};
+
+/** Política completa en una frase, para mostrarla antes de que haya error (WCAG 3.3.2). */
+export function descripcionPolitica(politica: PasswordPolicy): string {
+  const clases = politica.required_classes.map((c) => NOMBRE_CLASE[c]);
+  const lista = clases.length > 1 ? `${clases.slice(0, -1).join(', ')} y ${clases[clases.length - 1]}` : clases[0];
+  return `${mensajeLargo(politica)}${lista ? ` Debe incluir ${lista}.` : ''}`;
+}
+
 export function mensajeLargo(politica: PasswordPolicy): string {
   return `Entre ${politica.min_length} y ${politica.max_length} caracteres.`;
 }

@@ -17,7 +17,7 @@
 import { useEffect, useState } from 'react';
 import { usersApi } from '@/lib/access/users';
 import type { PasswordPolicy } from '@/lib/access/types';
-import { generarSegunPolitica } from '@/lib/contrasena';
+import { descripcionPolitica, generarSegunPolitica } from '@/lib/contrasena';
 import type { Area, AreaRef, ManagedUser } from '@/lib/types';
 import { Button, Field, Modal, TextInput } from '../form';
 import { Icono } from '../icono';
@@ -343,10 +343,20 @@ export function DirectoryAccountForm({
                   required
                   aria-required="true"
                   autoComplete="new-password"
-                  aria-describedby={fields.password ? `${IDS.password}-error` : undefined}
+                  aria-describedby={
+                    [politica ? `${IDS.password}-politica` : null, fields.password ? `${IDS.password}-error` : null]
+                      .filter(Boolean)
+                      .join(' ') || undefined
+                  }
                   aria-invalid={fields.password ? true : undefined}
                 />
               </Field>
+              {/* Política visible antes del error y fuera del <label> (no forma parte del nombre del campo). */}
+              {politica ? (
+                <p id={`${IDS.password}-politica`} className="text-xs text-label">
+                  {descripcionPolitica(politica)}
+                </p>
+              ) : null}
               <div className="min-h-5 pt-0.5" aria-live="polite">
                 {fields.password ? (
                   <span id={`${IDS.password}-error`} role="alert" className="block text-xs font-bold text-error-text">
@@ -377,7 +387,8 @@ export function DirectoryAccountForm({
                     <button
                       type="button"
                       onClick={() => setMostrarPassword((prev) => !prev)}
-                      aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                      // Etiqueta fija: el estado lo da `aria-pressed` (no se anuncia dos veces).
+                      aria-label="Mostrar contraseña"
                       aria-pressed={mostrarPassword}
                       className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
@@ -388,10 +399,15 @@ export function DirectoryAccountForm({
                     <button
                       type="button"
                       onClick={() => {
-                        if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-                          navigator.clipboard.writeText(form.password || '');
-                          avisar('success', 'Contraseña copiada al portapapeles.', 'Copiada');
+                        // Solo se avisa «copiada» si el navegador la copió (revisión de seguridad).
+                        if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+                          avisar('error', 'El navegador no permite copiar al portapapeles.', 'No se copió');
+                          return;
                         }
+                        navigator.clipboard.writeText(form.password || '').then(
+                          () => avisar('success', 'Contraseña copiada al portapapeles.', 'Copiada'),
+                          () => avisar('error', 'El navegador no permitió copiar la contraseña.', 'No se copió'),
+                        );
                       }}
                       aria-label="Copiar contraseña al portapapeles"
                       className="min-h-12 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-panel-border bg-superficie hover:bg-superficie-elevada active:scale-[0.98] text-body-text font-semibold text-xs shadow-2xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
