@@ -42,3 +42,5 @@ class Evento(str, Enum):
     CREDENCIALES_ENVIADAS = 'credenciales_enviadas'
     CREDENCIALES_PENDIENTES = 'credenciales_pendientes'
     CREDENCIALES_REENVIADAS = 'credenciales_reenviadas'
+    GRUPOS_MOVIDOS = 'grupos_movidos'
+    GRUPOS_TRASLADO_FALLIDO = 'grupos_traslado_fallido'

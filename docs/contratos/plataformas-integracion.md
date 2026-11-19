@@ -24,11 +24,14 @@ Convenciones comunes: [README.md](README.md). Cambia `POST /platforms`, `PUT /pl
 | `ldap_group_user_dn` | string \| null | Grupo del nivel `usuario`; null solo si `conector` |
 | `ldap_group_admin_dn` | string \| null | Grupo del nivel `admin`; null solo si `conector` |
 | `groups_status` | `"ok"` \| `"no_existe"` \| `"sin_verificar"` | Resultado de la comprobación en el directorio |
+| `groups_location` | `"activos"` \| `"inactivos"` \| `"parcial"` | Dónde están hoy los grupos LDAP: `inactivos` = movidos a `LDAP_GROUPS_INACTIVE_BASE_DN` (plataforma o área inactiva); `parcial` = uno movido y otro no (FNC-163) |
+| `groups_move_status` | `null` \| `"pendiente"` \| `"hecho"` \| `"fallido"` | Estado del traslado de grupos (worker); `null` = nunca se pidió o la función está apagada (FNC-163) |
 | `has_connector` | boolean | Hay conector configurado (ver conectores-y-ejecuciones.md) |
 | `active_grants` | int | Accesos vigentes (definición en accesos.md) |
 
 - `user_ids` deja de exponerse; `PUT /platforms/<id>/users` responde `410 endpoint_retirado` (FNC-065, ver README.md).
 - Plataformas heredadas: tras la migración 0005 quedan `integration_type: "ldap"` con ambos DN `null` y `groups_status: "sin_verificar"`; se editan sin completarlos y el superadmin define sus grupos (FNC-046).
+- `ldap_group_*_dn` es siempre la ubicación **original**; con los grupos en inactivos (`groups_location != "activos"`) o el traslado sin cerrar, cambiar tipo o grupos en `PUT` responde `409 grupos_en_inactivos` (FNC-163; `docs/operacion/GRUPOS-INACTIVOS.md`).
 - `direct_link` y `logo_url` guardados que no cumplan la regla de entrada se devuelven `null` (FNC-046).
 - Los demás campos de `Platform` no cambian.
 
@@ -108,3 +111,4 @@ En la misma transacción:
 | 1 | 2026-10-19 | Aditivo (FNC-046): nota de plataformas heredadas (0005), URL guardadas no válidas como `null`, `409 grupo_en_uso`; cambiar `integration_type` en `PUT` solo superadmin (`403 dn_solo_superadmin`) |
 | 1.1 | 2026-10-20 | FNC-055: cambiar `area_id` ya no da 409 por accesos `admin_de_area` (se resincronizan); sin acceso automático para admins inactivos ni plataformas `ldap` sin grupo (decisión del orquestador, pendiente de validar en la PoC). Sin cambios de forma |
 | 1.2 | 2026-11-17 | FNC-144: `DELETE /platforms/<id>` con `409 plataforma_con_accesos` y limpieza del historial cerrado |
+| 1.3 | 2026-11-19 | FNC-163: aditivo `groups_location` y `groups_move_status`; `409 grupos_en_inactivos` en `PUT`; el cambio de `status` de plataforma o área (`PUT /areas/<id>`) mueve los grupos por el worker |
