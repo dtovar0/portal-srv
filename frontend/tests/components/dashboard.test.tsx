@@ -2,7 +2,7 @@
  * DIS-024: el Panel muestra el resumen por rol y, debajo, "Actividad del
  * portal" (`/stats`) con sus secciones como h3 bajo ese h2 (auditor-accesibilidad).
  */
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const permisos = vi.hoisted(() => ({ is_admin: true, is_area_admin: false }));
@@ -38,8 +38,7 @@ vi.mock('@/components/session-provider', () => ({
 
 import { Dashboard } from '@/components/dashboard';
 import { api } from '@/lib/api';
-import { CLAVE_DISENO_TARJETAS } from '@/components/dashboard/diseno-tarjetas';
-import { crearRaiz, simularCajas } from '../utils/dom-simulado';
+import { CLAVE_DISENO_TARJETAS, guardarDisenoTarjetas } from '@/components/dashboard/diseno-tarjetas';
 
 // recharts (`ResponsiveContainer`) necesita ResizeObserver, que jsdom no trae.
 beforeEach(() => {
@@ -55,9 +54,9 @@ afterEach(() => {
   window.localStorage.clear();
 });
 
-/** Contadores (`StatTile`): solo los `<p>`, sin el encabezado de la tabla alternativa. */
+/** Tarjetas de contador (grupos con el nombre del indicador), sin el encabezado de la tabla alternativa. */
 const contadores = (etiqueta: string) =>
-  screen.queryAllByText(etiqueta).filter((el) => el.tagName === 'P');
+  screen.queryAllByRole('group', { name: etiqueta });
 
 describe('Dashboard', () => {
   it('DIS-079: el admin ve la distribución responsiva con actividad reciente', async () => {
@@ -163,31 +162,30 @@ describe('Dashboard', () => {
       expect(within(screen.getByRole('group', { name: 'Visitas' })).getByText('80 %')).toBeTruthy();
     });
 
-    it('el modal cambia el diseño de las 5 tarjetas y la elección se recuerda', async () => {
-      simularCajas();
-      crearRaiz();
+    it('el encabezado del dashboard ya no trae el botón «Diseño de tarjetas» (vive en la barra superior)', async () => {
       permisos.is_admin = false;
-      conDesglose();
-      const { container, unmount } = render(<Dashboard />);
+      render(<Dashboard />);
       await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
-      fireEvent.click(screen.getByRole('button', { name: 'Diseño de tarjetas' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Medidor' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
-      container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('medidor'));
-      expect(window.localStorage.getItem(CLAVE_DISENO_TARJETAS)).toBe('medidor');
-
-      unmount();
-      conDesglose();
-      const otra = render(<Dashboard />);
-      await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
-      otra.container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('medidor'));
+      expect(screen.queryByRole('button', { name: 'Diseño de tarjetas' })).toBeNull();
     });
 
-    it('sin desglose (backend anterior) las tarjetas muestran solo la cifra', async () => {
+    it('las tarjetas toman el diseño guardado y cambian al instante cuando se aplica otro', async () => {
+      permisos.is_admin = false;
+      window.localStorage.setItem(CLAVE_DISENO_TARJETAS, 'medidor');
+      conDesglose();
+      const { container } = render(<Dashboard />);
+      await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+      container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('medidor'));
+      act(() => guardarDisenoTarjetas('brillo'));
+      container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('brillo'));
+    });
+
+    it('sin desglose (backend anterior) cada tarjeta conserva su diseño con el anillo vacío', async () => {
       permisos.is_admin = false;
       const { container } = render(<Dashboard />);
       await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
-      container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('solo-cifra'));
+      container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('segmentos'));
+      expect(container.querySelectorAll('.nx-ind__aro--vacio').length).toBeGreaterThan(0);
     });
   });
 });

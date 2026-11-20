@@ -378,4 +378,5 @@ Definidos en `frontend/src/styles/tokens.css` bajo la arquitectura de 3 capas (A
 | `--color-indicador-usuarios` | Color de la tarjeta «Usuarios» del dashboard (icono, trazo, borde, badge; el texto lo mezcla al 35 % con `--color-texto`) | `219 39 119` | `219 39 119` (igual: medido AA en ambos temas) | `tokens.css` | DIS-112, 2026-11-19 | Vigente |
 | `--color-indicador-usuarios-fin` | Extremo del degradado de «Usuarios» | `244 63 94` | `244 63 94` | `tokens.css` | DIS-112, 2026-11-19 | Vigente |
 | `CLAVE_DISENO_TARJETAS` (constante) | Llave de `localStorage` con el diseño de las tarjetas del dashboard | `nexus.dashboard.diseno-tarjetas` | ídem | `components/dashboard/diseno-tarjetas.ts` | DIS-112, 2026-11-19 | Vigente |
+| `EVENTO_DISENO_TARJETAS` (constante) | Evento de `window` que avisa del diseño aplicado (`detail`) a las tarjetas del dashboard | `nexus:diseno-tarjetas` | ídem | `components/dashboard/diseno-tarjetas.ts` | DIS-113, 2026-11-19 | Vigente |
 | `DISENO_POR_OMISION` (constante) | Diseño que rige sin preferencia guardada | `segmentos` («Dos segmentos») | ídem | `components/dashboard/diseno-tarjetas.ts` | DIS-112, 2026-11-19 | Vigente |

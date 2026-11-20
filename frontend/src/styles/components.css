@@ -1119,9 +1119,6 @@ select::-ms-expand {
     color: rgb(var(--color-texto-sobre-accion));
     box-shadow: 0 6px 12px -6px var(--nx-ind);
 }
-.nx-ind__icono--grande {
-    box-shadow: 0 8px 16px -8px var(--nx-ind);
-}
 /* Trazos: pista tenue, valor con degradado y extremos redondeados. */
 .nx-ind__anillo {
     position: relative;
@@ -1145,6 +1142,13 @@ select::-ms-expand {
 .nx-ind__pista {
     fill: none;
     stroke: color-mix(in srgb, var(--nx-ind) 14%, rgb(var(--color-superficie-hundida)));
+}
+/* Sin desglose: pista en gris neutro, sin el tinte del indicador (DIS-113). */
+/* Sin desglose (DIS-113): anillo vacío decorativo (SVG aria-hidden; el valor va en texto). 45 % lo hace
+   visible como «sin datos» (1.9:1 claro, 2.1:1 oscuro); no requiere 3:1 por no llevar información. */
+.nx-ind__aro--vacio .nx-ind__pista,
+.nx-ind__semi--vacio .nx-ind__pista {
+    stroke: color-mix(in srgb, rgb(var(--color-texto-tenue)) 45%, rgb(var(--color-superficie-hundida)));
 }
 .nx-ind__valor,
 .nx-ind__resto {

@@ -3,8 +3,9 @@
  * «Anillo con brillo», «Dos segmentos» (título como badge) y «Medidor».
  *
  * El color de cada indicador sale de la clase `nx-ind--*` (tokens `--color-indicador-*`); el
- * componente no fija ningún valor visual. Sin desglose válido (backend anterior a FNC-164) la
- * tarjeta muestra solo la cifra, sin anillo ni porcentaje. Total 0 = anillo vacío y «0 %».
+ * componente no fija ningún valor visual. Sin desglose válido (backend anterior a FNC-164) cada
+ * diseño conserva su disposición con el anillo vacío en gris neutro, sin porcentaje ni partes
+ * (en el lector, solo el valor); no se inventan datos. Total 0 = anillo vacío y «0 %».
  */
 
 import type { ClaveIndicador, DesgloseIndicador } from '@/lib/types';
@@ -20,6 +21,7 @@ const GROSOR_SEGMENTOS = 10;
 interface Props {
   indicador: ClaveIndicador;
   valor: number;
+  /** Sin él (o incoherente) la tarjeta muestra el anillo vacío. */
   desglose?: DesgloseIndicador;
   diseno: DisenoTarjeta;
 }
@@ -29,20 +31,6 @@ function CajaIcono({ icono, className }: { icono: (typeof INDICADORES)[ClaveIndi
     <span className={`nx-ind__icono grid shrink-0 place-items-center ${className}`} aria-hidden="true">
       <Icono nombre={icono} tamano="sm" />
     </span>
-  );
-}
-
-/** Solo la cifra: sin desglose no hay anillo ni porcentaje. */
-function SoloCifra({ indicador, valor }: { indicador: ClaveIndicador; valor: number }) {
-  const def = INDICADORES[indicador];
-  return (
-    <div className="relative flex items-center gap-3">
-      <CajaIcono icono={def.icono} className="nx-ind__icono--grande size-12 rounded-xl" />
-      <div className="min-w-0">
-        <p className="nx-ind__etq text-xs font-bold uppercase tracking-wide">{def.etiqueta}</p>
-        <p className="mt-1 text-3xl font-extrabold leading-none tabular-nums text-body-text">{formatoCifra(valor)}</p>
-      </div>
-    </div>
   );
 }
 
@@ -66,38 +54,46 @@ function Porcentaje({ indicador, desglose, className }: { indicador: ClaveIndica
   );
 }
 
-function Brillo({ indicador, valor, desglose }: { indicador: ClaveIndicador; valor: number; desglose: DesgloseIndicador }) {
+function Brillo({ indicador, valor, desglose }: { indicador: ClaveIndicador; valor: number; desglose?: DesgloseIndicador }) {
   const def = INDICADORES[indicador];
   return (
     <div className="relative flex flex-wrap items-center justify-between gap-3">
-      <ResumenPartes indicador={indicador} desglose={desglose} />
+      {desglose ? <ResumenPartes indicador={indicador} desglose={desglose} /> : null}
       <div className="grid min-w-32 flex-1 gap-1.5">
         <div className="flex items-center gap-2">
           <CajaIcono icono={def.icono} className="size-7 rounded-lg" />
           <p title={def.etiqueta} className="nx-ind__etq truncate text-xs font-bold uppercase tracking-wide">{def.etiqueta}</p>
         </div>
         <p className="text-3xl font-extrabold leading-none tabular-nums text-body-text">{formatoCifra(valor)}</p>
-        <p className="text-xs text-label">
-          {formatoCifra(desglose.parte)} {def.partes[0]}
-        </p>
+        {desglose ? (
+          <p className="text-xs text-label">
+            {formatoCifra(desglose.parte)} {def.partes[0]}
+          </p>
+        ) : null}
       </div>
       <div className="nx-ind__anillo nx-ind__anillo--brillo">
         <AnilloIndicador desglose={desglose} grosor={GROSOR_BRILLO} />
-        <Porcentaje indicador={indicador} desglose={desglose} className="nx-ind__pct relative text-base font-extrabold tabular-nums" />
+        {desglose ? (
+          <Porcentaje indicador={indicador} desglose={desglose} className="nx-ind__pct relative text-base font-extrabold tabular-nums" />
+        ) : (
+          <span aria-hidden="true" className="nx-ind__pct relative text-base font-extrabold tabular-nums">—</span>
+        )}
       </div>
     </div>
   );
 }
 
-function Segmentos({ indicador, valor, desglose }: { indicador: ClaveIndicador; valor: number; desglose: DesgloseIndicador }) {
+function Segmentos({ indicador, valor, desglose }: { indicador: ClaveIndicador; valor: number; desglose?: DesgloseIndicador }) {
   const def = INDICADORES[indicador];
-  const partes: [string, number, string][] = [
-    [def.partes[0], desglose.parte, 'nx-ind__punto'],
-    [def.partes[1], desglose.resto, 'nx-ind__punto nx-ind__punto--resto'],
-  ];
+  const partes: [string, number, string][] = desglose
+    ? [
+        [def.partes[0], desglose.parte, 'nx-ind__punto'],
+        [def.partes[1], desglose.resto, 'nx-ind__punto nx-ind__punto--resto'],
+      ]
+    : [];
   return (
     <div className="relative grid gap-3.5">
-      <ResumenPartes indicador={indicador} desglose={desglose} />
+      {desglose ? <ResumenPartes indicador={indicador} desglose={desglose} /> : null}
       <div className="flex flex-wrap items-center gap-3.5">
         <div className="nx-ind__anillo nx-ind__anillo--segmentos">
           <AnilloIndicador desglose={desglose} grosor={GROSOR_SEGMENTOS} dosSegmentos />
@@ -113,39 +109,45 @@ function Segmentos({ indicador, valor, desglose }: { indicador: ClaveIndicador; 
             {def.etiqueta}
           </span>
           <p className="text-3xl font-extrabold leading-none tabular-nums text-body-text">{formatoCifra(valor)}</p>
-          <p className="text-xs font-bold tabular-nums text-label">
-            {textoPorcentaje(desglose)}
-            <span className="sr-only"> {def.partes[0]}</span>
-          </p>
+          {desglose ? (
+            <p className="text-xs font-bold tabular-nums text-label">
+              {textoPorcentaje(desglose)}
+              <span className="sr-only"> {def.partes[0]}</span>
+            </p>
+          ) : null}
         </div>
       </div>
-      <ul className="nx-ind__leyenda grid gap-1.5 pt-3" aria-hidden="true">
-        {partes.map(([nombre, cantidad, claseCita]) => (
-          <li key={nombre} className="flex items-center gap-2 text-xs text-label">
-            <span className={`${claseCita} size-2.5 rounded-sm`} aria-hidden="true" />
-            <span className="min-w-0 flex-1">{nombre}</span>
-            <b className="font-bold tabular-nums text-body-text">{formatoCifra(cantidad)}</b>
-          </li>
-        ))}
-      </ul>
+      {desglose ? (
+        <ul className="nx-ind__leyenda grid gap-1.5 pt-3" aria-hidden="true">
+          {partes.map(([nombre, cantidad, claseCita]) => (
+            <li key={nombre} className="flex items-center gap-2 text-xs text-label">
+              <span className={`${claseCita} size-2.5 rounded-sm`} aria-hidden="true" />
+              <span className="min-w-0 flex-1">{nombre}</span>
+              <b className="font-bold tabular-nums text-body-text">{formatoCifra(cantidad)}</b>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
 
-function Medidor({ indicador, valor, desglose }: { indicador: ClaveIndicador; valor: number; desglose: DesgloseIndicador }) {
+function Medidor({ indicador, valor, desglose }: { indicador: ClaveIndicador; valor: number; desglose?: DesgloseIndicador }) {
   const def = INDICADORES[indicador];
   return (
     <div className="relative grid justify-items-center gap-1.5 text-center">
-      <ResumenPartes indicador={indicador} desglose={desglose} />
+      {desglose ? <ResumenPartes indicador={indicador} desglose={desglose} /> : null}
       <div className="nx-ind__medidor">
         <MedidorIndicador desglose={desglose} />
         <CajaIcono icono={def.icono} className="nx-ind__icono--medidor rounded-xl" />
       </div>
       <p className="nx-ind__etq text-xs font-bold uppercase tracking-wide">{def.etiqueta}</p>
       <p className="text-3xl font-extrabold leading-none tabular-nums text-body-text">{formatoCifra(valor)}</p>
-      <p className="text-xs text-label">
-        <span className="font-bold tabular-nums">{textoPorcentaje(desglose)}</span> {def.partes[0]}
-      </p>
+      {desglose ? (
+        <p className="text-xs text-label">
+          <span className="font-bold tabular-nums">{textoPorcentaje(desglose)}</span> {def.partes[0]}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -157,13 +159,12 @@ export function TarjetaIndicador({ indicador, valor, desglose, diseno }: Props) 
     <div
       role="group"
       aria-label={def.etiqueta}
-      data-diseno={reparto ? diseno : 'solo-cifra'}
+      data-diseno={diseno}
       className={`nx-ind ${def.clase} relative min-w-0 overflow-hidden rounded-2xl border border-panel-border bg-panel-fill p-4 shadow-1`}
     >
-      {!reparto ? <SoloCifra indicador={indicador} valor={valor} /> : null}
-      {reparto && diseno === 'brillo' ? <Brillo indicador={indicador} valor={valor} desglose={reparto} /> : null}
-      {reparto && diseno === 'segmentos' ? <Segmentos indicador={indicador} valor={valor} desglose={reparto} /> : null}
-      {reparto && diseno === 'medidor' ? <Medidor indicador={indicador} valor={valor} desglose={reparto} /> : null}
+      {diseno === 'brillo' ? <Brillo indicador={indicador} valor={valor} desglose={reparto} /> : null}
+      {diseno === 'segmentos' ? <Segmentos indicador={indicador} valor={valor} desglose={reparto} /> : null}
+      {diseno === 'medidor' ? <Medidor indicador={indicador} valor={valor} desglose={reparto} /> : null}
     </div>
   );
 }
