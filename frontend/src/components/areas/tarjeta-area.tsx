@@ -15,7 +15,7 @@ import { enlaceSeguro } from '@/lib/enlace-seguro';
 import type { Area, Platform } from '@/lib/types';
 import { variablesCss } from '@/lib/variables-css';
 import { Icono, type NombreIcono } from '../icono';
-import { Badge } from '../ui';
+import { EstadoBadgeBoton } from '../estado-badge-boton';
 
 /** Logos que se muestran en el pie; el resto va como «+N». */
 export const LOGOS_VISIBLES = 3;
@@ -67,6 +67,9 @@ export function TarjetaArea({
   conteo,
   plataformas,
   onSelect,
+  puedeEditar = false,
+  actualizarEstado,
+  onEstadoCambiado,
 }: {
   area: Area;
   /** Plataformas del área dentro del alcance de quien mira (ya calculado por la pantalla). */
@@ -74,6 +77,11 @@ export function TarjetaArea({
   /** Plataformas del área en el mismo alcance; de aquí salen los logos del pie. */
   plataformas: Platform[];
   onSelect: (area: Area) => void;
+  /** Quien puede editar el área (mismo permiso que «Editar»): su badge de estado conmuta (DIS-114). */
+  puedeEditar?: boolean;
+  /** `PUT` del área con el estado nuevo. */
+  actualizarEstado?: (status: 'Activo' | 'Inactivo') => Promise<unknown>;
+  onEstadoCambiado?: () => void;
 }) {
   const inactiva = area.status === 'Inactivo';
   const personas = area.users_count ?? 0;
@@ -81,20 +89,14 @@ export function TarjetaArea({
   const restantes = conteo - LOGOS_VISIBLES;
 
   return (
+    // La tarjeta completa abre las plataformas con el ratón; el control accesible (teclado y
+    // lector de pantalla) es «Ver plataformas», un botón propio. El badge de estado es otro
+    // botón y no queda anidado en ninguno (DIS-114).
     <div
-      role="button"
-      tabIndex={0}
       onClick={() => onSelect(area)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect(area);
-        }
-      }}
-      aria-label={`Área ${area.name}${inactiva ? ' (Inactiva)' : ''}, ${conteo} ${conteo === 1 ? 'plataforma' : 'plataformas'}. Ver plataformas.`}
       data-state={inactiva ? 'inactiva' : 'activa'}
       style={variablesCss({ '--area-color': color })}
-      className="nx-area-card foco-visible group relative flex h-full min-h-56 min-w-12 cursor-pointer select-none flex-col overflow-hidden rounded-xl border border-panel-border bg-panel-fill text-left shadow-1"
+      className="nx-area-card group relative flex h-full min-h-56 min-w-12 cursor-pointer select-none flex-col overflow-hidden rounded-xl border border-panel-border bg-panel-fill text-left shadow-1"
     >
       <div className="nx-area-card__cabecera relative flex items-center gap-3 p-5 pb-4">
         <span
@@ -121,11 +123,14 @@ export function TarjetaArea({
 
       <div className="nx-area-card__pie mt-auto flex items-center justify-between gap-3 border-t px-5 py-3">
         <div className="flex min-w-0 items-center gap-2">
-          {inactiva ? (
-            <Badge tone="warning" dot>
-              Inactiva
-            </Badge>
-          ) : null}
+          <EstadoBadgeBoton
+            tipo="area"
+            nombre={area.name}
+            activo={!inactiva}
+            editable={puedeEditar && Boolean(actualizarEstado)}
+            actualizar={(status) => actualizarEstado!(status)}
+            onCambiado={onEstadoCambiado}
+          />
           {plataformas.length > 0 ? (
             <div className="nx-area-card__logos flex items-center" aria-hidden="true">
               {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
@@ -141,10 +146,14 @@ export function TarjetaArea({
             <span className="text-xs text-label">Sin plataformas</span>
           )}
         </div>
-        <span className="nx-area-card__ir inline-flex min-h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-bold">
+        <button
+          type="button"
+          aria-label={`Área ${area.name}${inactiva ? ' (Inactiva)' : ''}, ${conteo} ${conteo === 1 ? 'plataforma' : 'plataformas'}. Ver plataformas.`}
+          className="nx-area-card__ir inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-bold"
+        >
           Ver plataformas
           <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} className="nx-area-card__flecha" />
-        </span>
+        </button>
       </div>
     </div>
   );

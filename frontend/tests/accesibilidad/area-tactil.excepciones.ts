@@ -11,6 +11,14 @@ export interface ExcepcionAreaTactil {
 }
 
 export const EXCEPCIONES: Record<string, ExcepcionAreaTactil> = {
+  'components/areas/tarjeta-area.tsx': {
+    cantidad: 1,
+    motivo: '«Ver plataformas» es el control de teclado de la tarjeta; con el ratón o el dedo abre toda la tarjeta (más de 48 px de alto y todo su ancho), DIS-114.',
+  },
+  'components/estado-badge-boton.tsx': {
+    cantidad: 1,
+    motivo: 'El botón mide lo del badge, pero `.nx-estado-boton::after` (components.css) amplía su área clicable a 44 × 44 px como mínimo, DIS-114.',
+  },
   'components/home/role-summary.tsx': {
     cantidad: 1,
     motivo: 'El contador del inicio es un `Link` `block` que envuelve un `StatTile` completo (más de 48 px de alto y a todo lo ancho de su celda).',

@@ -8,7 +8,7 @@
  *   zebra striping, ghost rows, paginación estandarizada) y EmptyNote centrado.
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAsync } from '@/lib/use-async';
 import type { Area } from '@/lib/types';
@@ -24,6 +24,7 @@ import { PageHeader } from './page-header';
 import { RequireRole } from './require-role';
 import { useSession } from './session-provider';
 import { useToast } from './toast';
+import { EstadoBadgeBoton } from './estado-badge-boton';
 import { Badge } from './ui';
 import { eliminarEnLote, mensajeLoteParcial } from '@/lib/eliminar-en-lote';
 
@@ -39,6 +40,9 @@ function AreasScreen() {
   const { session } = useSession();
   const { avisar } = useToast();
   const { data, loading, error, reload } = useAsync(() => api.areas(), []);
+  // `reload` cambia en cada render: las columnas (memoizadas) lo leen por referencia.
+  const recargar = useRef(reload);
+  recargar.current = reload;
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Area | null>(null);
   const [removing, setRemoving] = useState<Area[] | null>(null);
@@ -307,13 +311,15 @@ function AreasScreen() {
         cellClassName: 'px-6 py-1.5',
         cell: (area) => (
           <div className="flex items-center gap-1.5">
-            <Badge
-              tone={area.status === 'Activo' ? 'success' : 'warning'}
-              dot
+            <EstadoBadgeBoton
+              tipo="area"
+              nombre={area.name}
+              activo={area.status === 'Activo'}
+              editable={isAdmin || managedIds.has(area.id)}
+              actualizar={(status) => api.updateArea(area.id, { status })}
+              onCambiado={() => recargar.current()}
               className="!h-8 !px-3 inline-flex items-center text-xs font-semibold rounded-lg"
-            >
-              {area.status}
-            </Badge>
+            />
           </div>
         ),
       },

@@ -70,7 +70,7 @@ describe('TarjetaArea', () => {
 
   it('inactiva: aviso «Inactiva», estado neutro y sin color del área', () => {
     render(<TarjetaArea area={{ ...AREA, status: 'Inactivo' }} conteo={4} plataformas={PLATAFORMAS} onSelect={vi.fn()} />);
-    const tarjeta = screen.getByRole('button', { name: /Área Finanzas \(Inactiva\)/ });
+    const tarjeta = screen.getByRole('button', { name: /Área Finanzas \(Inactiva\)/ }).closest('[data-state]')!;
     expect(screen.getByText('Inactiva')).toBeTruthy();
     expect(tarjeta.getAttribute('data-state')).toBe('inactiva');
     expect(tarjeta.getAttribute('style') ?? '').not.toContain('--area-color');
@@ -78,21 +78,18 @@ describe('TarjetaArea', () => {
 
   it('activa: el color del área viaja como variable CSS y el icono decide su texto', () => {
     const { container } = render(<TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} onSelect={vi.fn()} />);
-    expect(screen.getByRole('button').getAttribute('style')).toContain(`--area-color: ${AZUL}`);
+    expect(container.firstElementChild?.getAttribute('style')).toContain(`--area-color: ${AZUL}`);
     expect(container.querySelector('.nx-area-card__icono')?.getAttribute('data-texto')).toBe('sobre-oscuro');
   });
 
-  it('aria-label con nombre y conteo; clic, Enter y Espacio abren las plataformas', () => {
+  it('«Ver plataformas» es el control accesible; el clic en toda la tarjeta y la activación del botón abren las plataformas', () => {
     const onSelect = vi.fn();
-    render(<TarjetaArea area={AREA} conteo={1} plataformas={[PLATAFORMAS[0]]} onSelect={onSelect} />);
-    const tarjeta = screen.getByRole('button', { name: 'Área Finanzas, 1 plataforma. Ver plataformas.' });
-    fireEvent.click(tarjeta);
-    fireEvent.keyDown(tarjeta, { key: 'Enter' });
-    fireEvent.keyDown(tarjeta, { key: ' ' });
-    fireEvent.keyDown(tarjeta, { key: 'a' });
-    expect(onSelect).toHaveBeenCalledTimes(3);
+    const { container } = render(<TarjetaArea area={AREA} conteo={1} plataformas={[PLATAFORMAS[0]]} onSelect={onSelect} />);
+    const boton = screen.getByRole('button', { name: 'Área Finanzas, 1 plataforma. Ver plataformas.' });
+    fireEvent.click(boton);
+    fireEvent.click(container.firstElementChild!);
+    expect(onSelect).toHaveBeenCalledTimes(2);
     expect(onSelect).toHaveBeenCalledWith(AREA);
-    expect(tarjeta.getAttribute('tabindex')).toBe('0');
   });
 });
 
@@ -137,8 +134,7 @@ describe('TarjetaArea: CSS y contraste (AA en ambos temas)', () => {
   it('hover eleva y respeta prefers-reduced-motion; el foco usa la clase común', () => {
     expect(CSS).toMatch(/\.nx-area-card:hover\s*\{[^}]*translateY\(-2px\)/);
     expect(CSS).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.nx-area-card,[\s\S]*?transform: none/);
-    const { container } = render(<TarjetaArea area={AREA} conteo={0} plataformas={[]} onSelect={vi.fn()} />);
-    expect(container.firstElementChild?.className).toContain('foco-visible');
+    expect(CSS).toMatch(/\.nx-area-card:has\(\.nx-area-card__ir:focus-visible\)\s*\{\s*outline: var\(--foco-ancho\) solid rgb\(var\(--foco-anillo\)\)/);
   });
 
   const mezcla = (a: Rgba, b: Rgba, pa: number): Rgba => ({

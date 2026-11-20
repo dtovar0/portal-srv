@@ -96,7 +96,7 @@ function avanzarYGuardar(modal: ReturnType<typeof dialogo>) {
 }
 
 describe('PlatformAdmin: alta por rol', () => {
-  it('asistente de 3 pasos: Paso 1 (Descripción), Paso 2 (Diseño con vista previa y activación) y Paso 3 (Accesos con Dual Picklist)', async () => {
+  it('asistente de 3 pasos: Paso 1 (Descripción), Paso 2 (Diseño con vista previa, sin control de estado) y Paso 3 (Accesos con Dual Picklist)', async () => {
     const modal = await abrirAlta();
     // Paso 1: muestra controles de descripción y no los de diseño, sin área ni conector
     expect(modal.getByLabelText(/^Nombre/)).toBeTruthy();
@@ -106,7 +106,7 @@ describe('PlatformAdmin: alta por rol', () => {
     expect(modal.queryByLabelText(/^Tipo de integración/)).toBeNull();
     expect(modal.queryByLabelText('Color de fondo')).toBeNull();
 
-    // Avanzar a Paso 2: Diseño (con vista previa y toggle de activa)
+    // Avanzar a Paso 2: Diseño (con vista previa; el estado se conmuta con el badge, DIS-114)
     fireEvent.click(modal.getByText('Siguiente'));
     expect(modal.getByText('Diseño')).toBeTruthy();
     expect(await modal.findByLabelText('Color de fondo')).toBeTruthy();
@@ -114,7 +114,7 @@ describe('PlatformAdmin: alta por rol', () => {
     expect(modal.getByText('Elegir icono')).toBeTruthy();
     expect(modal.getByText('Subir imagen')).toBeTruthy();
     expect(modal.getByText('Vista previa de la plataforma')).toBeTruthy();
-    expect(modal.getByRole('switch', { name: /activa/i })).toBeTruthy();
+    expect(modal.queryByRole('switch', { name: /activa/i })).toBeNull();
 
     // Avanzar a Paso 3: Accesos con Dual Picklist
     fireEvent.click(modal.getByText('Siguiente'));
@@ -489,7 +489,7 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(await screen.findByText('Operaciones')).toBeTruthy();
     expect(screen.getByText('Inactiva')).toBeTruthy();
     expect(screen.getByLabelText(/Área Operaciones \(Inactiva\)/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Área Operaciones \(Inactiva\)/ }).getAttribute('data-state')).toBe('inactiva');
+    expect(screen.getByLabelText(/Área Operaciones \(Inactiva\)/).closest('[data-state]')?.getAttribute('data-state')).toBe('inactiva');
   });
 });
 
@@ -645,3 +645,91 @@ async function abrirAltaSinRender() {
   fireEvent.change(modal.getByLabelText(/^Descripción/), { target: { value: 'Descripción' } });
   return modal;
 }
+
+describe('PlatformAdmin: estado con badge (DIS-114)', () => {
+  async function abrirArea() {
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByText('Finanzas'));
+    await screen.findByText('Contabilidad');
+  }
+
+  it('tarjeta de área: el badge activa confirma, guarda Inactivo, recarga y no abre el área', async () => {
+    comoSuperadmin();
+    vi.mocked(api.areas).mockResolvedValue([{ ...AREAS[0], status: 'Activo' } as Area]);
+    vi.mocked(api.updateArea).mockResolvedValue({ status: 'success', area: { ...AREAS[0], status: 'Inactivo' } as Area });
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Activa, desactivar área Finanzas' }));
+    expect(screen.queryByText('Contabilidad')).toBeNull();
+    expect(api.updateArea).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
+    await waitFor(() => expect(api.updateArea).toHaveBeenCalledWith(3, { status: 'Inactivo' }));
+    await waitFor(() => expect(api.areas).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('button', { name: 'Editar Contabilidad' })).toBeNull();
+  });
+
+  it('tarjeta de área inactiva: el badge activa directo con PUT Activo', async () => {
+    comoSuperadmin();
+    vi.mocked(api.areas).mockResolvedValue([{ ...AREAS[0], status: 'Inactivo' } as Area]);
+    vi.mocked(api.updateArea).mockResolvedValue({ status: 'success', area: AREAS[0] });
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Inactiva, activar área Finanzas' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    await waitFor(() => expect(api.updateArea).toHaveBeenCalledWith(3, { status: 'Activo' }));
+  });
+
+  it('admin de área sin esa área a su cargo: el badge de la tarjeta no es botón', async () => {
+    vi.mocked(api.areas).mockResolvedValue([{ ...AREAS[0], status: 'Activo' } as Area]);
+    render(<PlatformAdmin />);
+    await screen.findByText('Finanzas');
+    expect(screen.queryByRole('button', { name: /(Activar|Desactivar) área/ })).toBeNull();
+  });
+
+  it('tabla de plataformas: el badge activa confirma y guarda solo {status: Inactivo}; no selecciona la fila', async () => {
+    await abrirArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar plataforma Contabilidad' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
+    await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledWith(12, { status: 'Inactivo' }));
+    await waitFor(() => expect(api.platforms).toHaveBeenCalledTimes(2));
+    expect((screen.getByLabelText('Seleccionar Contabilidad') as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('tabla de plataformas inactiva: el badge activa directo', async () => {
+    vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, status: 'Inactivo' } as Platform]);
+    await abrirArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Inactiva, activar plataforma Contabilidad' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledWith(12, { status: 'Activo' }));
+  });
+
+  it('error 409 al desactivar una plataforma: toast con el mensaje y la fila sigue Activa', async () => {
+    vi.mocked(api.updatePlatform).mockRejectedValue(
+      new ApiError(409, 'Los grupos están en inactivos.', { code: 'grupos_en_inactivos' }),
+    );
+    await abrirArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar plataforma Contabilidad' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
+    expect(await screen.findByText('Los grupos están en inactivos.')).toBeTruthy();
+    expect(api.platforms).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Activa, desactivar plataforma Contabilidad' })).toBeTruthy();
+  });
+
+  it('formulario de plataforma: sin control de estado; el alta no envía status', async () => {
+    const modal = await abrirAlta();
+    fireEvent.click(modal.getByText('Siguiente'));
+    expect(modal.queryByRole('switch')).toBeNull();
+    expect(modal.queryByLabelText(/^Activa/)).toBeNull();
+    avanzarYGuardar(modal);
+    await waitFor(() => expect(api.createPlatform).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.createPlatform).mock.calls[0][0]).not.toHaveProperty('status');
+  });
+
+  it('formulario de plataforma: la edición no envía status (no pisa el estado)', async () => {
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByText('Finanzas'));
+    fireEvent.click(await screen.findByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: /Editar Contabilidad/i }));
+    avanzarYGuardar(dialogo());
+    await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.updatePlatform).mock.calls[0][1]).not.toHaveProperty('status');
+  });
+});
