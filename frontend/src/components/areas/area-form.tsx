@@ -3,7 +3,7 @@
 /**
  * Alta y edición de un área en 3 pasos:
  * - Paso 1: Descripción (Nombre obligatorio, Descripción opcional).
- * - Paso 2: Estilo visual (Color personalizado o por omisión, icono, vista previa dinámica y Estado Activo/Inactivo).
+ * - Paso 2: Estilo visual (Color personalizado o por omisión, icono, vista previa dinámica).
  * - Paso 3: Accesos (Dual Picklist para asignar usuarios y marcar administradores de área con casilla).
  *
  * En un alta el color no se envía hasta que se elige: el servidor aplica su
@@ -18,7 +18,7 @@ import type { Area, AreaInput, ManagedUser } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { useFocoTrasMover } from '@/lib/use-foco-tras-mover';
 import { variablesCss } from '@/lib/variables-css';
-import { Button, Checkbox, ColorInput, Field, FieldErrorNote, Modal, TextArea, TextInput } from '../form';
+import { Button, ColorInput, Field, FieldErrorNote, Modal, TextArea, TextInput } from '../form';
 import { Icono } from '../icono';
 import type { NombreIcono } from '../icono-trazos';
 import { RegionDeAnuncios } from '../region-de-anuncios';
@@ -81,10 +81,12 @@ export function AreaForm({
           description: area.description ?? '',
           icon: area.icon || 'areas',
           color: area.color,
-          status: area.status,
         }
-      : { name: '', description: '', icon: 'areas', status: 'Activo' },
+      : { name: '', description: '', icon: 'areas' },
   );
+  // El estado ya no se edita aquí (DIS-114): se conmuta con el badge de la tarjeta o la tabla.
+  // Al crear, el servidor lo deja Activo; al editar no se envía, para no pisarlo.
+  const estadoVista = area?.status ?? 'Activo';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -580,21 +582,10 @@ export function AreaForm({
                     </p>
                   </div>
                 </div>
-                <Badge tone={form.status === 'Activo' ? 'success' : 'warning'} dot>
-                  {form.status === 'Activo' ? 'Activa' : 'Inactiva'}
+                <Badge tone={estadoVista === 'Activo' ? 'success' : 'warning'} dot>
+                  {estadoVista === 'Activo' ? 'Activa' : 'Inactiva'}
                 </Badge>
               </div>
-            </div>
-
-            <div>
-              <Checkbox
-                id="area-status"
-                label="Activa"
-                checked={form.status === 'Activo'}
-                onChange={(e) => setForm({ ...form, status: e.target.checked ? 'Activo' : 'Inactivo' })}
-                {...invalido('area-status-error', fields.status)}
-              />
-              <FieldErrorNote id="area-status-error" message={fields.status} />
             </div>
           </div>
         ) : null}

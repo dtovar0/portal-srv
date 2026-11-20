@@ -395,7 +395,8 @@ describe('Accesibilidad (auditor-accesibilidad)', () => {
     expect(await dialogo().findByLabelText(/^Color/)).toBeTruthy();
     expect(dialogo().getByText('Vista previa')).toBeTruthy();
     expect(dialogo().getByText('MA')).toBeTruthy();
-    expect(dialogo().getByLabelText('Activa')).toBeTruthy();
+    // DIS-114: el estado ya no se edita en el formulario.
+    expect(dialogo().queryByLabelText('Activa')).toBeNull();
 
     // Retroceder al Paso 1
     fireEvent.click(dialogo().getByText('Atrás'));
@@ -527,5 +528,55 @@ describe('Accesos del área (gestión de usuarios)', () => {
       expect(api.setAreaUsers).toHaveBeenCalledWith(15, [5]);
       expect(usersApi.setManagedAreas).toHaveBeenCalledWith(5, expect.arrayContaining([15]));
     });
+  });
+});
+
+describe('AreasList: estado con badge (DIS-114)', () => {
+  it('la tabla muestra el estado como botón para quien puede editar el área y guarda {status}', async () => {
+    rolActual = 'administrador';
+    vi.mocked(api.updateArea).mockResolvedValue({ status: 'success', area: { ...FINANZAS, status: 'Inactivo' } });
+    render(<AreasList />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Desactivar área Finanzas' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
+    await waitFor(() => expect(api.updateArea).toHaveBeenCalledWith(3, { status: 'Inactivo' }));
+  });
+
+  it('admin de área: solo las suyas son botón; las demás, badge normal', async () => {
+    rolActual = 'admin_area';
+    render(<AreasList />);
+    await screen.findByText('Sistemas');
+    expect(screen.getByRole('button', { name: 'Desactivar área Finanzas' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Desactivar área Sistemas' })).toBeNull();
+  });
+
+  it('el formulario de área no tiene control de estado; crear no envía status', async () => {
+    rolActual = 'administrador';
+    render(<AreasList />);
+    await screen.findByText('Finanzas');
+    fireEvent.click(screen.getByText('Nueva área'));
+    fireEvent.change(dialogo().getByLabelText('Nombre'), { target: { value: 'Compras' } });
+    fireEvent.change(dialogo().getByLabelText('Descripción'), { target: { value: 'Área de compras' } });
+    fireEvent.click(dialogo().getByText('Siguiente'));
+    await dialogo().findByLabelText(/^Color/);
+    expect(dialogo().queryByLabelText('Activa')).toBeNull();
+    fireEvent.click(dialogo().getByText('Siguiente: Accesos'));
+    fireEvent.click(await dialogo().findByText('Crear área'));
+    await waitFor(() => expect(api.createArea).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.createArea).mock.calls[0][0]).not.toHaveProperty('status');
+  });
+
+  it('editar un área no envía status (no pisa el estado)', async () => {
+    rolActual = 'administrador';
+    vi.mocked(api.updateArea).mockResolvedValue({ status: 'success', area: FINANZAS });
+    render(<AreasList />);
+    await screen.findByText('Finanzas');
+    fireEvent.click(screen.getByLabelText('Seleccionar Finanzas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Finanzas' }));
+    fireEvent.click(dialogo().getByText('Siguiente'));
+    expect(dialogo().queryByLabelText('Activa')).toBeNull();
+    fireEvent.click(dialogo().getByText('Siguiente: Accesos'));
+    fireEvent.click(await dialogo().findByText('Guardar cambios'));
+    await waitFor(() => expect(api.updateArea).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.updateArea).mock.calls[0][1]).not.toHaveProperty('status');
   });
 });

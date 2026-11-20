@@ -18,6 +18,27 @@
     gap: 0.375rem;
 }
 
+/* DIS-114: badge de estado que conmuta (botón). El aspecto es el del badge; el área táctil crece
+   a 44 px con un pseudoelemento sin cambiar el tamaño visible. */
+.nx-estado-boton {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+.nx-estado-boton::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 2.75rem);
+    height: max(100%, 2.75rem);
+    transform: translate(-50%, -50%);
+}
+.nx-estado-boton:hover .nx-badge { filter: brightness(0.95); }
+.nx-estado-boton:disabled { cursor: progress; opacity: 0.7; }
+
 .nx-badge-primary { background: rgb(var(--badge-primary-bg)) !important; color: rgb(var(--badge-primary-text)) !important; border-color: rgb(var(--badge-primary-text) / 0.2) !important; }
 .nx-badge-success { background: rgb(var(--badge-success-bg)) !important; color: rgb(var(--badge-success-text)) !important; border-color: rgb(var(--badge-success-text) / 0.2) !important; }
 .nx-badge-error   { background: rgb(var(--badge-error-bg)) !important;   color: rgb(var(--badge-error-text)) !important;   border-color: rgb(var(--badge-error-text) / 0.2) !important;   }
@@ -973,6 +994,14 @@ select::-ms-expand {
 }
 .nx-area-card:hover .nx-area-card__ir {
     background: color-mix(in srgb, var(--nx-area) 20%, rgb(var(--color-superficie)));
+}
+/* DIS-114: el foco está en «Ver plataformas» (botón) pero el anillo rodea la tarjeta completa. */
+.nx-area-card:has(.nx-area-card__ir:focus-visible) {
+    outline: var(--foco-ancho) solid rgb(var(--foco-anillo));
+    outline-offset: var(--foco-separacion);
+}
+.nx-area-card__ir:focus-visible {
+    outline: none;
 }
 .nx-area-card__flecha {
     transition: transform var(--duracion-corta) var(--curva);

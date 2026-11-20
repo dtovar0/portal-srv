@@ -5,6 +5,7 @@ import { enlaceSeguro } from '@/lib/enlace-seguro';
 import { atributoTexto, variablesChipPlataforma } from '@/lib/color-legible';
 import { variablesCss } from '@/lib/variables-css';
 import type { DataColumn } from '../data-table';
+import { EstadoBadgeBoton } from '../estado-badge-boton';
 import { Badge } from '../ui';
 
 export function columnasPlataformas({
@@ -13,12 +14,19 @@ export function columnasPlataformas({
   someSelected,
   toggleSelectAll,
   togglePlatform,
+  puedeEditarEstado = false,
+  actualizarEstado,
+  onEstadoCambiado,
 }: {
   selectedPlatformIds: Set<number>;
   allSelected: boolean;
   someSelected: boolean;
   toggleSelectAll: () => void;
   togglePlatform: (id: number) => void;
+  /** Mismo permiso que «Editar»: el badge de estado conmuta (DIS-114). */
+  puedeEditarEstado?: boolean;
+  actualizarEstado?: (platform: Platform, status: 'Activo' | 'Inactivo') => Promise<unknown>;
+  onEstadoCambiado?: () => void;
 }): DataColumn<Platform>[] {
   return [
     {
@@ -101,7 +109,14 @@ export function columnasPlataformas({
       headerClassName: 'px-6 py-2 font-black tracking-wider text-primary-text select-none',
       cellClassName: 'px-6 py-1.5',
       cell: (platform) => (
-        <Badge tone={platform.status === 'Activo' ? 'success' : 'warning'}>{platform.status}</Badge>
+        <EstadoBadgeBoton
+          tipo="plataforma"
+          nombre={platform.name}
+          activo={platform.status === 'Activo'}
+          editable={puedeEditarEstado && Boolean(actualizarEstado)}
+          actualizar={(status) => actualizarEstado!(platform, status)}
+          onCambiado={onEstadoCambiado}
+        />
       ),
     },
   ];
