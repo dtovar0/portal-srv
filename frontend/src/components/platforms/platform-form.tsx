@@ -3,7 +3,7 @@
 /**
  * Alta y edición de una plataforma en 3 pasos:
  * - Paso 1: Descripción (Nombre, Descripción, Enlace).
- * - Paso 2: Diseño y activación (Icono del catálogo o subida de imagen, Colores de fondo y del icono, Vista previa dinámica y Toggle Activa/Inactiva).
+ * - Paso 2: Diseño (Icono del catálogo o subida de imagen, Colores de fondo y del icono, Vista previa dinámica).
  * - Paso 3: Accesos (Dual Picklist con usuarios del área para asignar accesos directos).
  *
  * Mismo criterio y coherencia que `areas/area-form.tsx` (DIS-016, DIS-017, DIS-019).
@@ -17,7 +17,7 @@ import { useAsync } from '@/lib/use-async';
 import { useFocoTrasMover } from '@/lib/use-foco-tras-mover';
 import { atributoTexto, variablesChipPlataforma } from '@/lib/color-legible';
 import { variablesCss } from '@/lib/variables-css';
-import { Button, ColorInput, Field, FileInput, Modal, TextArea, TextInput, Toggle } from '../form';
+import { Button, ColorInput, Field, FileInput, Modal, TextArea, TextInput } from '../form';
 import { Icono } from '../icono';
 import { TRAZOS, type NombreIcono } from '../icono-trazos';
 import { RegionDeAnuncios } from '../region-de-anuncios';
@@ -68,7 +68,6 @@ const EMPTY: PlatformInput = {
   name: '',
   description: '',
   direct_link: '',
-  status: 'Activo',
 };
 
 /** Ids de los controles base, en el orden del formulario (foco al primer error). */
@@ -117,11 +116,13 @@ export function PlatformForm({
           logo_url: platform.logo_url ?? null,
           bg_color: platform.bg_color,
           text_color: platform.text_color,
-          status: platform.status,
         }
       : { ...EMPTY, icon: 'plataformas', area_id: defaultAreaId ?? areas[0]?.id },
   );
   const [integration] = useState<IntegrationValue>(initialIntegration);
+  // El estado ya no se edita aquí (DIS-114): se conmuta con el badge de la tabla.
+  // Al crear, el servidor la deja Activa; al editar no se envía, para no pisarlo.
+  const estadoVista = platform?.status ?? 'Activo';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -727,8 +728,8 @@ export function PlatformForm({
                 <span className="text-xs font-bold uppercase tracking-wider text-label block">
                   Vista previa de la plataforma
                 </span>
-                <Badge tone={form.status === 'Activo' ? 'success' : 'warning'} dot>
-                  {form.status === 'Activo' ? 'Activa' : 'Inactiva'}
+                <Badge tone={estadoVista === 'Activo' ? 'success' : 'warning'} dot>
+                  {estadoVista === 'Activo' ? 'Activa' : 'Inactiva'}
                 </Badge>
               </div>
 
@@ -773,17 +774,6 @@ export function PlatformForm({
                   ) : null}
                 </div>
               </div>
-            </div>
-
-            {/* Toggle de plataforma activa (movido a Paso 2) */}
-            <div>
-              <Toggle
-                id="platform-status"
-                label="Activa"
-                description="Indica si la plataforma se encuentra visible y disponible para los usuarios en el catálogo."
-                checked={form.status === 'Activo'}
-                onChange={(checked) => set('status', checked ? 'Activo' : 'Inactivo')}
-              />
             </div>
           </div>
         ) : null}

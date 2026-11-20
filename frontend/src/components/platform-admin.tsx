@@ -421,6 +421,12 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     setFocusTarget('trigger');
   }
 
+  // DIS-114: cambiar el estado de un área mueve el de sus plataformas (backend): se recargan ambas.
+  function recargarTrasEstado() {
+    areas.reload();
+    platforms.reload();
+  }
+
   async function handleDeleteArea() {
     if (!removingArea) return;
     const nombre = removingArea.name;
@@ -444,6 +450,10 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
   const canManage =
     session?.permissions.is_admin || session?.permissions.is_area_admin;
 
+  // `reload` cambia en cada render: las columnas (memoizadas) lo leen por referencia.
+  const recargarPlataformas = useRef(platforms.reload);
+  recargarPlataformas.current = platforms.reload;
+
   // Columnas de la tabla común (`DataTable`) con selección por checkbox inicial.
   const columnas = useMemo(
     () =>
@@ -453,12 +463,15 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
         someSelected,
         toggleSelectAll: toggleSelectAllPlatforms,
         togglePlatform,
+        puedeEditarEstado: Boolean(session?.permissions.is_admin || session?.permissions.is_area_admin),
+        actualizarEstado: (platform, status) => api.updatePlatform(platform.id, { status }),
+        onEstadoCambiado: () => recargarPlataformas.current(),
       }),
     // `toggleSelectAllPlatforms` solo lee `allSelected` y `allDisplayPlatformIds` (ya en las
     // dependencias) y usa el setter funcional: no hay dato viejo; agregarla recrearía las
     // columnas en cada render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeSelectedPlatformIds, allSelected, someSelected, allDisplayPlatformIds],
+    [activeSelectedPlatformIds, allSelected, someSelected, allDisplayPlatformIds, session?.permissions.is_admin, session?.permissions.is_area_admin],
   );
 
   async function remove() {
@@ -812,6 +825,9 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                       conteo={conteoPorArea[area.id] ?? 0}
                       plataformas={plataformasPorArea[area.id] ?? []}
                       onSelect={handleSelectArea}
+                      puedeEditar={isSuperadmin || managedAreaIds.has(area.id)}
+                      actualizarEstado={(status) => api.updateArea(area.id, { status })}
+                      onEstadoCambiado={recargarTrasEstado}
                     />
                   ))}
 

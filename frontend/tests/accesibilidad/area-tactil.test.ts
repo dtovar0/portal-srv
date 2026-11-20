@@ -328,3 +328,11 @@ describe('área táctil mínima (44 px) en src', () => {
     expect(conteo).toEqual(esperado);
   });
 });
+
+// DIS-114: la excepción del badge de estado se sostiene en este `::after` de 44 px.
+import { readFileSync as leerCss } from 'node:fs';
+import { it as prueba, expect as esperar } from 'vitest';
+prueba('el badge-botón de estado amplía su área táctil a 2.75rem con ::after', () => {
+  const css = leerCss('src/styles/components.css', 'utf8');
+  esperar(css).toMatch(/\.nx-estado-boton::after\s*\{[^}]*2\.75rem/);
+});
