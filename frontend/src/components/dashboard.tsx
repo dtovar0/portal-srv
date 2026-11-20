@@ -16,9 +16,15 @@ import type { HomeSummary } from '@/lib/access/types';
 import type { Stats } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { useTokenColors } from '@/lib/use-token-colors';
+import { useState } from 'react';
 import { ActividadReciente } from './home/actividad-reciente';
+import {
+  DISENO_POR_OMISION, guardarDisenoTarjetas, leerDisenoTarjetas, type DisenoTarjeta,
+} from './dashboard/diseno-tarjetas';
+import { SelectorDisenoTarjetas } from './dashboard/selector-diseno-tarjetas';
+import { TarjetasIndicadores, type ContadorIndicador } from './dashboard/tarjetas-indicadores';
 import { useSession } from './session-provider';
-import { Card, ErrorNote, PanelHeader, PremiumEmptyState, RegionDeAviso, Skeleton, StatTile } from './ui';
+import { Card, ErrorNote, PanelHeader, PremiumEmptyState, RegionDeAviso, Skeleton } from './ui';
 import { DataTable } from './data-table';
 import { PageHeader } from './page-header';
 
@@ -27,10 +33,20 @@ export function Dashboard() {
   const { data: stats, loading, error } = useAsync(() => api.stats(), []);
   const { data: resumen } = useAsync(() => homeApi.summary().catch(() => null), []);
   const administra = Boolean(session?.permissions.is_admin || session?.permissions.is_area_admin);
+  const [diseno, setDiseno] = useState<DisenoTarjeta>(
+    () => (typeof window === 'undefined' ? DISENO_POR_OMISION : leerDisenoTarjetas()),
+  );
+  const aplicarDiseno = (nuevo: DisenoTarjeta) => {
+    setDiseno(nuevo);
+    guardarDisenoTarjetas(nuevo);
+  };
 
   return (
     <div className="flex h-full w-full flex-col gap-4 min-h-0">
-      <PageHeader title="Dashboard" />
+      <PageHeader
+        title="Dashboard"
+        actions={<SelectorDisenoTarjetas actual={diseno} onAplicar={aplicarDiseno} />}
+      />
 
       {error ? (
         <RegionDeAviso minHeight="min-h-0" className="shrink-0">
@@ -41,7 +57,7 @@ export function Dashboard() {
       {loading ? (
         <Skeleton variant="tarjeta" count={5} ariaLabel="Cargando estadísticas…" />
       ) : stats ? (
-        <Estadisticas stats={stats} administra={administra} resumen={resumen} />
+        <Estadisticas stats={stats} administra={administra} resumen={resumen} diseno={diseno} />
       ) : null}
     </div>
   );
@@ -62,10 +78,12 @@ function Estadisticas({
   stats,
   administra,
   resumen,
+  diseno,
 }: {
   stats: Stats;
   administra: boolean;
   resumen?: HomeSummary | null;
+  diseno: DisenoTarjeta;
 }) {
   const { loading: cargandoSesion } = useSession();
   const colores = useTokenColors(TOKENS_GRAFICA);
@@ -81,20 +99,21 @@ function Estadisticas({
     )
   );
 
+  const contadores: ContadorIndicador[] = [
+    ...(verAreasYPlataformas
+      ? [{ indicador: 'areas', valor: stats.areas } as const, { indicador: 'platforms', valor: stats.platforms } as const]
+      : []),
+    { indicador: 'requests', valor: solicitudes },
+    { indicador: 'visits', valor: stats.visits },
+    ...(stats.users !== undefined ? [{ indicador: 'users', valor: stats.users } as const] : []),
+  ];
+
   return (
     <section aria-label="Actividad del portal" className="flex flex-1 min-h-0 flex-col gap-4">
       <h2 className="sr-only">Actividad del portal</h2>
 
-      {/* Fila 1: Las 5 cards en grid responsivo (shrink-0 para no colapsar) */}
-      <div className="grid w-full shrink-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {verAreasYPlataformas ? <StatTile label="Áreas" value={stats.areas} /> : null}
-        {verAreasYPlataformas ? <StatTile label="Plataformas" value={stats.platforms} /> : null}
-        <StatTile label="Solicitudes" value={solicitudes} />
-        <StatTile label="Visitas" value={stats.visits} />
-        {stats.users !== undefined ? (
-          <StatTile label="Usuarios" value={stats.users} />
-        ) : null}
-      </div>
+      {/* Fila 1: contadores con el diseño elegido (DIS-112) */}
+      <TarjetasIndicadores contadores={contadores} desglose={stats.desglose} diseno={diseno} />
 
       {/* Fila 2: Grid 60/40 de 5 columnas alineado con las cards superiores */}
       <div className="grid w-full flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-5">
