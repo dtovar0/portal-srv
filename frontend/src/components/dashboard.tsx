@@ -16,12 +16,9 @@ import type { HomeSummary } from '@/lib/access/types';
 import type { Stats } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { useTokenColors } from '@/lib/use-token-colors';
-import { useState } from 'react';
 import { ActividadReciente } from './home/actividad-reciente';
-import {
-  DISENO_POR_OMISION, guardarDisenoTarjetas, leerDisenoTarjetas, type DisenoTarjeta,
-} from './dashboard/diseno-tarjetas';
-import { SelectorDisenoTarjetas } from './dashboard/selector-diseno-tarjetas';
+import type { DisenoTarjeta } from './dashboard/diseno-tarjetas';
+import { useDisenoTarjetas } from './dashboard/use-diseno-tarjetas';
 import { TarjetasIndicadores, type ContadorIndicador } from './dashboard/tarjetas-indicadores';
 import { useSession } from './session-provider';
 import { Card, ErrorNote, PanelHeader, PremiumEmptyState, RegionDeAviso, Skeleton } from './ui';
@@ -33,20 +30,11 @@ export function Dashboard() {
   const { data: stats, loading, error } = useAsync(() => api.stats(), []);
   const { data: resumen } = useAsync(() => homeApi.summary().catch(() => null), []);
   const administra = Boolean(session?.permissions.is_admin || session?.permissions.is_area_admin);
-  const [diseno, setDiseno] = useState<DisenoTarjeta>(
-    () => (typeof window === 'undefined' ? DISENO_POR_OMISION : leerDisenoTarjetas()),
-  );
-  const aplicarDiseno = (nuevo: DisenoTarjeta) => {
-    setDiseno(nuevo);
-    guardarDisenoTarjetas(nuevo);
-  };
+  const diseno = useDisenoTarjetas();
 
   return (
     <div className="flex h-full w-full flex-col gap-4 min-h-0">
-      <PageHeader
-        title="Dashboard"
-        actions={<SelectorDisenoTarjetas actual={diseno} onAplicar={aplicarDiseno} />}
-      />
+      <PageHeader title="Dashboard" />
 
       {error ? (
         <RegionDeAviso minHeight="min-h-0" className="shrink-0">

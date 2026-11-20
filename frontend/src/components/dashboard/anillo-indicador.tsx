@@ -3,7 +3,7 @@
  * de semicírculo. Decorativos (`aria-hidden`): el dato también va en texto en la tarjeta.
  *
  * Todo trazo mide 100 unidades (`pathLength`), así el llenado es `100 - largo` sin importar el
- * radio. El estado final es el que se ve siempre; la animación de llenado (`nx-ind-llenar`,
+ * radio. Sin desglose se dibuja solo la pista en gris neutro (`--vacio`). El estado final es el que se ve siempre; la animación de llenado (`nx-ind-llenar`,
  * components.css) parte de vacío y se apaga con `prefers-reduced-motion`.
  */
 
@@ -44,18 +44,19 @@ export function AnilloIndicador({
   grosor,
   dosSegmentos = false,
 }: {
-  desglose: DesgloseIndicador;
+  /** Sin desglose el anillo queda vacío y en gris neutro. */
+  desglose?: DesgloseIndicador;
   /** Grosor del trazo en unidades del lienzo de 100. */
   grosor: number;
   dosSegmentos?: boolean;
 }) {
   const id = `nx-ind-${useId().replace(/:/g, '')}`;
   const radio = CENTRO - grosor / 2;
-  const [largoParte, largoResto] = segmentos(desglose, dosSegmentos);
-  const giro = (desglose.parte / (desglose.parte + desglose.resto || 1)) * 360;
+  const [largoParte, largoResto] = desglose ? segmentos(desglose, dosSegmentos) : [0, 0];
+  const giro = desglose ? (desglose.parte / (desglose.parte + desglose.resto || 1)) * 360 : 0;
 
   return (
-    <svg className="nx-ind__aro" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <svg className={`nx-ind__aro${desglose ? '' : ' nx-ind__aro--vacio'}`} viewBox="0 0 100 100" aria-hidden="true" focusable="false">
       <Degradado id={id} />
       <circle className="nx-ind__pista" cx={CENTRO} cy={CENTRO} r={radio} strokeWidth={grosor} />
       {largoParte > 0 ? (
@@ -89,14 +90,14 @@ export function AnilloIndicador({
 }
 
 /** Semicírculo del medidor: de izquierda a derecha, sobre el eje horizontal. */
-export function MedidorIndicador({ desglose }: { desglose: DesgloseIndicador }) {
+export function MedidorIndicador({ desglose }: { desglose?: DesgloseIndicador }) {
   const id = `nx-ind-${useId().replace(/:/g, '')}`;
   const radio = 44;
   const trazo = `M ${CENTRO - radio} 52 A ${radio} ${radio} 0 0 1 ${CENTRO + radio} 52`;
-  const [largoParte] = segmentos(desglose, false);
+  const [largoParte] = desglose ? segmentos(desglose, false) : [0];
 
   return (
-    <svg className="nx-ind__semi" viewBox="0 0 100 56" aria-hidden="true" focusable="false">
+    <svg className={`nx-ind__semi${desglose ? '' : ' nx-ind__semi--vacio'}`} viewBox="0 0 100 56" aria-hidden="true" focusable="false">
       <Degradado id={id} horizontal />
       <path className="nx-ind__pista" d={trazo} strokeWidth={9} />
       {largoParte > 0 ? (
