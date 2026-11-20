@@ -2,7 +2,7 @@
  * DIS-024: el Panel muestra el resumen por rol y, debajo, "Actividad del
  * portal" (`/stats`) con sus secciones como h3 bajo ese h2 (auditor-accesibilidad).
  */
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const permisos = vi.hoisted(() => ({ is_admin: true, is_area_admin: false }));
@@ -37,6 +37,9 @@ vi.mock('@/components/session-provider', () => ({
 }));
 
 import { Dashboard } from '@/components/dashboard';
+import { api } from '@/lib/api';
+import { CLAVE_DISENO_TARJETAS } from '@/components/dashboard/diseno-tarjetas';
+import { crearRaiz, simularCajas } from '../utils/dom-simulado';
 
 // recharts (`ResponsiveContainer`) necesita ResizeObserver, que jsdom no trae.
 beforeEach(() => {
@@ -49,6 +52,7 @@ afterEach(() => {
   permisos.is_area_admin = false;
   estado.cargando = false;
   estado.resumenFalla = false;
+  window.localStorage.clear();
 });
 
 /** Contadores (`StatTile`): solo los `<p>`, sin el encabezado de la tabla alternativa. */
@@ -136,5 +140,54 @@ describe('Dashboard', () => {
     expect(fila2Cols).toBeTruthy();
     expect(container.querySelector('.lg\\:col-span-3')).toBeTruthy();
     expect(container.querySelector('.lg\\:col-span-2')).toBeTruthy();
+  });
+
+  describe('DIS-112: tarjetas con anillo y selector de diseño', () => {
+    const conDesglose = () => vi.mocked(api.stats).mockResolvedValueOnce({
+      areas: 4, platforms: 10, visits: 100, users: 8, requests: 6,
+      desglose: {
+        areas: { parte: 3, resto: 1 }, platforms: { parte: 5, resto: 5 }, requests: { parte: 3, resto: 3 },
+        visits: { parte: 80, resto: 20 }, users: { parte: 6, resto: 2 },
+      },
+      platforms_by_area: [], most_visited: [],
+    });
+
+    it('por omisión usa «Dos segmentos» con el desglose del backend en las 5 tarjetas', async () => {
+      permisos.is_admin = false;
+      conDesglose();
+      const { container } = render(<Dashboard />);
+      await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+      const tarjetas = container.querySelectorAll('.nx-ind');
+      expect(tarjetas).toHaveLength(5);
+      tarjetas.forEach((t) => expect(t.getAttribute('data-diseno')).toBe('segmentos'));
+      expect(within(screen.getByRole('group', { name: 'Visitas' })).getByText('80 %')).toBeTruthy();
+    });
+
+    it('el modal cambia el diseño de las 5 tarjetas y la elección se recuerda', async () => {
+      simularCajas();
+      crearRaiz();
+      permisos.is_admin = false;
+      conDesglose();
+      const { container, unmount } = render(<Dashboard />);
+      await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+      fireEvent.click(screen.getByRole('button', { name: 'Diseño de tarjetas' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Medidor' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+      container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('medidor'));
+      expect(window.localStorage.getItem(CLAVE_DISENO_TARJETAS)).toBe('medidor');
+
+      unmount();
+      conDesglose();
+      const otra = render(<Dashboard />);
+      await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+      otra.container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('medidor'));
+    });
+
+    it('sin desglose (backend anterior) las tarjetas muestran solo la cifra', async () => {
+      permisos.is_admin = false;
+      const { container } = render(<Dashboard />);
+      await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+      container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('solo-cifra'));
+    });
   });
 });

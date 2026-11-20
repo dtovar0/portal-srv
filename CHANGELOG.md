@@ -6,12 +6,14 @@
 ## [Sin publicar]
 
 ### Agregado
+- API: `GET /api/v1/stats` suma la clave `desglose` con `parte`/`resto` de áreas, plataformas, solicitudes, visitas y usuarios (este último solo para administradores), con el mismo alcance de cada contador; contrato `inicio` v1.1 (FNC-164, 2026-11-19).
 - Plataformas y áreas: al pasar a Inactivo, el worker mueve sus grupos LDAP a la OU `LDAP_GROUPS_INACTIVE_BASE_DN` y los regresa al reactivar (vacía = sin cambios); la API de plataformas expone `groups_location` y `groups_move_status`; migración 0018; guía `docs/operacion/GRUPOS-INACTIVOS.md` (FNC-163, 2026-11-19).
 
 ### Eliminado
 - Usuarios: se retira «Reenviar credenciales» (el botón y `POST /users/<id>/credentials`, que ahora responde `410`); la contraseña se cambia desde «Editar usuario» (FNC-161, 2026-11-19).
 
 ### Cambiado
+- Web: las tarjetas de contadores del dashboard (Áreas, Plataformas, Solicitudes, Visitas, Usuarios) pasan de tarjetas planas a tres diseños con anillo, «Anillo con brillo», «Dos segmentos» (por omisión) y «Medidor»; el botón «Diseño de tarjetas» del encabezado abre un modal para elegir el activo (se recuerda por navegador). Usan `desglose` de `GET /stats` (FNC-164); sin él, solo la cifra. Tokens nuevos `--color-indicador-*`; cinco columnas solo desde 2xl (DIS-112, 2026-11-19).
 - Web: la tarjeta de área de Admin › Plataformas se rediseña (icono a la izquierda con degradado del color del área, cifras de personas y plataformas, logos de las primeras 3 plataformas y «Ver plataformas»); ya no se estira al alto de la rejilla (DIS-102, 2026-11-19).
 
 ### Corregido

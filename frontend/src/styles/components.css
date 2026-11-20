@@ -1065,3 +1065,217 @@ select::-ms-expand {
         transform: none;
     }
 }
+
+/* ==========================================================================
+   TARJETAS DE INDICADOR DEL DASHBOARD (DIS-112)
+   Tres diseños aprobados (brillo, segmentos, medidor). El color de cada indicador sale
+   de los tokens `--color-indicador-*` por su clase `nx-ind--*`. El texto nunca usa el
+   color tal cual: `--nx-ind-legible` lo mezcla 35 % con el texto del tema (>= 4.5:1,
+   medido en tests/accesibilidad/indicadores-contraste.test.ts, junto con trazos, extremos -fin y el trazo del resto).
+   ========================================================================== */
+.nx-ind--areas {
+    --ind-c: var(--color-indicador-areas);
+    --ind-c2: var(--color-indicador-areas-fin);
+}
+.nx-ind--plataformas {
+    --ind-c: var(--color-indicador-plataformas);
+    --ind-c2: var(--color-indicador-plataformas-fin);
+}
+.nx-ind--solicitudes {
+    --ind-c: var(--color-indicador-solicitudes);
+    --ind-c2: var(--color-indicador-solicitudes-fin);
+}
+.nx-ind--visitas {
+    --ind-c: var(--color-indicador-visitas);
+    --ind-c2: var(--color-indicador-visitas-fin);
+}
+.nx-ind--usuarios {
+    --ind-c: var(--color-indicador-usuarios);
+    --ind-c2: var(--color-indicador-usuarios-fin);
+}
+.nx-ind {
+    --nx-ind: rgb(var(--ind-c));
+    --nx-ind-fin: rgb(var(--ind-c2));
+    --nx-ind-legible: color-mix(in srgb, var(--nx-ind) 35%, rgb(var(--color-texto)));
+    transition:
+        transform var(--duracion-corta) var(--curva),
+        box-shadow var(--duracion-corta) var(--curva),
+        border-color var(--duracion-corta) var(--curva);
+}
+.nx-ind:hover {
+    transform: translateY(-2px);
+}
+.nx-ind > * {
+    position: relative;
+    z-index: 1;
+}
+.nx-ind__etq {
+    color: rgb(var(--color-texto-tenue));
+}
+/* Caja del icono: degradado del color con el icono en blanco. */
+.nx-ind__icono {
+    --nx-ind-extremo: rgb(var(--color-texto-sobre-fondo-claro));
+    background: linear-gradient(145deg, var(--nx-ind), color-mix(in srgb, var(--nx-ind) 72%, var(--nx-ind-extremo)));
+    color: rgb(var(--color-texto-sobre-accion));
+    box-shadow: 0 6px 12px -6px var(--nx-ind);
+}
+.nx-ind__icono--grande {
+    box-shadow: 0 8px 16px -8px var(--nx-ind);
+}
+/* Trazos: pista tenue, valor con degradado y extremos redondeados. */
+.nx-ind__anillo {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+}
+.nx-ind__aro {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    transform: rotate(-90deg);
+}
+.nx-ind__semi {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+.nx-ind__pista {
+    fill: none;
+    stroke: color-mix(in srgb, var(--nx-ind) 14%, rgb(var(--color-superficie-hundida)));
+}
+.nx-ind__valor,
+.nx-ind__resto {
+    fill: none;
+    stroke-linecap: round;
+}
+.nx-ind__resto {
+    /* Sin opacidad: texto-tenue ya da >= 3:1 contra panel-fill en ambos temas. */
+    stroke: rgb(var(--color-texto-tenue));
+}
+.nx-ind__tono {
+    stop-color: var(--nx-ind);
+}
+.nx-ind__tono-fin {
+    stop-color: var(--nx-ind-fin);
+}
+/* Llenado al cargar: parte de vacío hasta el valor (el estado final es el del atributo). */
+@keyframes nx-ind-llenar {
+    0% {
+        stroke-dashoffset: 100;
+    }
+}
+.nx-ind__valor {
+    animation: nx-ind-llenar 1.1s var(--curva);
+}
+.nx-ind__resto {
+    animation: nx-ind-llenar 1.1s var(--curva) 0.1s backwards;
+}
+
+/* 1 · Anillo con brillo */
+[data-diseno='brillo'] {
+    border-color: color-mix(in srgb, var(--nx-ind) 35%, rgb(var(--color-panel-border)));
+    box-shadow: var(--sombra-1), 0 12px 26px -20px var(--nx-ind);
+}
+[data-diseno='brillo']::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(55% 90% at 100% 50%, color-mix(in srgb, var(--nx-ind) 10%, transparent), transparent 100%);
+}
+[data-diseno='brillo']:hover {
+    border-color: color-mix(in srgb, var(--nx-ind) 65%, rgb(var(--color-panel-border)));
+    box-shadow: var(--sombra-2), 0 16px 30px -16px var(--nx-ind);
+}
+.nx-ind__anillo--brillo {
+    width: 4.875rem;
+    height: 4.875rem;
+    filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--nx-ind) 35%, transparent));
+}
+.nx-ind__pct {
+    color: var(--nx-ind-legible);
+}
+
+/* 2 · Dos segmentos: título como badge del color del indicador */
+[data-diseno='segmentos']:hover {
+    box-shadow: var(--sombra-2), 0 0 0 1px color-mix(in srgb, var(--nx-ind) 45%, transparent);
+}
+.nx-ind__anillo--segmentos {
+    width: 4.5rem;
+    height: 4.5rem;
+}
+.nx-ind__icono-aro {
+    color: var(--nx-ind-legible);
+}
+.nx-ind__leyenda {
+    border-top: 1px dashed rgb(var(--color-panel-border));
+}
+.nx-ind__punto {
+    background: var(--nx-ind);
+}
+.nx-ind__punto--resto {
+    background: rgb(var(--color-texto-tenue));
+}
+.badge-titulo {
+    color: var(--nx-ind-legible);
+    background: color-mix(in srgb, var(--nx-ind) 13%, rgb(var(--color-superficie)));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nx-ind) 32%, transparent);
+}
+
+/* 3 · Medidor */
+[data-diseno='medidor'] {
+    border-color: color-mix(in srgb, var(--nx-ind) 30%, rgb(var(--color-panel-border)));
+}
+[data-diseno='medidor']::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 60%;
+    pointer-events: none;
+    background: radial-gradient(60% 100% at 50% 0%, color-mix(in srgb, var(--nx-ind) 9%, transparent), transparent 100%);
+}
+[data-diseno='medidor']:hover {
+    box-shadow: var(--sombra-2), 0 16px 30px -18px var(--nx-ind);
+}
+.nx-ind__medidor {
+    position: relative;
+    width: 9.375rem;
+    max-width: 100%;
+    aspect-ratio: 2 / 1.12;
+}
+.nx-ind__icono--medidor {
+    position: absolute;
+    bottom: 0.25rem;
+    left: 50%;
+    width: 2.125rem;
+    height: 2.125rem;
+    transform: translateX(-50%);
+}
+@media (prefers-reduced-motion: reduce) {
+    .nx-ind,
+    .nx-ind:hover {
+        transition: none;
+        transform: none;
+    }
+    .nx-ind__valor,
+    .nx-ind__resto {
+        animation: none;
+    }
+}
+
+/* Vista previa del selector de diseño (DIS-112): el diseño elegido se marca con el color de acción. */
+.nx-ind-opcion {
+    border: 2px solid rgb(var(--color-panel-border));
+    background: rgb(var(--color-superficie-hundida));
+    transition: border-color var(--duracion-corta) var(--curva);
+}
+.nx-ind-opcion__marca {
+    color: rgb(var(--color-accion-texto));
+}
+.nx-ind-opcion[aria-pressed='true'] {
+    border-color: rgb(var(--color-accion));
+    background: rgb(var(--color-accion-tenue));
+}
