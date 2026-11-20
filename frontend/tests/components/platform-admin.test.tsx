@@ -658,7 +658,7 @@ describe('PlatformAdmin: estado con badge (DIS-114)', () => {
     vi.mocked(api.areas).mockResolvedValue([{ ...AREAS[0], status: 'Activo' } as Area]);
     vi.mocked(api.updateArea).mockResolvedValue({ status: 'success', area: { ...AREAS[0], status: 'Inactivo' } as Area });
     render(<PlatformAdmin />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Desactivar área Finanzas' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Activa, desactivar área Finanzas' }));
     expect(screen.queryByText('Contabilidad')).toBeNull();
     expect(api.updateArea).not.toHaveBeenCalled();
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
@@ -672,7 +672,7 @@ describe('PlatformAdmin: estado con badge (DIS-114)', () => {
     vi.mocked(api.areas).mockResolvedValue([{ ...AREAS[0], status: 'Inactivo' } as Area]);
     vi.mocked(api.updateArea).mockResolvedValue({ status: 'success', area: AREAS[0] });
     render(<PlatformAdmin />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Activar área Finanzas' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Inactiva, activar área Finanzas' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
     await waitFor(() => expect(api.updateArea).toHaveBeenCalledWith(3, { status: 'Activo' }));
   });
@@ -686,7 +686,7 @@ describe('PlatformAdmin: estado con badge (DIS-114)', () => {
 
   it('tabla de plataformas: el badge activa confirma y guarda solo {status: Inactivo}; no selecciona la fila', async () => {
     await abrirArea();
-    fireEvent.click(screen.getByRole('button', { name: 'Desactivar plataforma Contabilidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar plataforma Contabilidad' }));
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
     await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledWith(12, { status: 'Inactivo' }));
     await waitFor(() => expect(api.platforms).toHaveBeenCalledTimes(2));
@@ -696,7 +696,7 @@ describe('PlatformAdmin: estado con badge (DIS-114)', () => {
   it('tabla de plataformas inactiva: el badge activa directo', async () => {
     vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, status: 'Inactivo' } as Platform]);
     await abrirArea();
-    fireEvent.click(screen.getByRole('button', { name: 'Activar plataforma Contabilidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inactiva, activar plataforma Contabilidad' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
     await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledWith(12, { status: 'Activo' }));
   });
@@ -706,11 +706,11 @@ describe('PlatformAdmin: estado con badge (DIS-114)', () => {
       new ApiError(409, 'Los grupos están en inactivos.', { code: 'grupos_en_inactivos' }),
     );
     await abrirArea();
-    fireEvent.click(screen.getByRole('button', { name: 'Desactivar plataforma Contabilidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar plataforma Contabilidad' }));
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
     expect(await screen.findByText('Los grupos están en inactivos.')).toBeTruthy();
     expect(api.platforms).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('button', { name: 'Desactivar plataforma Contabilidad' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Activa, desactivar plataforma Contabilidad' })).toBeTruthy();
   });
 
   it('formulario de plataforma: sin control de estado; el alta no envía status', async () => {

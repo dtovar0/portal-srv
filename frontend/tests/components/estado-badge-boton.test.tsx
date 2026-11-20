@@ -36,7 +36,7 @@ function montar(over: Partial<React.ComponentProps<typeof EstadoBadgeBoton>> = {
 describe('EstadoBadgeBoton', () => {
   it('activa: pulsar pide confirmación y al confirmar guarda Inactivo', async () => {
     const { actualizar, onCambiado } = montar();
-    fireEvent.click(screen.getByRole('button', { name: 'Desactivar área Finanzas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar área Finanzas' }));
     expect(actualizar).not.toHaveBeenCalled();
     const dialogo = within(screen.getByRole('alertdialog'));
     expect(dialogo.getByText(/¿Desactivar el área «Finanzas»\?/)).toBeTruthy();
@@ -51,7 +51,7 @@ describe('EstadoBadgeBoton', () => {
 
   it('inactiva: pulsar activa directo, sin confirmar', async () => {
     const { actualizar, onCambiado } = montar({ activo: false });
-    fireEvent.click(screen.getByRole('button', { name: 'Activar área Finanzas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inactiva, activar área Finanzas' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
     await waitFor(() => expect(actualizar).toHaveBeenCalledWith('Activo'));
     await waitFor(() => expect(onCambiado).toHaveBeenCalledTimes(1));
@@ -60,7 +60,7 @@ describe('EstadoBadgeBoton', () => {
 
   it('cancelar no hace nada', () => {
     const { actualizar, onCambiado } = montar();
-    fireEvent.click(screen.getByRole('button', { name: 'Desactivar área Finanzas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar área Finanzas' }));
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(actualizar).not.toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe('EstadoBadgeBoton', () => {
       new ApiError(409, 'Reactiva la plataforma antes de cambiarla.', { code: 'grupos_en_inactivos' }),
     );
     const { onCambiado } = montar({ actualizar });
-    fireEvent.click(screen.getByRole('button', { name: 'Desactivar área Finanzas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar área Finanzas' }));
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
     expect(await screen.findByText('Reactiva la plataforma antes de cambiarla.')).toBeTruthy();
     expect(onCambiado).not.toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('EstadoBadgeBoton', () => {
 
   it('plataforma: nombre accesible y mensaje propios', async () => {
     const { actualizar } = montar({ tipo: 'plataforma', nombre: 'Contabilidad' });
-    fireEvent.click(screen.getByRole('button', { name: 'Desactivar plataforma Contabilidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar plataforma Contabilidad' }));
     expect(within(screen.getByRole('alertdialog')).getByText(/¿Desactivar la plataforma «Contabilidad»\?/)).toBeTruthy();
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
     await waitFor(() => expect(actualizar).toHaveBeenCalledWith('Inactivo'));
@@ -106,7 +106,7 @@ describe('TarjetaArea con badge de estado', () => {
 
   it('el clic en el badge, en el diálogo y al confirmar no abre la tarjeta; el resto de la tarjeta sí', async () => {
     const { onSelect, actualizarEstado } = tarjeta();
-    fireEvent.click(screen.getByRole('button', { name: 'Desactivar área Finanzas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activa, desactivar área Finanzas' }));
     expect(onSelect).not.toHaveBeenCalled();
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
     await waitFor(() => expect(actualizarEstado).toHaveBeenCalledWith('Inactivo'));
@@ -117,16 +117,16 @@ describe('TarjetaArea con badge de estado', () => {
 
   it('el badge-botón no queda dentro de otro control interactivo', () => {
     tarjeta();
-    const boton = screen.getByRole('button', { name: 'Desactivar área Finanzas' });
+    const boton = screen.getByRole('button', { name: 'Activa, desactivar área Finanzas' });
     expect(boton.parentElement?.closest('button, a, [role="button"]')).toBeNull();
   });
 
   it('activa muestra «Activa» y inactiva «Inactiva», ambas como botón', () => {
     tarjeta({ area: { ...AREA, status: 'Inactivo' } });
-    expect(screen.getByRole('button', { name: 'Activar área Finanzas' }).textContent).toBe('Inactiva');
+    expect(screen.getByRole('button', { name: 'Inactiva, activar área Finanzas' }).textContent).toBe('Inactiva');
     cleanup();
     tarjeta();
-    expect(screen.getByRole('button', { name: 'Desactivar área Finanzas' }).textContent).toBe('Activa');
+    expect(screen.getByRole('button', { name: 'Activa, desactivar área Finanzas' }).textContent).toBe('Activa');
   });
 
   it('sin permiso es un badge normal, no un botón', () => {

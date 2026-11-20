@@ -62,3 +62,10 @@ No verificado: captura visual en tema claro y oscuro, móvil y escritorio (no se
 
 ## Bitácora
 - 2026-11-20: implementada y documentada en la rama `dis/DIS-114-estado-con-badge`; sin push ni merge.
+
+## Correcciones de la auditoría de accesibilidad (orquestador)
+- Nombre accesible con el texto visible y el estado: «Activa, desactivar área X» (WCAG 2.5.3).
+- `aria-disabled` en lugar de `disabled` mientras guarda: el foco no se pierde.
+- El anillo propio de «Ver plataformas» solo se quita si el navegador soporta `:has()`.
+- Prueba que respalda la excepción de área táctil (`::after` de 2.75rem).
+- Sin corregir (menor): el `::after` del badge invade unos 3 px la fila contigua en tablas; no tapa otros controles.

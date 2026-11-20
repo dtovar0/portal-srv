@@ -536,7 +536,7 @@ describe('AreasList: estado con badge (DIS-114)', () => {
     rolActual = 'administrador';
     vi.mocked(api.updateArea).mockResolvedValue({ status: 'success', area: { ...FINANZAS, status: 'Inactivo' } });
     render(<AreasList />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Desactivar área Finanzas' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Activa, desactivar área Finanzas' }));
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Desactivar' }));
     await waitFor(() => expect(api.updateArea).toHaveBeenCalledWith(3, { status: 'Inactivo' }));
   });
@@ -545,8 +545,8 @@ describe('AreasList: estado con badge (DIS-114)', () => {
     rolActual = 'admin_area';
     render(<AreasList />);
     await screen.findByText('Sistemas');
-    expect(screen.getByRole('button', { name: 'Desactivar área Finanzas' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Desactivar área Sistemas' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Activa, desactivar área Finanzas' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activa, desactivar área Sistemas' })).toBeNull();
   });
 
   it('el formulario de área no tiene control de estado; crear no envía status', async () => {

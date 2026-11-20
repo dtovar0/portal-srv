@@ -1000,8 +1000,11 @@ select::-ms-expand {
     outline: var(--foco-ancho) solid rgb(var(--foco-anillo));
     outline-offset: var(--foco-separacion);
 }
-.nx-area-card__ir:focus-visible {
-    outline: none;
+/* Sin `:has()` el botón conserva su propio anillo (auditoría DIS-114). */
+@supports selector(:has(*)) {
+    .nx-area-card__ir:focus-visible {
+        outline: none;
+    }
 }
 .nx-area-card__flecha {
     transition: transform var(--duracion-corta) var(--curva);

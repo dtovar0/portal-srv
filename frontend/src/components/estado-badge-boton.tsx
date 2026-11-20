@@ -87,12 +87,15 @@ export function EstadoBadgeBoton({
       <button
         type="button"
         className="nx-estado-boton foco-visible"
-        aria-label={`${activo ? 'Desactivar' : 'Activar'} ${t.sustantivo} ${nombre}`}
+        // El nombre incluye el texto visible (WCAG 2.5.3) y el estado actual.
+        aria-label={`${activo ? 'Activa' : 'Inactiva'}, ${activo ? 'desactivar' : 'activar'} ${t.sustantivo} ${nombre}`}
         title={activo ? 'Pulsa para desactivar' : 'Pulsa para activar'}
-        disabled={ocupado}
+        // aria-disabled (no disabled): mientras guarda conserva el foco.
+        aria-disabled={ocupado || undefined}
         onClick={(e) => {
           // El badge vive dentro de tarjetas y filas clicables: su clic no debe abrirlas.
           e.stopPropagation();
+          if (ocupado) return;
           if (activo) setConfirmando(true);
           else void cambiar('Activo');
         }}
