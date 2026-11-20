@@ -1144,9 +1144,11 @@ select::-ms-expand {
     stroke: color-mix(in srgb, var(--nx-ind) 14%, rgb(var(--color-superficie-hundida)));
 }
 /* Sin desglose: pista en gris neutro, sin el tinte del indicador (DIS-113). */
+/* Sin desglose (DIS-113): anillo vacío decorativo (SVG aria-hidden; el valor va en texto). 45 % lo hace
+   visible como «sin datos» (1.9:1 claro, 2.1:1 oscuro); no requiere 3:1 por no llevar información. */
 .nx-ind__aro--vacio .nx-ind__pista,
 .nx-ind__semi--vacio .nx-ind__pista {
-    stroke: color-mix(in srgb, rgb(var(--color-texto-tenue)) 22%, rgb(var(--color-superficie-hundida)));
+    stroke: color-mix(in srgb, rgb(var(--color-texto-tenue)) 45%, rgb(var(--color-superficie-hundida)));
 }
 .nx-ind__valor,
 .nx-ind__resto {
