@@ -3,7 +3,9 @@
  *
  * La elección es por navegador (no un secreto): se guarda en `localStorage` con la llave
  * `CLAVE_DISENO_TARJETAS`; si el almacenamiento falla o trae un valor desconocido, rige el
- * diseño por omisión.
+ * diseño por omisión. Al guardar se avisa con el evento `EVENTO_DISENO_TARJETAS` para que las
+ * tarjetas (`useDisenoTarjetas`) cambien al instante aunque el botón viva en la barra superior
+ * (DIS-113).
  */
 
 export const DISENOS_TARJETA = ['brillo', 'segmentos', 'medidor'] as const;
@@ -11,6 +13,9 @@ export type DisenoTarjeta = (typeof DISENOS_TARJETA)[number];
 
 /** Llave en `localStorage` (preferencia por navegador). */
 export const CLAVE_DISENO_TARJETAS = 'nexus.dashboard.diseno-tarjetas';
+
+/** Evento de `window` con el diseño aplicado en `detail` (DIS-113). */
+export const EVENTO_DISENO_TARJETAS = 'nexus:diseno-tarjetas';
 
 /** Diseño que rige mientras nadie elija otro («Dos segmentos»). */
 export const DISENO_POR_OMISION: DisenoTarjeta = 'segmentos';
@@ -44,11 +49,15 @@ export function leerDisenoTarjetas(): DisenoTarjeta {
   }
 }
 
-/** Guarda la preferencia; si el almacenamiento no está disponible, solo rige en esta sesión. */
+/**
+ * Guarda la preferencia y avisa del cambio; si el almacenamiento no está disponible, solo rige
+ * en esta sesión (el aviso se emite igual).
+ */
 export function guardarDisenoTarjetas(diseno: DisenoTarjeta): void {
   try {
     window.localStorage.setItem(CLAVE_DISENO_TARJETAS, diseno);
   } catch {
     /* sin almacenamiento: la elección vale hasta recargar */
   }
+  window.dispatchEvent(new CustomEvent<DisenoTarjeta>(EVENTO_DISENO_TARJETAS, { detail: diseno }));
 }

@@ -72,18 +72,42 @@ describe('DIS-112: los tres diseños', () => {
 });
 
 describe('DIS-112: datos incompletos', () => {
-  it.each(DISENOS_TARJETA)('sin desglose (%s): solo la cifra, sin anillo ni porcentaje', (diseno) => {
+  it.each(DISENOS_TARJETA)('sin desglose (%s): conserva su diseño con el anillo vacío, sin porcentaje ni partes', (diseno) => {
     const { container } = render(<TarjetaIndicador indicador="users" valor={147} diseno={diseno} />);
     const tarjeta = screen.getByRole('group', { name: 'Usuarios' });
     expect(within(tarjeta).getByText('147')).toBeTruthy();
-    expect(tarjeta.getAttribute('data-diseno')).toBe('solo-cifra');
+    expect(tarjeta.getAttribute('data-diseno')).toBe(diseno);
     expect(tarjeta.textContent).not.toContain('%');
-    expect(container.querySelector('.nx-ind__aro, .nx-ind__semi')).toBeNull();
+    expect(tarjeta.textContent).not.toContain('activos');
+    expect(tarjeta.querySelector('li')).toBeNull();
+    expect(container.querySelector('.nx-ind__aro, .nx-ind__semi')).toBeTruthy();
+    expect(container.querySelector('.nx-ind__pista')).toBeTruthy();
+    expect(container.querySelector('.nx-ind__valor, .nx-ind__resto')).toBeNull();
+    expect(container.querySelector('.nx-ind__aro--vacio, .nx-ind__semi--vacio')).toBeTruthy();
   });
 
-  it('un desglose que no suma el contador se ignora', () => {
+  it('sin desglose los tres diseños se distinguen entre sí', () => {
+    const huellas = DISENOS_TARJETA.map((diseno) => {
+      const { container, unmount } = render(<TarjetaIndicador indicador="areas" valor={5} diseno={diseno} />);
+      const huella = container.innerHTML.replace(/nx-ind-[a-z0-9]+/g, 'id');
+      unmount();
+      return huella;
+    });
+    expect(new Set(huellas).size).toBe(3);
+  });
+
+  it('sin desglose, el lector oye solo el valor', () => {
+    render(<TarjetaIndicador indicador="areas" valor={5} diseno="brillo" />);
+    const tarjeta = screen.getByRole('group', { name: 'Áreas' });
+    expect(tarjeta.querySelectorAll('.sr-only')).toHaveLength(0);
+    expect(tarjeta.querySelector('.nx-ind__pct')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('un desglose que no suma el contador se ignora y la tarjeta conserva su diseño', () => {
     render(<TarjetaIndicador indicador="areas" valor={20} desglose={DESGLOSE} diseno="segmentos" />);
-    expect(screen.getByRole('group', { name: 'Áreas' }).textContent).not.toContain('%');
+    const tarjeta = screen.getByRole('group', { name: 'Áreas' });
+    expect(tarjeta.textContent).not.toContain('%');
+    expect(tarjeta.getAttribute('data-diseno')).toBe('segmentos');
   });
 
   it.each(DISENOS_TARJETA)('total 0 (%s): anillo vacío y «0 %%»', (diseno) => {
@@ -164,10 +188,10 @@ describe('DIS-112: selector de diseño', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('accesibilidad: el diálogo tiene nombre, foco dentro y los botones miden al menos 48 px (min-h-12)', () => {
+  it('accesibilidad: el diálogo tiene nombre, foco dentro; el disparador mide 44 px (min-h-11) y las opciones 48 px (min-h-12)', () => {
     render(<SelectorDisenoTarjetas actual="segmentos" onAplicar={() => {}} />);
     const disparador = screen.getByRole('button', { name: 'Diseño de tarjetas' });
-    expect(disparador.className).toContain('min-h-12');
+    expect(disparador.className).toContain('min-h-11');
     fireEvent.click(disparador);
     const dialogo = screen.getByRole('dialog');
     expect(dialogo.getAttribute('aria-labelledby')).toBeTruthy();

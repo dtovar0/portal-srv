@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Selector del diseño de las tarjetas del dashboard (DIS-112): botón «Diseño de tarjetas» que
- * abre un `Modal` con los tres diseños como vista previa; «Aplicar» confirma la elección y
+ * Selector del diseño de las tarjetas del dashboard (DIS-112): botón de icono «Diseño de
+ * tarjetas» (barra superior, DIS-113) que abre un `Modal` con los tres diseños como vista previa; «Aplicar» confirma la elección y
  * `Cancelar` o cerrar la descartan.
  */
 
@@ -10,6 +10,7 @@ import { useId, useState } from 'react';
 import { Button } from '../button';
 import { Modal } from '../form';
 import { Icono } from '../icono';
+import { BotonIcono } from '../marco/boton-icono';
 import { DISENOS, DISENOS_TARJETA, type DisenoTarjeta } from './diseno-tarjetas';
 import { TarjetaIndicador } from './tarjeta-indicador';
 
@@ -38,10 +39,7 @@ export function SelectorDisenoTarjetas({
 
   return (
     <>
-      <Button variant="secondary" size="sm" onClick={abrir} className="min-h-12 gap-2">
-        <Icono nombre="ajustes" tamano="sm" />
-        Diseño de tarjetas
-      </Button>
+      <BotonIcono icono="ajustes" etiqueta="Diseño de tarjetas" aria-haspopup="dialog" onClick={abrir} />
       {abierto ? (
         <Modal
           title="Diseño de tarjetas"
