@@ -5853,3 +5853,23 @@ Un administrador ejecuta `sudo ./deploy/install.sh` habiendo instalado previamen
 ### Impacto
 
 Afecta a [deploy/install.sh](file:///home/dtovar/bayblade/pokemon/deploy/install.sh), [deploy/unidades.sh](file:///home/dtovar/bayblade/pokemon/deploy/unidades.sh), [tests/deploy/test_unidades_sh.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_unidades_sh.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Integridad de Importaciones y Validación de Compilación en Frontend
+
+## Compilación y Empaquetado (frontend/src)
+
+### Regla
+
+1. **Unicidad Estricta de Identificadores e Importaciones**:
+   Todo módulo o componente React en `frontend/src` debe importar cada identificador o paquete una sola vez en el encabezado del archivo. La duplicación de declaraciones de importación (como `import Link from 'next/link'`) genera errores de análisis estático en Webpack/SWC durante `next build`, provocando fallos en la generación de artefactos estáticos de producción.
+2. **Validación Previa al Despliegue**:
+   Cualquier actualización en los componentes de autenticación o layouts debe compilar exitosamente vía `next build` y superar las pruebas unitarias de `vitest` antes de integrarse a las ramas productivas.
+
+### Ejemplo
+
+En `acceso-emergencia-form.tsx`, la inserción de tokens de marca no debe re-declarar la sentencia `import Link from 'next/link'`. El archivo conserva una única importación limpia del componente de enlace.
+
+### Impacto
+
+Afecta a [frontend/src/components/acceso-emergencia-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/acceso-emergencia-form.tsx) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
