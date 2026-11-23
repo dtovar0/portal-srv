@@ -5473,3 +5473,23 @@ Un superadministrador que necesita recuperar el sistema accede a `https://aduana
 ### Impacto
 
 Afecta a [frontend/src/components/acceso-emergencia-form.tsx](../frontend/src/components/acceso-emergencia-form.tsx), [frontend/src/components/formulario-login-local.tsx](../frontend/src/components/formulario-login-local.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/accesibilidad/colores-literales.test.ts](../frontend/tests/accesibilidad/colores-literales.test.ts).
+
+
+Depuración y Limpieza de Variables Heredadas de Authelia SSO
+
+## Configuración y Autenticación
+
+### Regla
+
+Las variables de entorno obsoletas `AUTHELIA_ENABLED` y `DEBUG_AUTH` quedan formalmente retiradas tanto de `.env` como de `.env.example`:
+1. **Retiro de `AUTHELIA_ENABLED`**: Esta variable pertenecía a la arquitectura original de autenticación por cabeceras HTTP inversas (`Remote-Email`/`Remote-User`), la cual fue revocada en ADR-009 y reemplazada por el estándar OIDC federado (`OIDC_HABILITADO`).
+2. **Retiro de `DEBUG_AUTH`**: Variable huérfana de desarrollo que no era leída por ningún módulo de la aplicación.
+3. **Control Exclusivo por OIDC**: La activación o desactivación de la autenticación federada se rige exclusivamente por `OIDC_HABILITADO` y el bloque canónico `OIDC_*`.
+
+### Ejemplo
+
+Un entorno de producción o desarrollo no incluye `AUTHELIA_ENABLED` ni `DEBUG_AUTH` en su archivo `.env`, manteniendo el archivo de configuración limpio y libre de variables sin efecto operativo.
+
+### Impacto
+
+Afecta a [.env](file:///.env), [.env.example](../.env.example), [docs/configuracion/VARIABLES.md](../docs/configuracion/VARIABLES.md) y a las pruebas de regresión en [tests/test_oidc.py](../tests/test_oidc.py).
