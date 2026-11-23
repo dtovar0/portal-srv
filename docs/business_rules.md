@@ -5360,3 +5360,27 @@ Al acceder a `/login` desde un navegador de escritorio, el usuario observa a la 
 ### Impacto
 
 Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
+
+
+Enfoque Exclusivo de Autenticación en la Pantalla de Login (Separación de Portada)
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) mantiene un enfoque exclusivo y centrado en la autenticación e identidad del usuario, delegando toda información comercial, módulos, características y presentación de la plataforma a la portada institucional (`/`):
+1. **Separación de Responsabilidades**: La portada (`/`) es el espacio destinado a la presentación del producto, métricas, beneficios y arquitectura. La pantalla de login (`/login`) es un centro de autenticación directo, libre de bloques de marketing, listas de características o información redundante de la plataforma.
+2. **Arquitectura Visual Focalizada**: La interfaz se estructura en tres secciones verticales utilizando `min-h-screen`:
+   - *Cabecera Superior*: Marca institucional discreta (isotipo y versión v2.0) y enlace contextual a la portada cuando esté activa (`PORTADA_ACTIVA`).
+   - *Área Central*: Tarjeta de acceso (`Card`) perfectamente proporcionada (`max-w-[440px]`), con borde superior institucional continuo (gradiente cian a naranja), isotipo corporativo en contenedor sincronizado con el tema, indicador de conexión segura y acción de entrada con Authelia SSO de alto contraste.
+   - *Pie Inferior*: Enlaces mínimos de gobernanza y estado de cifrado perimetral (TLS 1.3).
+3. **Ambiente y Profundidad Sin Distracciones**: Se emplean halos de luz ambiental sutiles (`blur-[120px]`) y una cuadrícula técnica tenue que proporcionan calidez y solidez visual sin sobrecargar el espacio ni competir con el formulario de acceso.
+4. **Restricciones de Desplazamiento**: Se prohíbe el uso de `overflow-hidden`, `h-screen` o `h-dvh` en el componente para preservar la total navegabilidad y desplazamiento en pantallas pequeñas o en modos de alta densidad.
+
+### Ejemplo
+
+Un usuario que navega a `https://aduana.vivaro.com/login` encuentra inmediatamente el centro de autenticación corporativo con el botón "Entrar con Authelia" y la indicación de seguridad SSO, sin distracciones de diapositivas o párrafos informativos de marketing. Si desea conocer la plataforma, puede hacer clic en el enlace superior hacia la portada.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
