@@ -76,6 +76,25 @@ def tipo_mfa():
     return (os.getenv('AUTOSERVICIO_MFA_TIPO') or 'email').strip().lower()
 
 
+def tiempo_expiracion_mfa():
+    """Tiempo de expiración en segundos para el código MFA de correo (por defecto 600s = 10 minutos).
+    Configurable vía AUTOSERVICIO_MFA_TTL_MINUTOS o AUTOSERVICIO_MFA_EXPIRACION_SEGUNDOS.
+    """
+    val_min = (os.getenv('AUTOSERVICIO_MFA_TTL_MINUTOS') or os.getenv('AUTOSERVICIO_MFA_EXPIRACION_MINUTOS') or '').strip()
+    if val_min:
+        try:
+            return max(60, int(val_min) * 60)
+        except ValueError:
+            pass
+    val_sec = (os.getenv('AUTOSERVICIO_MFA_TTL_SEGUNDOS') or os.getenv('AUTOSERVICIO_MFA_EXPIRACION_SEGUNDOS') or '').strip()
+    if val_sec:
+        try:
+            return max(30, int(val_sec))
+        except ValueError:
+            pass
+    return MFA_MAX_AGE_SEGUNDOS
+
+
 def _obtener_serializador():
     from flask import current_app
     secret_key = current_app.config.get('SECRET_KEY') or os.getenv('SECRET_KEY', 'authelia-fallback-secret')
@@ -136,12 +155,13 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
     msg['To'] = destinatario
     msg['Subject'] = f"Authelia • Código de verificación: {codigo}"
 
+    ttl_minutos = max(1, tiempo_expiracion_mfa() // 60)
     cuerpo = (
         f"Hola {nombre or destinatario},\n\n"
         "Has solicitado actualizar o recuperar tu contraseña corporativa en Authelia.\n\n"
         f"Tu código de seguridad de 6 dígitos es:\n\n"
         f"    {codigo}\n\n"
-        "Este código es válido durante 10 minutos y es requerido para autorizar el cambio.\n"
+        f"Este código es válido durante {ttl_minutos} minutos y es requerido para autorizar el cambio.\n"
         "Si tú no iniciaste esta solicitud, puedes ignorar este correo de forma segura.\n\n"
         "— Authelia Identity and Access Management"
     )
@@ -321,7 +341,7 @@ def validar_desafio_mfa(identificador, mfa_code, challenge_token=None):
     if tipo in ('email', 'ambos') and challenge_token:
         s = _obtener_serializador()
         try:
-            data = s.loads(challenge_token, salt=SALT_MFA, max_age=MFA_MAX_AGE_SEGUNDOS)
+            data = s.loads(challenge_token, salt=SALT_MFA, max_age=tiempo_expiracion_mfa())
             if data.get('code_hash') == _hash_codigo(mfa_code):
                 return True
             raise ErrorAutoservicio('Código de verificación de correo incorrecto.', 401)
@@ -364,12 +384,15 @@ def obtener_politica_contrasena():
 
 def obtener_configuracion_autoservicio():
     """Retorna la configuración de identidad, MFA y políticas para el frontend."""
+    ttl_seg = tiempo_expiracion_mfa()
     return {
         'status': 'success',
         'brand_name': 'Authelia',
         'brand_title': 'Authelia · Autoservicio de Identidad',
         'mfa_enabled': mfa_habilitado(),
         'mfa_tipo': tipo_mfa(),
+        'mfa_ttl_segundos': ttl_seg,
+        'mfa_ttl_minutos': max(1, ttl_seg // 60),
         'politica': cargar_politica().publica(),
     }
 

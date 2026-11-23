@@ -470,7 +470,7 @@ export function AutoservicioView() {
                     </button>
                   </div>
                   <p className="text-[11px] text-texto-secundario leading-relaxed">
-                    Revisa tu bandeja de entrada o carpeta de spam. El código expira en 10 minutos.
+                    Revisa tu bandeja de entrada o carpeta de spam. El código expira en {config?.mfa_ttl_minutos || 10} minutos.
                   </p>
                 </div>
               )}

@@ -118,6 +118,7 @@
 | `AUTOSERVICIO_BRAND_NAME` | Marca institucional en cabecera de autoservicio | texto | `Authelia` | `Authelia` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_MFA_ENABLED` | Exige segundo factor (MFA) en autoservicio de contraseñas | `true` / `false` | `false` | `false` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_MFA_TIPO` | Método de segundo factor en autoservicio | `email` / `authenticator` / `ambos` | `email` | `email` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_MFA_TTL_MINUTOS` | Tiempo de vida del código MFA por correo en minutos | entero | `10` | `10` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_SMTP_SERVER` | Servidor SMTP dedicado a autoservicio (fallback a `SMTP_SERVER`) | nombre de host | ninguno | `smtp.ejemplo.local` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_SMTP_PORT` | Puerto SMTP dedicado a autoservicio | entero | `587` | `587` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_SMTP_USER` | Usuario para autenticación SMTP de autoservicio | texto | ninguno | `authelia@ejemplo.local` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |

@@ -6045,3 +6045,23 @@ Un empleado con contraseña vencida ingresa a `/autoservicio`. En el Paso 1 escr
 
 ### Impacto
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+Tiempo de Vida y Expiración Criptográfica de Códigos MFA de Autoservicio
+
+## Módulo
+Autenticación / Autoservicio
+
+### Regla
+1. **Tiempo de Vida de Códigos OTP por Correo**:
+   El código numérico de seguridad de 6 dígitos despachado por correo electrónico posee una vigencia temporal estricta controlada criptográficamente mediante firma HMAC con marca de tiempo (`URLSafeTimedSerializer`).
+   - Por defecto, el tiempo de vida (TTL) es de **10 minutos (600 segundos)**.
+   - Es configurable mediante la variable de entorno `AUTOSERVICIO_MFA_TTL_MINUTOS` (o `AUTOSERVICIO_MFA_EXPIRACION_SEGUNDOS`).
+   - Una vez transcurrido este plazo, cualquier intento de validación es rechazado automáticamente por el backend con error HTTP 401 (`SignatureExpired`), impidiendo el uso de códigos obsoletos o interceptados.
+2. **Tiempo de Vida de Códigos TOTP (Authenticator)**:
+   Los códigos generados por aplicaciones Authenticator (Google Authenticator, Microsoft Authenticator) operan bajo el estándar RFC 6238 en intervalos de **30 segundos**. El backend valida una ventana estricta de tiempo de ±30 segundos para tolerancia de desfase de reloj, garantizando que el código expire automáticamente fuera de esa ventana.
+
+### Ejemplo
+Un usuario solicita un código MFA a las 10:00 AM recibiendo el número `482915`. Si intenta introducirlo a las 10:12 AM (después de los 10 minutos por defecto), el backend rechaza la petición con "El código de verificación ha expirado. Solicita uno nuevo." y el usuario debe solicitar un reenvío para continuar con el Paso 2 del autoservicio.
+
+### Impacto
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

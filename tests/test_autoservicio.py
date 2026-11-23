@@ -22,6 +22,10 @@ from app.modules.auth.autoservicio import (
     restablecer_con_token,
     restablecer_directo_mfa,
     verificar_codigo_mfa_paso2,
+    tiempo_expiracion_mfa,
+    _obtener_serializador,
+    _hash_codigo,
+    SALT_MFA,
 )
 
 
@@ -374,5 +378,48 @@ def test_endpoint_autoservicio_mfa_verificar(cliente, monkeypatch):
         "mfa_code": "000000"
     })
     assert resp.status_code == 401
+
+
+def test_tiempo_expiracion_mfa_configurable(monkeypatch):
+    """Verifica que el tiempo de vida (TTL) sea por defecto 10 minutos (600s) y configurable por .env."""
+    monkeypatch.delenv('AUTOSERVICIO_MFA_TTL_MINUTOS', raising=False)
+    monkeypatch.delenv('AUTOSERVICIO_MFA_EXPIRACION_MINUTOS', raising=False)
+    monkeypatch.delenv('AUTOSERVICIO_MFA_TTL_SEGUNDOS', raising=False)
+    monkeypatch.delenv('AUTOSERVICIO_MFA_EXPIRACION_SEGUNDOS', raising=False)
+    assert tiempo_expiracion_mfa() == 600
+
+    # Configuración por minutos
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TTL_MINUTOS', '5')
+    assert tiempo_expiracion_mfa() == 300
+
+    # Configuración por segundos
+    monkeypatch.delenv('AUTOSERVICIO_MFA_TTL_MINUTOS', raising=False)
+    monkeypatch.setenv('AUTOSERVICIO_MFA_EXPIRACION_SEGUNDOS', '120')
+    assert tiempo_expiracion_mfa() == 120
+
+
+def test_mfa_codigo_expirado_falla(app, monkeypatch):
+    """Verifica que un código MFA de 6 dígitos que superó su tiempo de vida sea rechazado."""
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'email')
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TTL_MINUTOS', '10')
+
+    with app.app_context():
+        s = _obtener_serializador()
+        codigo = "123456"
+        token = s.dumps({
+            'email': 'usuario_expira@vivaro.com',
+            'code_hash': _hash_codigo(codigo),
+            'ts': time.time(),
+        }, salt=SALT_MFA)
+
+        # Simular avance en el tiempo más allá del TTL de 10 minutos (600s)
+        tiempo_futuro = time.time() + 700
+        monkeypatch.setattr(time, 'time', lambda: tiempo_futuro)
+
+        with pytest.raises(ErrorAutoservicio) as exc:
+            validar_desafio_mfa('usuario_expira@vivaro.com', codigo, challenge_token=token)
+        assert "expirado" in str(exc.value).lower()
+        assert exc.value.codigo_http == 401
 
 

@@ -399,6 +399,8 @@ export interface AutoservicioConfig {
   brand_name: string;
   mfa_enabled: boolean;
   mfa_tipo: 'email' | 'authenticator' | 'ambos';
+  mfa_ttl_segundos?: number;
+  mfa_ttl_minutos?: number;
   politica: {
     min_length: number;
     max_length: number;
