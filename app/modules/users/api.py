@@ -256,6 +256,10 @@ def update_user(user_id):
         if error:
             db.session.rollback()
             return error_response(*error)
+        admin_correo = getattr(current_user, 'email', 'admin')
+        add_audit_log('ADMIN: RESET PASSWORD', module='Usuarios',
+                      target=target.email, status='success',
+                      detail=f"Contraseña restablecida por administrador ({admin_correo}) para {target.email}")
 
     db.session.commit()
     add_audit_log(f"EDITAR USUARIO: {target.email}", module='Usuarios',

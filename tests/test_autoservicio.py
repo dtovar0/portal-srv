@@ -7,6 +7,7 @@ import time
 import pytest
 from app import create_app, db
 from app.modules.auth.models import User
+from app.modules.audit.models import AuditLog
 from app.modules.auth.autoservicio import (
     generar_token_recuperacion,
     verificar_token_recuperacion,
@@ -200,3 +201,73 @@ def test_cambiar_contrasena_exige_mfa_cuando_esta_habilitado(app, monkeypatch):
         with pytest.raises(ErrorAutoservicio) as exc:
             cambiar_contrasena("user_mfa_req", "OldPasswordValida2026!", "NuevaContrasenaSegura2026!", mfa_code=None)
         assert "mfa" in str(exc.value).lower() or "segundo factor" in str(exc.value).lower()
+
+
+def test_cambiar_contrasena_envia_correo_confirmacion_y_audita(app, monkeypatch):
+    """Verifica envío de correo de confirmación y bitácora diferenciada al cambiar contraseña."""
+    with app.test_request_context():
+        u = User.query.filter_by(email="usuario_confirm@vivaro.com").first()
+        if not u:
+            u = User(email="usuario_confirm@vivaro.com", nombre="Operador Confirmacion", role="usuario")
+            u.set_password("OldPassword12345678!")
+            db.session.add(u)
+            db.session.commit()
+
+        confirmaciones = []
+
+        def mock_confirmacion(dest, nombre=None):
+            confirmaciones.append({'dest': dest, 'nombre': nombre})
+            return True
+
+        monkeypatch.setattr('app.modules.auth.autoservicio._enviar_correo_confirmacion_cambio', mock_confirmacion)
+        monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'false')
+
+        resultado = cambiar_contrasena("usuario_confirm@vivaro.com", "OldPassword12345678!", "NewPasswordSegura2026!")
+        assert resultado["status"] == "success"
+
+        # Verificar envío de correo de confirmación
+        assert len(confirmaciones) == 1
+        assert confirmaciones[0]['dest'] == "usuario_confirm@vivaro.com"
+
+        # Verificar registro en auditoría con acción específica de autoservicio
+        log = AuditLog.query.filter_by(action="AUTOSERVICIO: PASSWORD ACTUALIZADO POR USUARIO",
+                                       target="usuario_confirm@vivaro.com").order_by(AuditLog.id.desc()).first()
+        assert log is not None
+        assert log.status == "success"
+        assert log.module == "Autoservicio"
+
+
+def test_restablecer_contrasena_envia_correo_confirmacion_y_audita(app, monkeypatch):
+    """Verifica envío de correo de confirmación y bitácora diferenciada al restablecer con token."""
+    with app.test_request_context():
+        u = User.query.filter_by(email="usuario_token_audit@vivaro.com").first()
+        if not u:
+            u = User(email="usuario_token_audit@vivaro.com", nombre="Operador Token", role="usuario")
+            u.set_password("OldPassToken123456!")
+            db.session.add(u)
+            db.session.commit()
+
+        confirmaciones = []
+
+        def mock_confirmacion(dest, nombre=None):
+            confirmaciones.append({'dest': dest, 'nombre': nombre})
+            return True
+
+        monkeypatch.setattr('app.modules.auth.autoservicio._enviar_correo_confirmacion_cambio', mock_confirmacion)
+        monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'false')
+
+        token = generar_token_recuperacion("usuario_token_audit@vivaro.com")
+        resultado = restablecer_con_token("usuario_token_audit@vivaro.com", token, "NuevaClaveToken2026!")
+        assert resultado["status"] == "success"
+
+        # Verificar envío de correo de confirmación
+        assert len(confirmaciones) == 1
+        assert confirmaciones[0]['dest'] == "usuario_token_audit@vivaro.com"
+
+        # Verificar registro en auditoría con acción específica de autoservicio
+        log = AuditLog.query.filter_by(action="AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO",
+                                       target="usuario_token_audit@vivaro.com").order_by(AuditLog.id.desc()).first()
+        assert log is not None
+        assert log.status == "success"
+        assert log.module == "Autoservicio"
+

@@ -5955,3 +5955,32 @@ Un usuario corporativo que necesita restablecer su acceso hace clic en "Generar 
 ### Impacto
 
 Afecta a [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/generador-contrasena.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/generador-contrasena.ts), [app/modules/users/politica_contrasena.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/politica_contrasena.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+Ámbito de Vaultwarden, Notificación de Cambio y Auditoría Diferenciada de Contraseñas
+
+## Seguridad, Auditoría y Notificaciones (app/modules/auth/autoservicio.py & app/modules/users/api.py)
+
+### Regla
+
+1. **Ámbito Exclusivo de Vaultwarden (Sends Efímeros de Onboarding y Reset Administrativo)**:
+   Vaultwarden no se utiliza como almacén permanente de contraseñas de usuarios corporativos ni interviene en el portal de autoservicio. Su función se limita estrictamente a la entrega segura y efímera de contraseñas iniciales (Bitwarden Send con expiración temporal) durante el proceso de onboarding (`alta`) o cuando un superadministrador realiza un reenvío/reset administrativo (`entrega_credenciales.py`). Las contraseñas gestionadas por autoservicio (`autoservicio.py`) son ingresadas o generadas directamente por el usuario en memoria, aplicadas a OpenLDAP y sincronizadas a JumpServer sin crear ítems ni Sends en Vaultwarden.
+2. **Notificación de Confirmación de Cambio de Contraseña**:
+   Al completarse exitosamente una actualización (`cambiar_contrasena`) o restablecimiento (`restablecer_con_token`) por autoservicio, el sistema despacha inmediatamente un correo de confirmación al usuario corporativo (`Authelia • Confirmación de actualización de contraseña`) con marca temporal y advertencia de seguridad. Si el usuario no reconoce la actividad, se le instruye reportarlo de inmediato a Seguridad de TI.
+3. **Auditoría Diferenciada de Origen de Contraseña**:
+   La bitácora de auditoría (`AuditLog`) distingue de forma inequívoca el origen y actor de cualquier modificación de contraseña:
+   - **Autoservicio del Usuario**:
+     * Evento: `AUTOSERVICIO: PASSWORD ACTUALIZADO POR USUARIO` (con credencial actual y MFA) o `AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO` (con enlace temporal firmado y MFA).
+     * Actor / `user`: El identificador o correo del propio usuario.
+     * Módulo: `Autoservicio`.
+   - **Intervención del Administrador**:
+     * Evento: `ADMIN: RESET PASSWORD` (desde edición de usuario) o `CREDENCIALES_REENVIADAS` (desde entrega por Send).
+     * Actor / `user`: El correo del administrador que ejecutó la acción (`current_user.email`).
+     * Módulo: `Usuarios`.
+
+### Ejemplo
+
+Si el operador `jdoe@vivaro.com` actualiza su clave en `/autoservicio`, recibe un correo de confirmación con fecha y hora, y en auditoría queda registrado `AUTOSERVICIO: PASSWORD ACTUALIZADO POR USUARIO` con actor `jdoe@vivaro.com`. Por el contrario, si el superadmin `admin@vivaro.com` resetea la contraseña de `jdoe` desde la consola de administración, en auditoría queda registrado `ADMIN: RESET PASSWORD` con actor `admin@vivaro.com`.
+
+### Impacto
+
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/users/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/api.py), [app/modules/users/entrega_credenciales.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/entrega_credenciales.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

@@ -164,6 +164,49 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
         return False
 
 
+def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
+    """Envía un correo de notificación confirmando que la contraseña fue actualizada."""
+    cfg = resolver_smtp_autoservicio()
+    if not cfg:
+        logger.info("SMTP no activo: confirmación de cambio de contraseña para %s", destinatario)
+        return False
+
+    msg = MIMEMultipart()
+    msg['From'] = f"{cfg['sender_name']} <{cfg['sender_email']}>"
+    msg['To'] = destinatario
+    msg['Subject'] = "Authelia • Confirmación de actualización de contraseña"
+
+    ahora_str = time.strftime('%Y-%m-%d %H:%M:%S')
+    cuerpo = (
+        f"Hola {nombre or destinatario},\n\n"
+        "Te confirmamos que la contraseña de tu cuenta corporativa ha sido actualizada exitosamente "
+        "a través del portal de Autoservicio de Authelia.\n\n"
+        f"Fecha y hora del cambio: {ahora_str}\n\n"
+        "Si tú realizaste este cambio, no requieres realizar ninguna acción adicional. Tus credenciales "
+        "han sido sincronizadas de forma inmediata con JumpServer y plataformas conectadas.\n\n"
+        "⚠️ IMPORTANTE: Si tú NO realizaste este cambio, tu cuenta puede estar en riesgo. "
+        "Comunícate de inmediato con el equipo de Seguridad y Administración de TI.\n\n"
+        "— Authelia Identity and Access Management"
+    )
+    msg.attach(MIMEText(cuerpo, 'plain'))
+
+    try:
+        if cfg['encryption'] == 'ssl':
+            smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=10)
+        else:
+            smtp = smtplib.SMTP(cfg['server'], cfg['port'], timeout=10)
+            if cfg['encryption'] == 'starttls':
+                smtp.starttls()
+        if cfg['username'] and cfg['password']:
+            smtp.login(cfg['username'], cfg['password'])
+        smtp.send_message(msg)
+        smtp.quit()
+        return True
+    except Exception as exc:
+        logger.error("Error al enviar confirmación de cambio a %s: %s", destinatario, type(exc).__name__)
+        return False
+
+
 def _hash_codigo(codigo):
     return hashlib.sha256(codigo.strip().encode('utf-8')).hexdigest()
 
@@ -369,8 +412,15 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
 
                 # Hook de sincronización JumpServer
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
-                add_audit_log('AUTOSERVICIO: CONTRASEÑA ACTUALIZADA', status='success', target=identificador,
-                              detail='Authelia: cambio de contraseña exitoso en LDAP y sincronización JumpServer')
+
+                # Notificación por correo confirmando la actualización
+                destinatario_correo = persona.correo or (identificador if '@' in identificador else None)
+                if destinatario_correo:
+                    _enviar_correo_confirmacion_cambio(destinatario_correo, nombre=persona.nombre)
+
+                add_audit_log('AUTOSERVICIO: PASSWORD ACTUALIZADO POR USUARIO', module='Autoservicio', status='success',
+                              target=persona.identificador, user_override=identificador,
+                              detail='Contraseña actualizada por el propio usuario en OpenLDAP mediante portal de autoservicio Authelia')
                 return {'status': 'success', 'message': 'Contraseña actualizada con éxito en Authelia y el directorio corporativo.'}
         except ErrorAutoservicio:
             raise
@@ -387,8 +437,13 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
         user.set_password(nueva_contrasena)
         db.session.commit()
         sincronizar_jumpserver_o_externos(user.email, nueva_contrasena)
-        add_audit_log('AUTOSERVICIO: CONTRASEÑA ACTUALIZADA', status='success', target=identificador,
-                      detail='Authelia: cambio de contraseña exitoso para cuenta local')
+
+        # Notificación por correo confirmando la actualización
+        _enviar_correo_confirmacion_cambio(user.email, nombre=user.nombre)
+
+        add_audit_log('AUTOSERVICIO: PASSWORD ACTUALIZADO POR USUARIO', module='Autoservicio', status='success',
+                      target=user.email, user_override=identificador,
+                      detail='Contraseña actualizada por el propio usuario en BD local mediante portal de autoservicio Authelia')
         return {'status': 'success', 'message': 'Contraseña actualizada con éxito en Authelia.'}
 
     add_audit_log('ACCESO FALLIDO', status='error', target=identificador,
@@ -503,8 +558,13 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
                 if not resultado.exitoso:
                     raise ErrorAutoservicio('El directorio no pudo actualizar la contraseña.', 500)
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
-                add_audit_log('AUTOSERVICIO: CONTRASEÑA RESTABLECIDA', status='success', target=correo_objetivo,
-                              detail='Authelia: restablecimiento por token exitoso en LDAP')
+
+                # Notificación por correo confirmando el restablecimiento
+                _enviar_correo_confirmacion_cambio(correo_objetivo, nombre=persona.nombre)
+
+                add_audit_log('AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO', module='Autoservicio', status='success',
+                              target=correo_objetivo, user_override=correo_objetivo,
+                              detail='Contraseña restablecida por el usuario en OpenLDAP mediante enlace temporal y MFA de Authelia')
                 return {'status': 'success', 'message': 'Contraseña restablecida exitosamente en Authelia.'}
         except ErrorAutoservicio:
             raise
@@ -517,8 +577,13 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
         user.set_password(nueva_contrasena)
         db.session.commit()
         sincronizar_jumpserver_o_externos(user.email, nueva_contrasena)
-        add_audit_log('AUTOSERVICIO: CONTRASEÑA RESTABLECIDA', status='success', target=correo_objetivo,
-                      detail='Authelia: restablecimiento por token exitoso en cuenta local')
+
+        # Notificación por correo confirmando el restablecimiento
+        _enviar_correo_confirmacion_cambio(correo_objetivo, nombre=user.nombre)
+
+        add_audit_log('AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO', module='Autoservicio', status='success',
+                      target=correo_objetivo, user_override=correo_objetivo,
+                      detail='Contraseña restablecida por el usuario en BD local mediante enlace temporal y MFA de Authelia')
         return {'status': 'success', 'message': 'Contraseña restablecida exitosamente en Authelia.'}
 
     raise ErrorAutoservicio('No se encontró la cuenta en el directorio.', 404)
