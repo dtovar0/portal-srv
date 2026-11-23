@@ -5825,3 +5825,31 @@ Durante la instalación en un servidor independiente, el operador indica `Nexus`
 ### Impacto
 
 Afecta a [deploy/install.sh](file:///home/dtovar/bayblade/pokemon/deploy/install.sh), [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js), [deploy/errors/*.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [frontend/next.config.ts](file:///home/dtovar/bayblade/pokemon/frontend/next.config.ts), [frontend/src/lib/branding.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/branding.ts), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Validación de Servicios Previos e Idempotencia en el Instalador
+
+## Despliegue y Control de Servicios (deploy/install.sh & deploy/unidades.sh)
+
+### Regla
+
+1. **Introspección Directa de Servicios en Systemd**:
+   El instalador no depende de archivos de bloqueo efímeros ni de registros volátiles en base de datos para determinar si existe una instalación previa en el host. En su lugar, consulta la fuente de verdad definitiva del sistema operativo mediante `unidad_systemd_existe` (`systemctl list-unit-files`) sobre `${APP_NAME}-backend.service`, `${APP_NAME}-frontend.service` y `${APP_NAME}-worker.service`.
+2. **Protección Interactiva contra Sobrescrituras Accidentales**:
+   Si se ejecuta `install.sh` en modo de instalación estándar (sin `--force` y sin `--actualizar`) en una terminal interactiva y el instalador detecta que la unidad `${APP_NAME}-backend.service` ya existe:
+   - Alerta al operador indicando la presencia de servicios en ejecución.
+   - Recomienda el uso de `sudo ./deploy/install.sh --actualizar` (para actualizar el código y dependencias sin alterar infraestructura ni configuración).
+   - Recomienda el uso de `sudo ./deploy/install.sh --force` (para una reinstalación limpia desde cero que desmonte servicios previos).
+   - Solicita confirmación explícita `[s/N]`. Si el usuario no confirma, la ejecución se cancela de forma inmediata sin alterar ningún servicio ni archivo del sistema.
+3. **Comportamiento en Automatización / CI**:
+   En entornos no interactivos (sin terminal TTY adjunta), el instalador conserva su naturaleza idempotente, emitiendo una notificación de advertencia y actualizando las definiciones de las unidades de forma segura.
+4. **Protección a Nivel Base de Datos**:
+   La integridad del esquema relacional está salvaguardada por el control transaccional de migraciones de Alembic (`alembic_version`), impidiendo la colisión o duplicidad de tablas si una base de datos ya fue aprovisionada previamente.
+
+### Ejemplo
+
+Un administrador ejecuta `sudo ./deploy/install.sh` habiendo instalado previamente la plataforma `aduana`. El script detecta de inmediato `aduana-backend.service` en `/etc/systemd/system/`, emite una alerta sugiriendo correr con `--actualizar` para una actualización limpia de código, y le pregunta si desea sobrescribir los servicios. Si el operador pulsa `N`, el proceso se detiene de forma segura sin interrumpir la operación actual.
+
+### Impacto
+
+Afecta a [deploy/install.sh](file:///home/dtovar/bayblade/pokemon/deploy/install.sh), [deploy/unidades.sh](file:///home/dtovar/bayblade/pokemon/deploy/unidades.sh), [tests/deploy/test_unidades_sh.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_unidades_sh.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

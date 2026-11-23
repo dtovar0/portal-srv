@@ -60,3 +60,10 @@ def test_preflight_usa_la_funcion():
     assert 'unidades.sh' in texto
     assert 'unidad_systemd_existe "$u"' in texto
     assert 'list-unit-files "$u.service" 2>/dev/null | grep -q' not in texto
+
+
+def test_install_usa_la_funcion_para_detectar_instalacion_previa():
+    texto = (RAIZ / 'deploy' / 'install.sh').read_text()
+    assert 'unidades.sh' in texto
+    assert 'unidad_systemd_existe "$BACKEND_UNIT"' in texto
+

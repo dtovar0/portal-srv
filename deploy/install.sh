@@ -290,6 +290,29 @@ FRONTEND_UNIT="${APP_NAME}-frontend"
 # Worker de aprovisionamiento (FNC-049, FNC-067): exige Redis con contraseña.
 WORKER_UNIT="${APP_NAME}-worker"
 
+# shellcheck source=deploy/unidades.sh
+. "$PREFIX/deploy/unidades.sh"
+
+# Comprobación de instalación previa existente
+if (( ! FORCE )) && (( ! ACTUALIZAR )) && (( ! ACTUALIZAR_FRONTEND )); then
+    if unidad_systemd_existe "$BACKEND_UNIT"; then
+        if [[ -t 0 ]]; then
+            echo ""
+            echo "⚠️  AVISO: Ya existe una instalación previa en este servidor con las unidades de '${APP_NAME}' (${BACKEND_UNIT}.service)."
+            echo "   - Para actualizar código de forma transparente usa: sudo ./deploy/install.sh --actualizar"
+            echo "   - Para reinstalar de cero limpiando servicios usa:   sudo ./deploy/install.sh --force"
+            echo ""
+            read -r -p "¿Deseas sobrescribir y reiniciar los servicios existentes? [s/N]: " resp_sobrescribir
+            case "${resp_sobrescribir,,}" in
+                s|si|y|yes) echo "Continuando con la sobrescritura de servicios existentes..." ;;
+                *) echo "Instalación cancelada para proteger los servicios existentes." >&2; exit 1 ;;
+            esac
+        else
+            echo "Aviso: instalación previa detectada para '${APP_NAME}'; sobrescribiendo servicios de forma idempotente"
+        fi
+    fi
+fi
+
 # shellcheck source=deploy/servicio_bd.sh
 . "$PREFIX/deploy/servicio_bd.sh"
 # shellcheck source=deploy/motor_bd.sh
