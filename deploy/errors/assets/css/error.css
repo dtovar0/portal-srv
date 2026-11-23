@@ -1,0 +1,270 @@
+/**
+ * ADUANA — Control de Acceso
+ * Estilos canónicos para páginas de error de Nginx.
+ * Consume exclusivamente variables de tokens.css para garantizar Single Source of Truth.
+ */
+
+@import './tokens.css';
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: var(--aduana-bg-main);
+  color: var(--aduana-text-primary);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.error-layout {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: var(--space-4);
+  overflow: hidden;
+}
+
+/* Efectos de fondo ambiental (glows) */
+.glow-cyan {
+  position: absolute;
+  top: -120px;
+  left: -120px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background-color: var(--aduana-cyan-glow);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.glow-orange {
+  position: absolute;
+  bottom: -120px;
+  right: -120px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background-color: var(--aduana-orange-glow);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+/* Tarjeta principal */
+.error-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  background-color: var(--aduana-bg-surface);
+  border: 1px solid var(--aduana-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5) var(--space-5) var(--space-4) var(--space-5);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* Barra superior degradada institucional */
+.error-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--aduana-cyan) 0%, var(--aduana-cyan) 60%, var(--aduana-orange) 100%);
+  border-top-left-radius: var(--radius-card);
+  border-top-right-radius: var(--radius-card);
+}
+
+/* Contenedor del isotipo */
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-3) auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--aduana-border);
+  background-color: var(--aduana-bg-main);
+  box-shadow: var(--badge-shadow);
+}
+
+.brand-badge img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Indicador del código HTTP */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3);
+}
+
+.status-pill.status-danger {
+  color: var(--status-danger);
+  background-color: var(--status-danger-bg);
+  border: 1px solid var(--status-danger-border);
+}
+
+.status-pill.status-warning {
+  color: var(--status-warning);
+  background-color: var(--status-warning-bg);
+  border: 1px solid var(--status-warning-border);
+}
+
+.status-pill.status-info {
+  color: var(--status-info);
+  background-color: var(--status-info-bg);
+  border: 1px solid var(--status-info-border);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: currentColor;
+}
+
+/* Título */
+.error-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0 0 var(--space-2) 0;
+  letter-spacing: -0.02em;
+  color: var(--aduana-text-primary);
+}
+
+/* Descripción */
+.error-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--aduana-text-secondary);
+  margin: 0 0 var(--space-4) 0;
+}
+
+/* Recuadro de detalle técnico */
+.technical-box {
+  background-color: var(--aduana-bg-main);
+  border: 1px solid var(--aduana-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+  text-align: left;
+}
+
+.technical-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--aduana-text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-1);
+}
+
+.technical-box-code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--aduana-text-secondary);
+  word-break: break-all;
+}
+
+/* Botones de acción */
+.actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+@media (min-width: 480px) {
+  .actions-group {
+    flex-direction: row;
+  }
+}
+
+.btn-primary, .btn-secondary {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  box-sizing: border-box;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--aduana-cyan) 0%, var(--aduana-cyan-hover) 100%);
+  color: var(--btn-text-color);
+  border: none;
+  box-shadow: var(--shadow-cyan);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-cyan-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--aduana-text-primary);
+  border: 1px solid var(--aduana-border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--aduana-bg-surface-hover);
+  border-color: var(--aduana-text-muted);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* Pie institucional */
+.error-footer {
+  position: relative;
+  z-index: 10;
+  margin-top: var(--space-4);
+  text-align: center;
+  font-size: 12px;
+  color: var(--aduana-text-muted);
+}
+
+.error-footer-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--aduana-text-secondary);
+}

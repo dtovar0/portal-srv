@@ -40,6 +40,18 @@ server {
     proxy_set_header Remote-Name   "";
     proxy_set_header Remote-Groups "";
 
+    # --- Páginas de error corporativas (ADUANA) ----------------------------
+    error_page 403 /errors/403.html;
+    error_page 404 /errors/404.html;
+    error_page 500 /errors/500.html;
+    error_page 502 /errors/502.html;
+    error_page 503 /errors/503.html;
+    error_page 504 /errors/504.html;
+
+    location ^~ /errors/ {
+        alias @PREFIX@/deploy/errors/;
+    }
+
     # --- Backend Flask -----------------------------------------------------
     # La API (incluida la autenticación en `/api/v1/auth`, y el retorno de
     # Authelia en `/api/v1/auth/oidc/callback`). La cookie de sesión

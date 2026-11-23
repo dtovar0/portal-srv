@@ -5513,3 +5513,23 @@ Un usuario pulsa «Iniciar sesión con Authelia», completa el flujo en el IdP i
 ### Impacto
 
 Afecta a [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [tests/test_oidc.py](file:///home/dtovar/bayblade/pokemon/tests/test_oidc.py) y al flujo de inicio de sesión SSO con Authelia.
+
+
+Páginas de Error Corporativas de Nginx con Identidad ADUANA
+
+## Infraestructura y Reverse Proxy
+
+### Regla
+
+El proxy inverso Nginx cuenta con un catálogo de páginas de error estáticas personalizadas bajo la identidad visual corporativa de ADUANA:
+1. **Páginas Cubiertas**: Códigos HTTP `403` (Acceso Restringido), `404` (Página No Encontrada), `500` (Error Interno), `502` (Servicio No Disponible / Bad Gateway), `503` (Mantenimiento / Unavailable), `504` (Tiempo Agotado) y `50x` (Fallo Genérico de Servidor).
+2. **Separación Estricta de Capas y Resiliencia**: Las páginas son 100% estáticas y residen en `deploy/errors/` servidas directamente por Nginx mediante `location ^~ /errors/ { alias @PREFIX@/deploy/errors/; }`. No dependen de que Node.js/Next.js o Python/Flask se encuentren en ejecución. Prohibición estricta de `style=""`, `<style>` o `<script>` inline: los estilos se cargan desde `/errors/assets/css/error.css` y las interacciones desde `/errors/assets/js/error.js`.
+3. **Identidad Visual Corporativa**: Implementan los Design Tokens oficiales del Manual de Identidad Corporativa de ADUANA (Navy Profundo `#1B2A38`, Tarjeta `#233546`, Cian Tecnológico `#1CB5E0`, Naranja Control `#F26419`, tipografías Montserrat/Inter/JetBrains Mono, barra degradada superior y el isotipo oficial). Soporta automáticamente temas Dark y Light mediante `prefers-color-scheme`.
+
+### Ejemplo
+
+Si el backend o frontend entra en despliegue o falla (`502 Bad Gateway`), el usuario no visualiza la pantalla estándar genérica en blanco y negro de Nginx, sino una interfaz corporativa con el isotipo de ADUANA, el diagnóstico técnico del error y botones de acción ("Reintentar conexión" o "Ir al Dashboard").
+
+### Impacto
+
+Afecta a [deploy/nginx.conf.tmpl](file:///home/dtovar/bayblade/pokemon/deploy/nginx.conf.tmpl), los archivos en [deploy/errors/](file:///home/dtovar/bayblade/pokemon/deploy/errors/) y las pruebas en [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).
