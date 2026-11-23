@@ -13,6 +13,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { api, type AutoservicioConfig } from '@/lib/api';
+import { generarContrasenaSegura } from '@/lib/generador-contrasena';
 import { Button, Field, TextInput } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
@@ -116,6 +117,22 @@ export function AutoservicioView() {
 
   const mfaRequerido = config?.mfa_enabled ?? false;
   const mfaValido = !mfaRequerido || (mfaCode.trim().length === 6 && /^\d{6}$/.test(mfaCode.trim()));
+
+  // Generador criptográfico de contraseña segura (24 caracteres, alfanumérico + símbolos)
+  const handleGenerarContrasena = () => {
+    try {
+      const nueva = generarContrasenaSegura(24);
+      setNuevaContrasena(nueva);
+      setConfirmarContrasena(nueva);
+      setMostrarClaves(true);
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(nueva).catch(() => {});
+      }
+      avisar('success', 'Contraseña segura de 24 caracteres generada y copiada al portapapeles.');
+    } catch {
+      avisar('error', 'No se pudo generar la contraseña segura.');
+    }
+  };
 
   // Solicitar código MFA por correo
   const handleSolicitarCodigoMfa = async () => {
@@ -398,7 +415,7 @@ export function AutoservicioView() {
                   />
                 </Field>
 
-                {/* Alternar visibilidad de contraseñas */}
+                {/* Alternar visibilidad de contraseñas y Generador Seguro */}
                 <div className="flex items-center justify-between text-xs pt-1">
                   <button
                     type="button"
@@ -407,6 +424,16 @@ export function AutoservicioView() {
                   >
                     <Icono nombre={mostrarClaves ? 'candado' : 'ver'} tamano="xs" ariaHidden={true} />
                     <span>{mostrarClaves ? 'Ocultar' : 'Mostrar'} contraseñas</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerarContrasena}
+                    className="text-aduana-cyan hover:underline transition-colors flex items-center gap-1.5 font-semibold cursor-pointer"
+                    title="Genera una contraseña criptográficamente segura de 24 caracteres que cumple todas las reglas"
+                  >
+                    <Icono nombre="recargar" tamano="xs" ariaHidden={true} />
+                    <span>Generar contraseña</span>
                   </button>
                 </div>
 
@@ -613,6 +640,7 @@ export function AutoservicioView() {
                   />
                 </Field>
 
+                {/* Alternar visibilidad de contraseñas y Generador Seguro */}
                 <div className="flex items-center justify-between text-xs pt-1">
                   <button
                     type="button"
@@ -621,6 +649,16 @@ export function AutoservicioView() {
                   >
                     <Icono nombre={mostrarClaves ? 'candado' : 'ver'} tamano="xs" ariaHidden={true} />
                     <span>{mostrarClaves ? 'Ocultar' : 'Mostrar'} contraseñas</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerarContrasena}
+                    className="text-aduana-cyan hover:underline transition-colors flex items-center gap-1.5 font-semibold cursor-pointer"
+                    title="Genera una contraseña criptográficamente segura de 24 caracteres que cumple todas las reglas"
+                  >
+                    <Icono nombre="recargar" tamano="xs" ariaHidden={true} />
+                    <span>Generar contraseña</span>
                   </button>
                 </div>
 

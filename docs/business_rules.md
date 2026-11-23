@@ -5926,3 +5926,32 @@ Un usuario que olvida su contraseña accede a `/autoservicio`. Con `AUTOSERVICIO
 ### Impacto
 
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md), y [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py).
+
+
+Generador Criptográfico y Validación de Contraseñas en Autoservicio
+
+## Autenticación y Autoservicio (frontend/src/components/autoservicio-view.tsx & app/modules/users/politica_contrasena.py)
+
+### Regla
+
+1. **Generador Criptográfico Incorporado**:
+   La interfaz de autoservicio de contraseñas (`/autoservicio` y `/cambiar-contrasena`) incluye una acción directa "Generar contraseña" que invoca el generador criptográfico institucional (`generarContrasenaSegura`). El generador utiliza `crypto.getRandomValues` con muestreo por rechazo sin sesgo de módulo y barajado Fisher-Yates, produciendo una clave de 24 caracteres aleatorios.
+2. **Cumplimiento Integral de Política en Generación**:
+   La contraseña generada garantiza de forma determinista la presencia de todas las clases obligatorias:
+   - Al menos 1 letra mayúscula (`A-Z`).
+   - Al menos 1 letra minúscula (`a-z`).
+   - Al menos 1 dígito numérico (`0-9`).
+   - Al menos 1 símbolo especial permitido del conjunto corporativo (`!@#$%^&*()_+-=[]{}|;:,.<>?`).
+   - Longitud estricta superior al mínimo de 16 caracteres (24 caracteres).
+3. **Experiencia y Portapapeles**:
+   Al pulsar el generador, se rellenan automáticamente los campos "Nueva Contraseña" y "Confirmar Nueva Contraseña", se activa la visibilidad de caracteres para verificación visual inmediata, se copia la clave al portapapeles del usuario y se satisfacen simultáneamente todos los indicadores del checklist de seguridad en tiempo real.
+4. **Validación Simétrica en Servidor**:
+   El backend valida nuevamente la clave enviada contra `PoliticaContrasena`, impidiendo caracteres prohibidos que pudieran comprometer la integración con LDAP (`"'\ `) o JumpServer.
+
+### Ejemplo
+
+Un usuario corporativo que necesita restablecer su acceso hace clic en "Generar contraseña". El sistema genera instantáneamente una clave de 24 caracteres con letras mayúsculas, minúsculas, números y símbolos (ej. `kM9#vL2$pQ8*wR1!xT7^yU3&`), la copia al portapapeles y marca en verde todos los requisitos de seguridad corporativa.
+
+### Impacto
+
+Afecta a [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/generador-contrasena.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/generador-contrasena.ts), [app/modules/users/politica_contrasena.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/politica_contrasena.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
