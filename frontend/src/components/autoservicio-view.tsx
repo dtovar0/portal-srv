@@ -25,8 +25,8 @@ export function AutoservicioView() {
   // Configuración de Autoservicio (identidad Authelia y MFA)
   const [config, setConfig] = useState<AutoservicioConfig | null>(null);
 
-  // Estados de pestaña y modo
-  const [modo, setModo] = useState<'cambiar' | 'mfa_directo' | 'recuperar' | 'token'>('cambiar');
+  // Estados de pestaña y modo (mfa_directo es el flujo principal recomendado)
+  const [modo, setModo] = useState<'cambiar' | 'mfa_directo' | 'recuperar' | 'token'>('mfa_directo');
   const [cargando, setCargando] = useState(false);
   const [exitoMensaje, setExitoMensaje] = useState<string | null>(null);
 
@@ -373,20 +373,6 @@ export function AutoservicioView() {
                   <button
                     type="button"
                     onClick={() => {
-                      setModo('cambiar');
-                      setExitoMensaje(null);
-                    }}
-                    className={`flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-all cursor-pointer ${
-                      modo === 'cambiar'
-                        ? 'bg-superficie text-body-text shadow-xs border border-panel-border'
-                        : 'text-texto-secundario hover:text-body-text'
-                    }`}
-                  >
-                    Tengo clave (actual/caducada)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
                       setModo('mfa_directo');
                       setExitoMensaje(null);
                     }}
@@ -396,7 +382,21 @@ export function AutoservicioView() {
                         : 'text-texto-secundario hover:text-body-text'
                     }`}
                   >
-                    Restablecer con MFA
+                    Validar con MFA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModo('cambiar');
+                      setExitoMensaje(null);
+                    }}
+                    className={`flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-all cursor-pointer ${
+                      modo === 'cambiar'
+                        ? 'bg-superficie text-body-text shadow-xs border border-panel-border'
+                        : 'text-texto-secundario hover:text-body-text'
+                    }`}
+                  >
+                    Conozco mi clave
                   </button>
                   <button
                     type="button"
