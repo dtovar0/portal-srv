@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>50X Error de Servidor — ADUANA</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/brand/icon-32.png">
+  <link rel="stylesheet" href="/errors/assets/css/error.css">
+  <script src="/errors/assets/js/error.js" defer></script>
+</head>
+<body>
+  <div class="error-layout">
+    <div class="glow-cyan" aria-hidden="true"></div>
+    <div class="glow-orange" aria-hidden="true"></div>
+
+    <main class="error-card" role="main">
+      <div class="brand-badge" aria-hidden="true">
+        <img src="/errors/assets/brand/isotype-aduana.png" alt="Aduana">
+      </div>
+
+      <div>
+        <span class="status-pill status-danger">
+          <span class="status-dot"></span>
+          50X · SERVER ERROR
+        </span>
+      </div>
+
+      <h1 class="error-title">Error en los servicios</h1>
+      <p class="error-desc">
+        Se presentó una falla imprevista al comunicar con la infraestructura de la plataforma. El incidente ha sido notificado a soporte.
+      </p>
+
+      <div class="technical-box">
+        <div class="technical-box-header">
+          <span>Infraestructura</span>
+          <span>Reverse Proxy</span>
+        </div>
+        <div class="technical-box-code">
+          HTTP 50X Server Error · Excepción en la capa de servicios Nginx
+        </div>
+      </div>
+
+      <div class="actions-group">
+        <button type="button" class="btn-primary" data-action="reload">
+          Reintentar conexión
+        </button>
+        <a href="/dashboard" class="btn-secondary">
+          Ir al Dashboard
+        </a>
+      </div>
+    </main>
+
+    <footer class="error-footer" role="contentinfo">
+      <span class="error-footer-brand">ADUANA</span> · Control de Acceso y Gestión Centralizada de Permisos
+    </footer>
+  </div>
+</body>
+</html>
+
