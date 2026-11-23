@@ -45,9 +45,12 @@ export function AccesoEmergenciaForm() {
           />
         </div>
 
-        <Card className="relative overflow-hidden space-y-5 rounded-3xl border border-aduana-border bg-panel-fill/95 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-          <div className="h-1 w-full bg-gradient-to-r from-aduana-orange via-aduana-orange to-aduana-cyan rounded-t-3xl -mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-6 overflow-hidden" aria-hidden="true" />
-          <FormularioLoginLocal />
+        <Card className="relative rounded-3xl border border-aduana-border bg-panel-fill/95 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+          <div className="pointer-events-none absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-aduana-orange via-aduana-orange to-aduana-cyan rounded-t-3xl" aria-hidden="true" />
+
+          <div className="space-y-5">
+            <FormularioLoginLocal />
+          </div>
         </Card>
       </div>
     </div>
