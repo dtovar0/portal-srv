@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 auth_api_bp = Blueprint('api_auth', __name__, url_prefix='/api/v1/auth')
 
-RUTA_INICIO = '/'
+RUTA_INICIO = '/dashboard'
 RUTA_ENTRADA = '/login'
 USO_OIDC = 'GET /auth/oidc/login'
 USO_LOCAL = 'POST /auth/local'
