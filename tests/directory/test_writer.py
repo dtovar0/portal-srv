@@ -536,7 +536,37 @@ def test_operaciones_publicas_del_escritor():
 
     assert publicos == {'add_member', 'remove_member', 'create_user',
                         'delete_user', 'change_password', 'set_password',
-                        'mover_grupo'}  # FNC-163, revisado por seguridad
+                        'mover_grupo', 'create_group'}  # FNC-163, revisado por seguridad
+
+
+def test_crear_grupo_nuevo_y_dos_veces_es_idempotente(directorio, escritor):
+    dn_del_grupo = f'cn=nuevo-grupo,{GRUPOS_BASE_DN}'
+    res1 = escritor.create_group(dn_del_grupo, descripcion='Grupo nuevo')
+    assert res1.resultado == Resultado.HECHO
+    assert res1.dn == dn_del_grupo
+    assert res1.exito is True
+
+    # Comprobar que existe en el directorio
+    assert directorio.cliente.existe_dn(dn_del_grupo) is True
+
+    # Idempotencia
+    res2 = escritor.create_group(dn_del_grupo)
+    assert res2.resultado == Resultado.YA_ESTABA
+    assert res2.exito is True
+
+
+def test_crear_grupo_fuera_de_base_o_datos_invalidos(escritor, directorio):
+    # Fuera de base
+    res_fuera = escritor.create_group('cn=invalido,dc=otro,dc=local')
+    assert res_fuera.resultado == Resultado.ERROR_PERMANENTE
+
+    # Datos incompletos
+    res_vacio = escritor.create_group('')
+    assert res_vacio.resultado == Resultado.ERROR_PERMANENTE
+
+    # RDN no empieza con cn=
+    res_ou = escritor.create_group(f'ou=otra,{GRUPOS_BASE_DN}')
+    assert res_ou.resultado == Resultado.ERROR_PERMANENTE
 
 
 def test_alta_de_cuenta_con_contrasena(directorio, escritor, operaciones):

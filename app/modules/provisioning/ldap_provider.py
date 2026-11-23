@@ -22,6 +22,7 @@ from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
 from app.modules.directory.dn import mismo_dn
 from app.modules.directory.errors import (MOTIVO_DIRECTORIO,
                                           MOTIVO_FUERA_DE_BASE,
+                                          MOTIVO_GRUPO_INEXISTENTE,
                                           MOTIVO_USUARIO_INEXISTENTE,
                                           Resultado, clasificar_error)
 from app.modules.directory.ldap_client import (ClienteDirectorio,
@@ -142,6 +143,16 @@ class ProveedorLdap(Provisioner):
         except _Fallo as fallo:
             return fallo.resultado
         escritura = getattr(escritor, accion)(grupo, persona)
+        import os
+        auto_crear = (os.getenv('LDAP_PROVISIONING_AUTO_CREATE_GROUPS', '').lower() in ('true', '1', 'yes')
+                      or os.getenv('LDAP_AUTO_CREATE_PLATFORM_GROUPS', '').lower() in ('true', '1', 'yes'))
+        if (accion == 'add_member' and auto_crear
+                and escritura.resultado == Resultado.NO_EXISTE
+                and escritura.motivo == MOTIVO_GRUPO_INEXISTENTE
+                and hasattr(escritor, 'create_group')):
+            creacion = escritor.create_group(grupo)
+            if creacion.exito:
+                escritura = getattr(escritor, accion)(grupo, persona)
         resultado = _RESULTADOS[escritura.resultado]
         motivo = None if escritura.exito else escritura.motivo
         return ResultadoProveedor(resultado, motivo)

@@ -234,3 +234,18 @@ def test_el_filtro_de_correo_es_exacto_y_escapado(app, directorio,
 
     assert directorio.cliente.buscar_por_correo('a*)(uid=*@x.local') is None
     assert filtros == [(r'(mail=a\2a\29\28uid=\2a@x.local)', 2)]
+
+
+def test_otorgar_auto_crea_grupo_si_no_existe(app, directorio, monkeypatch):
+    monkeypatch.setenv('LDAP_PROVISIONING_AUTO_CREATE_GROUPS', 'true')
+    dn_ana = directorio.persona('ana', correo='ana@pruebas.local')
+    grupo_inexistente = dn_grupo('app-nuevo-usuario')
+    area = fabricas.crear_area()
+    plataforma = fabricas.crear_plataforma(area, ldap_group_user_dn=grupo_inexistente)
+    usuario = fabricas.crear_usuario(email='ana@pruebas.local')
+
+    proveedor = ProveedorLdap(cliente=directorio.cliente)
+    resultado = proveedor.otorgar(operacion(plataforma, usuario))
+
+    assert resultado.resultado == RESULTADO_EXITOSO
+    assert dn_ana in miembros(directorio, grupo_inexistente)

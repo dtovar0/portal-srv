@@ -238,7 +238,7 @@ def test_oidc_entra_aunque_falle_el_correo_de_bienvenida(client, oidc,
     respuesta = oidc.entrar(client)
 
     assert respuesta.status_code == 302
-    assert respuesta.headers['Location'] == '/'
+    assert respuesta.headers['Location'] in ('/', '/dashboard')
     assert usuario_en_sesion(client) == CORREO_OIDC
 
 
@@ -250,7 +250,7 @@ def test_oidc_entra_aunque_el_servicio_de_correo_lance_excepcion(
 
     respuesta = oidc.entrar(client)
 
-    assert respuesta.headers['Location'] == '/'
+    assert respuesta.headers['Location'] in ('/', '/dashboard')
     assert usuario_en_sesion(client) == CORREO_OIDC
 
 

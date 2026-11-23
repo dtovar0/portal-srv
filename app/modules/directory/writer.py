@@ -343,6 +343,45 @@ class EscritorDirectorio:
         return self._ejecutar('mover grupo', group_dn, mover)
 
     # ------------------------------------------------------------------ #
+    # Alta de grupos
+    # ------------------------------------------------------------------ #
+
+    def create_group(self, group_dn, descripcion=None):
+        """Crea el grupo en `LDAP_GROUPS_BASE_DN` con la clase configurada (`groupOfNames`)."""
+        if not group_dn or not isinstance(group_dn, str):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, '',
+                                      MOTIVO_DATOS_INCOMPLETOS)
+        partes = separar_dn(group_dn)
+        if partes is None or not self._grupo_en_base(group_dn):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                      MOTIVO_FUERA_DE_BASE)
+        rdn = partes[0]
+        if not rdn.lower().startswith('cn='):
+            return ResultadoEscritura(Resultado.ERROR_PERMANENTE, group_dn,
+                                      MOTIVO_DATOS_INVALIDOS)
+        cn = rdn.split('=', 1)[1]
+        cfg = self.configuracion
+        clases = [cfg.clase_grupo]
+        atributos = {'cn': cn}
+        if descripcion:
+            atributos['description'] = str(descripcion)
+        if cfg.clase_grupo.lower() in CLASES_GRUPO_CON_MIEMBRO_OBLIGATORIO:
+            miembro_inicial = cfg.miembro_relleno or cfg.bind_dn
+            if miembro_inicial:
+                atributos[cfg.atributo_miembro] = [miembro_inicial]
+
+        def alta_grupo(conexion):
+            if _existe(conexion, group_dn):
+                return ResultadoEscritura(Resultado.YA_ESTABA, group_dn)
+            try:
+                conexion.add(group_dn, clases, atributos)
+            except LDAPEntryAlreadyExistsResult:
+                return ResultadoEscritura(Resultado.YA_ESTABA, group_dn)
+            return ResultadoEscritura(Resultado.HECHO, group_dn)
+
+        return self._ejecutar('alta de grupo', group_dn, alta_grupo)
+
+    # ------------------------------------------------------------------ #
     # Alta de cuentas
     # ------------------------------------------------------------------ #
 

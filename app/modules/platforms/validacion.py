@@ -12,6 +12,7 @@ from app.utils.naming import sanitize_display_name
 CAMPOS_PERMITIDOS = frozenset({
     'name', 'description', 'area_id', 'direct_link', 'logo_url', 'icon',
     'bg_color', 'text_color', 'status', 'integration_type',
+    'create_groups', 'crear_grupos',
     *CAMPOS_DN.values(),
 })
 OBLIGATORIOS_ALTA = ('name', 'description', 'area_id', 'integration_type')
@@ -119,6 +120,8 @@ VALIDADORES = {
     'description': lambda v: _texto(v, DESCRIPCION_MIN, DESCRIPCION_MAX),
     'area_id': validar_area_id,
     'integration_type': validar_tipo,
+    'create_groups': lambda v: (bool(v), None),
+    'crear_grupos': lambda v: (bool(v), None),
     **{campo: validar_url for campo in CAMPOS_URL},
     **{campo: validar_dn for campo in CAMPOS_DN.values()},
     **{campo: _validar_texto_visual(campo) for campo in LARGO_CAMPOS_TEXTO},

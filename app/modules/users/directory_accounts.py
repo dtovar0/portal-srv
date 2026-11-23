@@ -327,6 +327,18 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
             f'{SISTEMA_DIRECTORIO}: {resultado.resultado.value} '
             f'({resultado.motivo or MOTIVO_SIN_CONEXION})')
 
+    # Vincular al grupo de usuarios regulares del portal (app-aduana-users)
+    try:
+        import os
+        grupo_portal = (os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
+        dn_grupo_portal = f'cn={grupo_portal},{escritor.configuracion.grupos_base_dn}'
+        if hasattr(escritor, 'create_group'):
+            escritor.create_group(dn_grupo_portal, descripcion='Usuarios del portal ADUANA')
+        if hasattr(escritor, 'add_member'):
+            escritor.add_member(dn_grupo_portal, resultado.dn)
+    except Exception as exc:
+        logger.warning('No se pudo agregar el usuario al grupo de portal: %s', exc)
+
     try:
         nueva_entrega(cuenta, alta.uid)
         _auditar(alta, 'success',

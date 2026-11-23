@@ -17,7 +17,8 @@ Orden de las comprobaciones en `POST` y `PUT`:
 8. Accesos automáticos de los admins del área (FNC-055, P6) en la misma
    transacción: al dar de alta y al cambiar el área o los grupos.
 """
-
+import os
+import logging
 from flask import Blueprint, jsonify
 from flask_login import current_user, login_required
 
@@ -40,7 +41,7 @@ from app.modules.platforms.estado import (accesos_que_impiden_mover,
                                           accesos_vigentes)
 from app.modules.platforms.tipos import (CAMPOS_DN, GRUPOS_SIN_VERIFICAR,
                                          NIVEL_ADMIN, NIVEL_USUARIO,
-                                         TIPO_CONECTOR)
+                                         TIPO_CONECTOR, TIPO_LDAP)
 from app.modules.platforms.validacion import (CAMPOS_PERMITIDOS,
                                               MENSAJE_DN_BASE,
                                               validar_campos)
@@ -219,6 +220,21 @@ def create_platform():
             limpios['name'], area)
     except Rechazo as rechazo:
         return rechazo.respuesta
+
+    debe_crear = (
+        limpios.get('create_groups')
+        or limpios.get('crear_grupos')
+        or os.getenv('LDAP_AUTO_CREATE_PLATFORM_GROUPS', '').lower() in ('true', '1', 'yes')
+    )
+    if debe_crear and configuracion is not None and limpios.get('integration_type') == TIPO_LDAP:
+        try:
+            from app.modules.directory.writer import EscritorDirectorio
+            escritor = EscritorDirectorio()
+            for nivel, dn in dns.items():
+                if dn:
+                    escritor.create_group(dn, descripcion=f'Grupo de acceso {nivel} para {limpios["name"]}')
+        except Exception as exc:
+            logger.warning('No se pudieron crear los grupos en LDAP: %s', exc)
 
     estado_grupos, avisos = _comprobar(configuracion, dns)
     plataforma = Platform(

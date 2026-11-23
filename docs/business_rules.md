@@ -5741,3 +5741,26 @@ Un colaborador sin grupo autorizado intenta ingresar a ADUANA y es rechazado. El
 ### Impacto
 
 Afecta a [frontend/src/components/acceso-denegado-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/acceso-denegado-view.tsx), [frontend/src/app/acceso-denegado/page.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/app/acceso-denegado/page.tsx), [frontend/src/components/login-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/login-form.tsx), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Auto-creación de Grupos de Plataforma y Asignación de Grupo de Portal en LDAP
+
+## Directorio y Aprovisionamiento (OpenLDAP & Worker)
+
+### Regla
+
+1. **Auto-creación de Grupos al Crear Plataformas**:
+   Al dar de alta una plataforma con integración LDAP (`integration_type: 'ldap'`), el backend valida y asegura la existencia de los grupos de nivel usuario y administrador (`ldap_group_user_dn` y `ldap_group_admin_dn`, bajo la convención `app-{plataforma}-users` y `app-{plataforma}-admins`). Si los grupos no existen en OpenLDAP, el backend (`EscritorDirectorio.create_group`) los crea de forma automática bajo `LDAP_GROUPS_BASE_DN` con la clase `groupOfNames` (y miembro de relleno configurado), registrándose la plataforma con `groups_status: 'ok'` sin requerir aprovisionamiento manual previo en el directorio.
+2. **Auto-recuperación y Creación de Grupos en Worker**:
+   Cuando el worker de aprovisionamiento (`portal-worker`) procesa una operación de otorgamiento de acceso (`otorgar`) y el grupo de la plataforma no existe en OpenLDAP (`MOTIVO_GRUPO_INEXISTENTE`), el proveedor LDAP crea el grupo dinámicamente mediante `create_group` y reintenta la membresía, garantizando un aprovisionamiento auto-reparable y resiliente sin interrupción de tareas.
+3. **Asignación Automática a app-aduana-users en Alta de Usuario**:
+   Al crear una cuenta en el directorio desde el portal (`POST /users/directory`), el backend crea la entrada en `ou=users` y la agrega inmediatamente al grupo de usuarios regulares de ADUANA (`app-aduana-users` / `LDAP_APP_USERS`), creando el grupo si no existiera. Esto garantiza que el colaborador recién creado pueda autenticarse de inmediato en el portal vía Authelia OIDC sin ser bloqueado por ausencia de grupo.
+
+### Ejemplo
+
+1. Un administrador crea la plataforma «Netbox Mon» en el portal. El backend crea automáticamente en OpenLDAP los grupos `cn=app-netbox-mon-users,ou=groups,dc=vivaro,dc=local` y `cn=app-netbox-mon-admins,ou=groups,dc=vivaro,dc=local`.
+2. Se da de alta al colaborador `juan.perez@vivaro.com` desde la pantalla de usuarios. El backend crea su entrada LDAP y lo añade de inmediato al grupo `app-aduana-users`. Al ingresar por primera vez con Authelia, se le concede acceso al portal sin error.
+
+### Impacto
+
+Afecta a [app/modules/directory/writer.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/writer.py), [app/modules/platforms/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/platforms/api.py), [app/modules/provisioning/ldap_provider.py](file:///home/dtovar/bayblade/pokemon/app/modules/provisioning/ldap_provider.py), [app/modules/users/directory_accounts.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/directory_accounts.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

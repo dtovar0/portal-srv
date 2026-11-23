@@ -251,6 +251,36 @@ def test_admin_de_area_crea_ldap_con_grupos_derivados(admin_de_area, area,
     assert plataforma['groups_status'] == 'no_existe'
 
 
+def test_alta_plataforma_con_crear_grupos_los_crea_en_directorio(admin_de_area, area, monkeypatch):
+    monkeypatch.setenv('LDAP_PLATFORM_GROUP_TEMPLATE', PLANTILLA)
+    directorio = instalar_directorio(monkeypatch)
+
+    respuesta = admin_de_area.post(f'{A}/platforms', json=_alta(
+        area.id, name='Soporte Redes', create_groups=True))
+
+    assert respuesta.status_code == 201, respuesta.get_json()
+    plataforma = respuesta.get_json()['platform']
+    assert plataforma['groups_status'] == 'ok'
+    assert respuesta.get_json()['warnings'] == []
+    assert plataforma['ldap_group_user_dn'] in directorio.servidor.dit
+    assert plataforma['ldap_group_admin_dn'] in directorio.servidor.dit
+
+
+def test_alta_plataforma_con_auto_crear_por_entorno(admin_de_area, area, monkeypatch):
+    monkeypatch.setenv('LDAP_PLATFORM_GROUP_TEMPLATE', PLANTILLA)
+    monkeypatch.setenv('LDAP_AUTO_CREATE_PLATFORM_GROUPS', 'true')
+    directorio = instalar_directorio(monkeypatch)
+
+    respuesta = admin_de_area.post(f'{A}/platforms', json=_alta(
+        area.id, name='Monitoreo VoIP'))
+
+    assert respuesta.status_code == 201, respuesta.get_json()
+    plataforma = respuesta.get_json()['platform']
+    assert plataforma['groups_status'] == 'ok'
+    assert plataforma['ldap_group_user_dn'] in directorio.servidor.dit
+    assert plataforma['ldap_group_admin_dn'] in directorio.servidor.dit
+
+
 def test_derivacion_no_inyecta_rdn(superadmin, monkeypatch):
     """Caracteres especiales del nombre no agregan RDN ni salen de la base."""
     monkeypatch.setenv('LDAP_PLATFORM_GROUP_TEMPLATE', PLANTILLA)

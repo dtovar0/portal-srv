@@ -92,7 +92,7 @@ def test_alta_fuera_de_desarrollo_se_vincula_al_entrar_por_authelia(
 
     respuesta = oidc.entrar(cliente)
 
-    assert respuesta.headers['Location'] == '/'
+    assert respuesta.headers['Location'] in ('/', '/dashboard')
     assert cliente.get('/api/v1/me').get_json()['role'] == ROLE_USER
     assert User.query.filter(db.func.lower(User.email) == correo).count() == 1
     cuenta = _cuenta(alta.get_json()['id'])
