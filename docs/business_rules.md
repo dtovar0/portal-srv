@@ -5449,3 +5449,27 @@ Al ingresar a `/login`, el usuario ve una tarjeta limpia con un solo logo de Adu
 ### Impacto
 
 Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
+
+
+Diseño Split-Card Homologado para la Pantalla de Acceso de Emergencia
+
+## Frontend y Autenticación
+
+### Regla
+
+La interfaz de contingencia administrativa (`/acceso-emergencia`) replica fielmente la arquitectura Split-Card minimalista del acceso principal para mantener consistencia visual y ergonomía:
+1. **Composición Split-Card Homologada**: La tarjeta flotante central (`max-w-4xl rounded-3xl border border-panel-border bg-superficie shadow-2xl`) cuenta con una división balanceada entre el formulario local a la izquierda y la fotografía estética a sangre a la derecha (`login-showcase.jpg`).
+2. **Identidad de Contingencia**:
+   - Cabecera con isotipo corporativo acompañado del indicador de estado «Recuperación» en color ámbar/naranja corporativo (`border-aduana-orange/30 bg-aduana-orange/10 text-aduana-orange`).
+   - Título explícito "Acceso de emergencia" y subtítulo de seguridad para contingencias de red.
+3. **Formulario de Credenciales Locales**: Renderiza `FormularioLoginLocal` con inputs ergonomizados y botón accesible de inicio de sesión (`POST /api/v1/auth/local`).
+4. **Navegación Asistida**: Incluye enlace directo de retorno al acceso corporativo (`/login`) para evitar que administradores queden atrapados en la vista de contingencia.
+5. **Restricciones Técnicas**: Cumple con `min-h-screen`, total ausencia de bloqueos de scroll (`overflow-hidden`, `h-screen`, `h-dvh`) y cero colores literales fuera de los tokens semánticos.
+
+### Ejemplo
+
+Un superadministrador que necesita recuperar el sistema accede a `https://aduana.vivaro.com/acceso-emergencia` y encuentra una interfaz limpia con el mismo diseño Split-Card que el login general, con su respectivo distintivo de «Recuperación», los campos de usuario y contraseña y el enlace de retorno a `/login`.
+
+### Impacto
+
+Afecta a [frontend/src/components/acceso-emergencia-form.tsx](../frontend/src/components/acceso-emergencia-form.tsx), [frontend/src/components/formulario-login-local.tsx](../frontend/src/components/formulario-login-local.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/accesibilidad/colores-literales.test.ts](../frontend/tests/accesibilidad/colores-literales.test.ts).
