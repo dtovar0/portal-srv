@@ -41,8 +41,8 @@ export function BarraLateral({
         </span>
         {colapsada ? null : (
           <span className="flex min-w-0 flex-col">
-            <span className="truncate text-base font-bold leading-tight text-barra-lateral-texto">Portal de accesos</span>
-            <span className="truncate text-xs text-barra-lateral-secundario">Vivaro</span>
+            <span className="truncate text-base font-bold leading-tight text-barra-lateral-texto">Aduana</span>
+            <span className="truncate text-xs text-barra-lateral-secundario">Accesos Vivaro</span>
           </span>
         )}
       </div>
