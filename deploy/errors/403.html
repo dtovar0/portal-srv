@@ -25,27 +25,27 @@
         </span>
       </div>
 
-      <h1 class="error-title">Acceso restringido</h1>
+      <h1 class="error-title">Acceso no autorizado</h1>
       <p class="error-desc">
-        No cuentas con autorización para consultar este recurso o tu sesión de control de acceso no tiene los permisos requeridos.
+        No tienes permisos para acceder a esta plataforma. Tienes que solicitarlos en Authelia para que tu cuenta cuente con los roles y áreas asignados.
       </p>
 
       <div class="technical-box">
         <div class="technical-box-header">
-          <span>Diagnóstico de seguridad</span>
-          <span>Nginx Proxy</span>
+          <span>Control de acceso</span>
+          <span>Authelia SSO</span>
         </div>
         <div class="technical-box-code">
-          HTTP 403 Forbidden · Acceso bloqueado por directiva de permisos
+          HTTP 403 Forbidden · Acceso restringido. Solicita tus permisos en Authelia.
         </div>
       </div>
 
       <div class="actions-group">
-        <a href="/dashboard" class="btn-primary">
-          Ir al Dashboard
+        <a href="/login" class="btn-primary">
+          Solicitar acceso en Authelia
         </a>
-        <a href="/login" class="btn-secondary">
-          Iniciar sesión
+        <a href="/dashboard" class="btn-secondary">
+          Ir al Dashboard
         </a>
       </div>
     </main>
