@@ -5648,3 +5648,31 @@ Mapeo de Grupos OIDC de Authelia y Asignación de Roles y Áreas
 ### Impacto
 
 Afecta a [app/modules/auth/oidc.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc.py), [app/modules/auth/oidc_cuentas.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc_cuentas.py), [app/modules/auth/oidc_configuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc_configuracion.py), [app/modules/areas/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/areas/api.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md) y [tests/test_oidc.py](file:///home/dtovar/bayblade/pokemon/tests/test_oidc.py).
+
+
+Autorización Estricta OIDC por Grupos de Authelia (Deny by Default)
+
+## Autenticación y Control de Acceso (RBAC)
+
+### Regla
+
+1. **Principio de Denegación por Defecto (Deny by Default)**:
+   La pertenencia a al menos uno de los grupos autorizados (`infraestructuraVoIP`, `app-aduana-admins` o `app-aduana-users`) es condición obligatoria para ingresar al portal ADUANA vía OIDC.
+2. **Rechazo Inmediato para Cuentas No Mapeadas**:
+   Si una cuenta autenticada en Authelia no pertenece a ninguno de los grupos autorizados (o el claim `groups` está vacío o solo contiene grupos ajenos a la plataforma):
+   - El acceso es rechazado inmediatamente con código `acceso_denegado` (`ErrorOidc(ERROR_DENEGADO)`).
+   - No se crea cuenta en la base de datos ni se abre sesión de usuario.
+   - Si se trataba de una cuenta existente de SSO a la que se le retiraron los grupos en el directorio/Authelia, no se le permite iniciar sesión y el intento fallido se audita como `ACCESO OIDC FALLIDO`.
+3. **Mapeo Explícito y Estricto**:
+   - `infraestructuraVoIP` $\rightarrow$ `administrador` (Superadmin)
+   - `app-aduana-admins` $\rightarrow$ `admin_area` (Admin de Área)
+   - `app-aduana-users` $\rightarrow$ `usuario` (Usuario estándar)
+   - Ningún otro grupo concede acceso o privilegios.
+
+### Ejemplo
+
+Un colaborador de la empresa que tiene credenciales activas en Authelia para otros sistemas internos intenta ingresar a ADUANA sin haber sido incorporado al grupo `app-aduana-users`. El callback OIDC detecta que no cuenta con ninguno de los tres grupos autorizados y rechaza el acceso con `error=acceso_denegado`, impidiendo su ingreso al portal.
+
+### Impacto
+
+Afecta a [app/modules/auth/oidc_cuentas.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc_cuentas.py), [tests/oidc_simulado.py](file:///home/dtovar/bayblade/pokemon/tests/oidc_simulado.py) y [tests/test_oidc.py](file:///home/dtovar/bayblade/pokemon/tests/test_oidc.py).

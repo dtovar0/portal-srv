@@ -124,6 +124,7 @@ def test_la_sesion_previa_no_sobrevive_al_inicio(client, oidc):
 
 def test_primer_inicio_vincula_por_correo_y_conserva_rol_y_origen(
         client, oidc, crear_usuario):
+    oidc.userinfo['groups'] = ['app-aduana-admins']
     cuenta = _cuenta_vinculada(crear_usuario, ROLE_AREA_ADMIN, origen='ldap',
                                email=CORREO)
 
@@ -177,33 +178,55 @@ def test_sin_name_usa_el_correo(client, oidc):
 
 
 # --------------------------------------------------------------------------- #
-# El rol nunca sale del token (SEG-10, SEC-AUTH-07)
+# Autorización estricta por grupos mapeados (FNC-143, FNC-144)
 # --------------------------------------------------------------------------- #
+
+def test_sin_grupos_autorizados_se_rechaza_acceso(client, oidc):
+    oidc.userinfo['groups'] = []
+
+    respuesta = oidc.entrar(client)
+
+    _sin_sesion_y_con_error(client, respuesta, 'acceso_denegado')
+    assert User.query.filter_by(email=CORREO).first() is None
+    assert hay_auditoria('ACCESO OIDC FALLIDO', 'error')
+
 
 @pytest.mark.parametrize('claims', [
     {'groups': ['admins', 'administradores'], 'role': ROLE_ADMIN},
-    {'roles': [ROLE_ADMIN], 'is_admin': True},
+    {'groups': ['marketing', 'contabilidad']},
+    {'roles': [ROLE_ADMIN], 'is_admin': True, 'groups': []},
 ])
-def test_grupos_y_roles_del_token_no_dan_rol_a_una_cuenta_nueva(
+def test_grupos_y_roles_no_autorizados_se_rechazan_con_acceso_denegado(
         client, oidc, claims):
     oidc.userinfo.update(claims)
     oidc.id_token_cambios.update(claims)
+
+    respuesta = oidc.entrar(client)
+
+    _sin_sesion_y_con_error(client, respuesta, 'acceso_denegado')
+    assert User.query.filter_by(email=CORREO).first() is None
+
+
+def test_claim_role_en_token_no_eleva_privilegios_de_usuario(client, oidc):
+    # El usuario pertenece a app-aduana-users pero el token trae role: 'administrador'
+    oidc.userinfo.update({'groups': ['app-aduana-users'], 'role': ROLE_ADMIN})
+    oidc.id_token_cambios.update({'role': ROLE_ADMIN})
 
     oidc.entrar(client)
 
     assert User.query.filter_by(email=CORREO).one().role == ROLE_USER
 
 
-@pytest.mark.parametrize('rol', [ROLE_USER, ROLE_AREA_ADMIN])
-def test_grupos_del_token_no_cambian_el_rol_de_una_cuenta_existente(
-        client, oidc, crear_usuario, rol):
-    cuenta = _cuenta_vinculada(crear_usuario, rol, email=CORREO, sub=SUB)
-    oidc.userinfo.update({'groups': ['admins'], 'role': ROLE_ADMIN})
+def test_cuenta_existente_sin_grupos_autorizados_no_puede_entrar(
+        client, oidc, crear_usuario):
+    cuenta = _cuenta_vinculada(crear_usuario, ROLE_USER, email=CORREO, sub=SUB)
+    oidc.userinfo.update({'groups': ['grupo_revocado']})
 
-    oidc.entrar(client)
+    respuesta = oidc.entrar(client)
 
+    _sin_sesion_y_con_error(client, respuesta, 'acceso_denegado')
     db.session.refresh(cuenta)
-    assert cuenta.role == rol
+    assert usuario_en_sesion(client) is None
 
 
 # --------------------------------------------------------------------------- #
