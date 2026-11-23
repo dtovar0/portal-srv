@@ -5676,3 +5676,27 @@ Un colaborador de la empresa que tiene credenciales activas en Authelia para otr
 ### Impacto
 
 Afecta a [app/modules/auth/oidc_cuentas.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc_cuentas.py), [tests/oidc_simulado.py](file:///home/dtovar/bayblade/pokemon/tests/oidc_simulado.py) y [tests/test_oidc.py](file:///home/dtovar/bayblade/pokemon/tests/test_oidc.py).
+
+
+Enlaces Absolutos a ADUANA en Páginas de Error Nginx
+
+## Infraestructura y Páginas de Error Nginx
+
+### Regla
+
+1. **Rutas Absolutas Hacia el Dominio Central de ADUANA**:
+   Todas las páginas de error corporativas de Nginx (403, 404, 500, 502, 503, 504, 50x) alojadas en la capa de reverse proxy para sitios satélite (`netbox`, `bookstack`, `graylog`, etc.) deben emplear exclusivamente URLs absolutas apuntando a `https://aduana.vivaro.com`.
+2. **Prohibición de Enlaces Relativos**:
+   Queda prohibido el uso de rutas relativas como `/platforms` o `/dashboard` en las plantillas HTML o en los scripts asociados, dado que el navegador las resolvería contra el propio dominio satélite en el que se originó el error (ej. `https://netbox-mon.vivaro.com/platforms`), provocando errores de navegación o bloqueos recurrentes.
+3. **Normalización Dinámica y Prefiltrado**:
+   - El botón primario "Solicitar acceso en ADUANA" debe apuntar a `https://aduana.vivaro.com/platforms?buscar={slug_plataforma}`.
+   - El botón secundario "Ir al Dashboard" debe apuntar a `https://aduana.vivaro.com/dashboard`.
+   - `error.js` garantiza la normalización forzosa de cualquier enlace hacia `https://aduana.vivaro.com` si se cargara sin protocolo absoluto.
+
+### Ejemplo
+
+Un usuario sin permisos accede a `https://netbox-mon.vivaro.com/login` y recibe el error 403. Al hacer clic en "Solicitar acceso en ADUANA", el botón lo redirige de inmediato a `https://aduana.vivaro.com/platforms?buscar=netbox-mon`, donde el catálogo precarga el filtro con la herramienta deseada. Si hace clic en "Ir al Dashboard", es dirigido a `https://aduana.vivaro.com/dashboard`.
+
+### Impacto
+
+Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html), [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js) y [frontend/src/components/platforms/platforms-shell.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platforms-shell.tsx).

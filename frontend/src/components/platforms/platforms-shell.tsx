@@ -125,6 +125,10 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
         }
       } catch {}
       const params = new URLSearchParams(window.location.search);
+      const queryBuscar = params.get('buscar') || params.get('q') || '';
+      if (queryBuscar) {
+        setSearchTerm(queryBuscar);
+      }
       if (params.get('seccion') === 'responsiva') {
         setSeccionActiva('responsiva');
       } else if (params.get('seccion') === 'widget') {

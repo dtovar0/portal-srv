@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var ADUANA_ORIGIN = 'https://aduana.vivaro.com';
+
   var backButtons = document.querySelectorAll('[data-action="back"]');
   for (var j = 0; j < backButtons.length; j++) {
     backButtons[j].addEventListener('click', function (e) {
@@ -23,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (window.history.length > 1) {
         window.history.back();
       } else {
-        window.location.href = '/dashboard';
+        window.location.href = ADUANA_ORIGIN + '/dashboard';
       }
     });
   }
@@ -107,9 +109,18 @@ document.addEventListener('DOMContentLoaded', function () {
       // 6. Conectar botón para prefiltrar en ADUANA
       var linksAduana = document.querySelectorAll('[data-link-aduana]');
       for (var n = 0; n < linksAduana.length; n++) {
-        var base = linksAduana[n].getAttribute('href') || '/platforms';
+        var base = linksAduana[n].getAttribute('href') || (ADUANA_ORIGIN + '/platforms');
+        if (base.indexOf('http://') !== 0 && base.indexOf('https://') !== 0) {
+          base = ADUANA_ORIGIN + (base.charAt(0) === '/' ? '' : '/') + base;
+        }
         var sep = base.indexOf('?') === -1 ? '?' : '&';
         linksAduana[n].setAttribute('href', base + sep + 'buscar=' + encodeURIComponent(rawSlug));
+      }
+
+      // 7. Normalizar cualquier enlace de Dashboard hacia ADUANA
+      var linksDashboard = document.querySelectorAll('[data-link-dashboard], a[href="/dashboard"], a[href$="/dashboard"]');
+      for (var d = 0; d < linksDashboard.length; d++) {
+        linksDashboard[d].setAttribute('href', ADUANA_ORIGIN + '/dashboard');
       }
     }
   } catch (err) {
