@@ -94,11 +94,11 @@ describe('Barra lateral', () => {
     }
   });
 
-  it('la marca dice «Portal de accesos» y «Vivaro»', async () => {
+  it('la marca dice «Aduana» y «Accesos Vivaro»', async () => {
     await montar('usuario');
     const aside = within(document.querySelector('aside')!);
-    expect(aside.getByText('Portal de accesos')).toBeTruthy();
-    expect(aside.getByText('Vivaro')).toBeTruthy();
+    expect(aside.getByText('Aduana')).toBeTruthy();
+    expect(aside.getByText('Accesos Vivaro')).toBeTruthy();
     expect(aside.queryByText('Nexus')).toBeNull();
   });
 

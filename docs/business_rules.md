@@ -5280,3 +5280,22 @@ Un usuario hace clic en «Cerrar sesión» y aterriza en `/logout`. El backend r
 ### Impacto
 
 Afecta a [app/modules/api/auth.py](../app/modules/api/auth.py), [tests/test_sesion_y_logout.py](../tests/test_sesion_y_logout.py) y al flujo de navegación de autenticación en [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx).
+
+
+Identidad de Marca en Barra Lateral del Dashboard
+
+## Navegación y Marca
+
+### Regla
+
+En la barra lateral principal del sistema (`BarraLateral`), la cabecera de marca superior despliega el isotipo canónico de Aduana acompañado de la denominación oficial:
+- Título principal: `Aduana` (en tipografía bold, color `text-barra-lateral-texto`).
+- Subtítulo: `Accesos Vivaro` (en tipografía texto secundario, color `text-barra-lateral-secundario`).
+
+### Ejemplo
+
+Al ingresar al Dashboard o cualquier vista dentro del layout principal con menú lateral (`AppShell`), el usuario visualiza en la esquina superior izquierda el isotipo corporativo junto con los textos «Aduana» y «Accesos Vivaro».
+
+### Impacto
+
+Afecta a [frontend/src/components/marco/barra-lateral.tsx](../frontend/src/components/marco/barra-lateral.tsx) y a la suite de pruebas unitarias en [frontend/tests/components/marco-admin.test.tsx](../frontend/tests/components/marco-admin.test.tsx).
