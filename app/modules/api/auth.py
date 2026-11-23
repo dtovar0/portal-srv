@@ -51,10 +51,11 @@ def _abrir_sesion(cuenta):
     """`login_user` sobre una sesión limpia (fijación de sesión, SEC-SES-03).
 
     `session.clear()` quita también `_permanent`: se vuelve a fijar.
+    `remember=False`: no se emiten cookies persistentes de 1 año (SEC-AUTH-15).
     """
     session.clear()
     session.permanent = True
-    return login_user(cuenta, remember=True)
+    return login_user(cuenta, remember=False)
 
 
 def _volver_a_entrada(codigo):

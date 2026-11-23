@@ -5319,3 +5319,23 @@ Al alternar entre el tema claro y oscuro en la portada (`/`) o en el portal/dash
 ### Impacto
 
 Afecta a [frontend/src/components/portada/pagina-portada.tsx](../frontend/src/components/portada/pagina-portada.tsx), [frontend/src/components/marco/barra-lateral.tsx](../frontend/src/components/marco/barra-lateral.tsx), [frontend/src/components/platforms/platforms-topbar.tsx](../frontend/src/components/platforms/platforms-topbar.tsx) y [frontend/src/components/platforms/platforms-sidebar-view.tsx](../frontend/src/components/platforms/platforms-sidebar-view.tsx).
+
+
+Eliminación de Tokens Persistentes (`remember=False`) en Sesiones Locales y SSO
+
+## Seguridad y Autenticación
+
+### Regla
+
+El portal no emite cookies persistentes de larga duración (`remember_token`). En el inicio de sesión (`_abrir_sesion`), la autenticación se realiza con `login_user(cuenta, remember=False)`:
+1. **Acceso de Emergencia (Superadmin Local)**: Por motivos de alta seguridad, la cuenta con privilegios totales de administración jamás debe dejar tokens persistentes de 1 año en los dispositivos donde se ejecute recuperación o mantenimiento. La sesión está acotada estrictamente a la cookie de sesión cifrada (`nexus_session`).
+2. **Acceso Corporativo (Authelia SSO / OIDC)**: La persistencia y el tiempo de vida de la sesión corporativa están centralizados y gobernados exclusivamente por Authelia (IdP). El portal no duplica estados de persistencia local que sobrevivan al cierre del navegador o a la expiración de la sesión corporativa.
+3. **Defensa en Profundidad**: Se fija `REMEMBER_COOKIE_DURATION = timedelta(hours=12)` a nivel de configuración de la aplicación para mitigar cualquier llamada accidental futura a tokens persistentes.
+
+### Ejemplo
+
+Cuando un superadmin ingresa por `/acceso-emergencia` con credenciales locales para atender una contingencia, el navegador solo recibe la cookie de sesión `nexus_session`. Al cerrar la sesión o cerrar el navegador, las credenciales quedan completamente desvinculadas sin dejar rastro de tokens de 365 días.
+
+### Impacto
+
+Afecta a [app/modules/api/auth.py](../app/modules/api/auth.py), [app/__init__.py](../app/__init__.py), [tests/test_sesion_y_logout.py](../tests/test_sesion_y_logout.py) y [tests/test_login_local.py](../tests/test_login_local.py).
