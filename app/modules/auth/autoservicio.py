@@ -68,7 +68,7 @@ def _env_bool(nombre, por_defecto=False):
 
 def mfa_habilitado():
     """True si la verificación MFA está activada para el autoservicio."""
-    return _env_bool('AUTOSERVICIO_MFA_ENABLED', False)
+    return _env_bool('AUTOSERVICIO_MFA_ENABLED', True)
 
 
 def tipo_mfa():
@@ -340,6 +340,21 @@ def validar_desafio_mfa(identificador, mfa_code, challenge_token=None):
             raise ErrorAutoservicio('Código de Authenticator inválido o desfasado.', 401)
 
     raise ErrorAutoservicio('No se pudo verificar el código de segundo factor.', 401)
+
+
+def verificar_codigo_mfa_paso2(identificador, mfa_code, challenge_token=None):
+    """Valida el código de segundo factor en el paso 2 del asistente."""
+    identificador = (identificador or '').strip()
+    mfa_code = (mfa_code or '').strip()
+    if not identificador:
+        raise ErrorAutoservicio('Indica tu usuario o correo corporativo.', 400)
+    if not mfa_code:
+        raise ErrorAutoservicio('Ingresa el código numérico de 6 dígitos.', 400)
+    validar_desafio_mfa(identificador, mfa_code, challenge_token)
+    return {
+        'status': 'success',
+        'message': 'Código de seguridad verificado correctamente.'
+    }
 
 
 def obtener_politica_contrasena():

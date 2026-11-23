@@ -265,6 +265,24 @@ def autoservicio_mfa_solicitar():
         return jsonify({'status': 'error', 'message': 'Ocurrió un error al procesar el código MFA.'}), 500
 
 
+@auth_api_bp.route('/autoservicio/mfa/verificar', methods=['POST'])
+def autoservicio_mfa_verificar():
+    """Valida el código de segundo factor (MFA) en el paso 2 del asistente."""
+    from app.modules.auth.autoservicio import verificar_codigo_mfa_paso2, ErrorAutoservicio
+    data = request.get_json(silent=True) or {}
+    identificador = (data.get('identificador') or data.get('identifier') or '').strip()
+    mfa_code = (data.get('mfa_code') or '').strip()
+    challenge_token = data.get('challenge_token') or ''
+    try:
+        res = verificar_codigo_mfa_paso2(identificador, mfa_code, challenge_token=challenge_token)
+        return jsonify(res), 200
+    except ErrorAutoservicio as err:
+        return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http
+    except Exception as exc:
+        logger.error("Error en autoservicio/mfa/verificar: %s", type(exc).__name__)
+        return jsonify({'status': 'error', 'message': 'Ocurrió un error al verificar el código MFA.'}), 500
+
+
 @auth_api_bp.route('/autoservicio/cambiar', methods=['POST'])
 def autoservicio_cambiar():
     """Cambia la contraseña validando la contraseña actual y MFA si aplica."""

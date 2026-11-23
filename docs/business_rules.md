@@ -6025,3 +6025,23 @@ Un empleado cuya contraseña corporativa caducó no puede iniciar sesión en el 
 
 ### Impacto
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [app/modules/directory/ldap_client.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/ldap_client.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/components/login-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/login-form.tsx), [frontend/src/components/marco/menu-usuario.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/marco/menu-usuario.tsx) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+Asistente de Autoservicio de Contraseña por Pasos (Stepper) y Verificación MFA
+
+## Módulo
+Autenticación / Autoservicio
+
+### Regla
+1. **Flujo Guiado Secuencial en 3 Pasos (Stepper)**:
+   La interfaz de autoservicio de contraseña se estructura en un asistente secuencial estricto de tres pasos sin pestañas concurrentes ni botones de bifurcación ambiguos:
+   - **Paso 1 (Identificación)**: El usuario introduce su usuario o correo institucional. Si la autenticación multifactor configurada es por correo, el sistema despacha automáticamente el código de seguridad de 6 dígitos al correo registrado sin exponer información sensible.
+   - **Paso 2 (Validación de Identidad MFA)**: Se valida el código numérico de 6 dígitos. El método de validación se rige estrictamente por la variable de entorno `AUTOSERVICIO_MFA_TIPO` (`email` para código enviado al buzón corporativo o `authenticator` para código temporal TOTP de aplicación móvil como Google Authenticator o Microsoft Authenticator). El usuario ingresa el código y el backend valida su autenticidad mediante `/api/v1/auth/autoservicio/mfa/verificar` antes de permitir el acceso al cambio de contraseña.
+   - **Paso 3 (Nueva Contraseña)**: El usuario establece su nueva contraseña o utiliza el generador criptográfico integrado de 24 caracteres de alta entropía. La clave se valida contra la directiva corporativa (longitud mínima 16 caracteres, mayúsculas, minúsculas, dígitos y símbolos).
+2. **Sincronización Atómica y Notificación de Confirmación**:
+   Al enviar el formulario del Paso 3 mediante `/api/v1/auth/autoservicio/restablecer-mfa`, el backend actualiza de forma atómica la contraseña en OpenLDAP, sincroniza las credenciales autorizadas en JumpServer, genera un registro de auditoría (`AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO (MFA)`) y remite un correo electrónico de confirmación al usuario notificando el cambio exitoso de contraseña para alertarle ante cualquier actividad no autorizada.
+
+### Ejemplo
+Un empleado con contraseña vencida ingresa a `/autoservicio`. En el Paso 1 escribe su usuario `jdoe`. El sistema detecta `AUTOSERVICIO_MFA_TIPO=email`, despacha el código de 6 dígitos a su correo corporativo y avanza al Paso 2. El usuario introduce `482915` y presiona "Validar y Continuar al Paso 3". En el Paso 3, presiona "Generar contraseña segura", el sistema genera una clave de 24 caracteres que cumple con todos los requisitos, y al hacer clic en "Cambiar Contraseña", OpenLDAP y JumpServer se actualizan al instante, recibiendo el usuario un correo de notificación confirmando el cambio exitoso.
+
+### Impacto
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

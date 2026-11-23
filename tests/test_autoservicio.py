@@ -21,6 +21,7 @@ from app.modules.auth.autoservicio import (
     cambiar_contrasena,
     restablecer_con_token,
     restablecer_directo_mfa,
+    verificar_codigo_mfa_paso2,
 )
 
 
@@ -329,6 +330,48 @@ def test_endpoint_restablecer_mfa(cliente, monkeypatch):
         "identifier": "usuario_prueba@vivaro.com",
         "new_password": "NuevaContrasenaSegura2026!",
         "mfa_code": "999999"
+    })
+    assert resp.status_code == 401
+
+
+def test_verificar_codigo_mfa_paso2_exito_y_fallo(app, monkeypatch):
+    """Verifica la función de validación intermedia de MFA para el paso 2 del asistente."""
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'authenticator')
+
+    with app.app_context():
+        # Faltan datos
+        with pytest.raises(ErrorAutoservicio) as exc:
+            verificar_codigo_mfa_paso2("", "123456")
+        assert "usuario o correo" in str(exc.value).lower()
+
+        with pytest.raises(ErrorAutoservicio) as exc:
+            verificar_codigo_mfa_paso2("usuario@vivaro.com", "")
+        assert "código" in str(exc.value).lower()
+
+        # Código TOTP válido
+        secret = _secret_totp_usuario("stepper_user@vivaro.com")
+        key = base64.b32decode(secret.upper(), casefold=True)
+        ahora = int(time.time() // 30)
+        msg = struct.pack('>Q', ahora)
+        digest = hmac.new(key, msg, hashlib.sha1).digest()
+        o = digest[19] & 0x0f
+        val = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
+        codigo_valido = f"{val:06d}"
+
+        res = verificar_codigo_mfa_paso2("stepper_user@vivaro.com", codigo_valido)
+        assert res["status"] == "success"
+
+
+def test_endpoint_autoservicio_mfa_verificar(cliente, monkeypatch):
+    """Verifica el endpoint POST /api/v1/auth/autoservicio/mfa/verificar."""
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'authenticator')
+
+    # Código incorrecto retorna 401
+    resp = cliente.post('/api/v1/auth/autoservicio/mfa/verificar', json={
+        "identificador": "operador_test@vivaro.com",
+        "mfa_code": "000000"
     })
     assert resp.status_code == 401
 

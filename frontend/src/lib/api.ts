@@ -277,6 +277,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ identificador }),
     }),
+  autoservicioVerificarMfa: (datos: {
+    identificador: string;
+    mfa_code: string;
+    challenge_token?: string;
+  }) =>
+    request<{ status: string; message: string }>('/auth/autoservicio/mfa/verificar', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
   autoservicioPolitica: () =>
     request<{ min_length: number; max_length: number; required_classes: string[]; symbols: string }>(
       '/auth/autoservicio/politica'
