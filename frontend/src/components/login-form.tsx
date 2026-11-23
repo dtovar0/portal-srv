@@ -2,13 +2,14 @@
 
 /**
  * Pantalla de acceso corporativo (ADR-009):
- * Enfoque exclusivo en autenticación e identidad. No muestra contenido de
- * marketing ni presentación de la plataforma (reservado para la portada `/`).
+ * Layout split-screen visual con escaparate de interfaz (capturas reales) en
+ * escritorio y tarjeta de autenticación enfocada.
  *
  * Flujo:
  * - Un solo botón que inicia el flujo OIDC con Authelia por navegación completa.
  * - Con Authelia apagado (`OIDC_HABILITADO=false`, FNC-158) muestra usuario y
  *   contraseña para cuentas locales.
+ * - La cuenta administrativa de contingencia se atiende en `/acceso-emergencia`.
  * - Errores de callback en `?error=<codigo>` mostrados por toast.
  */
 
@@ -66,54 +67,105 @@ export function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col justify-between bg-fondo text-body-text select-none">
+    <div className="relative flex min-h-screen w-full flex-col lg:flex-row bg-fondo text-body-text select-none">
       <PageHeader
         title="Aduana: Control de Acceso"
         description="Inicia sesión con tu cuenta corporativa para acceder a tus plataformas."
         className="sr-only"
       />
 
-      {/* Atmósfera y profundidad de fondo (luces ambientales sutiles y cuadrícula técnica) */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 size-[620px] rounded-full bg-aduana-cyan/10 blur-[120px] dark:bg-aduana-cyan/15" />
-        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 size-[500px] rounded-full bg-aduana-orange/10 blur-[120px] dark:bg-aduana-orange/10" />
-        <div className="absolute inset-0 bg-[radial-gradient(var(--color-borde-sutil)_1px,transparent_1px)] [background-size:24px_24px] opacity-40 dark:opacity-20" />
-      </div>
+      {/* PANEL IZQUIERDO (Desktop): Escaparate Visual de la Plataforma */}
+      <div className="relative hidden w-full lg:flex lg:w-1/2 xl:w-7/12 flex-col justify-between border-r border-panel-border/60 bg-superficie-hundida p-8 lg:p-12">
+        {/* Atmósfera y luces ambientales sutiles */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="absolute -top-24 -left-24 size-96 rounded-full bg-aduana-cyan/10 blur-[100px]" />
+          <div className="absolute -bottom-24 -right-24 size-96 rounded-full bg-aduana-orange/10 blur-[100px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(var(--color-borde-sutil)_1px,transparent_1px)] [background-size:24px_24px] opacity-40 dark:opacity-20" />
+        </div>
 
-      {/* BARRA SUPERIOR: Identidad discreta y enlace opcional a portada */}
-      <header className="relative z-10 flex w-full items-center justify-between px-6 py-5 sm:px-10">
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie p-1.5 shadow-xs transition-colors">
+        {/* Cabecera de marca superior izquierda */}
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-panel-border bg-superficie p-1.5 shadow-md ring-4 ring-aduana-cyan/15 transition-colors">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-7 object-contain" width={28} height={28} />
+            <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-8 object-contain" width={32} height={32} />
           </span>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-display text-base font-bold tracking-tight text-body-text">Aduana</span>
-              <span className="inline-flex items-center rounded-md border border-aduana-cyan/30 bg-aduana-cyan/10 px-1.5 py-0.2 text-[10px] font-bold text-aduana-cyan">
+              <span className="font-display text-xl font-extrabold tracking-tight text-body-text">Aduana</span>
+              <span className="inline-flex items-center rounded-md border border-aduana-cyan/30 bg-aduana-cyan/10 px-2 py-0.5 text-[10px] font-bold text-aduana-cyan">
                 v2.0
               </span>
             </div>
-            <span className="text-[11px] text-texto-secundario">Control de Acceso</span>
+            <span className="text-xs text-texto-secundario font-medium">Control de Acceso • Portal Vivaro</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {esPortadaActiva() ? (
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-panel-border/70 bg-superficie/60 px-3 py-1.5 text-xs font-semibold text-aduana-cyan backdrop-blur-md transition-all hover:bg-superficie hover:text-aduana-cyan-hover hover:border-aduana-cyan/40 outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
-            >
-              <Icono nombre="info" tamano="xs" ariaHidden={true} />
-              <span>Conoce Aduana: Guía y Presentación de la Plataforma</span>
-            </Link>
-          ) : null}
+        {/* Centro visual: Ventana de interfaz de la plataforma */}
+        <div className="relative z-10 my-auto py-8 max-w-xl mx-auto w-full">
+          <div className="rounded-3xl border border-panel-border/80 bg-superficie/90 p-3 shadow-2xl shadow-aduana-cyan/5 backdrop-blur-xl transition-all">
+            <div className="flex items-center justify-between px-3 pb-3">
+              <div className="flex gap-1.5" aria-hidden="true">
+                <span className="size-2.5 rounded-full bg-error/80" />
+                <span className="size-2.5 rounded-full bg-warning/80" />
+                <span className="size-2.5 rounded-full bg-success/80" />
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-texto-secundario">
+                <Icono nombre="escudo-ok" tamano="xs" ariaHidden={true} className="text-aduana-cyan" />
+                <span>Catálogo Unificado de Plataformas</span>
+              </span>
+            </div>
+            <div className="rounded-2xl border border-panel-border bg-superficie-hundida">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/screenshots/catalogo-plataformas.png"
+                alt="Catálogo de plataformas de Aduana"
+                className="rounded-2xl block h-auto w-full object-cover shadow-xs"
+                fetchPriority="high"
+              />
+            </div>
+          </div>
         </div>
-      </header>
 
-      {/* ÁREA CENTRAL: Tarjeta de Acceso Corporativo con enfoque puro */}
-      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
-        <div className="w-full max-w-[440px]">
+        {/* Pie del panel izquierdo */}
+        <div className="relative z-10 pt-4 border-t border-panel-border/40 flex items-center justify-between text-xs text-texto-secundario">
+          <span>Vivaro • Telecomunicaciones y Medios</span>
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <span className="size-2 rounded-full bg-exito" />
+            Sistemas Operativos
+          </span>
+        </div>
+      </div>
+
+      {/* PANEL DERECHO: Tarjeta de Acceso y Acciones */}
+      <div className="relative flex flex-1 flex-col justify-between p-6 sm:p-10 lg:p-12">
+        {/* Cabecera superior derecha (Mobile y enlace a portada) */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3 lg:hidden">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie p-1 shadow-xs">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-7 object-contain" width={28} height={28} />
+            </span>
+            <div className="flex flex-col">
+              <span className="font-display text-lg font-bold text-body-text">Aduana</span>
+              <span className="text-[11px] text-texto-secundario">Control de Acceso</span>
+            </div>
+          </div>
+
+          <div className="ml-auto">
+            {esPortadaActiva() ? (
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-panel-border/70 bg-superficie/60 px-3 py-1.5 text-xs font-semibold text-aduana-cyan backdrop-blur-md transition-all hover:bg-superficie hover:text-aduana-cyan-hover hover:border-aduana-cyan/40 outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+              >
+                <Icono nombre="info" tamano="xs" ariaHidden={true} />
+                <span>Conoce Aduana: Guía y Presentación de la Plataforma</span>
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Contenedor de la Tarjeta de Autenticación */}
+        <div className="relative z-10 mx-auto my-auto w-full max-w-[420px] py-8">
           <Card className="relative rounded-3xl border border-panel-border bg-superficie/95 p-8 sm:p-10 shadow-2xl shadow-aduana-cyan/5 backdrop-blur-xl transition-all">
             {/* Borde superior continuo con gradiente institucional */}
             <div
@@ -121,20 +173,20 @@ export function LoginForm() {
               aria-hidden="true"
             />
 
-            {/* Cabecera de la tarjeta: Logo e indicadores de autenticación */}
+            {/* Cabecera de la tarjeta: Logo e indicadores */}
             <div className="flex flex-col items-center text-center">
-              <div className="relative mb-5 flex size-16 items-center justify-center rounded-2xl border border-panel-border bg-superficie p-2.5 shadow-md ring-4 ring-aduana-cyan/15 transition-transform hover:scale-105">
+              <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl border border-panel-border bg-superficie p-2 shadow-md ring-4 ring-aduana-cyan/15 transition-transform hover:scale-105">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/brand/isotype-aduana.png"
                   alt="Aduana"
-                  className="size-11 object-contain"
-                  width={44}
-                  height={44}
+                  className="size-10 object-contain"
+                  width={40}
+                  height={40}
                 />
               </div>
 
-              <div className="inline-flex items-center gap-2 rounded-full border border-panel-border/80 bg-panel-fill px-3 py-1 text-xs font-medium text-texto-secundario mb-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-panel-border/80 bg-panel-fill px-3 py-1 text-xs font-medium text-texto-secundario mb-2">
                 <span className="size-2 rounded-full bg-exito animate-pulse" />
                 <span>Portal Vivaro • Acceso Corporativo</span>
               </div>
@@ -142,8 +194,8 @@ export function LoginForm() {
               <h1 className="font-display text-2xl font-black tracking-tight text-body-text sm:text-3xl">
                 Iniciar Sesión
               </h1>
-              <p className="mt-2 text-xs sm:text-sm text-texto-secundario max-w-xs leading-relaxed">
-                Ingresa con tu cuenta corporativa para acceder al catálogo unificado de plataformas.
+              <p className="mt-2 text-xs sm:text-sm text-texto-secundario leading-relaxed">
+                Ingresa con tu cuenta corporativa para acceder a tus plataformas autorizadas.
               </p>
             </div>
 
@@ -192,16 +244,16 @@ export function LoginForm() {
             </div>
           </Card>
         </div>
-      </main>
 
-      {/* BARRA INFERIOR: Metadata institucional y seguridad perimetral */}
-      <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-5 sm:px-10 text-xs text-texto-secundario border-t border-panel-border/40 text-center sm:text-left">
-        <span>Vivaro • Gobernanza y Control Centralizado de Accesos TI</span>
-        <div className="flex items-center gap-2 text-[11px]">
-          <span className="size-1.5 rounded-full bg-exito" />
-          <span>Conexión Cifrada TLS 1.3</span>
+        {/* Pie inferior derecho */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-texto-secundario pt-4 border-t border-panel-border/40 text-center sm:text-left">
+          <span>Vivaro • Gobernanza y Control Centralizado de Accesos TI</span>
+          <div className="flex items-center gap-2 text-[11px]">
+            <span className="size-1.5 rounded-full bg-exito" />
+            <span>Conexión Cifrada TLS 1.3</span>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
