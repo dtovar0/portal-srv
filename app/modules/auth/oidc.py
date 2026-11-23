@@ -56,6 +56,7 @@ class Identidad:
     sub: str
     correo: str
     nombre: str
+    grupos: tuple[str, ...] = ()
 
 
 # Un cliente por configuración: conserva el descubrimiento y las llaves en memoria.
@@ -153,7 +154,24 @@ def identidad_del_callback(config: ConfiguracionOidc) -> Identidad:
     if claims.get('email_verified') is False:
         raise ErrorOidc(ERROR_IDENTIDAD, 'OIDC: correo no verificado')
     nombre = _texto(claims.get('name')) or correo
-    return Identidad(sub=sub, correo=correo, nombre=nombre)
+
+    grupos_candidatos = []
+    for fuente in (claims.get('groups'), claims.get('group'),
+                   claims_id.get('groups') if isinstance(claims_id, dict) else None,
+                   claims_id.get('group') if isinstance(claims_id, dict) else None):
+        if fuente:
+            if isinstance(fuente, (str, bytes)):
+                grupos_candidatos.append(fuente)
+            elif isinstance(fuente, (list, tuple, set)):
+                grupos_candidatos.extend(fuente)
+    vistos = set()
+    grupos_limpios = []
+    for g in grupos_candidatos:
+        txt = str(g).strip()
+        if txt and txt not in vistos:
+            vistos.add(txt)
+            grupos_limpios.append(txt)
+    return Identidad(sub=sub, correo=correo, nombre=nombre, grupos=tuple(grupos_limpios))
 
 
 def _origen(url):

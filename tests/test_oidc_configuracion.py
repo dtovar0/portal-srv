@@ -41,7 +41,7 @@ def test_configuracion_completa():
     assert config.issuer == ISSUER
     assert config.client_id == 'portal'
     assert config.redirect_uri == REDIRECT_URI
-    assert config.scopes == 'openid profile email'
+    assert config.scopes == 'openid profile email groups'
     assert config.logout_url == 'https://auth.pruebas.invalid/logout'
 
 
