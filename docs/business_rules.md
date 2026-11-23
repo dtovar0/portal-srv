@@ -5339,3 +5339,24 @@ Cuando un superadmin ingresa por `/acceso-emergencia` con credenciales locales p
 ### Impacto
 
 Afecta a [app/modules/api/auth.py](../app/modules/api/auth.py), [app/__init__.py](../app/__init__.py), [tests/test_sesion_y_logout.py](../tests/test_sesion_y_logout.py) y [tests/test_login_local.py](../tests/test_login_local.py).
+
+
+Diseño Split-Screen Corporativo de la Pantalla de Login
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) adopta una arquitectura visual split-screen de dos paneles:
+1. **Panel Institucional (Showcase Desktop)**: Exhibe la identidad institucional de Aduana (isotipo oficial v2.0, pilares de gobernanza Zero-Trust, federación SSO, catálogo unificado y trazabilidad inmutable) en una columna izquierda dedicada con atmósfera tecnológica oscura, fondos con degradados perimetrales y micro-tarjetas informativas.
+2. **Panel de Autenticación**: Columna derecha limpia, ergonómica y accesible donde reside la tarjeta de autenticación (`Card`), el estado de conexión con Authelia / SSO corporativo, acciones de inicio de sesión de alto contraste (botón con elevación y gradiente cian corporativo), retroalimentación de estado accesible y enlaces institucionales.
+3. **Responsividad Móvil**: En pantallas móviles y tablets (`< lg`), el panel de showcase se oculta fluidamente priorizando la tarjeta de autenticación y preservando una cabecera institucional compacta.
+4. **Contratos Técnicos y de Navegación**: Se respeta de manera estricta la ausencia de clases de bloqueo de scroll (`h-screen`, `h-dvh`, `overflow-hidden`), utilizando `min-h-screen` y preservando intactos los contratos de integración con Authelia, modos de login local y accesibilidad semántica.
+
+### Ejemplo
+
+Al acceder a `/login` desde un navegador de escritorio, el usuario observa a la izquierda la propuesta de valor y los estándares de seguridad corporativa de Vivaro, y a la derecha una tarjeta centrada con el botón "Entrar con Authelia". En dispositivos móviles, la interfaz se adapta automáticamente a una vista vertical limpia y deslizable sin desbordamientos de pantalla.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
