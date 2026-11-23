@@ -10,6 +10,7 @@
  * Paso 4: Confirmación de actualización exitosa y notificación remitida por correo.
  */
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { api, type AutoservicioConfig } from '@/lib/api';
 import { generarContrasenaSegura } from '@/lib/generador-contrasena';
@@ -118,7 +119,7 @@ export function AutoservicioView() {
       setConfirmarContrasena(clave);
       setMostrarClaves(true);
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        navigator.clipboard.writeText(clave).catch(() => {});
+        navigator.clipboard.writeText(clave).catch(() => { });
       }
       avisar('success', 'Contraseña de 24 caracteres generada y copiada al portapapeles.');
     } catch {
@@ -294,11 +295,10 @@ export function AutoservicioView() {
                 {/* Paso 1 */}
                 <li className="flex items-center flex-1">
                   <div
-                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${
-                      paso >= 1
+                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 1
                         ? 'bg-aduana-cyan text-texto-sobre-accion ring-4 ring-aduana-cyan/20'
                         : 'bg-panel-border text-texto-secundario'
-                    }`}
+                      }`}
                   >
                     {paso > 1 ? '✓' : '1'}
                   </div>
@@ -309,20 +309,18 @@ export function AutoservicioView() {
                     <p className="text-xs font-semibold text-body-text leading-tight">Identificación</p>
                   </div>
                   <div
-                    className={`flex-1 mx-3 sm:mx-4 h-0.5 transition-colors ${
-                      paso >= 2 ? 'bg-aduana-cyan' : 'bg-panel-border'
-                    }`}
+                    className={`flex-1 mx-3 sm:mx-4 h-0.5 transition-colors ${paso >= 2 ? 'bg-aduana-cyan' : 'bg-panel-border'
+                      }`}
                   />
                 </li>
 
                 {/* Paso 2 */}
                 <li className="flex items-center flex-1">
                   <div
-                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${
-                      paso >= 2
+                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 2
                         ? 'bg-aduana-cyan text-texto-sobre-accion ring-4 ring-aduana-cyan/20'
                         : 'bg-panel-border text-texto-secundario'
-                    }`}
+                      }`}
                   >
                     {paso > 2 ? '✓' : '2'}
                   </div>
@@ -333,20 +331,18 @@ export function AutoservicioView() {
                     <p className="text-xs font-semibold text-body-text leading-tight">Código MFA</p>
                   </div>
                   <div
-                    className={`flex-1 mx-3 sm:mx-4 h-0.5 transition-colors ${
-                      paso >= 3 ? 'bg-aduana-cyan' : 'bg-panel-border'
-                    }`}
+                    className={`flex-1 mx-3 sm:mx-4 h-0.5 transition-colors ${paso >= 3 ? 'bg-aduana-cyan' : 'bg-panel-border'
+                      }`}
                   />
                 </li>
 
                 {/* Paso 3 */}
                 <li className="flex items-center">
                   <div
-                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${
-                      paso >= 3
+                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 3
                         ? 'bg-aduana-cyan text-texto-sobre-accion ring-4 ring-aduana-cyan/20'
                         : 'bg-panel-border text-texto-secundario'
-                    }`}
+                      }`}
                   >
                     {paso > 3 ? '✓' : '3'}
                   </div>

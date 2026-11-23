@@ -26,6 +26,8 @@ from app.modules.auth.autoservicio import (
     _obtener_serializador,
     _hash_codigo,
     SALT_MFA,
+    resolver_smtp_autoservicio,
+    _enviar_correo_mfa,
 )
 
 
@@ -421,5 +423,56 @@ def test_mfa_codigo_expirado_falla(app, monkeypatch):
             validar_desafio_mfa('usuario_expira@vivaro.com', codigo, challenge_token=token)
         assert "expirado" in str(exc.value).lower()
         assert exc.value.codigo_http == 401
+
+
+def test_resolver_smtp_dedicado_autoservicio(monkeypatch):
+    """Verifica la prioridad de AUTOSERVICIO_SMTP_* sobre la configuración global."""
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_SERVER', 'smtp.authelia.local')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_PORT', '2525')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_USER', 'authelia_user')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_PASSWORD', 'secret_authelia')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_ENCRYPTION', 'ssl')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_SENDER_EMAIL', 'seguridad@vivaro.com')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_SENDER_NAME', 'Authelia Security')
+
+    cfg = resolver_smtp_autoservicio()
+    assert cfg is not None
+    assert cfg['server'] == 'smtp.authelia.local'
+    assert cfg['port'] == 2525
+    assert cfg['username'] == 'authelia_user'
+    assert cfg['password'] == 'secret_authelia'
+    assert cfg['encryption'] == 'ssl'
+    assert cfg['sender_email'] == 'seguridad@vivaro.com'
+    assert cfg['sender_name'] == 'Authelia Security'
+    assert cfg['source'] == 'env_autoservicio'
+
+
+def test_resolver_smtp_fallback_global(app, monkeypatch):
+    """Verifica que sin AUTOSERVICIO_SMTP_SERVER se utilice la configuración global de Aduana."""
+    monkeypatch.delenv('AUTOSERVICIO_SMTP_SERVER', raising=False)
+    monkeypatch.setenv('SMTP_SERVER', 'smtp.global.local')
+    monkeypatch.setenv('SMTP_PORT', '587')
+    monkeypatch.setenv('SMTP_USER', 'global_user')
+    monkeypatch.setenv('SMTP_PASSWORD', 'global_pass')
+    monkeypatch.setenv('SMTP_FORCE_ENV', 'true')
+
+    with app.app_context():
+        cfg = resolver_smtp_autoservicio()
+        assert cfg is not None
+        assert cfg['server'] == 'smtp.global.local'
+        assert cfg['port'] == 587
+        assert cfg['username'] == 'global_user'
+
+
+def test_enviar_correo_mfa_sin_smtp_retorna_error(monkeypatch):
+    """Verifica que sin servidor SMTP configurado retorne False y mensaje explicativo."""
+    monkeypatch.delenv('AUTOSERVICIO_SMTP_SERVER', raising=False)
+    monkeypatch.delenv('SMTP_SERVER', raising=False)
+    monkeypatch.setattr('app.modules.auth.autoservicio.resolver_smtp_autoservicio', lambda: None)
+
+    exito, error_msg = _enviar_correo_mfa('test@vivaro.com', '123456')
+    assert exito is False
+    assert 'No hay un servidor de correo (SMTP) configurado' in error_msg
+
 
 

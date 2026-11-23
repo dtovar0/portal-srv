@@ -121,34 +121,81 @@ def verificar_token_recuperacion(token):
 
 def resolver_smtp_autoservicio():
     """Obtiene la configuración SMTP para Autoservicio/Authelia.
-    Usa AUTOSERVICIO_SMTP_* si existen; si no, hereda SMTP_* global.
+    Prioridad:
+    1. Variables dedicadas AUTOSERVICIO_SMTP_* en .env (si tienen servidor definido).
+    2. Configuración unificada de Aduana (resolve_smtp_settings: variables SMTP_* o BD SMTPConfig).
+    3. Variables SMTP_* directas del entorno.
     """
-    server = (os.getenv('AUTOSERVICIO_SMTP_SERVER') or os.getenv('SMTP_SERVER') or '').strip()
-    if not server:
-        return None
-    port = int(os.getenv('AUTOSERVICIO_SMTP_PORT') or os.getenv('SMTP_PORT') or '587')
-    username = (os.getenv('AUTOSERVICIO_SMTP_USER') or os.getenv('SMTP_USER') or '').strip() or None
-    password = os.getenv('AUTOSERVICIO_SMTP_PASSWORD') or os.getenv('SMTP_PASSWORD') or None
-    encryption = (os.getenv('AUTOSERVICIO_SMTP_ENCRYPTION') or os.getenv('SMTP_ENCRYPTION') or 'starttls').strip().lower()
-    sender_name = (os.getenv('AUTOSERVICIO_SMTP_SENDER_NAME') or 'Authelia • Autoservicio de Identidad').strip()
-    sender_email = (os.getenv('AUTOSERVICIO_SMTP_SENDER_EMAIL') or os.getenv('SMTP_SENDER_EMAIL') or 'authelia@vivaro.com').strip()
-    return {
-        'server': server,
-        'port': port,
-        'username': username,
-        'password': password,
-        'encryption': encryption,
-        'sender_name': sender_name,
-        'sender_email': sender_email,
-    }
+    server_dedicado = (os.getenv('AUTOSERVICIO_SMTP_SERVER') or '').strip()
+    if server_dedicado:
+        port = int(os.getenv('AUTOSERVICIO_SMTP_PORT') or '587')
+        username = (os.getenv('AUTOSERVICIO_SMTP_USER') or '').strip() or None
+        password = os.getenv('AUTOSERVICIO_SMTP_PASSWORD') or None
+        encryption = (os.getenv('AUTOSERVICIO_SMTP_ENCRYPTION') or 'starttls').strip().lower()
+        sender_name = (os.getenv('AUTOSERVICIO_SMTP_SENDER_NAME') or 'Authelia • Autoservicio de Identidad').strip()
+        sender_email = (os.getenv('AUTOSERVICIO_SMTP_SENDER_EMAIL') or 'authelia@vivaro.com').strip()
+        return {
+            'server': server_dedicado,
+            'port': port,
+            'username': username,
+            'password': password,
+            'encryption': encryption,
+            'sender_name': sender_name,
+            'sender_email': sender_email,
+            'source': 'env_autoservicio',
+        }
+
+    # Fallback a la configuración global de Aduana (BD SMTPConfig o SMTP_*)
+    try:
+        from app.modules.notifications.services import resolve_smtp_settings
+        global_cfg = resolve_smtp_settings()
+        if global_cfg and global_cfg.is_usable:
+            sender_name = (os.getenv('AUTOSERVICIO_SMTP_SENDER_NAME') or global_cfg.sender_name or 'Authelia • Autoservicio de Identidad').strip()
+            sender_email = (os.getenv('AUTOSERVICIO_SMTP_SENDER_EMAIL') or global_cfg.sender_email or 'authelia@vivaro.com').strip()
+            return {
+                'server': global_cfg.server,
+                'port': global_cfg.port,
+                'username': global_cfg.username,
+                'password': global_cfg.password,
+                'encryption': global_cfg.encryption,
+                'sender_name': sender_name,
+                'sender_email': sender_email,
+                'source': f"global_{global_cfg.source}",
+            }
+    except Exception as exc:
+        logger.warning("Autoservicio: no se pudo resolver configuración SMTP global: %s", exc)
+
+    # Fallback directo a variables SMTP_* del entorno
+    server_env = (os.getenv('SMTP_SERVER') or '').strip()
+    if server_env:
+        port = int(os.getenv('SMTP_PORT') or '587')
+        username = (os.getenv('SMTP_USER') or '').strip() or None
+        password = os.getenv('SMTP_PASSWORD') or None
+        encryption = (os.getenv('SMTP_ENCRYPTION') or 'starttls').strip().lower()
+        sender_name = (os.getenv('AUTOSERVICIO_SMTP_SENDER_NAME') or os.getenv('SMTP_SENDER_NAME') or 'Authelia • Autoservicio de Identidad').strip()
+        sender_email = (os.getenv('AUTOSERVICIO_SMTP_SENDER_EMAIL') or os.getenv('SMTP_SENDER_EMAIL') or 'authelia@vivaro.com').strip()
+        return {
+            'server': server_env,
+            'port': port,
+            'username': username,
+            'password': password,
+            'encryption': encryption,
+            'sender_name': sender_name,
+            'sender_email': sender_email,
+            'source': 'env_smtp',
+        }
+
+    return None
 
 
 def _enviar_correo_mfa(destinatario, codigo, nombre=None):
-    """Envía el código de 6 dígitos mediante el servidor SMTP configurado."""
+    """Envía el código de 6 dígitos mediante el servidor SMTP configurado.
+    Retorna (True, None) si el envío fue exitoso, o (False, mensaje_error) si falló.
+    """
     cfg = resolver_smtp_autoservicio()
     if not cfg:
-        logger.info("SMTP no activo: código MFA Authelia para %s es: %s", destinatario, codigo)
-        return False
+        logger.warning("Autoservicio MFA: No hay servidor SMTP configurado en el sistema para enviar a %s", destinatario)
+        return False, "No hay un servidor de correo (SMTP) configurado en el sistema. Configura SMTP_SERVER o AUTOSERVICIO_SMTP_SERVER en el archivo .env o en Ajustes > Servidor de Correo."
 
     msg = MIMEMultipart()
     msg['From'] = f"{cfg['sender_name']} <{cfg['sender_email']}>"
@@ -167,28 +214,35 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
     )
     msg.attach(MIMEText(cuerpo, 'plain'))
 
+    logger.info("Autoservicio MFA: Conectando a servidor SMTP %s:%s (cifrado: %s, auth: %s, origen: %s) para enviar código a %s",
+                cfg['server'], cfg['port'], cfg['encryption'], bool(cfg['username'] and cfg['password']), cfg.get('source'), destinatario)
+
     try:
         if cfg['encryption'] == 'ssl':
-            smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=10)
+            smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=15)
         else:
-            smtp = smtplib.SMTP(cfg['server'], cfg['port'], timeout=10)
+            smtp = smtplib.SMTP(cfg['server'], cfg['port'], timeout=15)
             if cfg['encryption'] == 'starttls':
                 smtp.starttls()
+        if os.getenv('DEBUG_SMTP', '').strip().lower() == 'true':
+            smtp.set_debuglevel(1)
         if cfg['username'] and cfg['password']:
             smtp.login(cfg['username'], cfg['password'])
         smtp.send_message(msg)
         smtp.quit()
-        return True
+        logger.info("Autoservicio MFA: Código de 6 dígitos enviado exitosamente a %s vía %s", destinatario, cfg['server'])
+        return True, None
     except Exception as exc:
-        logger.error("Error al enviar código MFA a %s: %s", destinatario, type(exc).__name__)
-        return False
+        logger.error("Autoservicio MFA: Error al conectar o enviar vía SMTP a %s (%s:%s): %s",
+                     destinatario, cfg['server'], cfg['port'], exc, exc_info=True)
+        return False, f"Fallo al conectar con el servidor SMTP {cfg['server']}:{cfg['port']} ({type(exc).__name__}: {exc})"
 
 
 def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
     """Envía un correo de notificación confirmando que la contraseña fue actualizada."""
     cfg = resolver_smtp_autoservicio()
     if not cfg:
-        logger.info("SMTP no activo: confirmación de cambio de contraseña para %s", destinatario)
+        logger.info("Autoservicio: SMTP no activo al enviar confirmación de cambio a %s", destinatario)
         return False
 
     msg = MIMEMultipart()
@@ -210,20 +264,26 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
     )
     msg.attach(MIMEText(cuerpo, 'plain'))
 
+    logger.info("Autoservicio: Conectando a servidor SMTP %s:%s para enviar confirmación de cambio a %s",
+                cfg['server'], cfg['port'], destinatario)
     try:
         if cfg['encryption'] == 'ssl':
-            smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=10)
+            smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=15)
         else:
-            smtp = smtplib.SMTP(cfg['server'], cfg['port'], timeout=10)
+            smtp = smtplib.SMTP(cfg['server'], cfg['port'], timeout=15)
             if cfg['encryption'] == 'starttls':
                 smtp.starttls()
+        if os.getenv('DEBUG_SMTP', '').strip().lower() == 'true':
+            smtp.set_debuglevel(1)
         if cfg['username'] and cfg['password']:
             smtp.login(cfg['username'], cfg['password'])
         smtp.send_message(msg)
         smtp.quit()
+        logger.info("Autoservicio: Notificación de cambio de contraseña enviada a %s", destinatario)
         return True
     except Exception as exc:
-        logger.error("Error al enviar confirmación de cambio a %s: %s", destinatario, type(exc).__name__)
+        logger.error("Autoservicio: Error al enviar confirmación de cambio a %s (%s:%s): %s",
+                     destinatario, cfg['server'], cfg['port'], exc, exc_info=True)
         return False
 
 
@@ -248,11 +308,15 @@ def solicitar_codigo_mfa(identificador):
         try:
             cliente = ClienteDirectorio()
             persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_por_uid(identificador)
+            if not persona and '@' in identificador:
+                # Si no se encontró por correo exacto, intentar por uid extrayendo la parte de usuario
+                usuario_parte = identificador.split('@')[0]
+                persona = cliente.buscar_por_uid(usuario_parte)
             if persona:
                 correo = persona.correo or (identificador if '@' in identificador else None)
                 nombre = persona.nombre
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Autoservicio MFA: Error al consultar LDAP para '%s': %s", identificador, exc)
 
     # Búsqueda en BD local si no se encontró en LDAP
     if not correo:
@@ -266,6 +330,7 @@ def solicitar_codigo_mfa(identificador):
 
     # Si no se encontró, responder como si se enviara (anti-enumeración)
     if not correo:
+        logger.info("Autoservicio MFA: Identificador '%s' no encontrado en LDAP ni en BD local", identificador)
         return {
             'status': 'success',
             'message': 'Si la cuenta existe en Authelia, recibirás un código de 6 dígitos.',
@@ -281,7 +346,18 @@ def solicitar_codigo_mfa(identificador):
         'ts': time.time(),
     }, salt=SALT_MFA)
 
-    _enviar_correo_mfa(correo, codigo_6, nombre=nombre)
+    res_envio = _enviar_correo_mfa(correo, codigo_6, nombre=nombre)
+    if isinstance(res_envio, tuple):
+        exito_envio, error_envio = res_envio
+    else:
+        exito_envio, error_envio = bool(res_envio), "Fallo desconocido al enviar correo"
+
+    if not exito_envio:
+        from flask import current_app
+        if not current_app.config.get('TESTING'):
+            logger.error("Autoservicio MFA: No se pudo enviar el código de seguridad a %s: %s", correo, error_envio)
+            raise ErrorAutoservicio(error_envio, 503)
+
     add_audit_log('AUTOSERVICIO: CODIGO MFA ENVIADO', status='info', target=correo,
                   detail='Código de verificación enviado por correo')
 
@@ -544,17 +620,20 @@ def solicitar_recuperacion(correo, base_url=''):
             msg.attach(MIMEText(cuerpo, 'plain'))
             try:
                 if cfg['encryption'] == 'ssl':
-                    smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=10)
+                    smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=15)
                 else:
-                    smtp = smtplib.SMTP(cfg['server'], cfg['port'], timeout=10)
+                    smtp = smtplib.SMTP(cfg['server'], cfg['port'], timeout=15)
                     if cfg['encryption'] == 'starttls':
                         smtp.starttls()
+                if os.getenv('DEBUG_SMTP', '').strip().lower() == 'true':
+                    smtp.set_debuglevel(1)
                 if cfg['username'] and cfg['password']:
                     smtp.login(cfg['username'], cfg['password'])
                 smtp.send_message(msg)
                 smtp.quit()
+                logger.info("Autoservicio: Enlace de recuperación enviado exitosamente a %s", correo)
             except Exception as exc:
-                logger.error("Error al enviar correo de recuperación (%s): %s", correo, type(exc).__name__)
+                logger.error("Autoservicio: Error al enviar correo de recuperación (%s): %s", correo, exc, exc_info=True)
         else:
             logger.info("SMTP no activo: enlace de recuperación generado para %s: %s", correo, enlace)
 

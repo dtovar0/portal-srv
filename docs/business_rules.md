@@ -6087,3 +6087,28 @@ Un usuario finaliza la actualización de su contraseña en el Paso 3 del Autoser
 
 ### Impacto
 Afecta a [frontend/src/components/login-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/login-form.tsx), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Resolución Unificada de SMTP y Diagnóstico Explícito de Entrega de Códigos MFA
+
+## Módulo
+Autenticación / Autoservicio / Notificaciones SMTP
+
+### Regla
+1. **Resolución Unificada de Servidor SMTP**:
+   El módulo de autoservicio (`autoservicio.py`) resuelve el servidor de correo saliente mediante una cascada de configuración:
+   - **Prioridad 1**: Configuración dedicada en variables de entorno `AUTOSERVICIO_SMTP_*` (si `AUTOSERVICIO_SMTP_SERVER` está definido).
+   - **Prioridad 2**: Configuración global unificada de Aduana mediante `resolve_smtp_settings()`, reutilizando las variables `SMTP_*` del entorno o la configuración almacenada en la base de datos (`SMTPConfig`), con soporte para remitente personalizado `AUTOSERVICIO_SMTP_SENDER_NAME` y `AUTOSERVICIO_SMTP_SENDER_EMAIL`.
+   - **Prioridad 3**: Variables de entorno globales `SMTP_*`.
+2. **Diagnóstico y Retroalimentación Explícita en Entrega de Códigos**:
+   El envío de códigos MFA y notificaciones no debe fallar silenciosamente. Si no existe ningún servidor SMTP configurado o si ocurre un error de conexión, autenticación o tiempo de espera con el servidor de correo:
+   - El sistema registra en logs el detalle completo del intento de conexión (`host`, `port`, cifrado y causa del fallo con traza de excepción).
+   - En ejecución de producción, la API responde con un error HTTP 503 explicativo (`ErrorAutoservicio`), notificando al usuario en la interfaz la razón exacta (ej. falta de configuración de SMTP o fallo de conexión al host de correo) en lugar de retornar un falso positivo de éxito.
+3. **Búsqueda Resiliente de Identidad en Directorio LDAP**:
+   Al solicitar código MFA, si el usuario introduce una dirección de correo corporativa (`usuario@dominio.com`) y la búsqueda por atributo `mail` no retorna coincidencia directa en LDAP, el sistema realiza una búsqueda secundaria por el identificador de cuenta (`uid`), garantizando la entrega en infraestructuras donde el buzón y el UID difieren o no comparten atributos idénticos.
+
+### Ejemplo
+Un administrador despliega el portal habiendo definido únicamente el remitente institucional en `.env` pero sin servidor SMTP activo. Al solicitar el código MFA en el Paso 1, el backend detecta la ausencia de servidor configurado y devuelve un error 503 claro: "No hay un servidor de correo (SMTP) configurado en el sistema. Configura SMTP_SERVER o AUTOSERVICIO_SMTP_SERVER en el archivo .env". La interfaz muestra de inmediato una notificación toast descriptiva, impidiendo que el usuario quede en espera indefinida de un correo no despachado.
+
+### Impacto
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
