@@ -15,9 +15,7 @@ import { api } from '@/lib/api';
 import { mensajeErrorOidc } from '@/lib/errores-oidc';
 import { esPortadaActiva } from '@/lib/portada';
 import type { AuthContext } from '@/lib/types';
-import { Button } from './form';
 import { Icono } from './icono';
-import { PageHeader } from './page-header';
 import { useToast } from './toast';
 import { FormularioLoginLocal } from './formulario-login-local';
 import { Card, PantallaCarga } from './ui';
@@ -63,54 +61,71 @@ export function LoginForm() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center p-4">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-fondo p-4 sm:p-6 select-none">
+      {/* Luces ambientales con los acentos corporativos de Aduana */}
+      <div className="pointer-events-none absolute -top-32 -left-32 size-[420px] rounded-full bg-aduana-cyan/15 blur-[120px] opacity-70 motion-reduce:hidden" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 size-[420px] rounded-full bg-aduana-orange/10 blur-[120px] opacity-60 motion-reduce:hidden" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.06] bg-[radial-gradient(var(--aduana-cyan)_1px,transparent_1px)] [background-size:24px_24px]" aria-hidden="true" />
+
+      <div className="relative z-10 w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
-          <span
-            className="mb-4 flex size-14 shrink-0 items-center justify-center rounded-2xl border border-[#334A60] bg-[#1B2A38] shadow-md p-2"
+          <div
+            className="mb-4 flex size-16 shrink-0 items-center justify-center rounded-2xl border border-aduana-border bg-aduana-bg p-2.5 shadow-xl ring-4 ring-aduana-cyan/15"
             aria-hidden="true"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-10 object-contain" width={40} height={40} />
+            <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-11 object-contain" width={44} height={44} />
+          </div>
+
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-body-text">
+            Aduana
+          </h1>
+
+          <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-aduana-border bg-aduana-surface/70 px-3 py-1 text-xs font-semibold text-aduana-cyan">
+            <span className="size-1.5 rounded-full bg-aduana-cyan animate-pulse" />
+            Control de Acceso • Portal Vivaro
           </span>
-          <PageHeader
-            title="Aduana: Control de Acceso"
-            description="Inicia sesión con tu cuenta corporativa para acceder a tus plataformas."
-            className="text-center sm:flex-col sm:items-center"
-          />
+
+          <p className="mt-2 text-xs text-label font-normal max-w-xs leading-relaxed">
+            Inicia sesión con tu cuenta corporativa para acceder a tus plataformas.
+          </p>
         </div>
 
-        <Card className="space-y-5 rounded-2xl border border-panel-border bg-panel-fill p-6 sm:p-8 shadow-2xl">
+        <Card className="space-y-5 rounded-3xl border border-aduana-border bg-panel-fill/95 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           {context.local_login ? (
             <FormularioLoginLocal />
           ) : context.oidc_enabled ? (
-            <Button
+            <button
               // Única acción de la pantalla: el foco empieza en ella.
               autoFocus
+              type="button"
               onClick={() => { window.location.href = URL_INICIO_OIDC; }}
-              className="w-full py-2 shadow-xs"
+              className="group relative flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-aduana-cyan to-aduana-cyan-hover px-5 py-3 font-display text-sm font-bold tracking-wide text-white shadow-lg shadow-aduana-cyan/25 transition-all hover:brightness-110 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
             >
-              <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
-              Entrar con Authelia
-            </Button>
+              <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="transition-transform group-hover:scale-110" />
+              <span>Entrar con Authelia</span>
+            </button>
           ) : (
-            <p className="text-sm text-label" role="status">
+            <p className="text-sm text-label text-center py-2" role="status">
               El inicio de sesión con Authelia no está disponible por ahora.
             </p>
           )}
         </Card>
 
-        {esPortadaActiva() ? (
-          <div className="mt-4 text-center">
+        <div className="mt-6 flex flex-col items-center gap-2 text-center">
+          {esPortadaActiva() ? (
             <Link
               href="/"
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 text-xs font-semibold text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg px-3 py-1.5"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 text-xs font-semibold text-aduana-cyan hover:text-aduana-cyan-hover hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan rounded-lg px-3 py-1.5"
             >
               <Icono nombre="info" tamano="xs" ariaHidden={true} />
               <span>Conoce Aduana: Guía y Presentación de la Plataforma</span>
             </Link>
-          </div>
-        ) : null}
+          ) : null}
+          <span className="text-[11px] text-label/60">
+            Vivaro • Gobernanza y Control Centralizado de Accesos TI
+          </span>
+        </div>
 
       </div>
     </div>

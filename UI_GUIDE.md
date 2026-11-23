@@ -337,6 +337,13 @@ Este documento registra los patrones de diseño, componentes consolidados, clase
   - *Branding en Barra y Lanzador (DIS-121 & DIS-122)*:
     - Marco Admin (`BarraLateral`): Título «Aduana» con subtítulo «Portal Vivaro».
     - Portal de Usuario (`PlatformsTopbar` y `PlatformsSidebarView`): Isotipo oficial sobre contenedor Navy Profundo (`#1B2A38`), título «Aduana» y subtítulo de producto «Vivaro Launchpad». Se retira el icono genérico de escudo (`escudo-ok`).
+  - *Rediseño Institucional de Inicio de Sesión (DIS-123)*:
+    - Escenario inmersivo Dark-First en `LoginForm` con luces ambientales en Cian Tecnológico (`aduana-cyan`) y Naranja Control (`aduana-orange`).
+    - Isotipo en contenedor Navy Profundo `#1B2A38` con borde `#334A60` y halo cian.
+    - Tipografía `Montserrat` para titular «Aduana» con badge «Control de Acceso • Portal Vivaro».
+    - Tarjeta flotante con desenfoque de cristal (`backdrop-blur-xl`) y borde `border-aduana-border`.
+    - Botones de acción (Authelia y Local) en gradiente oficial `from-aduana-cyan to-aduana-cyan-hover` con tipografía `font-display font-bold`.
+    - Campos de texto con foco cian interactivo y etiquetas estilizadas.
 
 ## 🚫 Prohibiciones Absolutas
 
