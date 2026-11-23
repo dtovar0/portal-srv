@@ -69,6 +69,12 @@ export const TRAZOS = {
   'chevron-der': ['m9 6 6 6-6 6'],
   'chevron-abajo': ['m6 9 6 6 6-6'],
   'flecha-izq': ['M19 12H5', 'M12 19l-7-7 7-7'],
+  'flecha-der': ['M5 12h14', 'M12 5l7 7-7 7'],
+  'flecha-izquierda': ['M19 12H5', 'M12 19l-7-7 7-7'],
+  candado: [
+    'M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z',
+    'M7 11V7a5 5 0 0 1 10 0v4',
+  ],
   colapsar: ['m11 17-5-5 5-5', 'm18 17-5-5 5-5'],
 
   // Acciones
