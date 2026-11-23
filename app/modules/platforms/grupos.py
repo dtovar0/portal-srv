@@ -59,9 +59,19 @@ def derivar_dn(configuracion, nivel, plataforma, area):
     nombre = identificador(plataforma)
     if not plantilla or not nombre:
         return None
+
+    # Convención estándar ADUANA / Authelia: plurales en inglés (-users y -admins)
+    # cuando la plantilla incluye el prefijo 'app-' o se solicita plural
+    import os
+    if 'app-' in plantilla or os.getenv('LDAP_GROUP_PLURAL', '').lower() in ('true', '1', 'yes'):
+        nivel_texto = 'users' if str(nivel).lower() in ('usuario', 'user', 'users') else (
+            'admins' if str(nivel).lower() in ('admin', 'admins', 'admin_area') else nivel)
+    else:
+        nivel_texto = nivel
+
     relativo = plantilla.format(plataforma=escapar_valor_dn(nombre),
                                 area=escapar_valor_dn(identificador(area)),
-                                nivel=escapar_valor_dn(nivel))
+                                nivel=escapar_valor_dn(nivel_texto))
     return f'{relativo},{configuracion.grupos_base_dn}'
 
 

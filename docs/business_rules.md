@@ -5764,3 +5764,34 @@ Auto-creación de Grupos de Plataforma y Asignación de Grupo de Portal en LDAP
 ### Impacto
 
 Afecta a [app/modules/directory/writer.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/writer.py), [app/modules/platforms/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/platforms/api.py), [app/modules/provisioning/ldap_provider.py](file:///home/dtovar/bayblade/pokemon/app/modules/provisioning/ldap_provider.py), [app/modules/users/directory_accounts.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/directory_accounts.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Sincronización de Grupos OIDC por Rol de Usuario y Convención de Plataformas
+
+## Autenticación, Usuarios y Directorio (OIDC & OpenLDAP)
+
+### Regla
+
+1. **Mapeo y Sincronización de Grupos OIDC según Rol en ADUANA**:
+   Al crear un usuario desde ADUANA (`POST /users` o `POST /users/directory`), el backend determina su grupo OIDC en OpenLDAP según su rol:
+   - Si el rol es de administración (`ROLE_AREA_ADMIN`, `admin_area`, `admin`, `administrador`), se agrega a `OIDC_GROUP_AREA_ADMIN` (por omisión: `app-aduana-admins`).
+   - Si el rol es estándar (`ROLE_USER`, `usuario`, `user`), se agrega a `OIDC_GROUP_USER` (por omisión: `app-aduana-users`).
+   Si el grupo no existe en el directorio, se crea automáticamente.
+2. **Sincronización Dinámica al Cambiar de Rol**:
+   Al modificar el rol de un usuario (`PUT /users/<id>`), si el directorio está activo, el backend actualiza atómicamente la pertenencia en LDAP, retirándolo del grupo anterior y agregándolo al nuevo grupo correspondiente (`app-aduana-admins` o `app-aduana-users`).
+3. **Estandarización de Nombres de Grupos de Plataforma en Plural**:
+   Para mantener compatibilidad estricta con Authelia y la nomenclatura institucional de Vivaro, los grupos generados para plataformas que utilicen el prefijo `app-` (o con `LDAP_GROUP_PLURAL=true`) derivan obligatoriamente los niveles en plural en inglés:
+   - Nivel usuario: `app-{plataforma}-users`
+   - Nivel administrador: `app-{plataforma}-admins`
+4. **Manejo de Error 403 en Nginx bajo auth_request con Authelia**:
+   En configuraciones de Nginx donde `location /` contiene la directiva `error_page 401 =302 $redirection_url;`, Nginx por diseño anula la herencia de las directivas `error_page` del bloque `server`. Para que el usuario vea la pantalla corporativa de ADUANA en lugar del error estándar en texto plano de Nginx (`403 Forbidden nginx/1.20.1`), se debe definir explícitamente `error_page 403 /errors/403.html;` dentro del bloque `location /` que invoca `auth_request`.
+
+### Ejemplo
+
+- Un administrador crea en ADUANA el usuario `operador@vivaro.com` con rol `usuario`. El sistema lo crea en OpenLDAP y lo añade a `cn=app-aduana-users,ou=groups,dc=vivaro,dc=com`. Cuando este usuario se autentica en Authelia e ingresa a ADUANA, Authelia emite el claim `groups: ["app-aduana-users"]` y ADUANA le otorga el rol de usuario sin rechazo.
+- Para la plataforma `netbox-mon`, el sistema deriva y asegura los grupos `cn=app-netbox-mon-users,...` y `cn=app-netbox-mon-admins,...`.
+- En `netbox.conf`, dentro de `location /`, se añade `error_page 403 /errors/403.html;`. Cuando un usuario sin permisos intenta acceder a Netbox, Authelia responde 403 y Nginx muestra la pantalla interactiva corporativa de ADUANA en lugar del error blanco por defecto.
+
+### Impacto
+
+Afecta a [app/modules/users/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/api.py), [app/modules/users/directory_accounts.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/directory_accounts.py), [app/modules/platforms/grupos.py](file:///home/dtovar/bayblade/pokemon/app/modules/platforms/grupos.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [tests/platforms/test_integracion_y_grupos.py](file:///home/dtovar/bayblade/pokemon/tests/platforms/test_integracion_y_grupos.py) y las configuraciones de Nginx para plataformas protegidas.

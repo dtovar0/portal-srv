@@ -491,3 +491,15 @@ def test_si_falla_la_auditoria_no_se_crea_la_plataforma(superadmin, area,
 
     db.session.rollback()
     assert Platform.query.count() == 0
+
+
+def test_derivar_dn_convencion_app_plurales():
+    from app.modules.platforms.grupos import derivar_dn
+    from types import SimpleNamespace
+    cfg = SimpleNamespace(grupos_base_dn='ou=groups,dc=vivaro,dc=com',
+                          plantilla_grupo='cn=app-{plataforma}-{nivel}')
+    dn_u = derivar_dn(cfg, 'usuario', 'netbox-mon', 'TI')
+    dn_a = derivar_dn(cfg, 'admin', 'netbox-mon', 'TI')
+    assert dn_u == 'cn=app-netbox-mon-users,ou=groups,dc=vivaro,dc=com'
+    assert dn_a == 'cn=app-netbox-mon-admins,ou=groups,dc=vivaro,dc=com'
+

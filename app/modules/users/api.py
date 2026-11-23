@@ -164,6 +164,27 @@ def create_user():
 
     db.session.add(user)
     db.session.commit()
+
+    # Sincronizar membresía de grupo OIDC en OpenLDAP si el directorio está activo
+    from app.modules.directory.configuracion import directorio_activo
+    if directorio_activo():
+        try:
+            import os
+            from app.modules.directory.writer import EscritorDirectorio
+            from app.authz import ROLE_AREA_ADMIN
+            escritor = EscritorDirectorio()
+            persona = escritor.cliente.buscar_por_correo(email)
+            if persona is not None:
+                if role in (ROLE_AREA_ADMIN, 'admin', 'admin_area', 'administrador'):
+                    grupo_oidc = (os.getenv('OIDC_GROUP_AREA_ADMIN') or os.getenv('LDAP_APP_ADMINS') or 'app-aduana-admins').strip()
+                else:
+                    grupo_oidc = (os.getenv('OIDC_GROUP_USER') or os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
+                dn_grupo = f'cn={grupo_oidc},{escritor.configuracion.grupos_base_dn}'
+                escritor.create_group(dn_grupo)
+                escritor.add_member(dn_grupo, persona.dn)
+        except Exception as exc:
+            logger.warning('No se pudo sincronizar usuario en grupo OIDC de LDAP: %s', exc)
+
     add_audit_log(f"CREAR USUARIO: {email}", module='Usuarios', target=email,
                   status='success')
     return jsonify({'status': 'success', 'id': user.id}), 201
@@ -203,6 +224,29 @@ def update_user(user_id):
 
     if change_role:
         cambiar_rol(target, new_role)
+        from app.modules.directory.configuracion import directorio_activo
+        if directorio_activo():
+            try:
+                import os
+                from app.modules.directory.writer import EscritorDirectorio
+                from app.authz import ROLE_AREA_ADMIN
+                escritor = EscritorDirectorio()
+                persona = escritor.cliente.buscar_por_correo(target.email)
+                if persona is not None:
+                    grupo_admins = (os.getenv('OIDC_GROUP_AREA_ADMIN') or os.getenv('LDAP_APP_ADMINS') or 'app-aduana-admins').strip()
+                    grupo_users = (os.getenv('OIDC_GROUP_USER') or os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
+                    dn_admins = f'cn={grupo_admins},{escritor.configuracion.grupos_base_dn}'
+                    dn_users = f'cn={grupo_users},{escritor.configuracion.grupos_base_dn}'
+                    if new_role == ROLE_AREA_ADMIN:
+                        escritor.create_group(dn_admins)
+                        escritor.add_member(dn_admins, persona.dn)
+                        escritor.remove_member(dn_users, persona.dn)
+                    else:
+                        escritor.create_group(dn_users)
+                        escritor.add_member(dn_users, persona.dn)
+                        escritor.remove_member(dn_admins, persona.dn)
+            except Exception as exc:
+                logger.warning('No se pudo actualizar grupo OIDC en LDAP tras cambio de rol: %s', exc)
     if 'name' in data:
         target.nombre = sanitize_display_name(data['name'], fallback=target.email)
     if 'is_active' in data:

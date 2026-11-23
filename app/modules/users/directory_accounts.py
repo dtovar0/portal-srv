@@ -131,6 +131,7 @@ class AltaDirectorio:
     apellido: str
     area_ids: tuple
     password: str = field(default='', repr=False)
+    role: str = ROLE_USER
 
 
 def _texto(datos, campo, errores):
@@ -258,7 +259,7 @@ def _reservar_en_portal(alta):
         email=alta.correo,
         nombre=sanitize_display_name(f'{alta.nombre} {alta.apellido}',
                                      fallback=alta.correo),
-        role=ROLE_USER,
+        role=getattr(alta, 'role', ROLE_USER),
         auth_source=ORIGEN_DIRECTORIO,
         is_active=True,
     )
@@ -327,13 +328,19 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
             f'{SISTEMA_DIRECTORIO}: {resultado.resultado.value} '
             f'({resultado.motivo or MOTIVO_SIN_CONEXION})')
 
-    # Vincular al grupo de usuarios regulares del portal (app-aduana-users)
+    # Vincular al grupo correspondiente en LDAP según el mapeo OIDC
     try:
         import os
-        grupo_portal = (os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
+        from app.authz import ROLE_AREA_ADMIN
+        rol_usuario = getattr(alta, 'role', ROLE_USER)
+        if rol_usuario == ROLE_AREA_ADMIN:
+            grupo_portal = (os.getenv('OIDC_GROUP_AREA_ADMIN') or os.getenv('LDAP_APP_ADMINS') or 'app-aduana-admins').strip()
+        else:
+            grupo_portal = (os.getenv('OIDC_GROUP_USER') or os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
+
         dn_grupo_portal = f'cn={grupo_portal},{escritor.configuracion.grupos_base_dn}'
         if hasattr(escritor, 'create_group'):
-            escritor.create_group(dn_grupo_portal, descripcion='Usuarios del portal ADUANA')
+            escritor.create_group(dn_grupo_portal, descripcion=f'Grupo OIDC ADUANA para {rol_usuario}')
         if hasattr(escritor, 'add_member'):
             escritor.add_member(dn_grupo_portal, resultado.dn)
     except Exception as exc:
