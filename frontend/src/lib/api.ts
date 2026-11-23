@@ -7,23 +7,45 @@
  */
 
 import type {
-  Area, AreaInput, AppNotification, AuditEntry, AuthConfig, AuthContext,
+  Area, AreaInput, AppNotification, AuditEntry, AuthContext,
   EmailTemplate,
-  DirectoryUser, InactiveUser, ManagedUser, Platform, PlatformInput,
-  Session, SmtpConfig, Stats,
+  DirectoryUser, InactiveUser, ManagedUser, Platform, PlatformInput, PlatformWarning,
+  ResponsivaData, Session, SmtpConfig, Stats,
   SystemSettings, UserInput,
 } from './types';
+import type { Access } from './access/types';
+
+/** Backend local de desarrollo; por nombre de host, sin IP (FNC-069, absorbe
+ *  FNC-005 parcial). En staging y prod se fija `BACKEND_URL`. */
+const BACKEND_URL_POR_DEFECTO = 'http://localhost:5001';
 
 /** En el servidor hay que hablar con Flask directamente; en el navegador basta
  *  la ruta relativa, que Nginx (o el rewrite de dev) reenvía. */
 const BASE = typeof window === 'undefined'
-  ? (process.env.BACKEND_URL ?? 'http://127.0.0.1:5001')
+  ? (process.env.BACKEND_URL ?? BACKEND_URL_POR_DEFECTO)
   : '';
 
+/** Detalle opcional del error estándar (`docs/contratos/README.md`). */
+export interface ApiErrorDetails {
+  /** Código interno del contrato (`area_duplicada`, `validacion`…). */
+  code?: string;
+  /** Mensaje por campo de un `422 validacion`. */
+  fields?: Record<string, string>;
+  /** Identificador de un `500` para cruzar con el log. */
+  correlationId?: string;
+}
+
 export class ApiError extends Error {
-  constructor(readonly status: number, message: string) {
+  readonly code: string | null;
+  readonly fields: Record<string, string>;
+  readonly correlationId: string | null;
+
+  constructor(readonly status: number, message: string, details: ApiErrorDetails = {}) {
     super(message);
     this.name = 'ApiError';
+    this.code = details.code ?? null;
+    this.fields = details.fields ?? {};
+    this.correlationId = details.correlationId ?? null;
   }
 
   /** El usuario está autenticado pero no tiene permiso. */
@@ -37,6 +59,36 @@ export class ApiError extends Error {
   }
 }
 
+/** Aplana `fields` anidados (`fields.params.<campo>`) a claves con punto. */
+function flattenFields(fields: Record<string, unknown>, prefix = ''): Record<string, string> {
+  const flat: Record<string, string> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    const name = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === 'string') flat[name] = value;
+    else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      Object.assign(flat, flattenFields(value as Record<string, unknown>, name));
+    }
+  }
+  return flat;
+}
+
+/** Lee `code`, `fields` y `correlation_id` del cuerpo de error, si vienen. */
+function errorDetails(body: unknown): ApiErrorDetails {
+  if (!body || typeof body !== 'object') return {};
+  const { code, fields, correlation_id: correlationId } = body as Record<string, unknown>;
+  const details: ApiErrorDetails = {};
+  if (typeof code === 'string') details.code = code;
+  if (fields && typeof fields === 'object' && !Array.isArray(fields)) {
+    details.fields = flattenFields(fields as Record<string, unknown>);
+  }
+  if (typeof correlationId === 'string') details.correlationId = correlationId;
+  return details;
+}
+
+/**
+ * Petición a `/api/v1` con la sesión de Flask. Exportada como `apiRequest`
+ * para que los clientes por sección (`lib/access/`) la reutilicen (FNC-069).
+ */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}/api/v1${path}`, {
     ...init,
@@ -56,18 +108,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok) {
-    const message = await response
-      .json()
-      .then((body) => body?.message ?? body?.error)
-      .catch(() => null);
-    throw new ApiError(response.status, message ?? `Error ${response.status}`);
+    const body: unknown = await response.json().catch(() => null);
+    const parsed = (body ?? {}) as { message?: unknown; error?: unknown };
+    const message = parsed.message ?? parsed.error;
+    throw new ApiError(
+      response.status,
+      typeof message === 'string' && message ? message : `Error ${response.status}`,
+      errorDetails(body),
+    );
   }
 
   return response.json() as Promise<T>;
 }
 
+export { request as apiRequest };
+
 export const api = {
   session: () => request<Session>('/me'),
+  responsiva: () => request<ResponsivaData>('/responsiva'),
+  firmarResponsiva: () =>
+    request<{ status: string; message: string; firmada_at: string }>(
+      '/me/firmar-responsiva',
+      { method: 'POST' },
+    ),
   areas: () => request<Area[]>('/areas'),
   stats: () => request<Stats>('/stats'),
   users: () => request<ManagedUser[]>('/users'),
@@ -113,16 +176,30 @@ export const api = {
 
   // --- Plataformas ---
   createPlatform: (input: PlatformInput) =>
-    request<{ status: string; platform: Platform }>(
+    request<{ status: string; platform: Platform; warnings?: PlatformWarning[] }>(
       '/platforms', { method: 'POST', body: JSON.stringify(input) }),
   updatePlatform: (id: number, input: PlatformInput) =>
-    request<{ status: string; platform: Platform }>(
+    request<{ status: string; platform: Platform; warnings?: PlatformWarning[] }>(
       `/platforms/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   deletePlatform: (id: number) =>
     request<{ status: string }>(`/platforms/${id}`, { method: 'DELETE' }),
   setPlatformUsers: (id: number, userIds: number[]) =>
     request<{ status: string }>(`/platforms/${id}/users`,
       { method: 'PUT', body: JSON.stringify({ user_ids: userIds }) }),
+  platformAccess: (platformId: number) =>
+    request<{ items: Access[]; total: number }>(`/platforms/${platformId}/access`),
+  userAccess: (userId: number, status = 'vigente') =>
+    request<{ items: Access[]; total: number }>(`/users/${userId}/access?status=${status}`),
+  grantPlatformAccess: (platformId: number, userId: number, level = 'usuario') =>
+    request<{ status: string; access: Access }>(
+      `/platforms/${platformId}/access`,
+      { method: 'POST', body: JSON.stringify({ user_id: userId, level }) },
+    ),
+  revokeAccess: (accessId: number, reason?: string | null) =>
+    request<{ status: string; access: Access }>(
+      `/access/${accessId}/revoke`,
+      { method: 'POST', body: JSON.stringify(reason ? { reason } : {}) },
+    ),
 
   // --- Usuarios ---
   createUser: (input: UserInput) =>
@@ -183,12 +260,11 @@ export const api = {
 
   // --- Autenticación ---
   authContext: () => request<AuthContext>('/auth/context'),
-  ssoLogin: () =>
-    request<{ status: string; role: string }>('/auth/sso', { method: 'POST' }),
-  login: (email: string, password: string, method: 'directory' | 'local') =>
-    request<{ status: string; role: string }>('/auth/login', {
+  /** Cuenta de emergencia (ADR-009 6A): única entrada con contraseña. */
+  loginLocal: (email: string, password: string) =>
+    request<{ status: string; role: string }>('/auth/local', {
       method: 'POST',
-      body: JSON.stringify({ email, password, method }),
+      body: JSON.stringify({ email, password }),
     }),
   logout: () =>
     request<{ status: string; redirect: string | null }>(
@@ -219,11 +295,44 @@ export const api = {
     return data as { status: string; restored: string[] };
   },
 
-  authConfig: () => request<AuthConfig>('/auth-config'),
-  saveAuthConfig: (input: Partial<AuthConfig> & { ldap_pass?: string }) =>
-    request<{ status: string; config: AuthConfig }>(
-      '/auth-config', { method: 'PUT', body: JSON.stringify(input) }),
-  testAuthConfig: (input?: Partial<AuthConfig> & { ldap_pass?: string }) =>
-    request<{ status: string; message?: string }>(
-      '/auth-config/test', { method: 'POST', body: JSON.stringify(input ?? {}) }),
+  /** Importación masiva (Bulk Import) de usuarios, áreas o plataformas. */
+  bulkImport: (entity: 'users' | 'areas' | 'platforms', records: Record<string, unknown>[], dryRun = false) =>
+    request<BulkImportResult>('/import/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ entity, records, dry_run: dryRun }),
+    }),
+
+  /** Descarga plantilla CSV para importación masiva. */
+  downloadImportTemplate: async (entity: 'users' | 'areas' | 'platforms') => {
+    const response = await fetch(`${BASE}/api/v1/import/template/${entity}`, {
+      credentials: 'include',
+      headers: { Accept: 'text/csv' },
+    });
+    if (!response.ok) throw new ApiError(response.status, 'No se pudo descargar la plantilla');
+    return response.blob();
+  },
 };
+
+export interface BulkImportItem {
+  row: number;
+  email?: string;
+  name?: string;
+  role?: string;
+  area?: string;
+  areas?: string[];
+  status: 'valid' | 'error';
+  error: string | null;
+}
+
+export interface BulkImportResult {
+  status: 'success' | 'error';
+  entity: string;
+  dry_run: boolean;
+  total: number;
+  valid: number;
+  created: number;
+  errors: { row: number; item: string; error: string }[];
+  items: BulkImportItem[];
+  message?: string;
+}
+

@@ -1,9 +1,11 @@
 # API Flask de @APP_TITLE@.
 # Instalar en /etc/systemd/system/ y ajustar User, WorkingDirectory y rutas.
+# El marcador DB_SERVICE es el servicio de la BD local (mysqld, mariadb, mysql o postgresql) que detecta
+# install.sh; sin BD local, install.sh quita la dependencia (FNC-125).
 [Unit]
 Description=@APP_TITLE@ API (Flask/Gunicorn)
-After=network.target mysql.service
-Wants=mysql.service
+After=network.target @DB_SERVICE@
+Wants=@DB_SERVICE@
 
 [Service]
 Type=simple
@@ -13,7 +15,7 @@ WorkingDirectory=@PREFIX@
 EnvironmentFile=@PREFIX@/.env
 ExecStart=@PREFIX@/venv/bin/gunicorn \
     --workers 4 \
-    --bind 127.0.0.1:5001 \
+    --bind 127.0.0.1:@API_PORT@ \
     --timeout 120 \
     --access-logfile @LOGDIR@/access.log \
     --error-logfile @LOGDIR@/error.log \

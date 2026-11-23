@@ -1,0 +1,146 @@
+"""Directorio OpenLDAP simulado para las pruebas de login (FNC-022, FNC-042).
+
+Desde FNC-042 el login usa el cliente centralizado (`app.modules.directory`).
+Este doble activa el directorio con variables `LDAP_*` ficticias y conecta el
+cliente a un servidor `ldap3` `MOCK_SYNC` (sin red), el mismo esquema que
+`tests/directory/conftest.py`. Registra los filtros de búsqueda que recibe.
+
+Uso:
+    directorio = instalar_directorio(monkeypatch)
+    directorio.agregar('jperez', 'clave', grupos=[DN_GRUPO])
+"""
+
+import ldap3
+
+from app import db
+from app.modules.auth.models import AuthConfig
+from app.modules.directory import ldap_client
+from tests.matriz_proteccion import CONTRASENA_FICTICIA, HOST_LDAP_FICTICIO
+
+BASE_DN = 'dc=pruebas,dc=local'
+USUARIOS_BASE_DN = f'ou=personas,{BASE_DN}'
+GRUPOS_BASE_DN = f'ou=grupos,{BASE_DN}'
+CUENTA_SERVICIO = f'cn=servicio,{BASE_DN}'
+DOMINIO_CORREO = 'pruebas.local'
+
+ENTORNO_VALIDO = {
+    'LDAP_URL': f'ldaps://{HOST_LDAP_FICTICIO}',
+    'LDAP_BIND_DN': CUENTA_SERVICIO,
+    'LDAP_BIND_PASSWORD': CONTRASENA_FICTICIA,
+    'LDAP_USERS_BASE_DN': USUARIOS_BASE_DN,
+    'LDAP_GROUPS_BASE_DN': GRUPOS_BASE_DN,
+}
+
+
+def dn_persona(uid):
+    return f'uid={uid},{USUARIOS_BASE_DN}'
+
+
+def dn_grupo(nombre):
+    return f'cn={nombre},{GRUPOS_BASE_DN}'
+
+
+class ServidorSimulado:
+    """Base única del LDAP simulado (FNC-074): entradas en un `MOCK_SYNC`.
+
+    Crea la cuenta de servicio y las unidades de personas y grupos. Los dobles
+    `DirectorioFalso` (login, API) y `DirectorioMock` (cliente) la extienden.
+    """
+
+    def __init__(self, servidor):
+        self.servidor = servidor
+        self._carga = ldap3.Connection(servidor,
+                                       client_strategy=ldap3.MOCK_SYNC)
+        self._agregar(CUENTA_SERVICIO, objectClass='person', cn='servicio',
+                      userPassword=CONTRASENA_FICTICIA)
+        for ou in (USUARIOS_BASE_DN, GRUPOS_BASE_DN):
+            self._agregar(ou, objectClass='organizationalUnit',
+                          ou=ou.split(',')[0].split('=')[1])
+
+    def _agregar(self, dn, **atributos):
+        self._carga.strategy.add_entry(dn, atributos)
+
+
+class DirectorioFalso(ServidorSimulado):
+    """Personas y grupos del directorio, y los filtros que pidió el login."""
+
+    def __init__(self, servidor):
+        super().__init__(servidor)
+        self.filtros = []       # filtros de búsqueda recibidos, en orden
+        self.error = None       # excepción a lanzar al conectar, si se define
+
+    def agregar(self, uid, contrasena, correo=None, nombre=None, grupos=()):
+        """Persona `inetOrgPerson`; `grupos` son DN de `groupOfNames`.
+
+        `correo=None` usa `<uid>@pruebas.local`; `correo=''`, sin `mail`.
+        """
+        dn = dn_persona(uid)
+        atributos = {'objectClass': 'inetOrgPerson', 'uid': uid, 'cn': uid,
+                     'sn': uid, 'displayName': nombre or f'Persona {uid}',
+                     'userPassword': contrasena}
+        if correo != '':  # `correo=''`: persona sin `mail`
+            atributos['mail'] = correo or f'{uid}@{DOMINIO_CORREO}'
+        self._agregar(dn, **atributos)
+        for grupo in grupos:
+            self._agregar(grupo, objectClass='groupOfNames',
+                          cn=grupo.split(',')[0].split('=')[1], member=[dn])
+        return dn
+
+    def conexion(self):
+        """Clase que reemplaza a `ldap3.Connection` en el cliente."""
+        directorio = self
+
+        class ConexionRegistrada(ldap3.Connection):
+            def __init__(self, *args, **kwargs):
+                if directorio.error:
+                    raise directorio.error
+                super().__init__(*args, **kwargs)
+
+            def search(self, base, filtro, *args, **kwargs):
+                directorio.filtros.append(filtro)
+                return super().search(base, filtro, *args, **kwargs)
+
+        return ConexionRegistrada
+
+
+def instalar_directorio(monkeypatch, variables=None, **config):
+    """Activa el directorio simulado para el login.
+
+    - `variables`: `LDAP_*` que sobrescriben las de prueba.
+    - `config`: si se da, crea `AuthConfig` con esos campos (p. ej.
+      `ldap_group_admin` o `ldap_role_mappings`), para probar que el login ya
+      no los usa.
+    """
+    for nombre, valor in {**ENTORNO_VALIDO, **(variables or {})}.items():
+        monkeypatch.setenv(nombre, valor)
+    if config:
+        db.session.add(AuthConfig(**config))
+        db.session.commit()
+
+    monkeypatch.setattr(ldap_client, 'ESTRATEGIA', ldap3.MOCK_SYNC)
+    cliente = ldap_client.ClienteDirectorio(
+        ldap_client.cargar_configuracion())
+    directorio = DirectorioFalso(cliente._servidor())
+    monkeypatch.setattr(ldap_client.ClienteDirectorio, '_servidor',
+                        lambda self: directorio.servidor)
+    monkeypatch.setattr(ldap_client, 'Connection', directorio.conexion())
+    simular_password_modify(monkeypatch)
+    return directorio
+
+
+def cifrado_simulado(contrasena):
+    """Valor que deja el Password Modify simulado: cifrado, nunca el texto."""
+    import hashlib
+    return '{SIMULADO}' + hashlib.sha256(contrasena.encode()).hexdigest()
+
+
+def simular_password_modify(monkeypatch):
+    """`MOCK_SYNC` no implementa Password Modify (RFC 3062): se simula
+    guardando `userPassword` cifrado, como OpenLDAP (FNC-138)."""
+    from ldap3.extend import StandardExtendedOperations
+
+    def modify_password(self, user=None, old_password=None, new_password=None, **_):
+        return self._connection.modify(
+            user, {'userPassword': [(ldap3.MODIFY_REPLACE, [cifrado_simulado(new_password)])]})
+
+    monkeypatch.setattr(StandardExtendedOperations, 'modify_password', modify_password)

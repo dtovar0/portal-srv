@@ -1,0 +1,67 @@
+'use client';
+
+/**
+ * Historial de un usuario (`/audit/users/[id]`; DIS-020, F-AUD-04;
+ * `GET /audit/users/<id>`): eventos donde actuó o lo afectaron.
+ *
+ * - Admin y superadmin: cualquiera de su alcance (el backend responde 404 fuera de él).
+ * - Usuario: solo el suyo; otro id muestra "sin permiso" sin pedir nada.
+ */
+
+import { ButtonLink } from '../form';
+import { Icono } from '../icono';
+import { PageHeader } from '../page-header';
+import { useCallback, useState } from 'react';
+import { auditApi } from '@/lib/access/audit';
+import type { AuditEntryV1, AuditParams } from '@/lib/access/types';
+import { FORBIDDEN_MESSAGE } from '../require-role';
+import { useSession } from '../session-provider';
+import { ErrorNote, Skeleton } from '../ui';
+import { AuditHistory } from './audit-history';
+import { RUTA_AUDITORIA } from './audit-routes';
+
+/** Correo del usuario según los registros (actor o usuario afectado). */
+export function correoDelUsuario(items: AuditEntryV1[], userId: number): string | null {
+  for (const entry of items) {
+    if (entry.target_user?.id === userId) return entry.target_user.email;
+    if (entry.actor?.id === userId) return entry.actor.email;
+  }
+  return null;
+}
+
+export function UserAuditHistory({ userId }: { userId: number }) {
+  const { session, loading, error } = useSession();
+  const [correo, setCorreo] = useState<string | null>(null);
+
+  const cargar = useCallback(
+    (params: AuditParams) => auditApi.ofUser(userId, params), [userId]);
+  const nombrar = useCallback((items: AuditEntryV1[]) => {
+    setCorreo((actual) => actual ?? correoDelUsuario(items, userId));
+  }, [userId]);
+
+  if (loading) return <Skeleton variant="fila" count={4} ariaLabel="Cargando sesión…" />;
+  if (error) return <ErrorNote message={error} />;
+  if (!session) return null;
+
+  const administra = session.permissions.is_admin || session.permissions.is_area_admin;
+  if (!administra && session.id !== userId) return <ErrorNote message={FORBIDDEN_MESSAGE} />;
+
+  const propio = session.id === userId;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={propio ? 'Mi historial' : 'Historial del usuario'}
+        description={(propio ? session.email : correo) ?? 'Eventos donde actuó o que lo afectaron.'}
+        actions={
+          <ButtonLink href={RUTA_AUDITORIA} variant="fila" className="nx-btn-toolbar !px-2.5">
+            <Icono nombre="auditoria" tamano="sm" ariaHidden={true} />
+            <span className="sr-only">Toda la auditoría</span>
+            <span aria-hidden="true">Auditoría</span>
+          </ButtonLink>
+        }
+      />
+      <AuditHistory cargar={cargar} onDatos={nombrar} />
+    </div>
+  );
+}

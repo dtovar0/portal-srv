@@ -1,0 +1,81 @@
+# Estándares de Comportamiento e Interacción (02-comportamiento.md)
+
+Basado en **ADR-007**, **PLAN-FASE-7** y la regla arquitectónica **«Un patrón, un componente» (DIS-068)**.
+
+## 1. Principio Fundamental: «Un patrón, un componente»
+
+Ninguna pantalla, vista o módulo debe implementar marcado ad hoc para componentes de diseño que ya cuentan con una implementación estándar en la biblioteca compartida.
+
+### Matriz de Patrones y Componentes Canónicos
+
+| Patrón Funcional | Prohibición en Vistas / Marcado Ad Hoc | Componente Canónico Único | Tarea de Consolidación |
+|---|---|---|---|
+| **Botones y Enlaces de Acción** | Prohibido `<button className="nexus-btn">` o `<Link className="nexus-btn">` sueltos | `<Button>` y `<ButtonLink>` (`components/form.tsx` / `button.tsx`) | DIS-058 |
+| **Campos de Entrada** | Prohibidos `<input>`, `<select>`, `<textarea>` directos con estilos arbitrarios | `<TextInput>`, `<Select>`, `<TextArea>` (`components/form.tsx`) | DIS-059 |
+| **Pestañas de Navegación** | Prohibido marcar `role="tablist"`, `role="tab"` manualmente | `<Tabs>` y `<ToggleChip>` (`components/tabs.tsx`) | DIS-060 |
+| **Contenedores y Paneles** | Prohibido reimplementar estructuras de tarjetas o modales de cristal | `<Card>`, `<PanelHeader>`, `<Modal>`, `<Drawer>` (`components/ui.tsx`, `components/form.tsx`) | DIS-061 |
+| **Mensajes y Estados** | Prohibidas cajas con `bg-<estado>/NN` ad hoc | `<Note>`, insignias (`Badge`) y alertas | DIS-062 |
+| **Tablas y Listados de Datos** | Prohibido `<table>` o `<thead>`/`<tbody>` fuera del componente canónico | `<DataTable>` (`components/data-table.tsx`) | DIS-071 |
+| **Barras de Filtros** | Prohibidas barras de búsqueda y filtros duplicadas | `<FilterBar>` (`components/filter-bar.tsx`) | DIS-069 |
+| **Encabezados de Página** | Prohibido `<h1>` fuera del encabezado canónico de pantalla | `<PageHeader>` (`components/page-header.tsx`) | DIS-070 |
+| **Diálogos de Confirmación** | Prohibido `window.confirm`, alert nativo o modales ad hoc para avisos | `<AlertDialog>` (`components/alert-dialog.tsx`) | DIS-074 |
+
+---
+
+## 2. Validación Automatizada
+La prueba `frontend/tests/accesibilidad/patrones-unicos.test.ts` valida en tiempo de compilación y pruebas:
+1. No se permite la inclusión de ningún nuevo `<table>`, `<h1>`, `role="tablist"` o clases `.nexus-btn` fuera de los componentes autorizados.
+2. Toda excepción heredada existente fue eliminada al 100% en DIS-067 (`EXCEPCIONES_PATRONES = {}`), asegurando conformidad absoluta con la arquitectura de componentes unificados.
+
+
+---
+
+## 3. Estabilidad Visual (Sin saltos de diseño / CLS < 0.01) y Movimiento Reducido (DIS-073)
+
+### Reglas de Estabilidad:
+1. **Canales de desplazamiento estables:** Todo contenedor desplazable (`[data-desplazable]`) declara `scrollbar-gutter: stable` en CSS para evitar que al activar el bloqueo de scroll (`useScrollLock`) o al alternar diálogos el contenido salte lateralmente.
+2. **Cargas asíncronas con esqueletos:** Las operaciones de carga deben reservar el espacio final mediante `<Skeleton variant="fila" | "tarjeta" | "contador">` para evitar el desplazamiento vertical del contenido.
+3. **Zonas reservadas para avisos:** Los formularios y cabeceras de listado usan `<RegionDeAviso minHeight="...">` para evitar que la aparición de un mensaje de error o éxito empuje los controles inferiores.
+4. **Animaciones respetuosas:**
+   - Toda transición se restringe estrictamente a `opacity` y `transform`.
+   - Con `prefers-reduced-motion: reduce`, las animaciones y transiciones se anulan (`animation: none`, `motion-reduce:transition-none`).
+
+---
+
+## 4. Tabla de Decisión: Diálogo (`AlertDialog`) o Toast (`useToast`) (DIS-074)
+
+| Situación | Patrón Canónico | ¿Se cierra solo? |
+|---|---|---|
+| **Acción destructiva o irreversible** (eliminar, revocar, purgar, rechazar) | `<AlertDialog type="pregunta">` o `"aviso"`; botón peligro con verbo de acción | No |
+| **Acción con efecto importante sobre otros** (aprobar, reintentar, cambiar rol) | `<AlertDialog type="pregunta">` con confirmación explícita | No |
+| **Resultado que el usuario debe leer o copiar** (error bloqueante, credenciales) | `<AlertDialog type="error">` o `"exito"` con botón «Entendido» | No |
+| **Éxito de rutina** (guardado, marcado como favorito) | Toast éxito (`useToast().avisar('success', ...)`) | Sí (≥ 5 s, pausa con hover/foco) |
+| **Error recuperable no crítico** (falla toggle favorito, tema) | Toast error (`useToast().avisar('error', ...)`) | No mientras tenga foco; botón cerrar |
+| **Error de validación de campo** | `<FieldErrorNote>` en línea bajo el campo | — |
+| **Error al cargar vista o sección** | `<ErrorNote>` en la zona reservada | — |
+| **Estado persistente de la pantalla** (falta de configuración) | `<Note>` en línea | — |
+
+---
+
+## 5. Plantillas Canónicas de Pantalla (`components/plantillas/`) (DIS-070)
+
+Para garantizar consistencia arquitectónica y visual en todas las vistas de la aplicación:
+
+1. **`PantallaListado`:**
+   - **Estructura:** `PageHeader` (con acciones primarias como "Nueva...") → `FilterBar` → `RegionDeAviso` → Estados (Skeleton, EmptyNote, ErrorNote) → Tabla/Lista (`DataTable`) → `ListPager`.
+   - **Uso:** Vistas administrativas y catálogos (Plataformas, Áreas, Usuarios, Inventario, Aprobaciones, Auditoría, Ejecuciones, Notificaciones, Mis solicitudes).
+
+2. **`PantallaDetalle`:**
+   - **Estructura:** `PageHeader` (con botón Volver) → `RegionDeAviso` → Resumen (`Card` / `DataList`) → Secciones de detalle.
+   - **Uso:** Historial de auditoría por usuario/plataforma, detalle de ejecuciones, conectores.
+
+3. **`PantallaFormulario`:**
+   - **Estructura:** `PageHeader` → `RegionDeAviso` → Formulario en ancho `max-w-formulario` → Campos → Barra de acciones (primaria a la derecha).
+   - **Uso:** Vistas de edición/alta completas y pestañas de Ajustes.
+
+4. **`PantallaPanel`:**
+   - **Estructura:** `PageHeader` → `RegionDeAviso` → Rejilla de métricas (`StatTile` / `Card`) → Bloques modulares.
+   - **Uso:** Inicio / Dashboard, Catálogo de autoservicio, Favoritos.
+
+
+

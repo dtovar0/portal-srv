@@ -1,5 +1,5 @@
 """
-Autorización centralizada de Nexus (multitenant por área).
+Autorización centralizada del Portal (multitenant por área).
 
 Este módulo concentra las reglas de acceso. El resto de la aplicación debe pedir
 permisos aquí en lugar de comparar `current_user.role` a mano.
@@ -11,8 +11,9 @@ Niveles de acceso (de mayor a menor):
     admin_area    -> administra las áreas que tiene asignadas en `area_admins`:
                      sus plataformas, sus usuarios y sus permisos. No ve ni toca
                      nada de otras áreas ni la configuración global.
-    usuario       -> solo consulta las plataformas de las áreas que tiene
-                     asignadas en `user_areas`.
+    usuario       -> solo abre las plataformas en las que tiene un acceso
+                     `activo` (FNC-063), de las áreas a las que pertenece
+                     (`user_areas`).
 
 El área es la unidad de aislamiento (tenant). El aislamiento se aplica por
 fila: cada consulta se filtra por las áreas que el usuario alcanza, mediante las
@@ -21,7 +22,7 @@ funciones `scoped_*` de este módulo.
 
 from functools import wraps
 
-from flask import abort, flash, jsonify, redirect, request, url_for
+from flask import abort, jsonify
 from flask_login import current_user
 
 ROLE_ADMIN = 'administrador'
@@ -36,6 +37,11 @@ ROLE_USER = 'usuario'
 def _role(user):
     """Rol normalizado: llega sin normalizar de LDAP y de Authelia."""
     return (getattr(user, 'role', '') or '').lower()
+
+
+def normalized_role(user):
+    """Rol en minúsculas de cualquier cuenta (no exige sesión)."""
+    return _role(user)
 
 
 def _valid(user):
@@ -108,20 +114,44 @@ def scoped_areas(user=None, only_active=False):
 
 
 def scoped_platforms(user=None):
-    """Query de las plataformas visibles para el usuario."""
+    """Query de "mis plataformas": las que el usuario abre, marca favoritas y
+    visita (FNC-063, P4).
+
+    - Superadmin: todas (acceso por defecto, P6).
+    - Admin de área: las de las áreas que administra (acceso automático,
+      FNC-055) y las de sus accesos `activo`.
+    - Usuario: las de sus accesos `activo`.
+
+    Un acceso solo cuenta si la plataforma es de un área a la que la cuenta
+    pertenece (`user_areas`, P1). Otros estados del acceso no dan
+    visibilidad. `user_platforms` (obsoleta desde FNC-065, P4: se descarta) no
+    interviene.
+    El catálogo para solicitar es otro: `access_requests/catalogo.py`.
+    """
+    from app import db
+    from app.modules.access.consultas import plataformas_con_acceso_activo
     from app.modules.core.models import Platform
 
     user = user if user is not None else current_user
     if is_admin(user):
         return Platform.query
-    return Platform.query.filter(Platform.area_id.in_(user_area_ids(user)))
+    if not _valid(user):
+        return Platform.query.filter(False)
+    member_ids = [a.id for a in (user.areas or [])]
+    by_grant = db.and_(Platform.id.in_(plataformas_con_acceso_activo(user.id)),
+                       Platform.area_id.in_(member_ids))
+    if is_area_admin(user):
+        return Platform.query.filter(
+            db.or_(Platform.area_id.in_(managed_area_ids(user)), by_grant))
+    return Platform.query.filter(by_grant)
 
 
 def scoped_users(user=None):
     """Query de los usuarios que el usuario puede administrar.
 
-    El superadmin ve a todos. Un admin de área ve a quienes pertenecen a alguna
-    de las áreas que administra. Un usuario normal, solo a sí mismo.
+    El superadmin ve a todos. Un admin de área, solo las cuentas con rol
+    `usuario` de las áreas que administra (el mismo criterio que
+    `can_manage_user`, SEC-AUTHZ-06). Un usuario normal, solo a sí mismo.
     """
     from app import db
     from app.modules.auth.models import User, user_areas
@@ -137,11 +167,11 @@ def scoped_users(user=None):
         # como única entidad y admite filter_by() encadenado por quien llama.
         member_ids = (db.session.query(user_areas.c.user_id)
                       .filter(user_areas.c.area_id.in_(ids)))
-        # Un superadmin puede pertenecer a estas áreas, pero nunca debe quedar
-        # bajo la administración de un admin de área.
+        # Otros admins y el superadmin pueden pertenecer a estas áreas, pero
+        # nunca quedan bajo la administración de un admin de área (SEG-05).
         return User.query.filter(
             User.id.in_(member_ids),
-            db.func.lower(db.func.coalesce(User.role, '')) != ROLE_ADMIN,
+            db.func.lower(db.func.coalesce(User.role, '')) == ROLE_USER,
         )
     return User.query.filter(User.id == user.id) if _valid(user) else User.query.filter(False)
 
@@ -151,13 +181,16 @@ def scoped_users(user=None):
 # --------------------------------------------------------------------------- #
 
 def can_access_platform(platform, user=None):
-    """True si el usuario puede ver esa plataforma."""
+    """True si la plataforma está en "mis plataformas" (`scoped_platforms`)."""
+    from app.modules.core.models import Platform
+
     if platform is None:
         return False
     user = user if user is not None else current_user
     if is_admin(user):
         return True
-    return platform.area_id in user_area_ids(user)
+    return scoped_platforms(user).filter(
+        Platform.id == platform.id).first() is not None
 
 
 def can_manage_area(area_id, user=None):
@@ -180,8 +213,8 @@ def can_manage_platform(platform, user=None):
 def can_manage_user(target, user=None):
     """True si `user` puede administrar la cuenta `target`.
 
-    Un admin de área solo puede administrar usuarios de sus áreas, y nunca a un
-    superadmin.
+    Un admin de área solo administra cuentas con rol `usuario` de sus áreas:
+    nunca a otro admin de área ni al superadmin (SEC-AUTHZ-06, SEG-05).
     """
     if target is None:
         return False
@@ -190,7 +223,7 @@ def can_manage_user(target, user=None):
         return True
     if not is_area_admin(user):
         return False
-    if is_admin(target):
+    if _role(target) != ROLE_USER:
         return False
     managed = set(managed_area_ids(user))
     return bool(managed & {a.id for a in (target.areas or [])})
@@ -200,26 +233,9 @@ def can_manage_user(target, user=None):
 # Decoradores
 # --------------------------------------------------------------------------- #
 
-def _wants_json():
-    """True si quien llama espera JSON en lugar de una redirección HTML.
-
-    Sin esto, un `fetch()` a una ruta protegida recibe un 302 hacia el dashboard
-    y el JS falla al parsear HTML como JSON.
-    """
-    if request.is_json or '/api/' in request.path or request.path.endswith('-api'):
-        return True
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return True
-    accept = request.accept_mimetypes
-    return accept['application/json'] >= accept['text/html']
-
-
 def _deny(message='Acceso restringido. Se requieren permisos de administrador.'):
-    """Respuesta de acceso denegado en el formato que espera quien llama."""
-    if _wants_json():
-        return jsonify({'status': 'error', 'message': message}), 403
-    flash(message, 'warning')
-    return redirect(url_for('core.index'))
+    """Acceso denegado: 403 JSON (toda ruta protegida es de `/api/v1`)."""
+    return jsonify({'status': 'error', 'message': message}), 403
 
 
 def admin_required(f):

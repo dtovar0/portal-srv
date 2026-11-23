@@ -15,7 +15,64 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Main Palette
+        // DIS-055 — Semánticos por rol funcional (ADR-007)
+        fondo: 'rgb(var(--color-fondo) / <alpha-value>)',
+        superficie: 'rgb(var(--color-superficie) / <alpha-value>)',
+        'superficie-elevada': 'rgb(var(--color-superficie-elevada) / <alpha-value>)',
+        'superficie-hundida': 'rgb(var(--color-superficie-hundida) / <alpha-value>)',
+        velo: 'rgb(var(--color-velo))',
+
+        texto: 'rgb(var(--color-texto) / <alpha-value>)',
+        'texto-secundario': 'rgb(var(--color-texto-secundario) / <alpha-value>)',
+        'texto-tenue': 'rgb(var(--color-texto-tenue) / <alpha-value>)',
+        'texto-sobre-accion': 'rgb(var(--color-texto-sobre-accion) / <alpha-value>)',
+        'texto-sobre-peligro': 'rgb(var(--color-texto-sobre-peligro) / <alpha-value>)',
+        'texto-sobre-aviso': 'rgb(var(--color-texto-sobre-aviso) / <alpha-value>)',
+        'texto-enlace': 'rgb(var(--color-texto-enlace) / <alpha-value>)',
+
+        borde: 'rgb(var(--color-borde) / <alpha-value>)',
+        'borde-sutil': 'rgb(var(--color-borde-sutil) / <alpha-value>)',
+        'borde-fuerte': 'rgb(var(--color-borde-fuerte) / <alpha-value>)',
+
+        accion: 'rgb(var(--color-accion) / <alpha-value>)',
+        'accion-hover': 'rgb(var(--color-accion-hover) / <alpha-value>)',
+        'accion-presionada': 'rgb(var(--color-accion-presionada) / <alpha-value>)',
+        'accion-tenue': 'rgb(var(--color-accion-tenue) / <alpha-value>)',
+        'accion-texto': 'rgb(var(--color-accion-texto) / <alpha-value>)',
+
+        exito: 'rgb(var(--color-exito-relleno) / <alpha-value>)',
+        'exito-tenue': 'rgb(var(--color-exito-tenue) / <alpha-value>)',
+        'exito-borde': 'rgb(var(--color-exito-borde) / <alpha-value>)',
+        'exito-texto': 'rgb(var(--color-exito-texto) / <alpha-value>)',
+
+        aviso: 'rgb(var(--color-aviso-relleno) / <alpha-value>)',
+        'aviso-tenue': 'rgb(var(--color-aviso-tenue) / <alpha-value>)',
+        'aviso-borde': 'rgb(var(--color-aviso-borde) / <alpha-value>)',
+        'aviso-texto': 'rgb(var(--color-aviso-texto) / <alpha-value>)',
+
+        peligro: 'rgb(var(--color-peligro-relleno) / <alpha-value>)',
+        'peligro-tenue': 'rgb(var(--color-peligro-tenue) / <alpha-value>)',
+        'peligro-borde': 'rgb(var(--color-peligro-borde) / <alpha-value>)',
+        'peligro-texto': 'rgb(var(--color-peligro-texto) / <alpha-value>)',
+
+        'info-tenue': 'rgb(var(--color-info-tenue) / <alpha-value>)',
+        'info-borde': 'rgb(var(--color-info-borde) / <alpha-value>)',
+
+        neutro: 'rgb(var(--color-neutro-relleno) / <alpha-value>)',
+        'neutro-tenue': 'rgb(var(--color-neutro-tenue) / <alpha-value>)',
+        'neutro-borde': 'rgb(var(--color-neutro-borde) / <alpha-value>)',
+        'neutro-texto': 'rgb(var(--color-neutro-texto) / <alpha-value>)',
+
+        // DIS-056 — Tokens de interacción y estado
+        'foco-anillo': 'rgb(var(--foco-anillo) / <alpha-value>)',
+        'deshabilitado-fondo': 'rgb(var(--deshabilitado-fondo) / <alpha-value>)',
+        'deshabilitado-texto': 'rgb(var(--deshabilitado-texto) / <alpha-value>)',
+        'deshabilitado-borde': 'rgb(var(--deshabilitado-borde) / <alpha-value>)',
+        'invalido-borde': 'rgb(var(--invalido-borde) / <alpha-value>)',
+        'solo-lectura-fondo': 'rgb(var(--solo-lectura-fondo) / <alpha-value>)',
+        'seleccionado-borde': 'rgb(var(--seleccionado-borde) / <alpha-value>)',
+
+        // Main Palette (Alias transitorios)
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
         accent: 'rgb(var(--color-accent) / <alpha-value>)',
@@ -26,11 +83,35 @@ export default {
         sky: 'rgb(var(--color-accent-sky) / <alpha-value>)',
         brand: 'rgb(var(--color-brand) / <alpha-value>)',
 
+        // Texto de marca por tema (DIS-001): los de arriba son rellenos.
+        'primary-text': 'rgb(var(--color-primary-text) / <alpha-value>)',
+        'brand-text': 'rgb(var(--color-brand-text) / <alpha-value>)',
+        'accent-text': 'rgb(var(--color-accent-text) / <alpha-value>)',
+        'accent-sky-text': 'rgb(var(--color-accent-sky-text) / <alpha-value>)',
+        'accent-peach-text': 'rgb(var(--color-accent-peach-text) / <alpha-value>)',
+        // Relleno de marca con texto encima y su texto (DIS-001).
+        'primary-solid': 'rgb(var(--color-primary-solid) / <alpha-value>)',
+        'on-primary': 'rgb(var(--color-on-primary) / <alpha-value>)',
+
         // Surfaces & Backgrounds
         'body-bg': 'var(--color-body-bg)',
         'body-text': 'var(--color-body-text)',
-        header: 'var(--color-header-bg)',
-        'header-text': 'var(--color-header-text)',
+        header: 'rgb(var(--color-header-bg) / <alpha-value>)',
+        'header-text': 'rgb(var(--color-header-text) / <alpha-value>)',
+        // DIS-078: marco de administración (paleta del diseño aprobado, DIS-076)
+        'barra-lateral': 'rgb(var(--color-barra-lateral) / <alpha-value>)',
+        'barra-lateral-borde': 'rgb(var(--color-barra-lateral-borde) / <alpha-value>)',
+        'barra-lateral-texto': 'rgb(var(--color-barra-lateral-texto) / <alpha-value>)',
+        'barra-lateral-secundario': 'rgb(var(--color-barra-lateral-secundario) / <alpha-value>)',
+        'barra-lateral-nav': 'rgb(var(--color-barra-lateral-nav) / <alpha-value>)',
+        'barra-lateral-hover': 'rgb(var(--color-barra-lateral-hover))',
+        'barra-lateral-presionado': 'rgb(var(--color-barra-lateral-presionado))',
+        'barra-lateral-elemento': 'rgb(var(--color-barra-lateral-elemento))',
+        'barra-lateral-foco': 'rgb(var(--color-barra-lateral-foco) / <alpha-value>)',
+        navegacion: 'rgb(var(--color-navegacion) / <alpha-value>)',
+        'activo-fondo': 'rgb(var(--color-activo-fondo) / <alpha-value>)',
+        'activo-texto': 'rgb(var(--color-activo-texto) / <alpha-value>)',
+        'entrada-fondo': 'rgb(var(--color-entrada-fondo) / <alpha-value>)',
         'panel-fill': 'rgb(var(--color-panel-fill) / <alpha-value>)',
         'panel-border': 'rgb(var(--color-panel-border) / <alpha-value>)',
         'panel-header': 'rgb(var(--color-panel-header-bg) / <alpha-value>)',
@@ -39,6 +120,8 @@ export default {
         'surface-container': 'rgb(var(--color-surface-container-bg) / <alpha-value>)',
         'surface-container-border':
           'rgb(var(--color-surface-container-border) / <alpha-value>)',
+        // DIS-038: velo de diálogos y menú móvil; el token ya trae su opacidad.
+        overlay: 'rgb(var(--color-overlay))',
 
         // Buttons & Interaction
         'button-bg': 'rgb(var(--color-button-bg) / <alpha-value>)',
@@ -53,6 +136,7 @@ export default {
         'input-border': 'rgb(var(--color-input-border) / <alpha-value>)',
         'input-focus': 'rgb(var(--color-input-focus) / <alpha-value>)',
         label: 'rgb(var(--color-label-text) / <alpha-value>)',
+        placeholder: 'rgb(var(--color-placeholder) / <alpha-value>)',
 
         // Navigation & Tabs
         'tab-bar': 'rgb(var(--color-tab-bar-bg) / <alpha-value>)',
@@ -68,22 +152,101 @@ export default {
         'bi-muted': 'rgb(var(--color-bi-text-muted) / <alpha-value>)',
         'kpi-highlight': 'rgb(var(--color-kpi-highlight) / <alpha-value>)',
 
+        // Estados: rellenos y tintes (`bg-error/10`); DIS-002 quitó los literales.
         success: 'rgb(var(--color-success) / <alpha-value>)',
-        warning: '#f59e0b',
-        error: '#ef4444',
-        info: '#3b82f6',
+        warning: 'rgb(var(--color-warning) / <alpha-value>)',
+        error: 'rgb(var(--color-error) / <alpha-value>)',
+        info: 'rgb(var(--color-info) / <alpha-value>)',
+        // DIS-004: relleno del botón de peligro y su texto, por tema.
+        'error-solid': 'rgb(var(--color-error-solid) / <alpha-value>)',
+        'on-error': 'rgb(var(--color-on-error) / <alpha-value>)',
+        // Estados como texto, por tema (DIS-002).
+        'success-text': 'rgb(var(--color-success-text) / <alpha-value>)',
+        'warning-text': 'rgb(var(--color-warning-text) / <alpha-value>)',
+        'error-text': 'rgb(var(--color-error-text) / <alpha-value>)',
+        'info-text': 'rgb(var(--color-info-text) / <alpha-value>)',
 
         // Alias usados por el marcado de base.html
         bg: 'var(--color-body-bg)',
         text: 'var(--color-body-text)',
+
+        // Identidad Corporativa ADUANA (Manual de Identidad §06)
+        'aduana-bg-main': 'var(--aduana-bg-main)',
+        'aduana-bg-surface': 'var(--aduana-bg-surface)',
+        'aduana-bg-hover': 'var(--aduana-bg-hover)',
+        'aduana-border': 'var(--aduana-border)',
+        'aduana-text-primary': 'var(--aduana-text-primary)',
+        'aduana-text-secondary': 'var(--aduana-text-secondary)',
+        'aduana-cyan': 'var(--aduana-cyan)',
+        'aduana-cyan-hover': 'var(--aduana-cyan-hover)',
+        'aduana-orange': 'var(--aduana-orange)',
+        'aduana-orange-hover': 'var(--aduana-orange-hover)',
+        'status-approved': 'var(--status-approved)',
+        'status-pending': 'var(--status-pending)',
+        'status-rejected': 'var(--status-rejected)',
+        'status-info': 'var(--status-info)',
       },
       borderRadius: {
         base: 'var(--radius-base)',
         panel: 'var(--radius-panel)',
+        control: 'var(--radio-control)',
+        tarjeta: 'var(--radio-tarjeta)',
+        dialogo: 'var(--radio-dialogo)',
+        pastilla: 'var(--radio-pastilla)',
+        xl: '8px',
+        '2xl': '10px',
+        '3xl': '12px',
+      },
+      boxShadow: {
+        1: 'var(--sombra-1)',
+        2: 'var(--sombra-2)',
+        3: 'var(--sombra-3)',
+      },
+      borderWidth: {
+        base: 'var(--borde-ancho)',
+      },
+      transitionDuration: {
+        corta: 'var(--duracion-corta)',
+        media: 'var(--duracion-media)',
+      },
+      transitionTimingFunction: {
+        curva: 'var(--curva)',
       },
       fontFamily: {
-        // base.html carga Inter desde Google Fonts.
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--fuente-display)', 'var(--font-display)', 'Montserrat', 'sans-serif'],
+        sans: ['var(--fuente-texto)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--fuente-mono)', 'ui-monospace', 'monospace'],
+      },
+      fontSize: {
+        xs: ['var(--text-xs)', { lineHeight: '1rem' }],
+        sm: ['var(--text-sm)', { lineHeight: '1.25rem' }],
+        base: ['var(--text-base)', { lineHeight: '1.5rem' }],
+        lg: ['var(--text-lg)', { lineHeight: '1.75rem' }],
+        xl: ['var(--text-xl)', { lineHeight: '1.75rem' }],
+        '2xl': ['var(--text-2xl)', { lineHeight: '2rem' }],
+        '3xl': ['var(--text-3xl)', { lineHeight: '2.25rem' }],
+      },
+      maxWidth: {
+        contenido: 'var(--contenido-max)',
+        formulario: 'var(--formulario-max)',
+        dialogo: 'var(--dialogo-max)',
+      },
+      width: {
+        lateral: 'var(--marco-lateral-ancho)',
+        'lateral-colapsada': 'var(--marco-lateral-colapsada)',
+      },
+      height: {
+        control: 'var(--control-alto)',
+        'barra-superior': 'var(--marco-superior-alto)',
+      },
+      minHeight: {
+        control: 'var(--control-alto)',
+      },
+      minWidth: {
+        control: 'var(--control-alto)',
+      },
+      zIndex: {
+        '60': '60',
       },
     },
   },

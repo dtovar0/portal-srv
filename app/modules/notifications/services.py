@@ -1,8 +1,13 @@
+import html
+import logging
 import os
+import re
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.modules.notifications.models import SMTPConfig, NotificationTemplate, InAppNotification
+
+logger = logging.getLogger(__name__)
 
 
 class SmtpSettings:
@@ -64,7 +69,7 @@ def smtp_settings_from_env():
         auth_enabled=_env_flag('SMTP_AUTH', bool(username and password)),
         username=username,
         password=password,
-        sender_name=(os.getenv('SMTP_SENDER_NAME') or 'Nexus').strip(),
+        sender_name=(os.getenv('SMTP_SENDER_NAME') or 'Portal').strip(),
         sender_email=(os.getenv('SMTP_SENDER_EMAIL') or '').strip() or None,
         source='env',
     )
@@ -96,7 +101,8 @@ def resolve_smtp_settings():
             encryption=config.encryption,
             auth_enabled=config.auth_enabled,
             username=config.username,
-            password=config.password,
+            # La contraseña nunca sale de la BD: solo de SMTP_PASSWORD (FNC-010).
+            password=os.getenv('SMTP_PASSWORD') or None,
             sender_name=config.sender_name,
             source='db',
         )
@@ -151,12 +157,12 @@ def send_test_email(server, port, encryption, username, password, sender_name, t
         msg = MIMEMultipart()
         msg['From'] = f"{sender_name} <{username}>"
         msg['To'] = target_email
-        msg['Subject'] = "⚡ Nexus Premium - SMTP Verification"
+        msg['Subject'] = "⚡ Portal - Verificación SMTP"
 
         body = f"""
         <html>
             <body style="font-family: sans-serif; color: #1a1a1a;">
-                <h2 style="color: #6366f1;">⚡ Nexus System Verification</h2>
+                <h2 style="color: #6366f1;">⚡ Verificación del sistema - Portal</h2>
                 <p>Usted está recibiendo este mensaje porque se ha solicitado una prueba de conectividad desde el panel de administración.</p>
                 <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
                     <p><b>Status:</b> Conexión Exitosa</p>
@@ -188,6 +194,43 @@ def send_test_email(server, port, encryption, username, password, sender_name, t
     except Exception as e:
         return {"status": "error", "message": "Error al enviar correo de prueba."}
 
+# `{clave}` de una plantilla: letras, dígitos y guion bajo.
+PATRON_VARIABLE = re.compile(r'\{(\w+)\}')
+# Saltos de línea que, en una cabecera, abrirían otra (SEC-MAIL-01).
+PATRON_SALTO_DE_LINEA = re.compile(r'[\r\n]+')
+
+
+def render_template_text(text, context=None, escape_html=False):
+    """Sustituye `{clave}` por su valor en una sola pasada (SEC-MAIL-01, 02).
+
+    - Una clave sin valor queda tal cual.
+    - Con `escape_html` los valores pasan por `html.escape`: el texto del
+      usuario (justificación, motivo, nombre) no puede meter HTML ni enlaces.
+    - El valor insertado no se vuelve a sustituir: `{url}` dentro de una
+      justificación queda literal.
+    """
+    valores = context or {}
+
+    def _valor(coincidencia):
+        clave = coincidencia.group(1)
+        if clave not in valores:
+            return coincidencia.group(0)
+        texto = str(valores[clave])
+        return html.escape(texto) if escape_html else texto
+
+    return PATRON_VARIABLE.sub(_valor, text)
+
+
+def render_subject(subject, context=None):
+    """Asunto sin saltos de línea: ni los valores ni la plantilla agregan cabeceras."""
+    return PATRON_SALTO_DE_LINEA.sub(' ', render_template_text(subject, context))
+
+
+def notifications_enabled():
+    """Interruptor global `ENABLE_NOTIFICATIONS`: solo `true` activa el envío."""
+    return os.getenv('ENABLE_NOTIFICATIONS', 'true').lower() == 'true'
+
+
 def send_notification_by_slug(slug, target_email, context=None):
     """
     Sends a pre-defined notification template using the global SMTP configuration.
@@ -200,7 +243,7 @@ def send_notification_by_slug(slug, target_email, context=None):
     load_dotenv(override=True)
     
     # Global Switch Check
-    if os.getenv('ENABLE_NOTIFICATIONS', 'true').lower() != 'true':
+    if not notifications_enabled():
         print(f"🔕 Notificaciones desactivadas globalmente (.env). Omitiendo slug: {slug}")
         return {"status": "success", "message": "Notifications disabled globally"}
 
@@ -213,13 +256,9 @@ def send_notification_by_slug(slug, target_email, context=None):
         if not template:
             return {"status": "error", "message": f"Plantilla '{slug}' no encontrada"}
 
-        # Prepare content
-        body = template.body
-        subject = template.subject
-        if context:
-            for key, val in context.items():
-                body = body.replace(f"{{{key}}}", str(val))
-                subject = subject.replace(f"{{{key}}}", str(val))
+        body = render_template_text(template.body, context,
+                                    escape_html=bool(template.is_html))
+        subject = render_subject(template.subject, context)
 
         msg = MIMEMultipart()
         msg['From'] = f"{config.sender_name} <{config.sender_email}>"
@@ -236,3 +275,25 @@ def send_notification_by_slug(slug, target_email, context=None):
 
     except Exception as e:
         return {"status": "error", "message": "Error interno enviando notificación."}
+
+
+SLUG_USUARIO_CREADO = 'usuario_creado'
+VAR_NOTIFY_USER_CREATED = 'NOTIFY_USER_CREATED'
+
+
+def avisar_usuario_creado(correo, nombre, base_url, url=None):
+    """Correo de bienvenida a una cuenta recién creada (D-04, FNC-030).
+
+    Solo si `NOTIFY_USER_CREATED` es `true` (por omisión). Un fallo al
+    notificar nunca impide el acceso: se registra en el log y se sigue.
+    `url` es el enlace de la plantilla (por omisión, `base_url`).
+    """
+    if os.getenv(VAR_NOTIFY_USER_CREATED, 'true').lower() != 'true':
+        return
+    try:
+        send_notification_by_slug(SLUG_USUARIO_CREADO, correo, context={
+            'nombre': nombre, 'usuario': correo,
+            'base_url': base_url, 'url': url or base_url,
+        })
+    except Exception:
+        logger.exception('Fallo al enviar el aviso de usuario creado')

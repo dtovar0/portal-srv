@@ -5,6 +5,8 @@ export type Role = 'administrador' | 'admin_area' | 'usuario';
 export interface AreaRef {
   id: number;
   name: string;
+  icon?: string;
+  color?: string;
 }
 
 export interface Session {
@@ -13,6 +15,9 @@ export interface Session {
   name: string;
   role: Role;
   auth_source: string;
+  responsiva_firmada?: boolean;
+  responsiva_firmada_at?: string | null;
+  responsiva_version?: string;
   areas: AreaRef[];
   managed_areas: AreaRef[];
   permissions: {
@@ -26,7 +31,31 @@ export interface Session {
     email_notifications: boolean;
     refresh_interval: number;
     tour_enabled: boolean;
+    /** Id de tema de `lib/tema.ts` (FNC-122); nunca se usa como clase sin `esTemaValido`. */
+    theme?: string;
   };
+}
+
+export interface ResponsivaData {
+  version: string;
+  firmada: boolean;
+  firmada_at: string | null;
+  titulo: string;
+  contenido: string;
+  es_aprobacion?: boolean;
+  areas: AreaRef[];
+  plataformas: {
+    id: number;
+    name: string;
+    area_name?: string | null;
+    level?: string;
+  }[];
+}
+
+export interface AreaAdminRef {
+  id: number;
+  name: string;
+  email: string;
 }
 
 export interface Area {
@@ -38,6 +67,8 @@ export interface Area {
   status: string;
   platforms_count: number;
   users_count: number;
+  admins?: AreaAdminRef[];
+  admin_names?: string[];
 }
 
 export interface Platform {
@@ -56,6 +87,25 @@ export interface Platform {
   status: string;
   visits: number;
   is_favorite: boolean;
+  // Campos del contrato v1 (plataformas-integracion.md, FNC-046).
+  integration_type: IntegrationType;
+  /** Grupo del nivel `usuario`; null solo si `conector`. */
+  ldap_group_user_dn: string | null;
+  /** Grupo del nivel `admin`; null solo si `conector`. */
+  ldap_group_admin_dn: string | null;
+  groups_status: 'ok' | 'no_existe' | 'sin_verificar';
+  has_connector: boolean;
+  /** Accesos vigentes (accesos.md). */
+  active_grants: number;
+}
+
+/** Cómo se aprovisiona el acceso a una plataforma (contrato v1). */
+export type IntegrationType = 'ldap' | 'conector';
+
+/** Aviso no bloqueante de una escritura de plataforma (`warnings`). */
+export interface PlatformWarning {
+  code: string;
+  message: string;
 }
 
 export interface ManagedUser {
@@ -68,6 +118,20 @@ export interface ManagedUser {
   areas: AreaRef[];
   managed_areas: AreaRef[];
   last_login_at: string | null;
+  /** Entrega de la contraseña inicial (usuarios-directorio.md v2); `null` o ausente: sin onboarding del portal. */
+  credentials_status?: CredentialsStatus | null;
+  credentials_sent_at?: string | null;
+}
+
+export type CredentialsStatus = 'enviadas' | 'pendientes';
+
+/** Indicadores del dashboard que traen desglose en `GET /stats` (contrato de FNC-164). */
+export type ClaveIndicador = 'areas' | 'platforms' | 'requests' | 'visits' | 'users';
+
+/** Reparto de un contador en dos partes: `parte + resto` = el contador (DIS-112). */
+export interface DesgloseIndicador {
+  parte: number;
+  resto: number;
 }
 
 export interface Stats {
@@ -75,6 +139,9 @@ export interface Stats {
   platforms: number;
   visits: number;
   users?: number;
+  requests?: number;
+  /** Ausente en un backend anterior a FNC-164; `users` solo llega a admins. */
+  desglose?: Partial<Record<ClaveIndicador, DesgloseIndicador>>;
   most_visited: { id: number; name: string; visits: number }[];
   platforms_by_area: { area: string; color: string; count: number }[];
 }
@@ -135,18 +202,6 @@ export interface AppNotification {
   timestamp: string;
 }
 
-export interface AuthConfig {
-  ldap_host: string | null;
-  ldap_port: number;
-  ldap_ssl: boolean;
-  ldap_base_dn: string | null;
-  ldap_user: string | null;
-  ldap_user_attr: string;
-  ldap_group_admin: string | null;
-  ldap_group_user: string | null;
-  ldap_role_mappings: string | null;
-}
-
 /** Campos editables de un área. */
 export interface AreaInput {
   name?: string;
@@ -167,26 +222,37 @@ export interface PlatformInput {
   bg_color?: string;
   text_color?: string;
   status?: string;
+  /** Obligatorio en `POST /platforms`, igual que `name`, `description` y `area_id`. */
+  integration_type?: IntegrationType;
+  /** Solo superadmin (`403 dn_solo_superadmin` para un admin de área). */
+  ldap_group_user_dn?: string;
+  /** Solo superadmin. */
+  ldap_group_admin_dn?: string;
 }
 
-/** Campos editables de un usuario. */
+/**
+ * Campos editables de un usuario (`POST /users`, `PUT /users/<id>`).
+ * Sin `auth_source` ni `managed_area_ids`: el backend responde
+ * `400 campo_no_permitido` (FNC-044). Las áreas administradas van por
+ * `setManagedAreas` (`lib/access/users.ts`).
+ */
 export interface UserInput {
   email?: string;
   name?: string;
   role?: Role;
   password?: string;
   is_active?: boolean;
-  auth_source?: string;
   area_ids?: number[];
-  managed_area_ids?: number[];
 }
 
 export interface AuthContext {
-  sso_enabled: boolean;
-  /** Identidad que ya aporta Authelia, si el proxy la inyectó. */
-  sso_user: string | null;
+  /** `OIDC_*` completas: se muestra «Entrar con Authelia». */
+  oidc_enabled: boolean;
   authenticated: boolean;
-  ldap_available: boolean;
+  /** La ruta `/auth/local` existe; no hay enlace visible (ADR-009 6A). */
+  emergency_available: boolean;
+  /** Authelia apagado (`OIDC_HABILITADO=false`, FNC-158): `/login` pide usuario y contraseña (cuentas locales). */
+  local_login?: boolean;
 }
 
 export interface InactiveUser {
@@ -201,6 +267,6 @@ export interface DirectoryUser {
   name: string;
   email: string;
   account: string;
-  /** Ya existe una cuenta en Nexus con ese correo. */
+  /** Ya existe una cuenta en el Portal con ese correo. */
   exists: boolean;
 }

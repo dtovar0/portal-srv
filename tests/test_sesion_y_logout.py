@@ -1,0 +1,105 @@
+"""Sesión tras el login y cierre de sesión: `POST /api/v1/auth/logout` (FNC-022)."""
+
+import pytest
+
+from app import db
+from app.authz import ROLE_ADMIN
+from tests.matriz_proteccion import CONTRASENA_FICTICIA
+from tests.oidc_simulado import VARIABLES as VARIABLES_OIDC
+from tests.peticiones_auth import (A, hay_auditoria, iniciar_sesion_api,
+                                   usuario_en_sesion)
+
+COOKIE_SESION = 'nexus_session'
+URL_CIERRE_FICTICIA = 'https://auth.pruebas.invalid/logout'
+
+
+@pytest.fixture
+def usuario_local(crear_usuario):
+    # Cuenta de emergencia: la única con login local (FNC-077).
+    return crear_usuario(ROLE_ADMIN, contrasena=CONTRASENA_FICTICIA)
+
+
+@pytest.fixture
+def cliente_con_login(client, usuario_local):
+    """Cliente con sesión abierta por el login real."""
+    respuesta = iniciar_sesion_api(client, usuario_local.email,
+                                   CONTRASENA_FICTICIA)
+    assert respuesta.status_code == 200
+    return client
+
+
+# --------------------------------------------------------------------------- #
+# Sesión
+# --------------------------------------------------------------------------- #
+
+def test_login_emite_la_cookie_de_sesion(cliente_con_login):
+    assert cliente_con_login.get_cookie(COOKIE_SESION) is not None
+
+
+def test_sesion_identifica_al_usuario_en_peticiones_siguientes(
+        cliente_con_login, usuario_local):
+    assert usuario_en_sesion(cliente_con_login) == usuario_local.email
+    contexto = cliente_con_login.get(f'{A}/context').get_json()
+    assert contexto['authenticated'] is True
+
+
+def test_sin_login_no_hay_sesion(client):
+    assert usuario_en_sesion(client) is None
+    assert client.get(f'{A}/context').get_json()['authenticated'] is False
+
+
+def test_cuenta_desactivada_pierde_la_sesion(cliente_con_login, usuario_local):
+    """SEC-AUTH-11. Hoy ya se cumple: en Flask-Login 0.6.3 `is_authenticated`
+    devuelve `is_active`, así que `@login_required` responde 401."""
+    usuario_local.is_active = False
+    db.session.commit()
+
+    assert usuario_en_sesion(cliente_con_login) is None
+
+
+# --------------------------------------------------------------------------- #
+# Logout
+# --------------------------------------------------------------------------- #
+
+def test_logout_cierra_la_sesion(cliente_con_login, usuario_local):
+    respuesta = cliente_con_login.post(f'{A}/logout')
+
+    assert respuesta.status_code == 200
+    assert respuesta.get_json() == {'status': 'success', 'redirect': None}
+    assert usuario_en_sesion(cliente_con_login) is None
+    assert hay_auditoria('CIERRE DE SESIÓN',
+                         'success', target=usuario_local.email)
+
+
+def test_logout_sin_sesion_da_401(client):
+    assert client.post(f'{A}/logout').status_code == 401
+
+
+def test_logout_con_oidc_devuelve_la_url_de_cierre_de_authelia(
+        cliente_con_login, monkeypatch):
+    for clave, valor in VARIABLES_OIDC.items():
+        monkeypatch.setenv(clave, valor)
+    monkeypatch.setenv('OIDC_LOGOUT_URL', URL_CIERRE_FICTICIA)
+
+    respuesta = cliente_con_login.post(f'{A}/logout')
+
+    assert respuesta.get_json()['redirect'] == (
+        f'{URL_CIERRE_FICTICIA}?rd=https%3A%2F%2Fportal.pruebas.invalid%2Flogin')
+    assert usuario_en_sesion(cliente_con_login) is None
+
+
+def test_logout_con_oidc_sin_url_de_cierre_no_redirige(cliente_con_login,
+                                                       monkeypatch):
+    for clave, valor in VARIABLES_OIDC.items():
+        monkeypatch.setenv(clave, valor)
+    from app.modules.auth import oidc
+    oidc.reiniciar_clientes()
+    # Sin red: el descubrimiento falla y no hay a dónde redirigir.
+    from tests.oidc_simulado import ProveedorOidc
+    proveedor = ProveedorOidc().instalar(monkeypatch)
+    proveedor.metadatos = lambda: (_ for _ in ()).throw(RuntimeError('sin red'))
+
+    respuesta = cliente_con_login.post(f'{A}/logout')
+
+    assert respuesta.get_json()['redirect'] is None
+    oidc.reiniciar_clientes()

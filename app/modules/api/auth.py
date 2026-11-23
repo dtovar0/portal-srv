@@ -1,186 +1,208 @@
 """
-API v1 — autenticación.
+API v1 — autenticación (contrato `docs/contratos/autenticacion.md`).
 
-Endpoints JSON que consume el frontend. La emisión y validación de la sesión
-sigue aquí, en Flask-Login: es lo que firma la cookie.
+Las personas entran solo por Authelia con OIDC (código de autorización con
+PKCE; `app/modules/auth/oidc.py`, ADR-009). Queda una ruta local de emergencia
+(`POST /auth/local`, sin enlace visible) para la cuenta de emergencia.
 
-Sobre el SSO: Authelia se aplica mediante cabeceras que inyecta Nginx
-(`Remote-Email`, `Remote-Name`, `Remote-Groups`). Confiar en ellas solo es
-seguro si nadie más puede ponerlas, así que este módulo únicamente las acepta
-cuando la petición llega de un proxy declarado en TRUSTED_PROXIES. Sin esa
-comprobación, cualquiera que alcance el puerto podría enviar
-`Remote-Email: admin` y suplantar a quien quisiera.
+La emisión y validación de la sesión sigue aquí, en Flask-Login: es lo que
+firma la cookie. Las cabeceras `Remote-*` ya no autentican a nadie.
+
+El rol no sale del token ni de sus grupos: una cuenta nueva entra como
+`usuario` y el superadmin la eleva en el portal (SEG-10, FNC-042).
 """
 
+import logging
 import os
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, redirect, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 
-from app import db
+from app.modules.api.helpers import endpoint_retirado
 from app.modules.audit.services import add_audit_log
+from app.modules.auth import oidc
+from app.modules.auth.acceso_local import (es_cuenta_de_emergencia,
+                                           login_local_por_oidc_apagado,
+                                           motivo_rechazo_login_local)
+from app.modules.auth.limite_intentos import MENSAJE_BLOQUEO, bloqueado
 from app.modules.auth.models import User
+from app.modules.auth.oidc_cuentas import cuenta_de_la_identidad
+from app.modules.auth.services import MENSAJE_CREDENCIALES
+from app.modules.notifications.services import avisar_usuario_creado
+
+logger = logging.getLogger(__name__)
 
 auth_api_bp = Blueprint('api_auth', __name__, url_prefix='/api/v1/auth')
 
+RUTA_INICIO = '/'
+RUTA_ENTRADA = '/login'
+USO_OIDC = 'GET /auth/oidc/login'
+USO_LOCAL = 'POST /auth/local'
 
-def _trusted_proxy():
-    """True si la petición viene de un proxy autorizado a inyectar Remote-*.
 
-    Por defecto solo loopback, que es donde escucha Nginx en este despliegue.
+def _acceso_fallido(email, motivo):
+    """Audita el motivo y responde el fallo único (401)."""
+    add_audit_log('ACCESO FALLIDO', status='error', target=email,
+                  detail=motivo[:200])
+    return jsonify({'status': 'error', 'message': MENSAJE_CREDENCIALES}), 401
+
+
+def _abrir_sesion(cuenta):
+    """`login_user` sobre una sesión limpia (fijación de sesión, SEC-SES-03).
+
+    `session.clear()` quita también `_permanent`: se vuelve a fijar.
     """
-    allowed = {p.strip() for p in os.getenv(
-        'TRUSTED_PROXIES', '127.0.0.1,::1').split(',') if p.strip()}
-    return request.remote_addr in allowed
+    session.clear()
+    session.permanent = True
+    return login_user(cuenta, remember=True)
 
 
-def _sso_enabled():
-    return os.getenv('AUTHELIA_ENABLED', 'false').lower() == 'true'
-
-
-def _role_from_groups(groups_header):
-    """Deduce el rol a partir de los grupos que envía Authelia."""
-    admin_groups = [g.strip().lower() for g in os.getenv(
-        'AUTHELIA_GROUP_ADMIN', 'administrador').split(',')]
-    if not groups_header:
-        return 'usuario'
-    groups = [g.strip().lower() for g in groups_header.split(',')]
-    return 'administrador' if any(g in groups for g in admin_groups) else 'usuario'
+def _volver_a_entrada(codigo):
+    """Redirige a la pantalla de acceso con un código sin detalle."""
+    return redirect(f'{RUTA_ENTRADA}?error={codigo}')
 
 
 @auth_api_bp.route('/context')
 def context():
-    """Qué métodos de acceso ofrecer, y si el SSO ya identifica al visitante.
-
-    El frontend lo consulta antes de pintar el formulario.
-    """
-    sso_user = None
-    if _sso_enabled() and _trusted_proxy():
-        header = os.getenv('AUTHELIA_HEADER_USER', 'Remote-Email')
-        sso_user = request.headers.get(header)
-
+    """Qué ofrecer en la pantalla de acceso. El frontend lo consulta antes de pintarla."""
     return jsonify({
-        'sso_enabled': _sso_enabled(),
-        'sso_user': sso_user,
+        'oidc_enabled': oidc.oidc_habilitado(),
         'authenticated': current_user.is_authenticated,
-        'ldap_available': True,
+        # La ruta de emergencia siempre existe, pero no tiene enlace visible (ADR-009 6A).
+        'emergency_available': True,
+        # Authelia apagado (FNC-158): `/login` muestra usuario y contraseña (solo cuentas locales).
+        'local_login': login_local_por_oidc_apagado(),
     })
 
 
-@auth_api_bp.route('/sso', methods=['POST'])
-def sso_login():
-    """Inicia sesión a partir de las cabeceras de Authelia."""
-    if not _sso_enabled():
-        return jsonify({'status': 'error', 'message': 'SSO no habilitado.'}), 400
-
-    # Una cabecera Remote-* solo vale si la puso el proxy, no el cliente.
-    if not _trusted_proxy():
-        add_audit_log('SSO RECHAZADO', status='warning',
-                      detail=f'Cabeceras Remote-* desde origen no confiable: '
-                             f'{request.remote_addr}')
-        return jsonify({'status': 'error',
-                        'message': 'Origen no autorizado para SSO.'}), 403
-
-    email = request.headers.get(os.getenv('AUTHELIA_HEADER_USER', 'Remote-Email'))
-    if not email:
-        return jsonify({'status': 'error', 'message': 'Sin identidad SSO.'}), 401
-
-    name = request.headers.get(
-        os.getenv('AUTHELIA_HEADER_NAME', 'Remote-Name'), email)
-    groups = request.headers.get(
-        os.getenv('AUTHELIA_HEADER_GROUPS', 'Remote-Groups'), '')
-    role = _role_from_groups(groups)
-
-    user = User.query.filter_by(email=email).first()
-    created = user is None
-    if created:
-        user = User(email=email, nombre=name, role=role, auth_source='sso')
-        db.session.add(user)
-    else:
-        user.nombre = name
-        # El rol lo manda el directorio, salvo que sea un admin de área local:
-        # ese nivel se gestiona en Nexus y el SSO no lo conoce.
-        if user.role != 'admin_area':
-            user.role = role
-    db.session.commit()
-
-    login_user(user, remember=True)
-    add_audit_log(f'ACCESO SSO: {email}', status='success',
-                  detail='Sesión iniciada vía Authelia')
-
-    if created and os.getenv('NOTIFY_USER_CREATED', 'true').lower() == 'true':
-        try:
-            from app.modules.notifications.services import send_notification_by_slug
-            base = os.getenv('BASE_URL', request.host_url.rstrip('/'))
-            send_notification_by_slug('usuario_creado', email, context={
-                'nombre': name, 'usuario': email,
-                'base_url': base, 'url': base,
-            })
-        except Exception:
-            # Un fallo al notificar no debe impedir el acceso.
-            pass
-
-    return jsonify({'status': 'success', 'role': user.role})
+@auth_api_bp.route('/oidc/login')
+def oidc_login():
+    """Redirige a Authelia (código de autorización, PKCE S256, `state` y `nonce`)."""
+    config = oidc.configuracion()
+    if config is None:
+        return _volver_a_entrada(oidc.ERROR_NO_DISPONIBLE)
+    try:
+        return oidc.cliente(config).authorize_redirect(config.redirect_uri)
+    except Exception as exc:
+        logger.error('OIDC: no se pudo iniciar el flujo (%s).', type(exc).__name__)
+        add_audit_log('ACCESO OIDC FALLIDO', status='error',
+                      detail=f'No se pudo contactar a Authelia: {type(exc).__name__}')
+        return _volver_a_entrada(oidc.ERROR_NO_DISPONIBLE)
 
 
-@auth_api_bp.route('/login', methods=['POST'])
-def login():
-    """Inicio de sesión con credenciales: directorio o cuenta local."""
+def _fallo_oidc(error, objetivo=None):
+    # Sin tokens, `code` ni `state`: solo el motivo de `ErrorOidc`.
+    add_audit_log('ACCESO OIDC FALLIDO', status='error', target=objetivo,
+                  detail=error.motivo[:200])
+    return _volver_a_entrada(error.codigo)
+
+
+@auth_api_bp.route('/oidc/callback')
+def oidc_callback():
+    """Vuelta de Authelia: valida, vincula la cuenta y abre la sesión del portal."""
+    config = oidc.configuracion()
+    if config is None:
+        return _volver_a_entrada(oidc.ERROR_NO_DISPONIBLE)
+    try:
+        identidad = oidc.identidad_del_callback(config)
+    except oidc.ErrorOidc as error:
+        return _fallo_oidc(error)
+
+    try:
+        resultado = cuenta_de_la_identidad(identidad)
+    except oidc.ErrorOidc as error:
+        return _fallo_oidc(error, identidad.correo)
+    except Exception as exc:
+        from app import db
+        db.session.rollback()
+        logger.error('OIDC: fallo al registrar la cuenta (%s).', type(exc).__name__)
+        return _fallo_oidc(oidc.ErrorOidc(oidc.ERROR_AUTENTICACION,
+                                          'OIDC: fallo al registrar la cuenta'),
+                           identidad.correo)
+
+    cuenta = resultado.cuenta
+    if not _abrir_sesion(cuenta):
+        return _fallo_oidc(oidc.ErrorOidc(oidc.ERROR_CUENTA,
+                                          'OIDC: login_user rechazó la cuenta'),
+                           cuenta.email)
+    add_audit_log('ACCESO SSO', status='success', target=cuenta.email,
+                  detail='Sesión iniciada vía Authelia (OIDC)')
+    if resultado.es_nueva:
+        # El enlace del correo sale de la configuración, nunca del `Host`.
+        base = (os.getenv('BASE_URL') or oidc.origen_del_portal(config)).rstrip('/')
+        avisar_usuario_creado(cuenta.email, cuenta.nombre, base,
+                              f'{base}{RUTA_ENTRADA}')
+    return redirect(RUTA_INICIO)
+
+
+@auth_api_bp.route('/local', methods=['POST'])
+def local_login():
+    """Inicio de sesión de la cuenta de emergencia (o, en desarrollo, la bandera de FNC-077).
+
+    Respuesta única de fallo (SEC-AUTH-09) y límite de intentos (FNC-014).
+    """
     data = request.get_json(silent=True) or {}
     email = (data.get('email') or '').strip()
     password = data.get('password') or ''
-    method = data.get('method') or 'directory'
 
     if not email or not password:
         return jsonify({'status': 'error',
                         'message': 'Indica usuario y contraseña.'}), 400
 
-    if method == 'directory':
-        from app.modules.auth.services import authenticate_user_ldap
-        result = authenticate_user_ldap(email, password)
-        if result.get('status') == 'success':
-            user = result['user']
-            login_user(user, remember=True)
-            add_audit_log(f'ACCESO DIRECTORIO: {email}', status='success',
-                          detail='Autenticación corporativa')
-            return jsonify({'status': 'success', 'role': user.role})
-        add_audit_log(f'ACCESO FALLIDO: {email}', status='error',
-                      detail=str(result.get('message'))[:200])
-        return jsonify({'status': 'error',
-                        'message': result.get('message') or 'Credenciales incorrectas.'}), 401
-
     user = User.query.filter_by(email=email).first()
+
+    # Fuerza bruta (FNC-014): sin probar credenciales mientras dure el bloqueo.
+    # La cuenta de emergencia solo se bloquea por IP (FNC-154): nadie debe poder
+    # dejarla fuera a propósito sin quedar bloqueado él mismo.
+    if bloqueado(email, omitir_limite_de_cuenta=es_cuenta_de_emergencia(user)):
+        add_audit_log('ACCESO BLOQUEADO', status='warning', target=email,
+                      detail='Límite de intentos fallidos')
+        return jsonify({'status': 'error', 'message': MENSAJE_BLOQUEO}), 429
+
     if user and user.password_hash and user.check_password(password):
+        # Solo la cuenta de emergencia (o, en desarrollo, la bandera):
+        # respuesta única, el motivo solo a la auditoría (FNC-077).
+        motivo = motivo_rechazo_login_local(user)
+        if motivo:
+            return _acceso_fallido(email, f'Local: {motivo}')
+        # Desactivada: respuesta única, no confirma la contraseña (SEC-AUTH-09).
         if not user.is_active:
-            return jsonify({'status': 'error',
-                            'message': 'La cuenta está desactivada.'}), 403
-        login_user(user, remember=True)
-        add_audit_log(f'ACCESO LOCAL: {email}', status='success',
+            return _acceso_fallido(email, 'Local: cuenta desactivada')
+        if not _abrir_sesion(user):
+            return _acceso_fallido(email, 'Local: cuenta desactivada')
+        add_audit_log('ACCESO LOCAL', status='success', target=email,
                       detail='Autenticación manual')
         return jsonify({'status': 'success', 'role': user.role})
 
-    add_audit_log(f'ACCESO FALLIDO: {email}', status='error',
+    add_audit_log('ACCESO FALLIDO', status='error', target=email,
                   detail='Credenciales locales incorrectas')
     # Mismo mensaje exista o no la cuenta, para no revelar qué correos hay.
     return jsonify({'status': 'error',
-                    'message': 'Credenciales incorrectas.'}), 401
+                    'message': MENSAJE_CREDENCIALES}), 401
+
+
+@auth_api_bp.route('/sso', methods=['POST'])
+def sso_retirado():
+    """Retirado (ADR-009): las cabeceras `Remote-*` ya no autentican."""
+    return endpoint_retirado(USO_OIDC)
+
+
+@auth_api_bp.route('/login', methods=['POST'])
+def login_retirado():
+    """Retirado (ADR-009): sin login por directorio; la emergencia usa `/auth/local`."""
+    return endpoint_retirado(USO_LOCAL)
 
 
 @auth_api_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
-    """Cierra la sesión y, con SSO, devuelve la URL de cierre de Authelia."""
+    """Cierra la sesión y devuelve la URL de cierre de Authelia, si hay una."""
     email = current_user.email
     logout_user()
-    add_audit_log(f'CIERRE DE SESIÓN: {email}', status='success',
+    session.clear()
+    add_audit_log('CIERRE DE SESIÓN', status='success', target=email,
                   detail='Sesión finalizada por el usuario')
 
-    redirect_to = None
-    if _sso_enabled():
-        slo = os.getenv('AUTHELIA_SLO_URL')
-        if slo:
-            # Authelia cierra su propia sesión y devuelve al login.
-            base = os.getenv('BASE_URL', request.host_url.rstrip('/'))
-            redirect_to = f'{slo}?rd={base}/login'
-
+    config = oidc.configuracion()
+    redirect_to = oidc.url_de_cierre(config) if config else None
     return jsonify({'status': 'success', 'redirect': redirect_to})

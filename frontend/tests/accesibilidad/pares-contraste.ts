@@ -1,0 +1,239 @@
+/**
+ * Pares de tokens texto/fondo que se miden en cada tema (FNC-025).
+ *
+ * Salen de la auditoría de accesibilidad inicial
+ * (docs/estandarizacion/auditorias/2026-10-13-accesibilidad-inicial.md, sección 1).
+ * `sobre` indica la superficie donde se compone un fondo con alpha y
+ * `alfaFondo` la opacidad que el marcado aplica al fondo (`bg-primary/15`).
+ * DIS-001: el color de marca como texto se mide con su variante `*-text`.
+ * DIS-002: los estados (success, error, warning, info) como texto, con su
+ * variante `*-text`, sobre panel y sobre su propio tinte (`bg-success/15`...).
+ */
+import { ESTADOS as ESTADOS_ACCESO } from '@/components/access/access-status-badge';
+import { ESTADOS_SOLICITUD } from '@/components/access/request-status-badge';
+import { ESTADOS_CREDENCIAL } from '@/components/connectors/connector-catalog';
+import { ESTADOS_EJECUCION, RESULTADOS_INTENTO } from '@/components/connectors/job-catalog';
+import { ESTADOS_DIRECTORIO } from '@/components/settings/directory-catalog';
+import { MIN_NO_TEXTO, MIN_TEXTO } from '../utils/wcag';
+
+export interface ParContraste {
+  id: string;
+  texto: string;
+  fondo: string;
+  sobre?: string;
+  alfaFondo?: number;
+  /** Opacidad que el marcado aplica al texto (`text-x/NN`). */
+  alfaTexto?: number;
+  minimo: number;
+}
+
+const texto = (id: string, t: string, fondo: string, sobre?: string): ParContraste =>
+  ({ id, texto: t, fondo, sobre, minimo: MIN_TEXTO });
+
+/** Texto sobre un tinte del relleno (`bg-x/NN`) compuesto sobre panel. */
+const tinte = (id: string, t: string, fondo: string, alfaFondo: number): ParContraste =>
+  ({ ...texto(id, t, fondo, '--color-panel-fill'), alfaFondo });
+
+const TONOS_ESTADO = ['success', 'error', 'warning', 'info'];
+const TONOS_BADGE = ['primary', 'success', 'error', 'warning', 'violet', 'sky', 'slate', 'cyan'];
+
+export const PARES: ParContraste[] = [
+  texto('body-text/body-bg', '--color-body-text', '--color-body-bg'),
+  texto('header-text/header-bg', '--color-header-text', '--color-header-bg'),
+  texto('panel-header-text/panel-header-bg', '--color-panel-header-text', '--color-panel-header-bg', '--color-panel-fill'),
+  texto('button-text/button-bg', '--color-button-text', '--color-button-bg'),
+  texto('tab-active-text/tab-active-bg', '--color-tab-active-text', '--color-tab-active-bg'),
+  texto('tab-inactive-text/tab-inactive-bg', '--color-tab-inactive-text', '--color-tab-inactive-bg'),
+  texto('label-text/panel', '--color-label-text', '--color-panel-fill'),
+  texto('label-text/input-bg', '--color-label-text', '--color-input-bg'),
+  // DIS-013: placeholder de `form.tsx` (`placeholder:text-label/85` sobre `bg-surface-container/30` en panel).
+  { ...texto('placeholder/input', '--color-label-text', '--color-surface-container-bg', '--color-panel-fill'),
+    alfaFondo: 0.3, alfaTexto: 0.85 },
+  // DIS-014: texto de `EmptyNote` en `ui.tsx` (`text-label/85` sobre `Card`, antes /60: 2,9–3,4:1).
+  { ...texto('empty-note/panel', '--color-label-text', '--color-panel-fill'), alfaTexto: 0.85 },
+  texto('input-text/input-bg', '--color-input-text', '--color-input-bg'),
+  texto('bi-text-main/panel', '--color-bi-text-main', '--color-panel-fill'),
+  texto('bi-text-muted/panel', '--color-bi-text-muted', '--color-panel-fill'),
+  texto('bi-text-muted/surface-container', '--color-bi-text-muted', '--color-surface-container-bg'),
+  texto('secondary/panel', '--color-secondary', '--color-panel-fill'),
+  texto('primary-text/body-bg', '--color-primary-text', '--color-body-bg'),
+  texto('primary-text/panel', '--color-primary-text', '--color-panel-fill'),
+  // DIS-014: sobre el fondo de página (fuera de `Card`): subtítulo, paginación y
+  // pestaña inactiva (`text-label`); pestaña activa (`text-primary-text`, ya en
+  // `primary-text/body-bg`) y su indicador `border-primary` (no textual, 3:1).
+  texto('label-text/body-bg', '--color-label-text', '--color-body-bg'),
+  { id: 'tab-indicador/body-bg', texto: '--color-primary', fondo: '--color-body-bg', minimo: MIN_NO_TEXTO },
+  // Entrada activa del menú, chips y pestañas: texto sobre `bg-primary/15` y `/10`.
+  { ...texto('primary-text/primary-15', '--color-primary-text', '--color-primary', '--color-panel-fill'), alfaFondo: 0.15 },
+  { ...texto('primary-text/primary-10', '--color-primary-text', '--color-primary', '--color-panel-fill'), alfaFondo: 0.1 },
+  texto('on-primary/primary-solid', '--color-on-primary', '--color-primary-solid'),
+  // DIS-097: encabezado de AlertDialog. Aviso/pregunta: texto oscuro sobre el relleno de aviso (título y
+  // icono 4,5:1; cerrar al 80%, no textual, 3:1). Error: blanco sobre `error-solid`.
+  texto('alert-aviso/titulo', '--color-texto-sobre-aviso', '--color-aviso-relleno'),
+  { ...texto('alert-aviso/cerrar-80', '--color-texto-sobre-aviso', '--color-aviso-relleno'), alfaTexto: 0.8, minimo: MIN_NO_TEXTO },
+  { ...texto('alert-aviso/titulo-degradado-95', '--color-texto-sobre-aviso', '--color-aviso-relleno', '--color-superficie'), alfaFondo: 0.95 },
+  texto('alert-error/titulo', '--color-on-error', '--color-error-solid'),
+  // DIS-099: contador de Inventario y Auditoría (`text-body-text bg-panel-border/30` sobre la barra).
+  { ...texto('contador/superficie', '--color-body-text', '--color-panel-border', '--color-superficie'), alfaFondo: 0.3 },
+  { ...texto('contador/superficie-hundida', '--color-body-text', '--color-panel-border', '--color-superficie-hundida'), alfaFondo: 0.3 },
+  { ...texto('alert-error/cerrar-80', '--color-on-error', '--color-error-solid'), alfaTexto: 0.8, minimo: MIN_NO_TEXTO },
+  { ...texto('alert-error/titulo-degradado-95', '--color-on-error', '--color-error-solid', '--color-superficie'), alfaFondo: 0.95 },
+  // DIS-002: texto de estado sobre panel (mensajes, estrella de favorito).
+  ...TONOS_ESTADO.map((tono) =>
+    texto(`${tono}-text/panel`, `--color-${tono}-text`, '--color-panel-fill')),
+  // DIS-002: chips de notificación (`bg-<tono>/15`) y ErrorNote / hover de Eliminar (`bg-error/10`).
+  ...TONOS_ESTADO.map((tono) => tinte(`${tono}-text/${tono}-15`, `--color-${tono}-text`, `--color-${tono}`, 0.15)),
+  tinte('error-text/error-10', '--color-error-text', '--color-error', 0.1),
+  // DIS-002: tarjeta "sin enlace" de Administrar plataformas (`bg-warning/10`).
+  tinte('body-text/warning-10', '--color-body-text', '--color-warning', 0.1),
+  texto('accent-peach-text/panel', '--color-accent-peach-text', '--color-panel-fill'),
+  texto('accent-text/panel', '--color-accent-text', '--color-panel-fill'),
+  texto('accent-sky-text/panel', '--color-accent-sky-text', '--color-panel-fill'),
+  texto('brand-text/panel', '--color-brand-text', '--color-panel-fill'),
+  // DIS-055: pares semánticos directos (superficie, texto, acción, estado y borde)
+  texto('semantico-texto/fondo', '--color-texto', '--color-fondo'),
+  texto('semantico-texto/superficie', '--color-texto', '--color-superficie'),
+  texto('semantico-texto-secundario/superficie', '--color-texto-secundario', '--color-superficie'),
+  texto('semantico-texto-tenue/superficie', '--color-texto-tenue', '--color-superficie'),
+  texto('semantico-texto-sobre-accion/accion', '--color-texto-sobre-accion', '--color-accion'),
+  texto('semantico-texto-sobre-peligro/peligro', '--color-texto-sobre-peligro', '--color-peligro-relleno'),
+  texto('semantico-texto-enlace/superficie', '--color-texto-enlace', '--color-superficie'),
+  texto('semantico-exito-texto/superficie', '--color-exito-texto', '--color-superficie'),
+  texto('semantico-aviso-texto/superficie', '--color-aviso-texto', '--color-superficie'),
+  texto('semantico-peligro-texto/superficie', '--color-peligro-texto', '--color-superficie'),
+  texto('semantico-info-texto/superficie', '--color-info-texto', '--color-superficie'),
+  { id: 'semantico-borde/superficie', texto: '--color-borde', fondo: '--color-superficie', minimo: MIN_NO_TEXTO },
+  { id: 'semantico-accion/superficie', texto: '--color-accion', fondo: '--color-superficie', minimo: MIN_NO_TEXTO },
+  ...TONOS_BADGE.map((tono) =>
+    texto(`badge-${tono}`, `--badge-${tono}-text`, `--badge-${tono}-bg`, '--color-panel-fill')),
+  // DIS-014: insignias de estado de solicitud (`RequestStatusBadge`) sobre `Card`.
+  ...Object.entries(ESTADOS_SOLICITUD).map(([estado, { tono }]) =>
+    texto(`badge-solicitud-${estado}`, `--badge-${tono}-text`, `--badge-${tono}-bg`, '--color-panel-fill')),
+  // DIS-015: Aprobaciones. Texto de las filas y de los diálogos (`text-body-text` en `Card` y
+  // `.nx-modal-glass`, ambos `--color-panel-fill`) y botón secundario ("Rechazar", "Cancelar":
+  // `.nexus-btn-secondary`, `--color-tab-inactive-text` sobre `--color-surface-container-bg`).
+  texto('body-text/panel', '--color-body-text', '--color-panel-fill'),
+  // DIS-015 (auditor-accesibilidad): `.nexus-btn-primary` de `components.css` (antes blanco sobre
+  // `--color-primary`: 2,56–4,23:1 en obsidian, rose, emerald y violet).
+  texto('nexus-btn-primary', '--color-on-primary', '--color-primary-solid'),
+  texto('btn-secondary-text/btn-secondary-bg', '--color-tab-inactive-text', '--color-surface-container-bg'),
+  // DIS-018: accesos de un usuario. Insignias de estado de acceso (`AccessStatusBadge`) sobre `Card`;
+  // el resto del panel reutiliza pares ya medidos (`body-text/panel`, `label-text/panel`,
+  // `success-text/panel`, `btn-secondary-*`, `nexus-btn-primary`, `primary-text/primary-10`,
+  // `label-text/body-bg`, `body-text/body-bg`; anillo de foco `ring-primary` en la página = `tab-indicador/body-bg`).
+  ...Object.entries(ESTADOS_ACCESO).map(([estado, { tono }]) =>
+    texto(`badge-acceso-${estado}`, `--badge-${tono}-text`, `--badge-${tono}-bg`, '--color-panel-fill')),
+  // DIS-021: inventario. Filtros y buscador fuera de `Card`, sobre el fondo de página: texto del
+  // control (`text-body-text`) y placeholder (`text-label/85`) sobre `bg-surface-container/30`
+  // compuesto sobre `--color-body-bg`. Las filas reutilizan pares ya medidos.
+  { ...texto('input-text/input-sobre-body-bg', '--color-body-text', '--color-surface-container-bg', '--color-body-bg'),
+    alfaFondo: 0.3 },
+  { ...texto('placeholder/input-sobre-body-bg', '--color-label-text', '--color-surface-container-bg', '--color-body-bg'),
+    alfaFondo: 0.3, alfaTexto: 0.85 },
+  // DIS-020: auditoría. Error del rango de fechas (`text-error-text`) bajo los filtros, sobre el
+  // fondo de página. Filas, insignias (`TONOS_BADGE`), detalle en `.nx-modal-glass` y enlaces
+  // `.nexus-btn-secondary` reutilizan pares ya medidos.
+  texto('error-text/body-bg', '--color-error-text', '--color-body-bg'),
+  // DIS-024: inicio por rol. Contadores (`StatTile` en `Link`) y títulos reutilizan pares ya medidos
+  // (`label-text/panel`, `bi-text-main/panel`, `body-text/body-bg`, `label-text/body-bg`, botones).
+  // Nuevo: anillo de foco `ring-primary` del contador, junto al borde del `Card` (no textual, 3:1);
+  // del lado del fondo de página ya lo mide `tab-indicador/body-bg`.
+  { id: 'foco-primary/panel', texto: '--color-primary', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  // DIS-025 (auditor-accesibilidad): borde `border-primary` del panel del menú móvil y anillo de
+  // foco de sus botones y enlaces; del lado del panel lo mide `foco-primary/panel` y del lado del
+  // contenido, `tab-indicador/body-bg` (no textuales, 3:1). Sin par nuevo.
+  // DIS-019: alta en el directorio y elevación a admin, en `.nx-modal-glass` (`--color-panel-fill`).
+  // Textos, pistas, errores, aviso y botones reutilizan pares ya medidos (`label-text/panel`,
+  // `body-text/panel`, `error-text/panel`, `success-text/panel`, `nexus-btn-primary`,
+  // `btn-secondary-*`, `primary-text/primary-10`; anillo `ring-primary` = `foco-primary/panel`).
+  // Nuevo: relleno de la casilla marcada (`.nexus-checkbox:checked`, `--color-primary` sobre panel),
+  // no textual. El borde de la casilla sin marcar (`--color-panel-border`) linda con el panel
+  // (`--color-panel-fill`, fondo real del modal) y falla 3:1 en los 7 temas (1,42–2,02:1, medido por
+  // auditor-accesibilidad): es de `.nexus-checkbox` (compartido) y lo corrige DIS-039.
+  { id: 'checkbox-marcada/panel', texto: '--color-primary', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  // DIS-009: la marca ✓ de la casilla marcada era `white`; ahora `--color-on-primary` sobre `--color-primary` (no textual, 3:1).
+  { id: 'checkbox-marca/relleno', texto: '--color-on-primary', fondo: '--color-primary', minimo: MIN_NO_TEXTO },
+  // DIS-022: conectores y ejecuciones. Insignias de estado de ejecución y de intento (en `Card` y en
+  // `.nx-modal-glass`) y de la credencial, sobre `--color-panel-fill`. El resto (filas, avisos
+  // `success-text`/`error-text` en `Card`, pistas, botones y anillos de foco) reutiliza pares ya medidos.
+  ...Object.entries(ESTADOS_EJECUCION).map(([estado, { tono }]) =>
+    texto(`badge-ejecucion-${estado}`, `--badge-${tono}-text`, `--badge-${tono}-bg`, '--color-panel-fill')),
+  ...Object.entries(RESULTADOS_INTENTO).map(([resultado, { tono }]) =>
+    texto(`badge-intento-${resultado}`, `--badge-${tono}-text`, `--badge-${tono}-bg`, '--color-panel-fill')),
+  ...Object.entries(ESTADOS_CREDENCIAL).map(([estado, { tono }]) =>
+    texto(`badge-credencial-${estado}`, `--badge-${tono}-text`, `--badge-${tono}-bg`, '--color-panel-fill')),
+  // DIS-023: pestaña Directorio de Ajustes. Aviso de origen (`text-body-text` sobre `bg-primary/10`)
+  // fuera de `Card`, sobre el fondo de página; insignia de estado del directorio sobre `Card`. Valores,
+  // origen (`text-label`), avisos `success-text`/`error-text` en `Card`, pista, botón secundario y
+  // anillos de foco reutilizan pares ya medidos. DIS-034: las pestañas (`text-primary-text`/`text-label` sobre la página,
+  // indicador y anillo `primary`) reutilizan los pares de DIS-014.
+  { ...texto('body-text/primary-10-sobre-body-bg', '--color-body-text', '--color-primary', '--color-body-bg'),
+    alfaFondo: 0.1 },
+  ...Object.entries(ESTADOS_DIRECTORIO).map(([estado, { tono }]) =>
+    texto(`badge-directorio-${estado}`, `--badge-${tono}-text`, `--badge-${tono}-bg`, '--color-panel-fill')),
+  // DIS-004: botón `danger` de `form.tsx` (antes blanco sobre `--color-error`: 3,76:1) y hover de
+  // `.nexus-btn-secondary` (`--color-primary-text` sobre `primary/5`) en `Card`/modal y en la página.
+  texto('on-error/error-solid', '--color-on-error', '--color-error-solid'),
+  tinte('btn-secondary-hover/panel', '--color-primary-text', '--color-primary', 0.05),
+  { ...texto('btn-secondary-hover/body-bg', '--color-primary-text', '--color-primary', '--color-body-bg'),
+    alfaFondo: 0.05 },
+  // DIS-005 (auditor-accesibilidad, H1): chip de tono de `notifications-list.tsx` (`bg-<tono>/15`
+  // + `text-<tono>-text`, info con `primary`) sobre `Card`, ya sin la opacidad de la tarjeta leída.
+  ...[...TONOS_ESTADO.filter((tono) => tono !== 'info'), 'primary'].map((tono) =>
+    tinte(`chip-notificacion-${tono}`, `--color-${tono}-text`, `--color-${tono}`, 0.15)),
+  // DIS-004/DIS-006 (auditor-accesibilidad, H2/H3): borde `primary` en hover de `.nexus-checkbox`
+  // (sobre `Card`/modal) y de `.nexus-btn-secondary` (sobre `Card`/modal y la página). No textuales.
+  { id: 'checkbox-hover/panel', texto: '--color-primary', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  { id: 'btn-secondary-hover-borde/panel', texto: '--color-primary', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  { id: 'btn-secondary-hover-borde/body-bg', texto: '--color-primary', fondo: '--color-body-bg', minimo: MIN_NO_TEXTO },
+  // No textuales (bordes de control): 3:1.
+  { id: 'input-border/panel', texto: '--color-input-border', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  { id: 'panel-border/body-bg', texto: '--color-panel-border', fondo: '--color-body-bg', minimo: MIN_NO_TEXTO },
+  // DIS-006 (auditor-accesibilidad, H6): `--color-input-border` contra el fondo de página.
+  { id: 'input-border/body-bg', texto: '--color-input-border', fondo: '--color-body-bg', minimo: MIN_NO_TEXTO },
+  // DIS-006: borde de `TextInput`/`Select`/`TextArea` (`border-panel-border`) y de la casilla sin
+  // marcar (`.nexus-checkbox`, DIS-039) contra `Card` y `.nx-modal-glass` (`--color-panel-fill`).
+  { id: 'panel-border/panel', texto: '--color-panel-border', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  // DIS-003: gráfica de Panel (`dashboard.tsx`). Texto de ejes y del tooltip: `label-text/panel` y
+  // `body-text/panel` (ya medidos). Barras (`--color-primary`) y rejilla/línea de ejes
+  // (`--color-panel-border`) son no textuales, 3:1 sobre `Card`; el tooltip se compone sobre el panel.
+  { id: 'grafica-serie/panel', texto: '--color-primary', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  { id: 'grafica-rejilla/panel', texto: '--color-panel-border', fondo: '--color-panel-fill', minimo: MIN_NO_TEXTO },
+  // DIS-056: anillo de foco y borde inválido ≥ 3:1 sobre superficie y superficie hundida (no textuales).
+  { id: 'foco-anillo/superficie', texto: '--foco-anillo', fondo: '--color-superficie', minimo: MIN_NO_TEXTO },
+  { id: 'foco-anillo/superficie-hundida', texto: '--foco-anillo', fondo: '--color-superficie-hundida', minimo: MIN_NO_TEXTO },
+  { id: 'invalido-borde/superficie', texto: '--invalido-borde', fondo: '--color-superficie', minimo: MIN_NO_TEXTO },
+  { id: 'invalido-borde/superficie-hundida', texto: '--invalido-borde', fondo: '--color-superficie-hundida', minimo: MIN_NO_TEXTO },
+  // DIS-076: paleta del diseño aprobado. Navegación y texto sobre la barra lateral, texto secundario y
+  // tenue sobre el fondo de página, texto sobre entrada y encabezado de tabla, activo y estados con su fondo.
+  texto('nav/barra-lateral', '--color-barra-lateral-nav', '--color-barra-lateral'),
+  texto('texto/barra-lateral', '--color-barra-lateral-texto', '--color-barra-lateral'),
+  texto('texto-secundario/barra-lateral', '--color-barra-lateral-secundario', '--color-barra-lateral'),
+  texto('texto-secundario/fondo', '--color-texto-secundario', '--color-fondo'),
+  texto('texto-tenue/fondo', '--color-texto-tenue', '--color-fondo'),
+  texto('texto/entrada', '--color-texto', '--color-entrada-fondo'),
+  texto('texto-secundario/tabla-encabezado', '--color-texto-secundario', '--color-tabla-encabezado'),
+  texto('activo-texto/activo-fondo', '--color-activo-texto', '--color-activo-fondo'),
+  texto('exito-texto/exito-fondo', '--color-exito-texto', '--color-exito-fondo'),
+  texto('aviso-texto/aviso-fondo', '--color-aviso-texto', '--color-aviso-fondo'),
+  texto('peligro-texto/peligro-fondo', '--color-peligro-texto', '--color-peligro-fondo'),
+  // DIS-079: cajas de icono, avatares y círculos de actividad (`.nx-tono-*`, texto de las iniciales), notas
+  // de los indicadores (`.nx-texto-*`, sobre la tarjeta) y acción de fila de relleno (`.nexus-btn-fila-primario`).
+  texto('nx-tono-activo', '--color-activo-texto', '--color-activo-fondo'),
+  texto('nx-tono-success', '--badge-success-text', '--badge-success-bg'),
+  texto('nx-tono-error', '--badge-error-text', '--badge-error-bg'),
+  texto('nx-tono-warning', '--badge-warning-text', '--badge-warning-bg'),
+  texto('nx-tono-neutro', '--badge-slate-text', '--badge-slate-bg'),
+  texto('nx-texto-warning/tarjeta', '--badge-warning-text', '--color-panel-fill'),
+  texto('nx-texto-error/tarjeta', '--badge-error-text', '--color-panel-fill'),
+  texto('nexus-btn-fila-primario', '--color-on-primary', '--color-primary-solid'),
+  { id: 'borde/fondo', texto: '--color-borde', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
+  { id: 'borde/barra-lateral', texto: '--color-barra-lateral-borde', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
+  { id: 'accion/fondo', texto: '--color-accion', fondo: '--color-fondo', minimo: MIN_NO_TEXTO },
+  // DIS-082: placeholder (`placeholder:text-placeholder`) sobre superficie y fondo de página.
+  texto('placeholder/superficie', '--color-placeholder', '--color-superficie'),
+  texto('placeholder/fondo', '--color-placeholder', '--color-fondo'),
+  // DIS-082: anillo de foco del menú lateral sobre la barra y sobre el ítem activo (no texto, 3:1).
+  { id: 'barra-lateral-foco/barra-lateral', texto: '--color-barra-lateral-foco', fondo: '--color-barra-lateral', minimo: MIN_NO_TEXTO },
+  { id: 'barra-lateral-foco/activo-fondo', texto: '--color-barra-lateral-foco', fondo: '--color-activo-fondo', minimo: MIN_NO_TEXTO },
+];

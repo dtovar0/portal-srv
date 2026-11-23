@@ -1,597 +1,915 @@
-html, body {
-  background-color: var(--color-body-bg);
-  color: var(--color-body-text);
-  margin: 0;
-  padding: 0;
-}
-
-/* === FORCED NUCLEAR GRID REFACTOR v3 === */
-.dt-container {
-    display: grid !important;
-    grid-template-rows: 1fr auto !important;
-    height: 100% !important;
-    grid-gap: 0 !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-}
-
-.dt-layout-row.dt-layout-table {
-    grid-row: 1 !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-.dt-layout-row:has(.dt-paging) {
-    grid-row: 2 !important;
-    height: 52px !important;
-    background: rgb(var(--color-surface-container-bg)) !important;
-    border-top: 2px solid rgb(var(--color-primary)) !important; /* Señal visual de fijación */
-}
-
-
-table.dataTable tbody tr {
-    height: var(--row-h, 52px) !important;
-    overflow: hidden !important;
-}
-
 /*
  * ╔══════════════════════════════════════════════════════════════╗
- * ║         NEXUS DESIGN TOKENS — v2.0 "Deep Sapphire"          ║
+ * ║         NEXUS DESIGN TOKENS — v3.1 (Fase 7B: DIS-076)        ║
  * ║                                                              ║
- * ║  Filosofía colorimétrica:                                    ║
- * ║  • Paleta análoga: Azul-Zafiro → Índigo → Cian              ║
- * ║  • Acento complementario: Ámbar cálido (60° opuesto)        ║
- * ║  • Modo claro: fondo blanco cálido, no frío                 ║
- * ║  • Modo oscuro: profundidad real, no negro plano            ║
- * ║  • Contraste WCAG AA garantizado en todos los textos        ║
+ * ║  Arquitectura por capas (ADR-007):                           ║
+ * ║  1. Primitivos: paleta tonal neutra y de acentos (R G B).    ║
+ * ║  2. Semánticos: rol asignado (superficie, texto, borde,       ║
+ * ║     acción y estado) en canales R G B para modo claro/oscuro. ║
+ * ║  3. Alias heredados: compatibilidad transitoria hasta DIS-067║
+ * ║                                                              ║
+ * ║  Filosofía: 2 temas (claro y oscuro), contraste WCAG AA.     ║
  * ╚══════════════════════════════════════════════════════════════╝
-*/
+ */
 
 :root, html.light {
+  /* Duración del toast: igual a `TOAST_MS` (toast.tsx); una prueba lo comprueba (DIS-093). */
+  --toast-duracion: 8s;
   /* ─────────────────────────────────────────────
-     PALETA BASE — Referencia tonal global
-     Basada en el modelo HSL con rotación armónica
+     CAPA 1: PRIMITIVOS — Paleta tonal pura
+     Solo se referencian por semánticos; nunca en componentes.
   ───────────────────────────────────────────── */
 
-  /* Azul Zafiro — Color primario (219°, 92%, 50%) */
-  --color-primary: 37 99 235;          /* #2563eb — Blue-600  */
+  /* Neutros fríos (Slate) */
+  --p-neutro-50:  248 250 252;
+  --p-neutro-100: 241 245 249;
+  --p-neutro-200: 226 232 240;
+  --p-neutro-300: 203 213 225;
+  --p-neutro-400: 148 163 184;
+  --p-neutro-500: 100 116 139;
+  --p-neutro-600: 71 85 105;
+  --p-neutro-700: 51 65 85;
+  --p-neutro-800: 30 41 59;
+  --p-neutro-900: 15 23 42;
+  --p-neutro-950: 2 6 23;
+  --p-blanco:     255 255 255;
+  --p-negro:      0 0 0;
 
-  /* Índigo profundo — Color de header/brand */
-  --color-brand: 67 56 202;            /* #4338ca — Indigo-700 */
+  /* Marca (Azul Zafiro / Blue) */
+  --p-marca-50:  239 246 255;
+  --p-marca-100: 219 234 254;
+  --p-marca-200: 191 219 254;
+  --p-marca-300: 147 197 253;
+  --p-marca-400: 96 165 250;
+  --p-marca-500: 59 130 246;
+  --p-marca-600: 37 99 235;
+  --p-marca-700: 29 78 216;
+  --p-marca-800: 30 64 175;
+  --p-marca-900: 30 58 138;
 
-  /* Cian eléctrico — Acento frío (análogo a primary) */
-  --color-accent-sky: 6 182 212;       /* #06b6d4 — Cyan-500   */
+  /* Rojo (Peligro / Error) */
+  --p-rojo-500: 239 68 68;
+  --p-rojo-600: 220 38 38;
+  --p-rojo-700: 185 28 28;
+  --p-rojo-800: 153 27 27;
 
-  /* Violeta — Acento análogo */
-  --color-accent-violet: 124 58 237;   /* #7c3aed — Violet-600 */
+  /* Verde (Éxito / Success) */
+  --p-verde-500: 16 185 129;
+  --p-verde-600: 5 150 105;
+  --p-verde-700: 4 120 87;
 
-  /* Ámbar — Acento cálido complementario (KPI/highlight) */
-  --color-accent-peach: 245 158 11;    /* #f59e0b — Amber-500  */
+  /* Ámbar (Aviso / Warning) */
+  --p-ambar-500: 245 158 11;
+  --p-ambar-600: 217 119 6;
+  --p-ambar-700: 180 83 9;
+  --p-ambar-800: 146 64 14;
 
-  /* Esmeralda — Estado positivo */
-  --color-success: 5 150 105;          /* #059669 — Emerald-600 */
+  /* Azul (Info) */
+  --p-azul-500: 59 130 246;
+  --p-azul-600: 37 99 235;
+  --p-azul-700: 29 78 216;
 
-  /* Ámbar — Estado advertencia */
-  --color-warning: 245 158 11;         /* #f59e0b — Amber-500 */
+  /* Violeta y Cian (Acentos complementarios) */
+  --p-violeta-500: 139 92 246;
+  --p-violeta-600: 124 58 237;
+  --p-violeta-700: 109 40 217;
+  --p-cian-500:    6 182 212;
+  --p-cian-700:    14 116 144;
 
-  /* Rosa/Rojo — Estado crítico */
-  --color-danger: 225 29 72;           /* #e11d48 — Rose-600 */
+  /* Paleta del diseño aprobado (DIS-076, 2026-10-28) */
+  /* Gris del tema claro */
+  --p-gris-50:  249 250 251;
+  --p-gris-100: 245 246 248;
+  --p-gris-200: 228 231 236;
+  --p-gris-300: 208 213 221;
+  --p-gris-400: 152 162 179;
+  --p-gris-500: 130 138 154;
+  --p-gris-600: 97 108 128;
+  --p-gris-700: 71 84 103;
+  --p-gris-800: 52 64 84;
+  --p-gris-900: 16 24 40;
 
-  /* Pizarra — Secundario neutro */
-  --color-secondary: 100 116 139;      /* #64748b — Slate-500  */
+  /* Noche (neutros del tema oscuro) */
+  --p-noche-50:  245 245 246;
+  --p-noche-200: 206 207 210;
+  --p-noche-300: 148 150 156;
+  --p-noche-500: 107 114 128;
+  --p-noche-700: 38 43 54;
+  --p-noche-800: 28 34 46;
+  --p-noche-850: 22 27 38;
+  --p-noche-900: 17 22 33;
+  --p-noche-950: 12 17 29;
+  /* DIS-082: placeholder opaco = label-text al 85% (AA >= 4.5:1 sobre superficie y fondo). */
+  --p-placeholder-claro:  97 108 128;
+  --p-placeholder-oscuro: 129 132 138;
 
-  /* Acento general (violeta) */
-  --color-accent: 124 58 237;          /* #7c3aed — Violet-600 */
+  /* Activo (selección de navegación) y estados, claro y oscuro */
+  --p-activo-fondo-oscuro: 26 37 71;
+  --p-activo-texto-oscuro: 164 194 255;
+  --p-ambar-fondo-claro:  255 250 235;
+  --p-ambar-texto-claro:  181 71 8;
+  --p-ambar-fondo-oscuro: 58 36 8;
+  --p-ambar-texto-oscuro: 254 200 75;
+  --p-verde-fondo-claro:  236 253 243;
+  --p-verde-texto-claro:  6 118 71;
+  --p-verde-fondo-oscuro: 6 48 28;
+  --p-verde-texto-oscuro: 117 224 167;
+  --p-rojo-fondo-claro:  254 243 242;
+  --p-rojo-texto-claro:  180 35 24;
+  --p-rojo-fondo-oscuro: 61 14 10;
+  --p-rojo-texto-oscuro: 253 162 155;
 
 
   /* ─────────────────────────────────────────────
-     MODO CLARO — Superficie y tipografía
-     Warmth bias: blanco ligeramente azulado,
-     sombras con tinte brand suave
+     CAPA 2: SEMÁNTICOS (MODO CLARO)
+     Tokens por rol funcional con contraste medido.
   ───────────────────────────────────────────── */
 
-  --color-body-bg: #f8fafc;            /* Slate-50: neutro, menos fatiga visual */
-  --color-body-text: #0f172a;          /* Slate-950: máximo contraste */
+  /* Superficie */
+  --color-fondo: var(--p-gris-100);
+  --color-superficie: var(--p-blanco);
+  --color-superficie-elevada: var(--p-blanco);
+  --color-superficie-hundida: var(--p-gris-50);
+  --color-barra-lateral: var(--p-noche-900);
+  --color-barra-lateral-borde: var(--p-noche-500);
+  --color-barra-lateral-texto: var(--p-noche-50);
+  --color-barra-lateral-secundario: var(--p-noche-300);
+  --color-barra-lateral-nav: var(--p-noche-200);
+  --color-barra-lateral-hover: 255 255 255 / 0.08;
+  --color-barra-lateral-presionado: 255 255 255 / 0.14;
+  --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
+  --color-entrada-fondo: var(--p-gris-50);
+  --color-tabla-encabezado: var(--p-gris-50);
+  --color-velo: 0 0 0 / 0.6;
 
-  --color-header-bg: #2563eb;          /* Blue-600: coherente con primario */
-  --color-header-text: #ffffff;
+  /* Texto */
+  --color-texto: var(--p-gris-900);
+  --color-texto-secundario: var(--p-gris-700);
+  --color-texto-tenue: var(--p-gris-600);
+  --color-texto-sobre-accion: 255 255 255;
+  --color-texto-sobre-peligro: 255 255 255;
+  --color-texto-sobre-aviso: var(--p-noche-900);
+  --color-texto-enlace: var(--p-marca-700);
+  --color-navegacion: var(--p-gris-800);
+  --color-activo-fondo: var(--p-activo-fondo-oscuro);
+  --color-activo-texto: var(--p-activo-texto-oscuro);
 
-  /* BADGE ADAPTATIVO — MODO CLARO (Contraste AA/AAA) */
-  --badge-primary-bg: 37 99 235 / 0.1;   --badge-primary-text: 29 78 216;
-  --badge-success-bg: 5 150 105 / 0.1;   --badge-success-text: 4 120 87;
-  --badge-error-bg: 225 29 72 / 0.1;     --badge-error-text: 190 18 60;
-  --badge-warning-bg: 217 119 6 / 0.1;   --badge-warning-text: 180 83 9;
-  --badge-violet-bg: 124 58 237 / 0.1;   --badge-violet-text: 109 40 217;
-  --badge-sky-bg: 14 165 233 / 0.1;      --badge-sky-text: 3 105 161;
-  --badge-slate-bg: 71 85 105 / 0.1;     --badge-slate-text: 51 65 85;
-  --badge-cyan-bg: 8 145 178 / 0.1;      --badge-cyan-text: 21 94 117;
-  --color-panel-header-bg: 226 232 240; /* Slate-200 */
-  --color-panel-header-text: 30 58 138; /* Blue-900: Contraste alto sobre Slate-200 */
+  /* Borde */
+  --color-borde: var(--p-gris-500);
+  --color-borde-sutil: var(--p-gris-200);
+  --color-borde-fuerte: var(--p-gris-600);
 
-  --color-panel-fill: 255 255 255;
-  --color-panel-border: 203 213 225;   /* Slate-300: borde perceptible */
-  --color-panel-shadow: 37 99 235 / 0.07;
+  /* Acción / Primario */
+  --color-accion: var(--p-marca-700);
+  --color-accion-hover: var(--p-marca-800);
+  --color-accion-presionada: var(--p-marca-900);
+  --color-accion-tenue: 29 78 216 / 0.1;
+  --color-accion-texto: var(--p-marca-700);
 
-  --color-surface-container-bg: 241 245 249;   /* Slate-100: neutro */
-  --color-surface-container-border: 226 232 240; /* Slate-200: contraste sutil */
+  /* Estado: Éxito */
+  --color-exito-relleno: 5 150 105;
+  --color-exito-tenue: 5 150 105 / 0.1;
+  --color-exito-borde: 5 150 105 / 0.25;
+  --color-exito-texto: var(--p-verde-texto-claro);
+  --color-exito-fondo: var(--p-verde-fondo-claro);
 
-  --color-audit-body: 241 245 249;
-  --color-audit-body-alpha: 0.6;
+  /* Estado: Aviso */
+  --color-aviso-relleno: 245 158 11;
+  --color-aviso-tenue: 217 119 6 / 0.1;
+  --color-aviso-borde: 217 119 6 / 0.25;
+  --color-aviso-texto: var(--p-ambar-texto-claro);
+  --color-aviso-fondo: var(--p-ambar-fondo-claro);
+
+  /* Estado: Peligro / Error */
+  --color-peligro-relleno: 220 38 38;
+  --color-peligro-tenue: 225 29 72 / 0.1;
+  --color-peligro-borde: 220 38 38 / 0.25;
+  --color-peligro-texto: var(--p-rojo-texto-claro);
+  --color-peligro-fondo: var(--p-rojo-fondo-claro);
+
+  /* Estado: Info */
+  --color-info-relleno: 59 130 246;
+  --color-info-tenue: 37 99 235 / 0.1;
+  --color-info-borde: 37 99 235 / 0.25;
+  --color-info-texto: 29 78 216;
+
+  /* Estado: Neutro */
+  --color-neutro-relleno: 100 116 139;
+  --color-neutro-tenue: 71 85 105 / 0.1;
+  --color-neutro-borde: 71 85 105 / 0.25;
+  --color-neutro-texto: 51 65 85;
+
+  /* Indicadores del dashboard (DIS-112): color y extremo del degradado de cada tarjeta. */
+  --color-indicador-areas: 99 102 241;
+  --color-indicador-areas-fin: 168 85 247;
+  --color-indicador-plataformas: 37 99 235;
+  --color-indicador-plataformas-fin: 8 145 178;
+  --color-indicador-solicitudes: 217 119 6;
+  --color-indicador-solicitudes-fin: 234 88 12;
+  --color-indicador-visitas: 13 148 136;
+  --color-indicador-visitas-fin: 22 163 74;
+  --color-indicador-usuarios: 219 39 119;
+  --color-indicador-usuarios-fin: 244 63 94;
 
 
   /* ─────────────────────────────────────────────
-     BOTONES
+     CAPA 3: ALIAS HEREDADOS (MODO CLARO)
+     Para compatibilidad de código existente hasta DIS-067.
   ───────────────────────────────────────────── */
-  --color-button-bg: var(--color-primary);
-  --color-button-text: 255 255 255;
+
+  --color-primary: var(--color-accion);
+  --color-brand: 67 56 202;
+  --color-accent-sky: 6 182 212;
+  --color-accent-violet: 124 58 237;
+  --color-accent-peach: var(--color-aviso-relleno);
+  --color-success: var(--color-exito-relleno);
+  --color-warning: var(--color-aviso-relleno);
+  --color-error: 239 68 68;
+  --color-info: var(--color-info-relleno);
+  --color-secondary: 100 116 139;
+  --color-accent: 124 58 237;
+
+  --color-primary-text: var(--color-accion-texto);
+  --color-brand-text: 67 56 202;
+  --color-accent-text: 124 58 237;
+  --color-accent-sky-text: 14 116 144;
+  --color-accent-peach-text: 180 83 9;
+
+  --color-success-text: var(--color-exito-texto);
+  --color-error-text: var(--color-peligro-texto);
+  --color-warning-text: var(--color-aviso-texto);
+  --color-info-text: var(--color-info-texto);
+
+  --color-primary-solid: var(--color-accion);
+  --color-on-primary: var(--color-texto-sobre-accion);
+  --color-error-solid: var(--color-peligro-relleno);
+  --color-on-error: var(--color-texto-sobre-peligro);
+
+  --color-body-bg: #f5f6f8;
+  --color-body-text: #101828;
+  --color-header-bg: var(--color-superficie);
+  --color-header-text: var(--color-texto);
+
+  --badge-primary-bg: var(--color-accion-tenue);
+  --badge-primary-text: var(--color-accion-texto);
+  --badge-success-bg: var(--color-exito-fondo);
+  --badge-success-text: var(--color-exito-texto);
+  --badge-error-bg: var(--color-peligro-fondo);
+  --badge-error-text: var(--color-peligro-texto);
+  --badge-warning-bg: var(--color-aviso-fondo);
+  --badge-warning-text: var(--color-aviso-texto);
+  --badge-violet-bg: 124 58 237 / 0.1;
+  --badge-violet-text: 109 40 217;
+  --badge-sky-bg: 14 165 233 / 0.1;
+  --badge-sky-text: 3 105 161;
+  --badge-slate-bg: var(--color-neutro-tenue);
+  --badge-slate-text: var(--color-neutro-texto);
+  --badge-cyan-bg: 8 145 178 / 0.1;
+  --badge-cyan-text: 21 94 117;
+
+  --color-panel-header-bg: var(--color-tabla-encabezado);
+  --color-panel-header-text: 30 58 138;
+  --color-panel-fill: var(--color-superficie);
+  --color-overlay: var(--color-velo);
+  --color-panel-border: var(--color-borde);
+
+  --color-surface-container-bg: var(--color-superficie-hundida);
+  --color-surface-container-border: var(--color-borde-sutil);
+  --color-audit-body: var(--color-superficie-hundida);
+
+  --color-button-bg: var(--color-accion);
+  --color-button-text: var(--color-texto-sobre-accion);
   --color-button-disabled-bg: 203 213 225;
   --color-button-disabled-text: 148 163 184;
 
+  --color-tab-bar-bg: 226 232 240;
+  --color-tab-active-bg: var(--color-accion);
+  --color-tab-active-text: var(--color-texto-sobre-accion);
+  --color-tab-inactive-bg: 203 213 225;
+  --color-tab-inactive-text: 30 64 175;
 
-  /* ─────────────────────────────────────────────
-     TABS
-  ───────────────────────────────────────────── */
-  --color-tab-bar-bg: 226 232 240;     /* Slate-200: cohesión neutra */
-  --color-tab-active-bg: var(--color-primary);
-  --color-tab-active-text: 255 255 255;
-  --color-tab-inactive-bg: 203 213 225;        /* Slate-300: menos saturado */
-  --color-tab-inactive-text: 30 64 175;        /* Blue-800: contraste WCAG AA */
-
-
-  /* ─────────────────────────────────────────────
-     BI / ANALYTICS
-  ───────────────────────────────────────────── */
   --color-bi-card-logistics: 71 85 105;
   --color-bi-ring-bg: 239 246 255;
   --color-bi-text-main: 15 23 42;
-  --color-bi-text-muted: 100 116 139;
-  --color-kpi-highlight: var(--color-accent-peach);
+  --color-bi-text-muted: var(--color-texto-tenue);
+  --color-kpi-highlight: var(--color-aviso-relleno);
 
+  --color-input-bg: var(--color-entrada-fondo);
+  --color-input-text: #101828;
+  --color-input-border: var(--color-borde);
+  --color-input-focus: var(--color-accion);
+  --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-claro);
+
+  --color-texto-sobre-fondo-oscuro: 255 255 255;
+  --color-texto-sobre-fondo-claro: 0 0 0;
+
+  --radius-base: 8px;
+  --radius-panel: 10px;
+
+  /* Interacción y Estados (DIS-056) */
+  --foco-anillo: 29 78 216;
+  --foco-ancho: 2px;
+  --foco-separacion: 2px;
+  --hover-capa: 0 0 0 / 0.05;
+  --presionado-capa: 0 0 0 / 0.1;
+  --seleccionado-fondo: 29 78 216 / 0.12;
+  --seleccionado-borde: 29 78 216;
+  --deshabilitado-fondo: var(--p-gris-100);
+  --deshabilitado-texto: var(--p-gris-400);
+  --deshabilitado-borde: var(--p-gris-300);
+  --invalido-borde: 220 38 38;
+  --solo-lectura-fondo: var(--p-gris-50);
+  --duracion-corta: 150ms;
+  --duracion-media: 250ms;
+  --curva: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ─────────────────────────────────────────────
-     INPUTS
+     ESCALAS — Tipografía, Radios, Bordes y Sombras (DIS-057)
   ───────────────────────────────────────────── */
-  --color-input-bg: 255 255 255;
-  --color-input-text: #0f172a;
-  --color-input-border: 203 213 225;   /* Slate-300: consistencia con bordes */
-  --color-input-focus: var(--color-primary);
-  --color-label-text: 51 65 85;        /* Slate-700: contraste AA */
+  /* Tipografía Corporativa Oficial (Manual de Identidad ADUANA §04 y §06) */
+  --font-display: 'Montserrat', sans-serif;
+  --font-ui: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --fuente-display: var(--font-display);
+  --fuente-texto: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fuente-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
+  /* Tokens Corporativos ADUANA (Tema Light - Manual de Identidad §06) */
+  --aduana-bg-main: #F8FAFC;
+  --aduana-bg-surface: #FFFFFF;
+  --aduana-bg-hover: #F1F5F9;
+  --aduana-border: #E2E8F0;
+  --aduana-text-primary: #1B2A38;
+  --aduana-text-secondary: #64748B;
 
-  /* ─────────────────────────────────────────────
-     NOTIFICACIONES
-  ───────────────────────────────────────────── */
-  --color-ntf-panel-bg: 239 246 255;
-  --color-ntf-card-bg: 255 255 255;
-  --color-ntf-card-border: 219 234 254;
-  --color-ntf-editor-bg: 255 255 255;
-  --color-ntf-editor-border: 219 234 254;
-  --color-ntf-editor-header-bg: 239 246 255;
-  --color-ntf-editor-input-bg: 255 255 255;
-  --color-ntf-preview-card: 255 255 255;
-  --color-ntf-text-editor: 15 23 42;
-  --color-ntf-text-subject: 37 99 235;
-  --color-ntf-border: 37 99 235 / 0.12;
-  --color-status-active: 37 99 235;
+  /* Acentos de Marca (Compartidos) */
+  --aduana-cyan: #1CB5E0;
+  --aduana-cyan-hover: #1597BC;
+  --aduana-orange: #F26419;
+  --aduana-orange-hover: #D9530F;
 
+  /* Estados IAM */
+  --status-approved: #10B981;
+  --status-pending: #F59E0B;
+  --status-rejected: #EF4444;
+  --status-info: #38BDF8;
 
-  /* ─────────────────────────────────────────────
-     SPACING & CURVATURE
-  ───────────────────────────────────────────── */
-  --space-1: 4px;
-  --radius-base: 10px;
-  --radius-panel: 14px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  --radio-control: 8px;
+  --radio-tarjeta: 12px;
+  --radio-dialogo: 16px;
+  --radio-pastilla: 9999px;
+
+  --borde-ancho: 1px;
+
+  --sombra-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* DIS-084: iconos del select y del check (los valores literales solo viven aquí) y tooltip. */
+  --icono-select-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-select-flecha-acento: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232563eb' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-check: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='3.5 8.5 6.5 11.5 12.5 5.5'/%3C/svg%3E");
+  --icono-check-indeterminado: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='4' y1='8' x2='12' y2='8'/%3C/svg%3E");
+  --color-tooltip-fondo: var(--p-noche-900);
+  --color-tooltip-texto: var(--p-gris-50);
 
   /* ─────────────────────────────────────────────
      ESCALA TIPOGRÁFICA — Sistema armónico 8pt
-     Basado en proporción 1.25 (Major Third)
   ───────────────────────────────────────────── */
-  --text-2xs:  10px;   /* badges, superscripts — usar con font-weight ≥ 700 */
-  --text-xs:   12px;   /* labels de tabla, meta info */
-  --text-sm:   13px;   /* body small, nav items */
-  --text-base: 15px;   /* body normal */
-  --text-md:   17px;   /* subtítulos de sección */
-  --text-lg:   20px;   /* titulos de panel */
-  --text-xl:   24px;   /* headings principales */
-  --text-2xl:  30px;   /* KPI values */
-  --text-3xl:  36px;   /* hero numbers */
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-md:   17px;
+  --text-lg:   18px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+
+  /* ─────────────────────────────────────────────
+     SIMETRÍA Y REJILLA — 8pt (DIS-072)
+  ───────────────────────────────────────────── */
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+
+  --control-alto: 48px;
+  --marco-lateral-ancho: 264px;
+  --marco-lateral-colapsada: 76px;
+  --marco-superior-alto: 64px;
+  --contenido-max: 1280px;
+  --formulario-max: 640px;
+  --dialogo-max: 560px;
+
+  --rejilla-columnas: 12;
+  --rejilla-canal: 16px;
+
+  --icono-sm: 16px;
+  --icono-md: 20px;
+  --icono-lg: 24px;
 }
 
 
 /* ══════════════════════════════════════════════════════════════
-   MODO OSCURO — "Midnight Ocean"
-   Filosofía: azul marino profundo, no negro plano.
-   Cada nivel de superficie +8% luminosidad relativa.
+   MODO OSCURO — "Midnight Ocean" (Fase 7: DIS-054 y DIS-055)
+   Semánticos y alias adaptados para profundidad real y WCAG AA.
+   Idéntico en @media y en html.dark (ADR-007; test tokens-so-oscuro).
 ══════════════════════════════════════════════════════════════ */
+
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --color-body-bg: #030712;               /* Gray-950: profundidad real */
-    --color-body-text: #e2e8f0;             /* Slate-200: neutro */
+    /* Semánticos (Modo Oscuro) */
+    --color-fondo: var(--p-noche-950);
+    --color-superficie: var(--p-noche-850);
+    --color-superficie-elevada: var(--p-noche-800);
+    --color-superficie-hundida: var(--p-noche-900);
+    --color-barra-lateral: var(--p-noche-900);
+    --color-barra-lateral-borde: var(--p-noche-500);
+    --color-barra-lateral-texto: var(--p-noche-50);
+    --color-barra-lateral-secundario: var(--p-noche-300);
+    --color-barra-lateral-nav: var(--p-noche-200);
+    --color-barra-lateral-hover: 255 255 255 / 0.08;
+    --color-barra-lateral-presionado: 255 255 255 / 0.14;
+    --color-barra-lateral-elemento: 255 255 255 / 0.05;
+    --color-barra-lateral-foco: var(--p-noche-50);
+    --color-entrada-fondo: var(--p-noche-950);
+    --color-tabla-encabezado: var(--p-noche-900);
+    --color-velo: 0 0 0 / 0.6;
 
-    --color-header-bg: #1e3a8a;
-    --color-header-text: #e2e8f0;
-    --color-panel-header-bg: 37 99 235 / 0.15;
-    --color-panel-header-text: 96 165 250; /* Blue-400: Brillo neón en modo oscuro */
+    --color-texto: var(--p-noche-50);
+    --color-texto-secundario: var(--p-noche-300);
+    --color-texto-tenue: var(--p-noche-300);
+    --color-texto-sobre-accion: 255 255 255;
+    --color-texto-sobre-peligro: 255 255 255;
+    --color-texto-sobre-aviso: var(--p-noche-900);
+    --color-texto-enlace: 96 165 250;
+    --color-navegacion: var(--p-noche-200);
+    --color-activo-fondo: var(--p-activo-fondo-oscuro);
+    --color-activo-texto: var(--p-activo-texto-oscuro);
 
-    --color-panel-fill: 15 23 42;           /* Slate-900: estándar industry */
-    --color-panel-border: 51 65 85;         /* Slate-600: sólido y legible */
-    --color-panel-shadow: 0 0 0 / 0;
+    --color-borde: var(--p-noche-500);
+    --color-borde-sutil: var(--p-noche-700);
+    --color-borde-fuerte: var(--p-noche-300);
 
-    --color-surface-container-bg: 30 41 59; /* Slate-800: mayor separación */
-    --color-surface-container-border: 51 65 85; /* Slate-600: cohesión */
+    --color-accion: var(--p-marca-600);
+    --color-accion-hover: 96 165 250;
+    --color-accion-presionada: 29 78 216;
+    --color-accion-tenue: 37 99 235 / 0.15;
+    --color-accion-texto: 96 165 250;
 
-    --color-audit-body: 15 23 42;
-    --color-audit-body-alpha: 0.4;
+    --color-exito-relleno: 16 185 129;
+    --color-exito-tenue: 16 185 129 / 0.15;
+    --color-exito-borde: 16 185 129 / 0.3;
+    --color-exito-texto: var(--p-verde-texto-oscuro);
+    --color-exito-fondo: var(--p-verde-fondo-oscuro);
 
-    --color-tab-bar-bg: 15 23 42;           /* Slate-900: coherente */
-    --color-tab-inactive-bg: 30 41 59;      /* Slate-800: elevación visible */
-    --color-tab-inactive-text: 148 163 184; /* Slate-400: menos saturado */
+    --color-aviso-relleno: 245 158 11;
+    --color-aviso-tenue: 245 158 11 / 0.15;
+    --color-aviso-borde: 245 158 11 / 0.3;
+    --color-aviso-texto: var(--p-ambar-texto-oscuro);
+    --color-aviso-fondo: var(--p-ambar-fondo-oscuro);
+
+    --color-peligro-relleno: 220 38 38;
+    --color-peligro-tenue: 244 63 94 / 0.15;
+    --color-peligro-borde: 220 38 38 / 0.3;
+    --color-peligro-texto: var(--p-rojo-texto-oscuro);
+    --color-peligro-fondo: var(--p-rojo-fondo-oscuro);
+
+    --color-info-relleno: 59 130 246;
+    --color-info-tenue: 59 130 246 / 0.15;
+    --color-info-borde: 59 130 246 / 0.3;
+    --color-info-texto: 147 197 253;
+
+    --color-neutro-relleno: 100 116 139;
+    --color-neutro-tenue: 148 163 184 / 0.15;
+    --color-neutro-borde: 148 163 184 / 0.3;
+    --color-neutro-texto: 203 213 225;
+
+    /* Indicadores del dashboard (DIS-112): color y extremo del degradado de cada tarjeta. */
+    --color-indicador-areas: 99 102 241;
+    --color-indicador-areas-fin: 168 85 247;
+    --color-indicador-plataformas: 37 99 235;
+    --color-indicador-plataformas-fin: 6 182 212;
+    --color-indicador-solicitudes: 217 119 6;
+    --color-indicador-solicitudes-fin: 234 88 12;
+    --color-indicador-visitas: 13 148 136;
+    --color-indicador-visitas-fin: 34 197 94;
+    --color-indicador-usuarios: 219 39 119;
+    --color-indicador-usuarios-fin: 244 63 94;
+
+    /* Alias heredados (Modo Oscuro) */
+    --color-body-bg: #0c111d;
+    --color-body-text: #f5f5f6;
+    --color-error-solid: var(--color-peligro-relleno);
+    --color-on-error: var(--color-texto-sobre-peligro);
+    --color-secondary: var(--p-noche-300);
+
+    --badge-primary-bg: var(--color-accion-tenue);
+    --badge-primary-text: var(--color-accion-texto);
+    --badge-success-bg: var(--color-exito-fondo);
+    --badge-success-text: var(--color-exito-texto);
+    --badge-error-bg: var(--color-peligro-fondo);
+    --badge-error-text: var(--color-peligro-texto);
+    --badge-warning-bg: var(--color-aviso-fondo);
+    --badge-warning-text: var(--color-aviso-texto);
+    --badge-violet-bg: 139 92 246 / 0.15;
+    --badge-violet-text: 167 139 250;
+    --badge-sky-bg: 56 189 248 / 0.15;
+    --badge-sky-text: 125 211 252;
+    --badge-slate-bg: 148 163 184 / 0.15;
+    --badge-slate-text: 203 213 225;
+    --badge-cyan-bg: 34 211 238 / 0.15;
+    --badge-cyan-text: 103 232 249;
+
+    --color-header-bg: var(--color-barra-lateral);
+    --color-header-text: var(--color-texto);
+    --color-panel-header-bg: var(--color-tabla-encabezado);
+    --color-panel-header-text: 96 165 250;
+
+    --color-primary-text: var(--color-accion-texto);
+    --color-brand-text: 129 140 248;
+    --color-accent-text: 167 139 250;
+    --color-accent-sky-text: 6 182 212;
+    --color-accent-peach-text: 245 158 11;
+    --color-success-text: var(--color-exito-texto);
+    --color-error-text: var(--color-peligro-texto);
+    --color-warning-text: var(--color-aviso-texto);
+    --color-info-text: var(--color-info-texto);
+
+    --color-panel-fill: var(--color-superficie);
+    --color-overlay: var(--color-velo);
+    --color-panel-border: var(--color-borde);
+
+    --color-surface-container-bg: var(--color-superficie-hundida);
+    --color-surface-container-border: var(--color-borde-sutil);
+
+    --color-audit-body: var(--color-superficie);
+
+    --color-tab-bar-bg: var(--color-superficie);
+    --color-tab-inactive-bg: var(--color-superficie-hundida);
+    --color-tab-inactive-text: 148 163 184;
 
     --color-bi-card-logistics: 100 116 139;
-    --color-bi-ring-bg: 15 23 42;
+    --color-bi-ring-bg: var(--color-superficie);
     --color-bi-text-main: 226 232 240;
-    --color-bi-text-muted: 148 163 184;
+    --color-bi-text-muted: var(--color-texto-tenue);
 
-    --color-input-bg: 30 41 59;             /* Slate-800: elevación real */
-    --color-input-text: #e2e8f0;
-    --color-input-border: 51 65 85;         /* Slate-600: sólido */
-    --color-label-text: 148 163 184;        /* Slate-400: menos saturado, legible */
+    --color-input-bg: var(--color-entrada-fondo);
+    --color-input-text: #f5f5f6;
+    --color-input-border: var(--color-borde);
+    --color-label-text: var(--color-texto-secundario);
+    --color-placeholder: var(--p-placeholder-oscuro);
 
-    --color-ntf-panel-bg: 6 13 31;
-    --color-ntf-card-bg: 13 27 62 / 0.5;
-    --color-ntf-card-border: 255 255 255 / 0.06;
-    --color-ntf-editor-bg: 10 20 48;
-    --color-ntf-editor-header-bg: 0 0 0 / 0.35;
-    --color-ntf-editor-input-bg: 0 0 0 / 0.2;
-    --color-ntf-editor-border: 255 255 255 / 0.06;
-    --color-ntf-preview-card: 10 20 48;
-    --color-ntf-text-editor: 96 165 250;
-    --color-ntf-text-subject: 147 197 253;
-    --color-status-active: 52 211 153;
+    --color-texto-sobre-fondo-oscuro: 255 255 255;
+    --color-texto-sobre-fondo-claro: 0 0 0;
+
+    /* Interacción y Estados (DIS-056) */
+    --foco-anillo: 96 165 250;
+    --foco-ancho: 2px;
+    --foco-separacion: 2px;
+    --hover-capa: 255 255 255 / 0.06;
+    --presionado-capa: 255 255 255 / 0.12;
+    --seleccionado-fondo: 37 99 235 / 0.25;
+    --seleccionado-borde: 96 165 250;
+    --deshabilitado-fondo: var(--p-noche-900);
+    --deshabilitado-texto: 100 116 139;
+    --deshabilitado-borde: var(--p-noche-700);
+    --invalido-borde: 252 165 165;
+    --solo-lectura-fondo: var(--p-noche-950);
+    --duracion-corta: 150ms;
+    --duracion-media: 250ms;
+    --curva: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Escalas en Modo Oscuro (DIS-057) */
+    /* Tipografía Corporativa Oficial (Manual de Identidad ADUANA §04 y §06) */
+    --font-display: 'Montserrat', sans-serif;
+    --font-ui: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --fuente-display: var(--font-display);
+    --fuente-texto: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --fuente-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    /* Tokens Corporativos ADUANA (Tema Dark - Manual de Identidad §06) */
+    --aduana-bg-main: #1B2A38;
+    --aduana-bg-surface: #233546;
+    --aduana-bg-hover: #2C4156;
+    --aduana-border: #334A60;
+    --aduana-text-primary: #FFFFFF;
+    --aduana-text-secondary: #94A3B8;
+
+    /* Acentos de Marca (Compartidos) */
+    --aduana-cyan: #1CB5E0;
+    --aduana-cyan-hover: #1597BC;
+    --aduana-orange: #F26419;
+    --aduana-orange-hover: #D9530F;
+
+    /* Estados IAM */
+    --status-approved: #10B981;
+    --status-pending: #F59E0B;
+    --status-rejected: #EF4444;
+    --status-info: #38BDF8;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+
+    --radio-control: 8px;
+    --radio-tarjeta: 12px;
+    --radio-dialogo: 16px;
+    --radio-pastilla: 9999px;
+
+    --borde-ancho: 1px;
+
+    --sombra-1: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+    --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+    --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+
+    /* DIS-084: iconos del select y del check (los valores literales solo viven aquí) y tooltip. */
+    --icono-select-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    --icono-select-flecha-acento: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    --icono-check: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='3.5 8.5 6.5 11.5 12.5 5.5'/%3C/svg%3E");
+    --icono-check-indeterminado: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='4' y1='8' x2='12' y2='8'/%3C/svg%3E");
+    --color-tooltip-fondo: var(--p-noche-700);
+    --color-tooltip-texto: var(--p-gris-50);
+
+    /* Simetría y Rejilla — 8pt (DIS-072) */
+    --espacio-1: 4px;
+    --espacio-2: 8px;
+    --espacio-3: 12px;
+    --espacio-4: 16px;
+    --espacio-6: 24px;
+    --espacio-8: 32px;
+    --espacio-12: 48px;
+
+    --control-alto: 48px;
+    --marco-lateral-ancho: 264px;
+    --marco-lateral-colapsada: 76px;
+    --marco-superior-alto: 64px;
+    --contenido-max: 1280px;
+    --formulario-max: 640px;
+    --dialogo-max: 560px;
+
+    --rejilla-columnas: 12;
+    --rejilla-canal: 16px;
+
+    --icono-sm: 16px;
+    --icono-md: 20px;
+    --icono-lg: 24px;
   }
 }
 
-/* Premium Validation Animations */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  50% { transform: translateX(5px); }
-  75% { transform: translateX(-5px); }
-}
-
-.animate-shake {
-  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-
 /* ══════════════════════════════════════════════════════════════
-   CLASE .dark — Mirror del media query para control JS
+   CLASE .dark — Espejo exacto del bloque anterior
 ══════════════════════════════════════════════════════════════ */
 html.dark {
-  --color-body-bg: #0f172a;            /* Slate-900: profundidad real */
-  --color-body-text: #f1f5f9;          /* Slate-100: claridad suave */
+  /* Semánticos (Modo Oscuro) */
+  --color-fondo: var(--p-noche-950);
+  --color-superficie: var(--p-noche-850);
+  --color-superficie-elevada: var(--p-noche-800);
+  --color-superficie-hundida: var(--p-noche-900);
+  --color-barra-lateral: var(--p-noche-900);
+  --color-barra-lateral-borde: var(--p-noche-500);
+  --color-barra-lateral-texto: var(--p-noche-50);
+  --color-barra-lateral-secundario: var(--p-noche-300);
+  --color-barra-lateral-nav: var(--p-noche-200);
+  --color-barra-lateral-hover: 255 255 255 / 0.08;
+  --color-barra-lateral-presionado: 255 255 255 / 0.14;
+  --color-barra-lateral-elemento: 255 255 255 / 0.05;
+  --color-barra-lateral-foco: var(--p-noche-50);
+  --color-entrada-fondo: var(--p-noche-950);
+  --color-tabla-encabezado: var(--p-noche-900);
+  --color-velo: 0 0 0 / 0.6;
 
-  /* BADGE ADAPTATIVO — MODO OSCURO (Brillo Neón) */
-  --badge-primary-bg: 37 99 235 / 0.15;  --badge-primary-text: 96 165 250;
-  --badge-success-bg: 16 185 129 / 0.15; --badge-success-text: 52 211 153;
-  --badge-error-bg: 244 63 94 / 0.15;    --badge-error-text: 251 113 133;
-  --badge-warning-bg: 245 158 11 / 0.15; --badge-warning-text: 251 191 36;
-  --badge-violet-bg: 139 92 246 / 0.15;  --badge-violet-text: 167 139 250;
-  --badge-sky-bg: 56 189 248 / 0.15;     --badge-sky-text: 125 211 252;
-  --badge-slate-bg: 148 163 184 / 0.15;  --badge-slate-text: 203 213 225;
-  --badge-cyan-bg: 34 211 238 / 0.15;     --badge-cyan-text: 103 232 249;
-  --color-header-bg: #1e3a8a;
-  --color-header-text: #e2e8f0;
-  --color-panel-header-bg: 37 99 235 / 0.15;
+  --color-texto: var(--p-noche-50);
+  --color-texto-secundario: var(--p-noche-300);
+  --color-texto-tenue: var(--p-noche-300);
+  --color-texto-sobre-accion: 255 255 255;
+  --color-texto-sobre-peligro: 255 255 255;
+  --color-texto-sobre-aviso: var(--p-noche-900);
+  --color-texto-enlace: 96 165 250;
+  --color-navegacion: var(--p-noche-200);
+  --color-activo-fondo: var(--p-activo-fondo-oscuro);
+  --color-activo-texto: var(--p-activo-texto-oscuro);
 
-  --color-panel-fill: 15 23 42;           /* Slate-900 */
-  --color-panel-border: 51 65 85;         /* Slate-600: sólido */
-  --color-panel-shadow: 0 0 0 / 0;
+  --color-borde: var(--p-noche-500);
+  --color-borde-sutil: var(--p-noche-700);
+  --color-borde-fuerte: var(--p-noche-300);
 
-  --color-surface-container-bg: 30 41 59; /* Slate-800 */
-  --color-surface-container-border: 51 65 85;
+  --color-accion: var(--p-marca-600);
+  --color-accion-hover: 96 165 250;
+  --color-accion-presionada: 29 78 216;
+  --color-accion-tenue: 37 99 235 / 0.15;
+  --color-accion-texto: 96 165 250;
 
-  --color-audit-body: 15 23 42;
-  --color-audit-body-alpha: 0.4;
+  --color-exito-relleno: 16 185 129;
+  --color-exito-tenue: 16 185 129 / 0.15;
+  --color-exito-borde: 16 185 129 / 0.3;
+  --color-exito-texto: var(--p-verde-texto-oscuro);
+  --color-exito-fondo: var(--p-verde-fondo-oscuro);
 
-  --color-tab-bar-bg: 15 23 42;
-  --color-tab-inactive-bg: 30 41 59;
+  --color-aviso-relleno: 245 158 11;
+  --color-aviso-tenue: 245 158 11 / 0.15;
+  --color-aviso-borde: 245 158 11 / 0.3;
+  --color-aviso-texto: var(--p-ambar-texto-oscuro);
+  --color-aviso-fondo: var(--p-ambar-fondo-oscuro);
+
+  --color-peligro-relleno: 220 38 38;
+  --color-peligro-tenue: 244 63 94 / 0.15;
+  --color-peligro-borde: 220 38 38 / 0.3;
+  --color-peligro-texto: var(--p-rojo-texto-oscuro);
+  --color-peligro-fondo: var(--p-rojo-fondo-oscuro);
+
+  --color-info-relleno: 59 130 246;
+  --color-info-tenue: 59 130 246 / 0.15;
+  --color-info-borde: 59 130 246 / 0.3;
+  --color-info-texto: 147 197 253;
+
+  --color-neutro-relleno: 100 116 139;
+  --color-neutro-tenue: 148 163 184 / 0.15;
+  --color-neutro-borde: 148 163 184 / 0.3;
+  --color-neutro-texto: 203 213 225;
+
+  /* Indicadores del dashboard (DIS-112): color y extremo del degradado de cada tarjeta. */
+  --color-indicador-areas: 99 102 241;
+  --color-indicador-areas-fin: 168 85 247;
+  --color-indicador-plataformas: 37 99 235;
+  --color-indicador-plataformas-fin: 6 182 212;
+  --color-indicador-solicitudes: 217 119 6;
+  --color-indicador-solicitudes-fin: 234 88 12;
+  --color-indicador-visitas: 13 148 136;
+  --color-indicador-visitas-fin: 34 197 94;
+  --color-indicador-usuarios: 219 39 119;
+  --color-indicador-usuarios-fin: 244 63 94;
+
+  /* Alias heredados (Modo Oscuro) */
+  --color-body-bg: #0c111d;
+  --color-body-text: #f5f5f6;
+  --color-error-solid: var(--color-peligro-relleno);
+  --color-on-error: var(--color-texto-sobre-peligro);
+  --color-secondary: var(--p-noche-300);
+
+  --badge-primary-bg: var(--color-accion-tenue);
+  --badge-primary-text: var(--color-accion-texto);
+  --badge-success-bg: var(--color-exito-fondo);
+  --badge-success-text: var(--color-exito-texto);
+  --badge-error-bg: var(--color-peligro-fondo);
+  --badge-error-text: var(--color-peligro-texto);
+  --badge-warning-bg: var(--color-aviso-fondo);
+  --badge-warning-text: var(--color-aviso-texto);
+  --badge-violet-bg: 139 92 246 / 0.15;
+  --badge-violet-text: 167 139 250;
+  --badge-sky-bg: 56 189 248 / 0.15;
+  --badge-sky-text: 125 211 252;
+  --badge-slate-bg: 148 163 184 / 0.15;
+  --badge-slate-text: 203 213 225;
+  --badge-cyan-bg: 34 211 238 / 0.15;
+  --badge-cyan-text: 103 232 249;
+
+  --color-header-bg: var(--color-barra-lateral);
+  --color-header-text: var(--color-texto);
+  --color-panel-header-bg: var(--color-tabla-encabezado);
+  --color-panel-header-text: 96 165 250;
+
+  --color-primary-text: var(--color-accion-texto);
+  --color-brand-text: 129 140 248;
+  --color-accent-text: 167 139 250;
+  --color-accent-sky-text: 6 182 212;
+  --color-accent-peach-text: 245 158 11;
+  --color-success-text: var(--color-exito-texto);
+  --color-error-text: var(--color-peligro-texto);
+  --color-warning-text: var(--color-aviso-texto);
+  --color-info-text: var(--color-info-texto);
+
+  --color-panel-fill: var(--color-superficie);
+  --color-overlay: var(--color-velo);
+  --color-panel-border: var(--color-borde);
+
+  --color-surface-container-bg: var(--color-superficie-hundida);
+  --color-surface-container-border: var(--color-borde-sutil);
+
+  --color-audit-body: var(--color-superficie);
+
+  --color-tab-bar-bg: var(--color-superficie);
+  --color-tab-inactive-bg: var(--color-superficie-hundida);
   --color-tab-inactive-text: 148 163 184;
 
   --color-bi-card-logistics: 100 116 139;
-  --color-bi-ring-bg: 15 23 42;
+  --color-bi-ring-bg: var(--color-superficie);
   --color-bi-text-main: 226 232 240;
-  --color-bi-text-muted: 148 163 184;
+  --color-bi-text-muted: var(--color-texto-tenue);
 
-  --color-input-bg: 30 41 59;             /* Slate-800 */
-  --color-input-text: #e2e8f0;
-  --color-input-border: 51 65 85;
-  --color-label-text: 148 163 184;        /* Slate-400 */
+  --color-input-bg: var(--color-entrada-fondo);
+  --color-input-text: #f5f5f6;
+  --color-input-border: var(--color-borde);
+  --color-label-text: var(--color-texto-secundario);
+  --color-placeholder: var(--p-placeholder-oscuro);
 
-  --color-ntf-panel-bg: 3 7 18;
-  --color-ntf-card-bg: 15 23 42 / 0.5;
-  --color-ntf-card-border: 255 255 255 / 0.06;
-  --color-ntf-editor-bg: 15 23 42;
-  --color-ntf-editor-header-bg: 0 0 0 / 0.35;
-  --color-ntf-editor-input-bg: 0 0 0 / 0.2;
-  --color-ntf-editor-border: 255 255 255 / 0.06;
-  --color-ntf-preview-card: 15 23 42;
-  --color-ntf-text-editor: 96 165 250;
-  --color-ntf-text-subject: 148 163 184;
-  --color-status-active: 52 211 153;
+  --color-texto-sobre-fondo-oscuro: 255 255 255;
+  --color-texto-sobre-fondo-claro: 0 0 0;
+
+  /* Interacción y Estados (DIS-056) */
+  --foco-anillo: 96 165 250;
+  --foco-ancho: 2px;
+  --foco-separacion: 2px;
+  --hover-capa: 255 255 255 / 0.06;
+  --presionado-capa: 255 255 255 / 0.12;
+  --seleccionado-fondo: 37 99 235 / 0.25;
+  --seleccionado-borde: 96 165 250;
+  --deshabilitado-fondo: var(--p-noche-900);
+  --deshabilitado-texto: 100 116 139;
+  --deshabilitado-borde: var(--p-noche-700);
+  --invalido-borde: 252 165 165;
+  --solo-lectura-fondo: var(--p-noche-950);
+  --duracion-corta: 150ms;
+  --duracion-media: 250ms;
+  --curva: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Escalas en Modo Oscuro (DIS-057) */
+  /* Tipografía Corporativa Oficial (Manual de Identidad ADUANA §04 y §06) */
+  --font-display: 'Montserrat', sans-serif;
+  --font-ui: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --fuente-display: var(--font-display);
+  --fuente-texto: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fuente-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Tokens Corporativos ADUANA (Tema Dark - Manual de Identidad §06) */
+  --aduana-bg-main: #1B2A38;
+  --aduana-bg-surface: #233546;
+  --aduana-bg-hover: #2C4156;
+  --aduana-border: #334A60;
+  --aduana-text-primary: #FFFFFF;
+  --aduana-text-secondary: #94A3B8;
+
+  /* Acentos de Marca (Compartidos) */
+  --aduana-cyan: #1CB5E0;
+  --aduana-cyan-hover: #1597BC;
+  --aduana-orange: #F26419;
+  --aduana-orange-hover: #D9530F;
+
+  /* Estados IAM */
+  --status-approved: #10B981;
+  --status-pending: #F59E0B;
+  --status-rejected: #EF4444;
+  --status-info: #38BDF8;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  --radio-control: 8px;
+  --radio-tarjeta: 12px;
+  --radio-dialogo: 16px;
+  --radio-pastilla: 9999px;
+
+  --borde-ancho: 1px;
+
+  --sombra-1: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  --sombra-2: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --sombra-3: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+
+  /* DIS-084: iconos del select y del check (los valores literales solo viven aquí) y tooltip. */
+  --icono-select-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-select-flecha-acento: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  --icono-check: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='3.5 8.5 6.5 11.5 12.5 5.5'/%3C/svg%3E");
+  --icono-check-indeterminado: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='4' y1='8' x2='12' y2='8'/%3C/svg%3E");
+  --color-tooltip-fondo: var(--p-noche-700);
+  --color-tooltip-texto: var(--p-gris-50);
+
+  /* Simetría y Rejilla — 8pt (DIS-072) */
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+
+  --control-alto: 48px;
+  --marco-lateral-ancho: 264px;
+  --marco-lateral-colapsada: 76px;
+  --marco-superior-alto: 64px;
+  --contenido-max: 1280px;
+  --formulario-max: 640px;
+  --dialogo-max: 560px;
+
+  --rejilla-columnas: 12;
+  --rejilla-canal: 16px;
+
+  --icono-sm: 16px;
+  --icono-md: 20px;
+  --icono-lg: 24px;
 }
 
-
-/* ══════════════════════════════════════════════════════════════
-   TEMA 3 — LIGHT "Emerald Forest"
-   Filosofía: Verde esmeralda sobre superficie cálida crema.
-   Primary: Emerald-600 | Superficies: Stone-warm
-══════════════════════════════════════════════════════════════ */
-html.theme-emerald-light {
-  --color-primary: 5 150 105;            /* #059669 — Emerald-600 */
-  --color-brand: 4 120 87;              /* Emerald-700 */
-  --color-accent-sky: 20 184 166;       /* Teal-500 */
-  --color-accent-violet: 13 148 136;    /* Teal-600 */
-  --color-accent-peach: 245 158 11;     /* Amber-500 */
-  --color-success: 5 150 105;
-  --color-secondary: 120 113 108;       /* Stone-500 */
-  --color-accent: 13 148 136;
-
-  --color-body-bg: #fafaf9;             /* Stone-50 */
-  --color-body-text: #1c1917;           /* Stone-900 */
-  --color-header-bg: #059669;           /* Emerald-600 */
-  --color-header-text: #ffffff;
-  --color-panel-header-bg: 209 250 229; /* Emerald-100 */
-
-  --color-panel-fill: 255 255 255;
-  --color-panel-border: 214 211 209;    /* Stone-300 */
-  --color-panel-shadow: 5 150 105 / 0.07;
-
-  --color-surface-container-bg: 245 245 244;   /* Stone-100 */
-  --color-surface-container-border: 231 229 228; /* Stone-200 */
-
-  --color-audit-body: 245 245 244;
-  --color-audit-body-alpha: 0.6;
-
-  --color-button-bg: var(--color-primary);
-  --color-button-text: 255 255 255;
-  --color-button-disabled-bg: 214 211 209;
-  --color-button-disabled-text: 168 162 158;
-
-  --color-tab-bar-bg: 231 229 228;
-  --color-tab-active-bg: var(--color-primary);
-  --color-tab-active-text: 255 255 255;
-  --color-tab-inactive-bg: 214 211 209;
-  --color-tab-inactive-text: 41 37 36;
-
-  --color-bi-card-logistics: 87 83 78;
-  --color-bi-ring-bg: 245 245 244;
-  --color-bi-text-main: 28 25 23;
-  --color-bi-text-muted: 120 113 108;
-  --color-kpi-highlight: var(--color-accent-peach);
-
-  --color-input-bg: 255 255 255;
-  --color-input-text: #1c1917;
-  --color-input-border: 214 211 209;
-  --color-input-focus: var(--color-primary);
-  --color-label-text: 87 83 78;
-
-  --color-ntf-panel-bg: 245 245 244;
-  --color-ntf-card-bg: 255 255 255;
-  --color-ntf-card-border: 214 211 209;
-  --color-ntf-editor-bg: 255 255 255;
-  --color-ntf-editor-border: 214 211 209;
-  --color-ntf-editor-header-bg: 245 245 244;
-  --color-ntf-editor-input-bg: 255 255 255;
-  --color-ntf-preview-card: 255 255 255;
-  --color-ntf-text-editor: 28 25 23;
-  --color-ntf-text-subject: 5 150 105;
-  --color-ntf-border: 5 150 105 / 0.12;
-  --color-status-active: 5 150 105;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   TEMA 4 — DARK "Obsidian"
-   Filosofía: Negro puro sin tinte de color. Superficies Zinc.
-   Primary: Zinc-400 highlight | Acento: Amber cálido
-══════════════════════════════════════════════════════════════ */
-html.theme-obsidian-dark {
-  --color-primary: 161 161 170;          /* Zinc-400 */
-  --color-brand: 113 113 122;           /* Zinc-500 */
-  --color-accent-sky: 161 161 170;
-  --color-accent-violet: 161 161 170;
-  --color-accent-peach: 250 204 21;     /* Yellow-400 */
-  --color-success: 74 222 128;          /* Green-400 */
-  --color-secondary: 113 113 122;
-  --color-accent: 250 204 21;
-
-  --color-body-bg: #09090b;             /* Zinc-950 */
-  --color-body-text: #e4e4e7;           /* Zinc-200 */
-  --color-header-bg: #18181b;           /* Zinc-900 */
-  --color-header-text: #e4e4e7;
-  --color-panel-header-bg: 39 39 42;    /* Zinc-800 */
-
-  --color-panel-fill: 24 24 27;         /* Zinc-900 */
-  --color-panel-border: 63 63 70;       /* Zinc-700 */
-  --color-panel-shadow: 0 0 0 / 0;
-
-  --color-surface-container-bg: 39 39 42;  /* Zinc-800 */
-  --color-surface-container-border: 63 63 70;
-
-  --color-audit-body: 24 24 27;
-  --color-audit-body-alpha: 0.4;
-
-  --color-button-bg: var(--color-primary);
-  --color-button-text: 9 9 11;
-  --color-button-disabled-bg: 39 39 42;
-  --color-button-disabled-text: 82 82 91;
-
-  --color-tab-bar-bg: 24 24 27;
-  --color-tab-active-bg: var(--color-primary);
-  --color-tab-active-text: 9 9 11;
-  --color-tab-inactive-bg: 39 39 42;
-  --color-tab-inactive-text: 161 161 170;
-
-  --color-bi-card-logistics: 113 113 122;
-  --color-bi-ring-bg: 24 24 27;
-  --color-bi-text-main: 228 228 231;
-  --color-bi-text-muted: 113 113 122;
-  --color-kpi-highlight: var(--color-accent-peach);
-
-  --color-input-bg: 39 39 42;
-  --color-input-text: #e4e4e7;
-  --color-input-border: 63 63 70;
-  --color-input-focus: var(--color-primary);
-  --color-label-text: 161 161 170;
-
-  --color-ntf-panel-bg: 9 9 11;
-  --color-ntf-card-bg: 24 24 27 / 0.5;
-  --color-ntf-card-border: 255 255 255 / 0.06;
-  --color-ntf-editor-bg: 24 24 27;
-  --color-ntf-editor-header-bg: 0 0 0 / 0.35;
-  --color-ntf-editor-input-bg: 0 0 0 / 0.2;
-  --color-ntf-editor-border: 255 255 255 / 0.06;
-  --color-ntf-preview-card: 24 24 27;
-  --color-ntf-text-editor: 161 161 170;
-  --color-ntf-text-subject: 161 161 170;
-  --color-status-active: 74 222 128;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   TEMA 5 — LIGHT "Rose Quartz"
-   Filosofía: Rosa cálido sobre base blanca suave.
-   Primary: Rose-500 | Superficies: Rose-warm
-══════════════════════════════════════════════════════════════ */
-html.theme-rose-light {
-  --color-primary: 244 63 94;            /* #f43f5e — Rose-500 */
-  --color-brand: 225 29 72;             /* Rose-600 */
-  --color-accent-sky: 251 113 133;      /* Rose-400 */
-  --color-accent-violet: 244 63 94;
-  --color-accent-peach: 251 146 60;     /* Orange-400 */
-  --color-success: 34 197 94;
-  --color-secondary: 120 113 108;
-  --color-accent: 244 63 94;
-
-  --color-body-bg: #fff1f2;             /* Rose-50 */
-  --color-body-text: #1c1917;           /* Stone-900 */
-  --color-header-bg: #f43f5e;           /* Rose-500 */
-  --color-header-text: #ffffff;
-  --color-panel-header-bg: 255 228 230; /* Rose-100 */
-
-  --color-panel-fill: 255 255 255;
-  --color-panel-border: 225 214 211;    /* Stone-300 con tinte rosa */
-  --color-panel-shadow: 244 63 94 / 0.07;
-
-  --color-surface-container-bg: 255 241 242;   /* Rose-50 */
-  --color-surface-container-border: 254 205 211; /* Rose-200 */
-
-  --color-audit-body: 255 241 242;
-  --color-audit-body-alpha: 0.6;
-
-  --color-button-bg: var(--color-primary);
-  --color-button-text: 255 255 255;
-  --color-button-disabled-bg: 214 211 209;
-  --color-button-disabled-text: 168 162 158;
-
-  --color-tab-bar-bg: 254 205 211;
-  --color-tab-active-bg: var(--color-primary);
-  --color-tab-active-text: 255 255 255;
-  --color-tab-inactive-bg: 254 226 230;
-  --color-tab-inactive-text: 159 18 57;
-
-  --color-bi-card-logistics: 87 83 78;
-  --color-bi-ring-bg: 255 241 242;
-  --color-bi-text-main: 28 25 23;
-  --color-bi-text-muted: 120 113 108;
-  --color-kpi-highlight: var(--color-accent-peach);
-
-  --color-input-bg: 255 255 255;
-  --color-input-text: #1c1917;
-  --color-input-border: 254 205 211;
-  --color-input-focus: var(--color-primary);
-  --color-label-text: 87 83 78;
-
-  --color-ntf-panel-bg: 255 241 242;
-  --color-ntf-card-bg: 255 255 255;
-  --color-ntf-card-border: 254 205 211;
-  --color-ntf-editor-bg: 255 255 255;
-  --color-ntf-editor-border: 254 205 211;
-  --color-ntf-editor-header-bg: 255 241 242;
-  --color-ntf-editor-input-bg: 255 255 255;
-  --color-ntf-preview-card: 255 255 255;
-  --color-ntf-text-editor: 28 25 23;
-  --color-ntf-text-subject: 244 63 94;
-  --color-ntf-border: 244 63 94 / 0.12;
-  --color-status-active: 244 63 94;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   TEMA 6 — DARK "Cyber Violet"
-   Filosofía: Violeta profundo con acentos neón.
-   Primary: Violet-500 | Superficies: Slate con tinte violeta
-══════════════════════════════════════════════════════════════ */
-html.theme-violet-dark {
-  --color-primary: 139 92 246;           /* #8b5cf6 — Violet-500 */
-  --color-brand: 124 58 237;            /* Violet-600 */
-  --color-accent-sky: 167 139 250;      /* Violet-400 */
-  --color-accent-violet: 139 92 246;
-  --color-accent-peach: 251 146 60;     /* Orange-400 */
-  --color-success: 52 211 153;          /* Emerald-400 */
-  --color-secondary: 148 163 184;
-  --color-accent: 139 92 246;
-
-  --color-body-bg: #0c0a1d;             /* Custom deep violet */
-  --color-body-text: #e2e0f0;           /* Lavender light */
-  --color-header-bg: #2e1065;           /* Violet-950 */
-  --color-header-text: #e2e0f0;
-  --color-panel-header-bg: 139 92 246 / 0.12;
-
-  --color-panel-fill: 17 12 46;         /* Deep violet surface */
-  --color-panel-border: 76 59 130;      /* Violet-tinted border */
-  --color-panel-shadow: 0 0 0 / 0;
-
-  --color-surface-container-bg: 30 24 64; /* Elevated violet */
-  --color-surface-container-border: 76 59 130;
-
-  --color-audit-body: 17 12 46;
-  --color-audit-body-alpha: 0.4;
-
-  --color-button-bg: var(--color-primary);
-  --color-button-text: 255 255 255;
-  --color-button-disabled-bg: 30 24 64;
-  --color-button-disabled-text: 76 59 130;
-
-  --color-tab-bar-bg: 17 12 46;
-  --color-tab-active-bg: var(--color-primary);
-  --color-tab-active-text: 255 255 255;
-  --color-tab-inactive-bg: 30 24 64;
-  --color-tab-inactive-text: 167 139 250;
-
-  --color-bi-card-logistics: 113 113 122;
-  --color-bi-ring-bg: 17 12 46;
-  --color-bi-text-main: 226 224 240;
-  --color-bi-text-muted: 148 163 184;
-  --color-kpi-highlight: var(--color-accent-peach);
-
-  --color-input-bg: 30 24 64;
-  --color-input-text: #e2e0f0;
-  --color-input-border: 76 59 130;
-  --color-input-focus: var(--color-primary);
-  --color-label-text: 167 139 250;
-
-  --color-ntf-panel-bg: 12 10 29;
-  --color-ntf-card-bg: 17 12 46 / 0.5;
-  --color-ntf-card-border: 255 255 255 / 0.06;
-  --color-ntf-editor-bg: 17 12 46;
-  --color-ntf-editor-header-bg: 0 0 0 / 0.35;
-  --color-ntf-editor-input-bg: 0 0 0 / 0.2;
-  --color-ntf-editor-border: 255 255 255 / 0.06;
-  --color-ntf-preview-card: 17 12 46;
-  --color-ntf-text-editor: 167 139 250;
-  --color-ntf-text-subject: 167 139 250;
-  --color-status-active: 52 211 153;
+@media (prefers-reduced-motion: reduce) {
+  :root, html.dark {
+    --duracion-corta: 0ms;
+    --duracion-media: 0ms;
+  }
 }
