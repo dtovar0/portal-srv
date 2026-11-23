@@ -36,6 +36,7 @@ def _configurar(app, config_overrides):
     from datetime import timedelta
     from flask import session
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(hours=12)
     app.config['SESSION_COOKIE_NAME'] = 'nexus_session'
     app.config['WTF_CSRF_TIME_LIMIT'] = None # Evita expiración de tokens por tiempo en dev
 
