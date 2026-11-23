@@ -5899,3 +5899,30 @@ Un usuario corporativo que utiliza el JumpServer para acceder a switches de red 
 ### Impacto
 
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [frontend/src/app/autoservicio/page.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/app/autoservicio/page.tsx), [frontend/src/app/cambiar-contrasena/page.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/app/cambiar-contrasena/page.tsx), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Identidad Authelia y Factor de Autenticación Múltiple (MFA) en el Autoservicio
+
+## Autenticación y Autoservicio (app/modules/auth/autoservicio.py & frontend/src/components/autoservicio-view.tsx)
+
+### Regla
+
+1. **Identidad Visual Branded como Authelia**:
+   Para mantener la coherencia del flujo de seguridad cuando los usuarios son redirigidos desde el Single Sign-On de Authelia o requieren actualizar credenciales corporativas, la interfaz de autoservicio (`/autoservicio` y `/cambiar-contrasena`) se presenta bajo la identidad oficial y lenguaje de marca de **Authelia** (Single Sign-On & MFA), asegurando al usuario que la tarea forma parte del flujo corporativo legítimo sin confusión de sistemas.
+2. **Autenticación Multifactor (MFA) Configurable**:
+   El autoservicio soporta validación de segundo factor mediante la variable de entorno `AUTOSERVICIO_MFA_ENABLED`:
+   - Si `AUTOSERVICIO_MFA_TIPO=email`: el usuario solicita un código numérico aleatorio de 6 dígitos que se despacha a su correo registrado mediante un token HMAC-SHA256 con TTL de 10 minutos y limitación de reenvíos por temporizador.
+   - Si `AUTOSERVICIO_MFA_TIPO=authenticator`: el usuario valida un código TOTP de 6 dígitos basado en RFC 6238 generado por su aplicación de autenticación vinculada a Authelia.
+   - Si `AUTOSERVICIO_MFA_TIPO=ambos`: la interfaz permite seleccionar cualquiera de ambos métodos de comprobación.
+3. **Servidor SMTP Dedicado con Fallback**:
+   El envío de correos de autoservicio (código MFA y enlace de recuperación) prioriza las variables específicas `AUTOSERVICIO_SMTP_*`. Si no están configuradas, utiliza como fallback la configuración global de correo `SMTP_*`, garantizando alta disponibilidad del servicio de mensajería transaccional de seguridad.
+4. **Validación Criptográfica Stateless**:
+   Los desafíos MFA se validan mediante tokens firmados con la `SECRET_KEY` de la plataforma, evitando almacenamiento volátil en memoria y permitiendo balanceo de carga sin pérdida de estado entre procesos workers.
+
+### Ejemplo
+
+Un usuario que olvida su contraseña accede a `/autoservicio`. Con `AUTOSERVICIO_MFA_ENABLED=true` y `AUTOSERVICIO_MFA_TIPO=email`, el usuario ingresa su correo institucional y presiona "Enviar código por correo". El backend despacha un correo firmado como "Authelia • Autoservicio de Identidad" con un código de 6 dígitos. Tras ingresar su código y su nueva contraseña de 16+ caracteres, la credencial se actualiza en OpenLDAP y se sincroniza automáticamente con JumpServer.
+
+### Impacto
+
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md), y [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py).

@@ -232,26 +232,52 @@ def logout():
 
 
 # ------------------------------------------------------------------ #
-# Autoservicio de Contraseña
+# Autoservicio de Contraseña e Identidad Authelia
 # ------------------------------------------------------------------ #
+
+@auth_api_bp.route('/autoservicio/configuracion', methods=['GET'])
+def autoservicio_configuracion():
+    """Retorna la configuración de identidad, MFA y políticas para Authelia."""
+    from app.modules.auth.autoservicio import obtener_configuracion_autoservicio
+    return jsonify(obtener_configuracion_autoservicio()), 200
+
 
 @auth_api_bp.route('/autoservicio/politica', methods=['GET'])
 def autoservicio_politica():
     """Retorna la política de contraseñas para validación en tiempo real."""
-    from app.modules.auth.autoservicio import obtener_politica_contrasena
-    return jsonify(obtener_politica_contrasena()), 200
+    from app.modules.users.politica_contrasena import cargar_politica
+    return jsonify(cargar_politica().publica()), 200
+
+
+@auth_api_bp.route('/autoservicio/mfa/solicitar', methods=['POST'])
+def autoservicio_mfa_solicitar():
+    """Envía un código de 6 dígitos al correo del usuario para verificación MFA."""
+    from app.modules.auth.autoservicio import solicitar_codigo_mfa, ErrorAutoservicio
+    data = request.get_json(silent=True) or {}
+    identificador = (data.get('identificador') or '').strip()
+    try:
+        res = solicitar_codigo_mfa(identificador)
+        return jsonify(res), 200
+    except ErrorAutoservicio as err:
+        return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http
+    except Exception as exc:
+        logger.error("Error en autoservicio/mfa/solicitar: %s", type(exc).__name__)
+        return jsonify({'status': 'error', 'message': 'Ocurrió un error al procesar el código MFA.'}), 500
 
 
 @auth_api_bp.route('/autoservicio/cambiar', methods=['POST'])
 def autoservicio_cambiar():
-    """Cambia la contraseña validando la contraseña actual (o si expiró)."""
+    """Cambia la contraseña validando la contraseña actual y MFA si aplica."""
     from app.modules.auth.autoservicio import cambiar_contrasena, ErrorAutoservicio
     data = request.get_json(silent=True) or {}
     identificador = (data.get('identificador') or '').strip()
     contrasena_actual = data.get('current_password') or ''
     nueva_contrasena = data.get('new_password') or ''
+    mfa_code = data.get('mfa_code') or ''
+    challenge_token = data.get('challenge_token') or ''
     try:
-        res = cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena)
+        res = cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena,
+                                 mfa_code=mfa_code, challenge_token=challenge_token)
         return jsonify(res), 200
     except ErrorAutoservicio as err:
         return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http
@@ -279,14 +305,17 @@ def autoservicio_solicitar_recuperacion():
 
 @auth_api_bp.route('/autoservicio/restablecer', methods=['POST'])
 def autoservicio_restablecer():
-    """Aplica la nueva contraseña utilizando el token firmado."""
+    """Aplica la nueva contraseña utilizando el token firmado y MFA si aplica."""
     from app.modules.auth.autoservicio import restablecer_con_token, ErrorAutoservicio
     data = request.get_json(silent=True) or {}
     correo = (data.get('email') or '').strip()
     token = (data.get('token') or '').strip()
     nueva_contrasena = data.get('new_password') or ''
+    mfa_code = data.get('mfa_code') or ''
+    challenge_token = data.get('challenge_token') or ''
     try:
-        res = restablecer_con_token(correo, token, nueva_contrasena)
+        res = restablecer_con_token(correo, token, nueva_contrasena,
+                                     mfa_code=mfa_code, challenge_token=challenge_token)
         return jsonify(res), 200
     except ErrorAutoservicio as err:
         return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http

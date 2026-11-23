@@ -114,6 +114,16 @@
 | `SMTP_SENDER_EMAIL` | Dirección del remitente | correo | `SMTP_USER` | `noreply@<dominio>` | No | No | Sí (vacío) | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `ENABLE_NOTIFICATIONS` | Interruptor global de correo | `true` / `false` | `true` | `true` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `DEBUG_SMTP` | Traza del diálogo SMTP en consola | `true` / `false` | `false` | `false` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
+| `AUTOSERVICIO_BRAND_NAME` | Marca institucional en cabecera de autoservicio | texto | `Authelia` | `Authelia` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_MFA_ENABLED` | Exige segundo factor (MFA) en autoservicio de contraseñas | `true` / `false` | `false` | `false` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_MFA_TIPO` | Método de segundo factor en autoservicio | `email` / `authenticator` / `ambos` | `email` | `email` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_SMTP_SERVER` | Servidor SMTP dedicado a autoservicio (fallback a `SMTP_SERVER`) | nombre de host | ninguno | `smtp.ejemplo.local` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_SMTP_PORT` | Puerto SMTP dedicado a autoservicio | entero | `587` | `587` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_SMTP_USER` | Usuario para autenticación SMTP de autoservicio | texto | ninguno | `authelia@ejemplo.local` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_SMTP_PASSWORD` | Contraseña SMTP dedicada a autoservicio | texto | ninguna | — | Sí si el servidor pide auth | **Sí** | Sí (vacía) | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_SMTP_ENCRYPTION` | Cifrado SMTP dedicado a autoservicio | `starttls` / `ssl` / `none` | `starttls` | `starttls` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_SMTP_SENDER_EMAIL` | Remitente de correos de autoservicio (código MFA y enlace) | correo | `authelia@vivaro.com` | `authelia@vivaro.com` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTOSERVICIO_SMTP_SENDER_NAME` | Nombre visible del remitente de autoservicio | texto | `Authelia • Autoservicio de Identidad` | `Authelia • Autoservicio de Identidad` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 
 ### Presentes en `.env.example` pero no leídas por el código
 

@@ -270,11 +270,24 @@ export const api = {
     request<{ status: string; redirect: string | null }>(
       '/auth/logout', { method: 'POST' }),
 
+  autoservicioConfiguracion: () =>
+    request<AutoservicioConfig>('/auth/autoservicio/configuracion'),
+  autoservicioSolicitarMfa: (identificador: string) =>
+    request<AutoservicioMfaSolicitarResp>('/auth/autoservicio/mfa/solicitar', {
+      method: 'POST',
+      body: JSON.stringify({ identificador }),
+    }),
   autoservicioPolitica: () =>
     request<{ min_length: number; max_length: number; required_classes: string[]; symbols: string }>(
       '/auth/autoservicio/politica'
     ),
-  autoservicioCambiar: (datos: { identificador: string; current_password: string; new_password: string }) =>
+  autoservicioCambiar: (datos: {
+    identificador: string;
+    current_password: string;
+    new_password: string;
+    mfa_code?: string;
+    challenge_token?: string;
+  }) =>
     request<{ status: string; message: string }>('/auth/autoservicio/cambiar', {
       method: 'POST',
       body: JSON.stringify(datos),
@@ -284,7 +297,13 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(datos),
     }),
-  autoservicioRestablecer: (datos: { email: string; token: string; new_password: string }) =>
+  autoservicioRestablecer: (datos: {
+    email: string;
+    token: string;
+    new_password: string;
+    mfa_code?: string;
+    challenge_token?: string;
+  }) =>
     request<{ status: string; message: string }>('/auth/autoservicio/restablecer', {
       method: 'POST',
       body: JSON.stringify(datos),
@@ -354,5 +373,26 @@ export interface BulkImportResult {
   errors: { row: number; item: string; error: string }[];
   items: BulkImportItem[];
   message?: string;
+}
+
+export interface AutoservicioConfig {
+  status: string;
+  brand_name: string;
+  mfa_enabled: boolean;
+  mfa_tipo: 'email' | 'authenticator' | 'ambos';
+  politica: {
+    min_length: number;
+    max_length: number;
+    required_classes: string[];
+    symbols: string;
+  };
+}
+
+export interface AutoservicioMfaSolicitarResp {
+  status: string;
+  message: string;
+  challenge_token: string;
+  masked_email?: string;
+  tipo?: string;
 }
 
