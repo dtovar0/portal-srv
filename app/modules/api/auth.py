@@ -323,3 +323,24 @@ def autoservicio_restablecer():
         logger.error("Error en autoservicio/restablecer: %s", type(exc).__name__)
         return jsonify({'status': 'error', 'message': 'Ocurrió un error interno procesando la solicitud.'}), 500
 
+
+@auth_api_bp.route('/autoservicio/restablecer-mfa', methods=['POST'])
+def autoservicio_restablecer_mfa():
+    """Aplica la nueva contraseña validando directamente el código MFA (sin requerir clave previa)."""
+    from app.modules.auth.autoservicio import restablecer_directo_mfa, ErrorAutoservicio
+    data = request.get_json(silent=True) or {}
+    identificador = (data.get('identifier') or data.get('identificador') or '').strip()
+    nueva_contrasena = data.get('new_password') or ''
+    mfa_code = data.get('mfa_code') or ''
+    challenge_token = data.get('challenge_token') or ''
+    try:
+        res = restablecer_directo_mfa(identificador, nueva_contrasena,
+                                      mfa_code=mfa_code, challenge_token=challenge_token)
+        return jsonify(res), 200
+    except ErrorAutoservicio as err:
+        return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http
+    except Exception as exc:
+        logger.error("Error en autoservicio/restablecer-mfa: %s", type(exc).__name__)
+        return jsonify({'status': 'error', 'message': 'Ocurrió un error interno procesando la solicitud.'}), 500
+
+

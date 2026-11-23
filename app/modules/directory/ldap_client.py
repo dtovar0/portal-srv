@@ -376,7 +376,11 @@ class ClienteDirectorio:
                     raise LDAPStartTLSError('StartTLS no quedó activo')
             conexion.bind()
             return True
-        except LDAPInvalidCredentialsResult:
+        except LDAPInvalidCredentialsResult as exc:
+            msg = f"{getattr(exc, 'message', '')} {getattr(exc, 'description', '')}".lower()
+            if any(term in msg for term in ('expired', 'passwordexpired', '532', 'ppolicy')):
+                logger.info('Directorio: contraseña expirada pero válida para %s', usuario.identificador)
+                return True
             return False
         except LDAPException as exc:
             logger.error('Directorio: fallo en verificación de contraseña '

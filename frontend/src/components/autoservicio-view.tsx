@@ -26,7 +26,7 @@ export function AutoservicioView() {
   const [config, setConfig] = useState<AutoservicioConfig | null>(null);
 
   // Estados de pestaña y modo
-  const [modo, setModo] = useState<'cambiar' | 'recuperar' | 'token'>('cambiar');
+  const [modo, setModo] = useState<'cambiar' | 'mfa_directo' | 'recuperar' | 'token'>('cambiar');
   const [cargando, setCargando] = useState(false);
   const [exitoMensaje, setExitoMensaje] = useState<string | null>(null);
 
@@ -160,7 +160,7 @@ export function AutoservicioView() {
     }
   };
 
-  // Manejo de actualización con contraseña actual
+  // Manejo de actualización con contraseña actual o caducada
   const handleCambiar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!esValida) {
@@ -192,6 +192,46 @@ export function AutoservicioView() {
       setMfaEnviado(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al actualizar la contraseña.';
+      avisar('error', msg);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // Manejo de restablecimiento directo con MFA (para contraseñas caducadas o sin clave previa)
+  const handleRestablecerDirectoMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identificador.trim()) {
+      avisar('error', 'Ingresa tu usuario o correo corporativo.');
+      return;
+    }
+    if (!esValida) {
+      avisar('error', 'La nueva contraseña no cumple todos los requisitos de seguridad corporativa.');
+      return;
+    }
+    if (!mfaValido) {
+      avisar('error', 'Ingresa el código numérico de 6 dígitos de autenticación multifactor (MFA).');
+      return;
+    }
+
+    setCargando(true);
+    setExitoMensaje(null);
+    try {
+      const resp = await api.autoservicioRestablecerMfa({
+        identifier: identificador.trim(),
+        new_password: nuevaContrasena,
+        mfa_code: mfaCode.trim(),
+        challenge_token: metodoMfaSeleccionado === 'email' ? challengeToken : undefined,
+      });
+      setExitoMensaje(resp.message || 'Contraseña restablecida exitosamente en Authelia. Ya puedes iniciar sesión.');
+      avisar('success', 'Contraseña restablecida correctamente.');
+      setNuevaContrasena('');
+      setConfirmarContrasena('');
+      setMfaCode('');
+      setChallengeToken('');
+      setMfaEnviado(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al restablecer la contraseña con MFA.';
       avisar('error', msg);
     } finally {
       setCargando(false);
@@ -297,20 +337,33 @@ export function AutoservicioView() {
                 </span>
               </div>
 
-              <div className="mt-6">
+              {/* Banner informativo de Acceso Público */}
+              <div className="mt-4 rounded-xl border border-aduana-cyan/30 bg-aduana-cyan/5 p-3 flex items-start gap-2.5 text-xs text-body-text">
+                <Icono nombre="candado" tamano="sm" className="text-aduana-cyan shrink-0 mt-0.5" ariaHidden={true} />
+                <div className="leading-relaxed">
+                  <strong className="text-aduana-cyan">Portal público de autoservicio Authelia: </strong>
+                  <span>No requieres iniciar sesión previamente para actualizar o restablecer tu cuenta. Puedes realizarlo aquí directamente si tu contraseña caducó o no tienes acceso.</span>
+                </div>
+              </div>
+
+              <div className="mt-5">
                 <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-body-text">
                   {modo === 'token'
                     ? 'Restablecer Contraseña'
                     : modo === 'cambiar'
                       ? 'Actualizar Contraseña'
-                      : 'Recuperar Acceso'}
+                      : modo === 'mfa_directo'
+                        ? 'Restablecer con MFA'
+                        : 'Recuperar por Correo'}
                 </h1>
                 <p className="mt-1 text-xs text-texto-secundario leading-relaxed">
                   {modo === 'token'
                     ? 'Establece tu nueva contraseña corporativa para completar la recuperación autorizada por Authelia.'
                     : modo === 'cambiar'
-                      ? 'Actualiza tu contraseña corporativa de Authelia. El cambio se sincronizará de forma inmediata con JumpServer y plataformas conectadas.'
-                      : 'Solicita un enlace seguro firmado criptográficamente para restablecer tu acceso a Authelia.'}
+                      ? 'Ingresa tu usuario, contraseña actual o caducada y tu nueva contraseña para sincronizarla con Authelia y JumpServer.'
+                      : modo === 'mfa_directo'
+                        ? 'Si tu clave caducó o no la tienes, valida tu identidad con tu código MFA (Authenticator o correo) e ingresa tu nueva contraseña directamente.'
+                        : 'Solicita un enlace seguro firmado criptográficamente para restablecer tu acceso a Authelia.'}
                 </p>
               </div>
 
@@ -323,13 +376,27 @@ export function AutoservicioView() {
                       setModo('cambiar');
                       setExitoMensaje(null);
                     }}
-                    className={`flex-1 rounded-lg py-1.5 px-3 text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-all cursor-pointer ${
                       modo === 'cambiar'
                         ? 'bg-superficie text-body-text shadow-xs border border-panel-border'
                         : 'text-texto-secundario hover:text-body-text'
                     }`}
                   >
-                    Conozco mi clave
+                    Tengo clave (actual/caducada)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModo('mfa_directo');
+                      setExitoMensaje(null);
+                    }}
+                    className={`flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-all cursor-pointer ${
+                      modo === 'mfa_directo'
+                        ? 'bg-superficie text-body-text shadow-xs border border-panel-border'
+                        : 'text-texto-secundario hover:text-body-text'
+                    }`}
+                  >
+                    Restablecer con MFA
                   </button>
                   <button
                     type="button"
@@ -337,13 +404,13 @@ export function AutoservicioView() {
                       setModo('recuperar');
                       setExitoMensaje(null);
                     }}
-                    className={`flex-1 rounded-lg py-1.5 px-3 text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-all cursor-pointer ${
                       modo === 'recuperar'
                         ? 'bg-superficie text-body-text shadow-xs border border-panel-border'
                         : 'text-texto-secundario hover:text-body-text'
                     }`}
                   >
-                    Olvidé mi clave
+                    Enlace por correo
                   </button>
                 </div>
               )}
@@ -382,11 +449,11 @@ export function AutoservicioView() {
                   />
                 </Field>
 
-                <Field label="Contraseña Actual">
+                <Field label="Contraseña Actual o Caducada" hint="Si tu clave expiró en el directorio, ingrésala aquí para autorizar el cambio.">
                   <TextInput
                     type={mostrarClaves ? 'text' : 'password'}
                     required
-                    placeholder="Tu contraseña actual"
+                    placeholder="Tu contraseña actual o caducada"
                     value={contrasenaActual}
                     onChange={(e) => setContrasenaActual(e.target.value)}
                     autoComplete="current-password"
@@ -572,6 +639,199 @@ export function AutoservicioView() {
                   className="w-full bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-accion font-bold text-xs py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer"
                 >
                   {cargando ? 'Sincronizando con Authelia y Directorio…' : 'Actualizar en Authelia'}
+                </Button>
+              </form>
+            )}
+
+            {/* FORMULARIO: PESTAÑA RESTABLECER DIRECTO CON MFA (CLAVE CADUCADA U OLVIDADA) */}
+            {modo === 'mfa_directo' && !exitoMensaje && (
+              <form onSubmit={handleRestablecerDirectoMfa} className="my-6 space-y-3.5">
+                <div className="rounded-xl border border-panel-border/80 bg-fondo p-3 text-xs text-texto-secundario leading-relaxed">
+                  <p>
+                    Usa esta opción si <strong>tu contraseña caducó</strong> o <strong>no tienes acceso</strong> a tu cuenta. Puedes verificar tu identidad mediante tu aplicación Authenticator o código por correo sin necesidad de conocer tu clave anterior.
+                  </p>
+                </div>
+
+                <Field label="Usuario o Correo Authelia">
+                  <TextInput
+                    type="text"
+                    required
+                    placeholder="ej. usuario@vivaro.com o jdoe"
+                    value={identificador}
+                    onChange={(e) => setIdentificador(e.target.value)}
+                    autoComplete="username"
+                  />
+                </Field>
+
+                {/* Sección MFA */}
+                <div className="rounded-xl border border-aduana-cyan/30 bg-aduana-cyan/5 p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Icono nombre="escudo" tamano="xs" className="text-aduana-cyan" ariaHidden={true} />
+                      <span className="font-bold text-aduana-cyan text-xs">
+                        Segundo Factor de Autenticación (MFA)
+                      </span>
+                    </div>
+                    {tipoMfaEfectivo === 'ambos' && (
+                      <div className="flex rounded-lg border border-panel-border bg-superficie p-0.5 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setMetodoMfaSeleccionado('email')}
+                          className={`px-2 py-0.5 rounded-md cursor-pointer ${metodoMfaSeleccionado === 'email' ? 'bg-aduana-cyan text-texto-sobre-accion font-bold' : 'text-texto-secundario'}`}
+                        >
+                          Correo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMetodoMfaSeleccionado('authenticator')}
+                          className={`px-2 py-0.5 rounded-md cursor-pointer ${metodoMfaSeleccionado === 'authenticator' ? 'bg-aduana-cyan text-texto-sobre-accion font-bold' : 'text-texto-secundario'}`}
+                        >
+                          App
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {metodoMfaSeleccionado === 'email' ? (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-texto-secundario leading-relaxed">
+                        Enviaremos un código de seguridad de 6 dígitos a tu correo corporativo.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          onClick={handleSolicitarCodigoMfa}
+                          disabled={enviandoMfa || cooldownMfa > 0 || !identificador.trim()}
+                          className="bg-superficie border border-panel-border text-body-text hover:bg-fondo text-xs py-1.5 px-3 rounded-lg font-semibold cursor-pointer shrink-0"
+                        >
+                          {enviandoMfa
+                            ? 'Enviando…'
+                            : cooldownMfa > 0
+                              ? `Reenviar en ${cooldownMfa}s`
+                              : mfaEnviado
+                                ? 'Reenviar código'
+                                : 'Enviar código por correo'}
+                        </Button>
+                        {maskedEmail && (
+                          <span className="text-[11px] text-texto-secundario truncate">
+                            Destino: <strong className="text-body-text">{maskedEmail}</strong>
+                          </span>
+                        )}
+                      </div>
+
+                      <Field label="Código de 6 dígitos">
+                        <TextInput
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          required
+                          placeholder="Ej. 123456"
+                          value={mfaCode}
+                          onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          autoComplete="one-time-code"
+                          className="font-mono text-center tracking-widest text-sm"
+                        />
+                      </Field>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-texto-secundario leading-relaxed">
+                        Ingresa el código TOTP de 6 dígitos generado por tu aplicación Authenticator (Google / Microsoft).
+                      </p>
+                      <Field label="Código Authenticator (TOTP)">
+                        <TextInput
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          required
+                          placeholder="Ej. 654321"
+                          value={mfaCode}
+                          onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          autoComplete="one-time-code"
+                          className="font-mono text-center tracking-widest text-sm"
+                        />
+                      </Field>
+                    </div>
+                  )}
+                </div>
+
+                <Field label="Nueva Contraseña">
+                  <TextInput
+                    type={mostrarClaves ? 'text' : 'password'}
+                    required
+                    placeholder="Mínimo 16 caracteres"
+                    value={nuevaContrasena}
+                    onChange={(e) => setNuevaContrasena(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </Field>
+
+                <Field label="Confirmar Nueva Contraseña">
+                  <TextInput
+                    type={mostrarClaves ? 'text' : 'password'}
+                    required
+                    placeholder="Repite la nueva contraseña"
+                    value={confirmarContrasena}
+                    onChange={(e) => setConfirmarContrasena(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </Field>
+
+                {/* Alternar visibilidad de contraseñas y Generador Seguro */}
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarClaves(!mostrarClaves)}
+                    className="text-texto-secundario hover:text-body-text transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Icono nombre={mostrarClaves ? 'candado' : 'ver'} tamano="xs" ariaHidden={true} />
+                    <span>{mostrarClaves ? 'Ocultar' : 'Mostrar'} contraseñas</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerarContrasena}
+                    className="text-aduana-cyan hover:underline transition-colors flex items-center gap-1.5 font-semibold cursor-pointer"
+                    title="Genera una contraseña criptográficamente segura de 24 caracteres que cumple todas las reglas"
+                  >
+                    <Icono nombre="recargar" tamano="xs" ariaHidden={true} />
+                    <span>Generar contraseña</span>
+                  </button>
+                </div>
+
+                {/* Checklist de requisitos de seguridad */}
+                <div className="rounded-xl border border-panel-border/70 bg-fondo p-3 space-y-1.5 text-[11px]">
+                  <p className="font-bold text-texto-secundario uppercase tracking-wider text-[10px]">
+                    Política de Seguridad Authelia:
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                    <span className={validaciones.longitud ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
+                      {validaciones.longitud ? '✓' : '•'} 16+ caracteres
+                    </span>
+                    <span className={validaciones.mayuscula ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
+                      {validaciones.mayuscula ? '✓' : '•'} Mayúscula
+                    </span>
+                    <span className={validaciones.minuscula ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
+                      {validaciones.minuscula ? '✓' : '•'} Minúscula
+                    </span>
+                    <span className={validaciones.numero ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
+                      {validaciones.numero ? '✓' : '•'} Número
+                    </span>
+                    <span className={validaciones.simbolo ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
+                      {validaciones.simbolo ? '✓' : '•'} Símbolo (!#$%)
+                    </span>
+                    <span className={validaciones.coinciden ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
+                      {validaciones.coinciden ? '✓' : '•'} Coinciden
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={cargando || !esValida || !mfaValido || !identificador.trim()}
+                  className="w-full bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-accion font-bold text-xs py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer"
+                >
+                  {cargando ? 'Restableciendo en Authelia y JumpServer…' : 'Restablecer Contraseña Directamente'}
                 </Button>
               </form>
             )}

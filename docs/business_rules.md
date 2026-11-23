@@ -6003,3 +6003,25 @@ Un entorno que solo usa Vaultwarden para Sends de onboarding define `VAULTWARDEN
 
 ### Impacto
 Afecta a [app/modules/secretos/configuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/secretos/configuracion.py), [app/modules/secretos/vaultwarden.py](file:///home/dtovar/bayblade/pokemon/app/modules/secretos/vaultwarden.py), [app/modules/secretos/sends.py](file:///home/dtovar/bayblade/pokemon/app/modules/secretos/sends.py), [deploy/secretos.sh](file:///home/dtovar/bayblade/pokemon/deploy/secretos.sh), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md).
+
+Acceso Público de Autoservicio y Desbloqueo de Cuentas Caducadas
+
+## Módulo
+Autenticación / Autoservicio
+
+### Regla
+1. **Naturaleza Pública e Inautenticada de Autoservicio**:
+   Las rutas `/autoservicio` y `/cambiar-contrasena` son 100% públicas y no requieren ninguna sesión previa ni autenticación en Authelia o Aduana para acceder a ellas. Los usuarios pueden ingresar de forma directa para rotar o restablecer credenciales en cualquier momento.
+2. **Desbloqueo de Contraseñas Caducadas o Sin Acceso Inicial**:
+   Para resolver el bloqueo en que un usuario cuya contraseña ha caducado (o que no tiene contraseña previa) no puede iniciar sesión en Authelia ni consultar su correo corporativo:
+   - **Tengo clave actual o caducada**: Si el usuario recuerda su contraseña caducada, el sistema la reconoce como válida en OpenLDAP (incluso si la directiva `ppolicy` rechaza el bind regular con `passwordExpired`) para autorizar la actualización inmediata.
+   - **Restablecimiento Directo con MFA**: Si el usuario no conoce su clave o no tiene contraseña, puede restablecerla directamente en pantalla validando su segundo factor de autenticación (TOTP Authenticator o código OTP de correo) mediante el endpoint `/api/v1/auth/autoservicio/restablecer-mfa`, sin depender de enlaces por correo ni requerir contraseña anterior.
+3. **Puntos de Entrada**:
+   - En `/login`, se provee una tarjeta destacada de acceso al autoservicio sin necesidad de iniciar sesión.
+   - En el menú de usuario de usuarios autenticados, se incluye la acción directa "Cambiar contraseña".
+
+### Ejemplo
+Un empleado cuya contraseña corporativa caducó no puede iniciar sesión en el SSO de Authelia ni abrir su correo de Vivaro. Entra directamente a `/autoservicio`, selecciona la pestaña "Restablecer con MFA", ingresa su usuario y su código de 6 dígitos de Google Authenticator, e ingresa su nueva contraseña generada. El sistema aplica el cambio en OpenLDAP y sincroniza JumpServer al instante, permitiéndole ingresar de inmediato.
+
+### Impacto
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [app/modules/directory/ldap_client.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/ldap_client.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/components/login-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/login-form.tsx), [frontend/src/components/marco/menu-usuario.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/marco/menu-usuario.tsx) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

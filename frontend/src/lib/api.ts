@@ -308,6 +308,16 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(datos),
     }),
+  autoservicioRestablecerMfa: (datos: {
+    identifier: string;
+    new_password: string;
+    mfa_code: string;
+    challenge_token?: string;
+  }) =>
+    request<{ status: string; message: string }>('/auth/autoservicio/restablecer-mfa', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
 
   /** Descarga el respaldo. Devuelve el Blob para que el navegador lo guarde. */
   downloadBackup: async () => {

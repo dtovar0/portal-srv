@@ -180,6 +180,15 @@ export function MenuUsuario({
 
           <div role="none" className="flex flex-col gap-1 pt-1">
             <Link
+              href="/cambiar-contrasena"
+              role="menuitem"
+              onClick={() => setAbierto(false)}
+              className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-semibold text-body-text hover:bg-superficie-hundida transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+            >
+              <Icono nombre="candado" tamano="sm" className="text-aduana-cyan" />
+              <span>Cambiar contraseña</span>
+            </Link>
+            <Link
               href="/logout"
               role="menuitem"
               onClick={() => setAbierto(false)}

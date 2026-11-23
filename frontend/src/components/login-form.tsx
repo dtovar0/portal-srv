@@ -125,13 +125,22 @@ export function LoginForm() {
                     <Icono nombre="candado" tamano="xs" ariaHidden={true} />
                     <span>Autenticación federada SSO</span>
                   </p>
-                  <div className="pt-1 text-center">
-                    <Link
-                      href="/autoservicio"
-                      className="text-xs font-medium text-texto-secundario hover:text-aduana-cyan transition-colors"
-                    >
-                      ¿Olvidaste o necesitas cambiar tu contraseña?
-                    </Link>
+                  <div className="pt-2">
+                    <div className="rounded-2xl border border-panel-border/80 bg-fondo p-3 text-center space-y-1.5 shadow-xs">
+                      <p className="text-xs font-semibold text-body-text">
+                        ¿Tu contraseña caducó o no puedes entrar?
+                      </p>
+                      <p className="text-[11px] text-texto-secundario">
+                        No requieres iniciar sesión para actualizar o restablecer tu cuenta.
+                      </p>
+                      <Link
+                        href="/autoservicio"
+                        className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-aduana-cyan hover:underline pt-0.5"
+                      >
+                        <Icono nombre="candado" tamano="xs" ariaHidden={true} />
+                        <span>Autoservicio de Contraseña (sin iniciar sesión) →</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ) : (

@@ -20,6 +20,7 @@ from app.modules.auth.autoservicio import (
     ErrorAutoservicio,
     cambiar_contrasena,
     restablecer_con_token,
+    restablecer_directo_mfa,
 )
 
 
@@ -270,4 +271,65 @@ def test_restablecer_contrasena_envia_correo_confirmacion_y_audita(app, monkeypa
         assert log is not None
         assert log.status == "success"
         assert log.module == "Autoservicio"
+
+
+def test_restablecer_directo_mfa_exitoso(app, monkeypatch):
+    """Verifica que un usuario con clave caducada/olvidada pueda restablecerla directamente con MFA."""
+    with app.test_request_context():
+        u = User.query.filter_by(email="caducado_mfa@vivaro.com").first()
+        if not u:
+            u = User(email="caducado_mfa@vivaro.com", nombre="Usuario Clave Caducada", role="usuario")
+            u.set_password("OldPassword123456!")
+            db.session.add(u)
+            db.session.commit()
+
+        monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+        monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'authenticator')
+
+        # Derivar código TOTP válido
+        import time, base64, hmac, hashlib, struct
+        from app.modules.auth.autoservicio import _secret_totp_usuario
+        secret = _secret_totp_usuario("caducado_mfa@vivaro.com")
+        key = base64.b32decode(secret.upper(), casefold=True)
+        ahora = int(time.time() // 30)
+        msg = struct.pack('>Q', ahora)
+        digest = hmac.new(key, msg, hashlib.sha1).digest()
+        o = digest[19] & 0x0f
+        val = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
+        codigo_valido = f"{val:06d}"
+
+        # 1. Con código erróneo falla
+        with pytest.raises(ErrorAutoservicio) as exc:
+            restablecer_directo_mfa("caducado_mfa@vivaro.com", "NuevaClaveSegura2026!", "000000")
+        assert "mfa" in str(exc.value).lower() or "código" in str(exc.value).lower()
+
+        # 2. Con código correcto tiene éxito
+        res = restablecer_directo_mfa("caducado_mfa@vivaro.com", "NuevaClaveSegura2026!", codigo_valido)
+        assert res["status"] == "success"
+
+        # Verificar que la contraseña cambió
+        u_actualizado = User.query.filter_by(email="caducado_mfa@vivaro.com").first()
+        assert u_actualizado.check_password("NuevaClaveSegura2026!") is True
+
+        # Verificar auditoría
+        log = AuditLog.query.filter_by(action="AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO (MFA)",
+                                       target="caducado_mfa@vivaro.com").order_by(AuditLog.id.desc()).first()
+        assert log is not None
+        assert log.status == "success"
+        assert log.module == "Autoservicio"
+
+
+def test_endpoint_restablecer_mfa(cliente, monkeypatch):
+    """Verifica la API POST /api/v1/auth/autoservicio/restablecer-mfa."""
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'authenticator')
+
+    # Código inválido
+    resp = cliente.post('/api/v1/auth/autoservicio/restablecer-mfa', json={
+        "identifier": "usuario_prueba@vivaro.com",
+        "new_password": "NuevaContrasenaSegura2026!",
+        "mfa_code": "999999"
+    })
+    assert resp.status_code == 401
+
 

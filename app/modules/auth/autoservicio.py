@@ -587,3 +587,72 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
         return {'status': 'success', 'message': 'Contraseña restablecida exitosamente en Authelia.'}
 
     raise ErrorAutoservicio('No se encontró la cuenta en el directorio.', 404)
+
+
+def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge_token=None):
+    """Restablece la contraseña directamente validando el segundo factor (MFA)
+    sin requerir contraseña previa ni enlace por correo.
+    Especialmente diseñado para usuarios con contraseña caducada o sin acceso inicial."""
+    identificador = (identificador or '').strip()
+    nueva_contrasena = (nueva_contrasena or '').strip()
+    mfa_code = (mfa_code or '').strip()
+
+    if not identificador or not nueva_contrasena:
+        raise ErrorAutoservicio('Debes indicar tu usuario/correo y la nueva contraseña.', 400)
+
+    if bloqueado(identificador):
+        raise ErrorAutoservicio('Has superado el límite de intentos fallidos. Intenta más tarde.', 429)
+
+    # El reseteo directo sin clave previa exige validar MFA
+    if not mfa_code:
+        raise ErrorAutoservicio('Se requiere el código de segundo factor (MFA) para restablecer la contraseña.', 400)
+
+    validar_desafio_mfa(identificador, mfa_code, challenge_token)
+
+    msg_politica = mensaje_de_incumplimiento(nueva_contrasena)
+    if msg_politica:
+        raise ErrorAutoservicio(msg_politica, 400)
+
+    # 1. OpenLDAP
+    if directorio_activo():
+        try:
+            cliente = ClienteDirectorio()
+            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_por_uid(identificador)
+            if persona and persona.dn:
+                escritor = EscritorDirectorio(cliente)
+                resultado = escritor.change_password(persona.dn, nueva_contrasena)
+                if not resultado.exitoso:
+                    raise ErrorAutoservicio('El directorio no pudo aplicar la nueva contraseña.', 500)
+
+                sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
+
+                destinatario_correo = persona.correo or (identificador if '@' in identificador else None)
+                if destinatario_correo:
+                    _enviar_correo_confirmacion_cambio(destinatario_correo, nombre=persona.nombre)
+
+                add_audit_log('AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO (MFA)', module='Autoservicio', status='success',
+                              target=persona.identificador, user_override=identificador,
+                              detail='Contraseña restablecida directamente con MFA por el usuario en Autoservicio Authelia')
+                return {'status': 'success', 'message': 'Contraseña restablecida con éxito en Authelia y el directorio corporativo.'}
+        except ErrorAutoservicio:
+            raise
+        except Exception as exc:
+            logger.error("Error restableciendo contraseña con MFA en LDAP (%s): %s", identificador, type(exc).__name__)
+
+    # 2. Base de datos local
+    condiciones = [User.email.ilike(identificador)]
+    if '@' not in identificador:
+        condiciones.append(User.email.ilike(f"{identificador}@%"))
+    user = User.query.filter(db.or_(*condiciones)).first()
+    if user:
+        user.set_password(nueva_contrasena)
+        db.session.commit()
+        sincronizar_jumpserver_o_externos(user.email, nueva_contrasena)
+        _enviar_correo_confirmacion_cambio(user.email, nombre=user.nombre)
+        add_audit_log('AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO (MFA)', module='Autoservicio', status='success',
+                      target=user.email, user_override=identificador,
+                      detail='Contraseña local restablecida directamente con MFA en Autoservicio Authelia')
+        return {'status': 'success', 'message': 'Contraseña restablecida con éxito en Authelia.'}
+
+    raise ErrorAutoservicio('No se encontró la cuenta de usuario especificada.', 404)
+
