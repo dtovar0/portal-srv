@@ -58,7 +58,7 @@ export function FormularioLoginLocal() {
         <Button
           type="submit"
           disabled={busy || !email || !password}
-          className="w-full py-3 min-h-12 bg-gradient-to-r from-aduana-cyan to-aduana-cyan-hover hover:brightness-110 active:scale-[0.98] font-display font-bold text-white shadow-lg shadow-aduana-cyan/25 rounded-xl border-0 transition-all disabled:opacity-40"
+          className="w-full py-3 min-h-12 bg-gradient-to-r from-aduana-cyan to-aduana-cyan-hover hover:brightness-110 active:scale-[0.98] font-display font-bold text-texto-sobre-accion shadow-lg shadow-aduana-cyan/25 rounded-xl border-0 transition-all disabled:opacity-40"
         >
           <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           {busy ? 'Comprobando…' : 'Iniciar sesión'}
