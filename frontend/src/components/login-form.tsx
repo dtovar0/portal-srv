@@ -19,6 +19,7 @@ import { PageHeader } from './page-header';
 import { useToast } from './toast';
 import { FormularioLoginLocal } from './formulario-login-local';
 import { PantallaCarga } from './ui';
+import { AccesoDenegadoView } from './acceso-denegado-view';
 
 /** Inicio del flujo OIDC: navegación completa, no `fetch`. */
 export const URL_INICIO_OIDC = '/api/v1/auth/oidc/login';
@@ -26,12 +27,22 @@ export const URL_INICIO_OIDC = '/api/v1/auth/oidc/login';
 export function LoginForm() {
   const { avisar } = useToast();
   const [context, setContext] = useState<AuthContext | null>(null);
+  const [codigoError, setCodigoError] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('error');
+    }
+    return null;
+  });
 
   useEffect(() => {
     // Muestra el error del callback y limpia la URL para que no quede en el historial.
     const params = new URLSearchParams(window.location.search);
     const codigo = params.get('error');
     if (codigo !== null) {
+      if (codigo === 'acceso_denegado') {
+        setCodigoError('acceso_denegado');
+        return;
+      }
       avisar('error', mensajeErrorOidc(codigo));
       window.history.replaceState(null, '', window.location.pathname);
     }
@@ -55,6 +66,10 @@ export function LoginForm() {
       });
     return () => { active = false; };
   }, []);
+
+  if (codigoError === 'acceso_denegado') {
+    return <AccesoDenegadoView supportEmail={context?.support_email} />;
+  }
 
   if (!context) {
     return <PantallaCarga label="Comprobando acceso…" subtexto="Conectando con el servidor corporativo…" />;

@@ -5717,3 +5717,27 @@ Al acceder a `https://netbox-mon.vivaro.com/login` y resultar denegado con 403, 
 ### Impacto
 
 Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html) y [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js).
+
+
+Pantalla de Acceso Denegado con Auto-Refresh y Correo de Soporte
+
+## Autenticación y Control de Acceso (RBAC)
+
+### Regla
+
+1. **Pantalla Dedicada para Acceso Denegado**:
+   Cuando un usuario autenticado ante Authelia no pertenece a ningún grupo autorizado (`acceso_denegado`), el portal despliega una pantalla de error dedicada (`AccesoDenegadoView` en `/acceso-denegado` y en `/login?error=acceso_denegado`), reemplazando el toast efímero por una experiencia explicativa y resolutiva.
+2. **Instrucciones Claras de Gestión**:
+   La pantalla indica explícitamente que la cuenta carece de permisos para ingresar a ADUANA y orienta al colaborador a comunicarse con su superior inmediato o a enviar un correo a la dirección de soporte configurada (`SUPPORT_EMAIL` / `NEXT_PUBLIC_SUPPORT_EMAIL`, por omisión `aduana-app@vivaro.com`).
+3. **Mecanismo de Auto-Refresh Inteligente**:
+   La pantalla implementa un temporizador regresivo de 15 segundos con barra animada de progreso y controles de pausa/reanudación. Al completarse el conteo, reintenta automáticamente la autenticación vía OIDC (`/api/v1/auth/oidc/login`), permitiendo el ingreso inmediato al Dashboard tan pronto como el superior o administrador asigne los grupos requeridos en el directorio, sin necesidad de recargas manuales.
+4. **Controles de Interacción**:
+   Dispone de un botón "Reintentar ahora", control de pausa/reanudación del temporizador, botón mailto preformateado y enlace de retorno al login.
+
+### Ejemplo
+
+Un colaborador sin grupo autorizado intenta ingresar a ADUANA y es rechazado. El portal despliega la pantalla "Sin acceso a la plataforma" con un contador de 15 segundos y la opción de enviar correo a `aduana-app@vivaro.com`. Mientras avisa a su superior, este le asigna el grupo `app-aduana-users`. Al finalizar el conteo regresivo, el portal reintenta la sesión con Authelia y el usuario ingresa de forma automática al Dashboard.
+
+### Impacto
+
+Afecta a [frontend/src/components/acceso-denegado-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/acceso-denegado-view.tsx), [frontend/src/app/acceso-denegado/page.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/app/acceso-denegado/page.tsx), [frontend/src/components/login-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/login-form.tsx), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

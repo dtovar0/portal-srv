@@ -253,6 +253,8 @@ export interface AuthContext {
   emergency_available: boolean;
   /** Authelia apagado (`OIDC_HABILITADO=false`, FNC-158): `/login` pide usuario y contraseña (cuentas locales). */
   local_login?: boolean;
+  /** Correo de soporte para solicitudes de acceso (ADUANA). */
+  support_email?: string;
 }
 
 export interface InactiveUser {
