@@ -5407,3 +5407,24 @@ Al acceder a `/login` en escritorio, el usuario observa a la izquierda una vista
 ### Impacto
 
 Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
+
+
+Diseño Split-Card Flotante con Fotografía Estética para Pantalla de Login
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) implementa una tarjeta flotante centralizada tipo Split-Card (inspirada en patrones de diseño editorial y minimalista):
+1. **Composición Dual Flotante**: Un contenedor central de bordes redondeados (`rounded-[2rem]`) con borde superior en gradiente continuo institucional y sombra profunda (`shadow-2xl`) flotando sobre una superficie con sutiles destellos ambientales.
+2. **Panel Izquierdo (Formulario de Acceso)**: Área de alta legibilidad y espacio generoso (`p-8 sm:p-12 lg:p-14`), con isotipo oficial sincronizado dinámicamente con el tema, saludo de bienvenida ("¡Bienvenido de nuevo!"), pastilla de estado corporativo y botón de acción principal de alta visibilidad para Authelia SSO.
+3. **Panel Derecho (Fotografía Artística a Sangre)**: En escritorio y tabletas (`md:block`), la mitad derecha se viste con una fotografía estética y artística de alta resolución a sangre completa (`login-showcase.jpg`), con un detalle de costura flotante (insignia de seguridad) y una pastilla glassmorphism discreta de estado de infraestructura. No contiene capturas de pantalla de la interfaz ni textos comerciales redundantes.
+4. **Comportamiento Responsivo**: En dispositivos móviles (`< md`), el panel fotográfico se oculta fluidamente y el contenedor mantiene el enfoque total en el formulario de autenticación, preservando la navegabilidad sin desbordamientos de pantalla (`min-h-screen`).
+
+### Ejemplo
+
+Un usuario que ingresa a `/login` desde un equipo de escritorio observa una tarjeta flotante estilizada con una imagen arquitectónica/artística en el costado derecho y el formulario limpio con el botón "Entrar con Authelia" en el costado izquierdo.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
