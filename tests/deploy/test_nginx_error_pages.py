@@ -72,6 +72,14 @@ def test_tokens_de_diseno_corporativo_aduana():
     assert 'prefers-color-scheme: light' in tokens
 
 
+def test_mensajes_de_permisos_authelia_en_errores():
+    """Valida que 403 y 502 orienten al usuario a solicitar permisos en Authelia."""
+    for pagina in ('403.html', '502.html'):
+        contenido = (DEPLOY_ERRORS / pagina).read_text(encoding='utf-8')
+        assert 'permisos' in contenido.lower(), f'{pagina} no menciona permisos'
+        assert 'Authelia' in contenido, f'{pagina} no menciona Authelia'
+
+
 def test_nginx_plantilla_declara_paginas_de_error():
     """Valida que deploy/nginx.conf.tmpl configure las directivas error_page y location /errors/."""
     tmpl = NGINX_TMPL.read_text(encoding='utf-8')

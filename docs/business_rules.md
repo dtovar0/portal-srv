@@ -5533,3 +5533,23 @@ Si el backend o frontend entra en despliegue o falla (`502 Bad Gateway`), el usu
 ### Impacto
 
 Afecta a [deploy/nginx.conf.tmpl](file:///home/dtovar/bayblade/pokemon/deploy/nginx.conf.tmpl), los archivos en [deploy/errors/](file:///home/dtovar/bayblade/pokemon/deploy/errors/) y las pruebas en [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).
+
+
+Orientación de Permisos y Solicitud en Authelia para Errores de Acceso (403 y 502)
+
+## Control de Acceso y Experiencia de Usuario
+
+### Regla
+
+Las páginas de error `403.html` (Forbidden) y `502.html` (Bad Gateway / Denegación de Upstream) de Nginx orientan de forma explícita al usuario sobre la causa del bloqueo y la vía canónica de resolución:
+1. **Mensaje de Permisos Insuficientes**: Se especifica que el usuario no cuenta con los permisos necesarios para acceder a la plataforma solicitada.
+2. **Canal Oficial de Solicitud en Authelia**: Se instruye al usuario a solicitar sus roles y permisos directamente a través de Authelia (SSO institucional) o mediante el líder administrativo de su área.
+3. **Llamado a la Acción Directo**: Se incluye un botón de acción principal «Solicitar acceso en Authelia» apuntando al flujo de inicio/reautenticación institucional (`/login`).
+
+### Ejemplo
+
+Un colaborador que intenta ingresar a una plataforma restringida sin estar dado de alta en los grupos correspondientes de Authelia recibe la página corporativa con el código HTTP correspondiente, informándole claramente: «No tienes permisos para acceder a esta plataforma. Tienes que solicitarlos en Authelia para que tu perfil sea habilitado por el administrador», con un botón directo para acceder a la pantalla de autenticación.
+
+### Impacto
+
+Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html) y las pruebas en [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).

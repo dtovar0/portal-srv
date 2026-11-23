@@ -25,28 +25,28 @@
         </span>
       </div>
 
-      <h1 class="error-title">Servicio no disponible</h1>
+      <h1 class="error-title">Acceso no autorizado</h1>
       <p class="error-desc">
-        El proxy inverso no pudo conectar con los servicios backend de la aplicación. Es posible que el servidor se esté iniciando o actualizando.
+        No tienes permisos para acceder a esta plataforma. Tienes que solicitarlos en Authelia para que tu perfil sea habilitado por el administrador.
       </p>
 
       <div class="technical-box">
         <div class="technical-box-header">
-          <span>Enlace upstream</span>
-          <span>Nginx Gateway</span>
+          <span>Control de acceso</span>
+          <span>Authelia SSO</span>
         </div>
         <div class="technical-box-code">
-          HTTP 502 Bad Gateway · Upstream no responde en loopback local
+          HTTP 502 · Sin permisos para acceder a esta plataforma. Solicita tu acceso en Authelia.
         </div>
       </div>
 
       <div class="actions-group">
-        <button type="button" class="btn-primary" data-action="reload">
+        <a href="/login" class="btn-primary">
+          Solicitar acceso en Authelia
+        </a>
+        <button type="button" class="btn-secondary" data-action="reload">
           Reintentar conexión
         </button>
-        <a href="/login" class="btn-secondary">
-          Pantalla de acceso
-        </a>
       </div>
     </main>
 
