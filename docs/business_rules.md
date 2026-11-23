@@ -5241,7 +5241,193 @@ Al seleccionar la variante «Editorial Suizo» o «Hero Banner» en el cajón la
 ### Impacto
 
 ... [truncated for diff preview]
-... [truncated for diff preview]
+Afecta a [platform-card-design-drawer.tsx](../frontend/src/components/platforms/platform-card-design-drawer.tsx), [UI_GUIDE.md](../UI_GUIDE.md) y a las pruebas en [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
+
+Diseño Premium Institucional en Acceso y Cierre de Sesión (Login / Logout)
+
+## Autenticación
+
+### Regla
+
+Las vistas de acceso (`LoginForm`), autenticación local/emergencia (`FormularioLoginLocal`, `AccesoEmergenciaForm`) y cierre de sesión (`LogoutView`) implementan la identidad visual corporativa de Aduana (Manual de Marca):
+1. **Atmósfera Dark-First**: Lienzo centrado con Navy Profundo (`#1B2A38` / `bg-fondo`), sutil resplandor ambiental tecnológico en los vértices superiores e inferiores mediante halos difuminados en Cian Tecnológico (`#1CB5E0`) y Naranja Control (`#F26419`).
+2. **Contenedor de Isotipo Canónico**: Caja redondeada con borde (`border-aduana-border`), superficie oscura (`bg-superficie`), anillo de énfasis (`ring-4 ring-aduana-cyan/15`) y renderizado del isotipo oficial `/brand/isotype-aduana.png`.
+3. **Título Display y Microcopy**: Titulares en tipografía `Montserrat` (`font-display font-extrabold`), acompañados de insignias de seguridad (`Control de Acceso • Portal Vivaro`, `Desconexión segura completada`, `Superadmin Local • Modo Recuperación`) y textos descriptivos canónicos.
+4. **Tarjeta Principal con Borde de Acento**: Superficie `bg-panel-fill/95 backdrop-blur-xl` con barra superior en degradado de acento corporativo (`from-aduana-cyan to-aduana-orange`), inputs de alta ergonomía con focus ring cian y botones de acción principal en degradado corporativo (`from-aduana-cyan to-aduana-cyan-hover`) con microinteracción hover/active y estado deshabilitado accesible.
+5. **Cierre de Sesión Asistido**: `LogoutView` presenta confirmación nítida con isotipo oficial, estado accesible de desconexión y enlace de retorno directo en botón primario de alta visibilidad.
+
+### Ejemplo
+
+Al ingresar a `/login`, el usuario es recibido por una pantalla inmersiva con el isotipo de Aduana en alta definición, la insignia «Control de Acceso • Portal Vivaro», la tarjeta de acceso con bisel degradado cian-naranja y el botón de acción en Cian Tecnológico. Al cerrar sesión en `/logout`, la vista despliega la insignia verde/cian de «Desconexión segura completada» junto con el botón «Volver a iniciar sesión» en formato primario destacado.
+
+### Impacto
+
+Afecta a [login-form.tsx](../frontend/src/components/login-form.tsx), [formulario-login-local.tsx](../frontend/src/components/formulario-login-local.tsx), [logout-view.tsx](../frontend/src/components/logout-view.tsx), [acceso-emergencia-form.tsx](../frontend/src/components/acceso-emergencia-form.tsx), [UI_GUIDE.md](../UI_GUIDE.md) y a las pruebas en [login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx).
+
+
+Erradicación Total de Sesión y Tokens Persistentes en Logout
+
+## Autenticación
+
+### Regla
+
+Al invocar el cierre de sesión (`POST /api/v1/auth/logout`), el sistema debe ejecutar una purga completa y garantizada de todas las credenciales de sesión en el cliente. Esto requiere invalidar la sesión en servidor, desvincular al usuario en Flask-Login y forzar explícitamente en la respuesta HTTP la eliminación (`delete_cookie`) tanto de la cookie de sesión (`nexus_session`) como del token persistente (`remember_token`). Esto previene que una reconexión a `/login` reactive automáticamente la sesión previa vía `remember_token` y redirija erróneamente al `/dashboard`.
+
+### Ejemplo
+
+Un usuario hace clic en «Cerrar sesión» y aterriza en `/logout`. El backend responde eliminando las cookies `nexus_session` y `remember_token` fijando su caducidad en el pasado (`Max-Age=0`). Cuando el usuario hace clic en «Volver a iniciar sesión» y navega a `/login`, la llamada a `/api/v1/auth/context` devuelve `authenticated: false`, permitiendo al usuario ver el formulario de acceso o botón SSO en lugar de ser redirigido automáticamente a `/dashboard`.
+
+### Impacto
+
+Afecta a [app/modules/api/auth.py](../app/modules/api/auth.py), [tests/test_sesion_y_logout.py](../tests/test_sesion_y_logout.py) y al flujo de navegación de autenticación en [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx).
+
+
+Identidad de Marca en Barra Lateral del Dashboard
+
+## Navegación y Marca
+
+### Regla
+
+En la barra lateral principal del sistema (`BarraLateral`), la cabecera de marca superior despliega el isotipo canónico de Aduana acompañado de la denominación oficial:
+- Título principal: `Aduana` (en tipografía bold, color `text-barra-lateral-texto`).
+- Subtítulo: `Accesos Vivaro` (en tipografía texto secundario, color `text-barra-lateral-secundario`).
+
+### Ejemplo
+
+Al ingresar al Dashboard o cualquier vista dentro del layout principal con menú lateral (`AppShell`), el usuario visualiza en la esquina superior izquierda el isotipo corporativo junto con los textos «Aduana» y «Accesos Vivaro».
+
+### Impacto
+
+Afecta a [frontend/src/components/marco/barra-lateral.tsx](../frontend/src/components/marco/barra-lateral.tsx) y a la suite de pruebas unitarias en [frontend/tests/components/marco-admin.test.tsx](../frontend/tests/components/marco-admin.test.tsx).
+
+
+Sincronización Temática del Isotipo Corporativo de Aduana
+
+## Marca y Temas (Dark / Light Mode)
+
+### Regla
+
+El contenedor del isotipo oficial de Aduana (`isotype-aduana.png`) debe sincronizarse automáticamente con el tema activo de la interfaz utilizando los tokens semánticos `bg-superficie` y `border-panel-border`:
+- En **Tema Claro (Light)**: El fondo del isotipo es blanco puro (`#FFFFFF` / `bg-superficie`) con borde perimetral sutil (`#E2E8F0` / `border-panel-border`), evitando fondos oscuros fijos o cajas negras en cabeceras claras.
+- En **Tema Oscuro (Dark)**: El fondo del isotipo transmuta automáticamente al Navy Profundo corporativo (`#1A2634` / `--p-noche-850`) con borde perimetral tecnológico (`#334A60` / `--p-noche-700`).
+Se prohíbe el uso de colores hexadecimales fijos (`#1B2A38`, `#334A60`) en los contenedores del isotipo en cabeceras de navegación, barras laterales y pies de página.
+
+### Ejemplo
+
+Al alternar entre el tema claro y oscuro en la portada (`/`) o en el portal/dashboard (`/dashboard`), el contenedor del logotipo de Aduana en la barra superior y lateral cambia de fondo blanco a fondo azul noche oscuro, armonizando con la superficie de la interfaz.
+
+### Impacto
+
+Afecta a [frontend/src/components/portada/pagina-portada.tsx](../frontend/src/components/portada/pagina-portada.tsx), [frontend/src/components/marco/barra-lateral.tsx](../frontend/src/components/marco/barra-lateral.tsx), [frontend/src/components/platforms/platforms-topbar.tsx](../frontend/src/components/platforms/platforms-topbar.tsx) y [frontend/src/components/platforms/platforms-sidebar-view.tsx](../frontend/src/components/platforms/platforms-sidebar-view.tsx).
+
+
+Eliminación de Tokens Persistentes (`remember=False`) en Sesiones Locales y SSO
+
+## Seguridad y Autenticación
+
+### Regla
+
+El portal no emite cookies persistentes de larga duración (`remember_token`). En el inicio de sesión (`_abrir_sesion`), la autenticación se realiza con `login_user(cuenta, remember=False)`:
+1. **Acceso de Emergencia (Superadmin Local)**: Por motivos de alta seguridad, la cuenta con privilegios totales de administración jamás debe dejar tokens persistentes de 1 año en los dispositivos donde se ejecute recuperación o mantenimiento. La sesión está acotada estrictamente a la cookie de sesión cifrada (`nexus_session`).
+2. **Acceso Corporativo (Authelia SSO / OIDC)**: La persistencia y el tiempo de vida de la sesión corporativa están centralizados y gobernados exclusivamente por Authelia (IdP). El portal no duplica estados de persistencia local que sobrevivan al cierre del navegador o a la expiración de la sesión corporativa.
+3. **Defensa en Profundidad**: Se fija `REMEMBER_COOKIE_DURATION = timedelta(hours=12)` a nivel de configuración de la aplicación para mitigar cualquier llamada accidental futura a tokens persistentes.
+
+### Ejemplo
+
+Cuando un superadmin ingresa por `/acceso-emergencia` con credenciales locales para atender una contingencia, el navegador solo recibe la cookie de sesión `nexus_session`. Al cerrar la sesión o cerrar el navegador, las credenciales quedan completamente desvinculadas sin dejar rastro de tokens de 365 días.
+
+### Impacto
+
+Afecta a [app/modules/api/auth.py](../app/modules/api/auth.py), [app/__init__.py](../app/__init__.py), [tests/test_sesion_y_logout.py](../tests/test_sesion_y_logout.py) y [tests/test_login_local.py](../tests/test_login_local.py).
+
+
+Diseño Split-Screen Corporativo de la Pantalla de Login
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) adopta una arquitectura visual split-screen de dos paneles:
+1. **Panel Institucional (Showcase Desktop)**: Exhibe la identidad institucional de Aduana (isotipo oficial v2.0, pilares de gobernanza Zero-Trust, federación SSO, catálogo unificado y trazabilidad inmutable) en una columna izquierda dedicada con atmósfera tecnológica oscura, fondos con degradados perimetrales y micro-tarjetas informativas.
+2. **Panel de Autenticación**: Columna derecha limpia, ergonómica y accesible donde reside la tarjeta de autenticación (`Card`), el estado de conexión con Authelia / SSO corporativo, acciones de inicio de sesión de alto contraste (botón con elevación y gradiente cian corporativo), retroalimentación de estado accesible y enlaces institucionales.
+3. **Responsividad Móvil**: En pantallas móviles y tablets (`< lg`), el panel de showcase se oculta fluidamente priorizando la tarjeta de autenticación y preservando una cabecera institucional compacta.
+4. **Contratos Técnicos y de Navegación**: Se respeta de manera estricta la ausencia de clases de bloqueo de scroll (`h-screen`, `h-dvh`, `overflow-hidden`), utilizando `min-h-screen` y preservando intactos los contratos de integración con Authelia, modos de login local y accesibilidad semántica.
+
+### Ejemplo
+
+Al acceder a `/login` desde un navegador de escritorio, el usuario observa a la izquierda la propuesta de valor y los estándares de seguridad corporativa de Vivaro, y a la derecha una tarjeta centrada con el botón "Entrar con Authelia". En dispositivos móviles, la interfaz se adapta automáticamente a una vista vertical limpia y deslizable sin desbordamientos de pantalla.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
+
+
+Enfoque Exclusivo de Autenticación en la Pantalla de Login (Separación de Portada)
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) mantiene un enfoque exclusivo y centrado en la autenticación e identidad del usuario, delegando toda información comercial, módulos, características y presentación de la plataforma a la portada institucional (`/`):
+1. **Separación de Responsabilidades**: La portada (`/`) es el espacio destinado a la presentación del producto, métricas, beneficios y arquitectura. La pantalla de login (`/login`) es un centro de autenticación directo, libre de bloques de marketing, listas de características o información redundante de la plataforma.
+2. **Arquitectura Visual Focalizada**: La interfaz se estructura en tres secciones verticales utilizando `min-h-screen`:
+   - *Cabecera Superior*: Marca institucional discreta (isotipo y versión v2.0) y enlace contextual a la portada cuando esté activa (`PORTADA_ACTIVA`).
+   - *Área Central*: Tarjeta de acceso (`Card`) perfectamente proporcionada (`max-w-[440px]`), con borde superior institucional continuo (gradiente cian a naranja), isotipo corporativo en contenedor sincronizado con el tema, indicador de conexión segura y acción de entrada con Authelia SSO de alto contraste.
+   - *Pie Inferior*: Enlaces mínimos de gobernanza y estado de cifrado perimetral (TLS 1.3).
+3. **Ambiente y Profundidad Sin Distracciones**: Se emplean halos de luz ambiental sutiles (`blur-[120px]`) y una cuadrícula técnica tenue que proporcionan calidez y solidez visual sin sobrecargar el espacio ni competir con el formulario de acceso.
+4. **Restricciones de Desplazamiento**: Se prohíbe el uso de `overflow-hidden`, `h-screen` o `h-dvh` en el componente para preservar la total navegabilidad y desplazamiento en pantallas pequeñas o en modos de alta densidad.
+
+### Ejemplo
+
+Un usuario que navega a `https://aduana.vivaro.com/login` encuentra inmediatamente el centro de autenticación corporativo con el botón "Entrar con Authelia" y la indicación de seguridad SSO, sin distracciones de diapositivas o párrafos informativos de marketing. Si desea conocer la plataforma, puede hacer clic en el enlace superior hacia la portada.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
+
+
+Arquitectura Split-Screen Visual para la Pantalla de Login
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) adopta un layout split-screen visual que equilibra la identidad institucional con la ergonomía de acceso sin sobrecargar al usuario con textos promocionales:
+1. **Columna Izquierda (Showcase Visual de la Plataforma)**: En pantallas de escritorio (`>= lg`), despliega un escaparate visual de alta fidelidad que enmarca la interfaz real de Aduana (`/screenshots/catalogo-plataformas.png`) dentro de una ventana estilizada de sistema operativo con semáforos de control (`bg-error`, `bg-warning`, `bg-success`) y badge de catálogo oficial. Se excluyen deliberadamente textos comerciales, bloques de marketing y listas de características para mantener la pulcritud y sobriedad de la herramienta.
+2. **Columna Derecha (Tarjeta de Autenticación)**: Contiene la tarjeta de acceso de 420px de ancho con acento perimetral superior en gradiente, isotipo oficial en contenedor dinámico sincronizado con el tema, estado de SSO corporativo y el botón de acción principal de alta visibilidad para Authelia.
+3. **Flujos de Acceso Local**:
+   - Con `OIDC_HABILITADO=false`: La interfaz detecta `local_login=true` y despliega automáticamente el formulario de credenciales locales (`FormularioLoginLocal`) para cuentas de base de datos.
+   - Con `OIDC_HABILITADO=true`: La entrada con credenciales locales de contingencia se realiza directamente a través de la ruta protegida `/acceso-emergencia`.
+4. **Restricciones Técnicas**: Uso exclusivo de tokens semánticos (cero colores literales o funciones de color directas), `min-h-screen` y total ausencia de clases de bloqueo de desplazamiento (`h-screen`, `h-dvh`, `overflow-hidden`).
+
+### Ejemplo
+
+Al acceder a `/login` en escritorio, el usuario observa a la izquierda una vista limpia de la interfaz del catálogo de plataformas en una ventana flotante elegante y a la derecha el botón de ingreso con Authelia SSO.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
+
+
+Diseño Split-Card Flotante con Fotografía Estética para Pantalla de Login
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) implementa una tarjeta flotante centralizada tipo Split-Card (inspirada en patrones de diseño editorial y minimalista):
+1. **Composición Dual Flotante**: Un contenedor central de bordes redondeados (`rounded-[2rem]`) con borde superior en gradiente continuo institucional y sombra profunda (`shadow-2xl`) flotando sobre una superficie con sutiles destellos ambientales.
+2. **Panel Izquierdo (Formulario de Acceso)**: Área de alta legibilidad y espacio generoso (`p-8 sm:p-12 lg:p-14`), con isotipo oficial sincronizado dinámicamente con el tema, saludo de bienvenida ("¡Bienvenido de nuevo!"), pastilla de estado corporativo y botón de acción principal de alta visibilidad para Authelia SSO.
+3. **Panel Derecho (Fotografía Artística a Sangre)**: En escritorio y tabletas (`md:block`), la mitad derecha se viste con una fotografía estética y artística de alta resolución a sangre completa (`login-showcase.jpg`), con un detalle de costura flotante (insignia de seguridad) y una pastilla glassmorphism discreta de estado de infraestructura. No contiene capturas de pantalla de la interfaz ni textos comerciales redundantes.
+4. **Comportamiento Responsivo**: En dispositivos móviles (`< md`), el panel fotográfico se oculta fluidamente y el contenedor mantiene el enfoque total en el formulario de autenticación, preservando la navegabilidad sin desbordamientos de pantalla (`min-h-screen`).
+
+### Ejemplo
+
+Un usuario que ingresa a `/login` desde un equipo de escritorio observa una tarjeta flotante estilizada con una imagen arquitectónica/artística en el costado derecho y el formulario limpio con el botón "Entrar con Authelia" en el costado izquierdo.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
 
 
 Simplificación y Minimalismo Editorial para la Pantalla de Login
