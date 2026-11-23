@@ -131,7 +131,7 @@ export function PaginaPortada() {
             aria-label="Aduana - Control de Acceso"
           >
             <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1B2A38] border border-[#334A60] p-1.5 shadow-xs group-hover:scale-105 transition-transform"
+              className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-superficie border border-panel-border p-1.5 shadow-xs transition-colors group-hover:scale-105 transition-transform"
               aria-hidden="true"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -842,7 +842,7 @@ export function PaginaPortada() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pb-8 border-b border-panel-border/60">
             <div className="flex items-center gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#1B2A38] border border-[#334A60] p-1 shadow-xs" aria-hidden="true">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-superficie border border-panel-border p-1 shadow-xs transition-colors" aria-hidden="true">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-7 object-contain" width={28} height={28} />
               </span>

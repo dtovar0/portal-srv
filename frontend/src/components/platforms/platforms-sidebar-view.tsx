@@ -592,14 +592,14 @@ export function PlatformsSidebarView({
                   onClick={alternarColapsada}
                   aria-label="Expandir barra lateral"
                   title="Expandir barra lateral"
-                  className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-[#334A60] bg-[#1B2A38] shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary p-1"
+                  className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary p-1 transition-colors"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-7 object-contain" width={28} height={28} />
                 </button>
               ) : (
                 <>
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#334A60] bg-[#1B2A38] shadow-xs p-1">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie shadow-xs p-1 transition-colors">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-7 object-contain" width={28} height={28} />
                   </span>
