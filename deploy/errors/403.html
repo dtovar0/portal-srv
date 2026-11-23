@@ -27,7 +27,7 @@
 
       <h1 class="error-title">Acceso bloqueado por Authelia</h1>
       <p class="error-desc">
-        Authelia está bloqueando el acceso a esta plataforma porque tu cuenta no cuenta con los permisos necesarios. Para poder ingresar, debes solicitar el acceso al administrador a través de la plataforma ADUANA.
+        Authelia está bloqueando el acceso a <strong data-plataforma-nombre>esta plataforma</strong> porque tu cuenta no cuenta con los permisos necesarios. Para poder ingresar, debes solicitar el acceso al administrador a través de la plataforma ADUANA.
       </p>
 
       <div class="technical-box">
@@ -36,12 +36,12 @@
           <span>Authelia SSO</span>
         </div>
         <div class="technical-box-code">
-          HTTP 403 Forbidden · Acceso bloqueado por Authelia. Solicita tu acceso al administrador a través de la plataforma ADUANA.
+          HTTP 403 Forbidden · Acceso denegado a <span data-plataforma-host>esta plataforma</span>. Solicita tu acceso al administrador a través de la plataforma ADUANA.
         </div>
       </div>
 
       <div class="actions-group">
-        <a href="/platforms" class="btn-primary">
+        <a href="/platforms" class="btn-primary" data-link-aduana>
           Solicitar acceso en ADUANA
         </a>
         <a href="/dashboard" class="btn-secondary">

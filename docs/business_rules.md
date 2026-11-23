@@ -5573,3 +5573,23 @@ Un usuario que navega a una herramienta interna sin la membresía de grupos nece
 ### Impacto
 
 Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html) y [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).
+
+
+Detección Contextual Dinámica de Plataforma y Enlace de Búsqueda en Páginas de Error
+
+## Experiencia de Usuario e Infraestructura
+
+### Regla
+
+Las páginas de error de Nginx (`403.html`, `502.html`) detectan dinámicamente en tiempo de ejecución en el navegador la plataforma específica que el usuario intentó acceder:
+1. **Detección por Host y Parámetros SSO**: Mediante `deploy/errors/assets/js/error.js`, se inspecciona el subdominio (`window.location.hostname`), la ruta solicitada y los parámetros de redirección provistos por Authelia (`rd`, `target`, `redirect_uri`).
+2. **Inyección en Tiempo Real**: Se reemplazan automáticamente los marcadores `[data-plataforma-nombre]` y `[data-plataforma-host]`, mostrando al usuario el nombre amigable de la plataforma bloqueada (ej. «terminal-packet») y su host/ruta exacta de destino.
+3. **Pre-filtrado en ADUANA**: El botón «Solicitar acceso en ADUANA» (`[data-link-aduana]`) concatena automáticamente el parámetro `?buscar=<nombre_plataforma>`, permitiendo que al hacer clic, el catálogo de ADUANA ya esté filtrado en la herramienta requerida para solicitar el acceso de inmediato.
+
+### Ejemplo
+
+Un usuario intenta ingresar a `https://terminal-packet.vivaro.com/core/` y es bloqueado por Authelia. La página muestra: «Authelia está bloqueando el acceso a «terminal-packet» porque tu cuenta no cuenta con los permisos necesarios...», detallando en el recuadro técnico `terminal-packet.vivaro.com/core/`, y el botón redirige directamente a `/platforms?buscar=terminal-packet`.
+
+### Impacto
+
+Afecta a [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js), [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html) y [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).
