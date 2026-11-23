@@ -5263,3 +5263,20 @@ Al ingresar a `/login`, el usuario es recibido por una pantalla inmersiva con el
 ### Impacto
 
 Afecta a [login-form.tsx](../frontend/src/components/login-form.tsx), [formulario-login-local.tsx](../frontend/src/components/formulario-login-local.tsx), [logout-view.tsx](../frontend/src/components/logout-view.tsx), [acceso-emergencia-form.tsx](../frontend/src/components/acceso-emergencia-form.tsx), [UI_GUIDE.md](../UI_GUIDE.md) y a las pruebas en [login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx).
+
+
+Erradicación Total de Sesión y Tokens Persistentes en Logout
+
+## Autenticación
+
+### Regla
+
+Al invocar el cierre de sesión (`POST /api/v1/auth/logout`), el sistema debe ejecutar una purga completa y garantizada de todas las credenciales de sesión en el cliente. Esto requiere invalidar la sesión en servidor, desvincular al usuario en Flask-Login y forzar explícitamente en la respuesta HTTP la eliminación (`delete_cookie`) tanto de la cookie de sesión (`nexus_session`) como del token persistente (`remember_token`). Esto previene que una reconexión a `/login` reactive automáticamente la sesión previa vía `remember_token` y redirija erróneamente al `/dashboard`.
+
+### Ejemplo
+
+Un usuario hace clic en «Cerrar sesión» y aterriza en `/logout`. El backend responde eliminando las cookies `nexus_session` y `remember_token` fijando su caducidad en el pasado (`Max-Age=0`). Cuando el usuario hace clic en «Volver a iniciar sesión» y navega a `/login`, la llamada a `/api/v1/auth/context` devuelve `authenticated: false`, permitiendo al usuario ver el formulario de acceso o botón SSO en lugar de ser redirigido automáticamente a `/dashboard`.
+
+### Impacto
+
+Afecta a [app/modules/api/auth.py](../app/modules/api/auth.py), [tests/test_sesion_y_logout.py](../tests/test_sesion_y_logout.py) y al flujo de navegación de autenticación en [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx).

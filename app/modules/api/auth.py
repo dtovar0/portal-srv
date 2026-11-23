@@ -15,7 +15,7 @@ El rol no sale del token ni de sus grupos: una cuenta nueva entra como
 import logging
 import os
 
-from flask import Blueprint, jsonify, redirect, request, session
+from flask import Blueprint, current_app, jsonify, redirect, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.modules.api.helpers import endpoint_retirado
@@ -198,11 +198,28 @@ def login_retirado():
 def logout():
     """Cierra la sesión y devuelve la URL de cierre de Authelia, si hay una."""
     email = current_user.email
-    logout_user()
     session.clear()
+    logout_user()
     add_audit_log('CIERRE DE SESIÓN', status='success', target=email,
                   detail='Sesión finalizada por el usuario')
 
     config = oidc.configuracion()
     redirect_to = oidc.url_de_cierre(config) if config else None
-    return jsonify({'status': 'success', 'redirect': redirect_to})
+    resp = jsonify({'status': 'success', 'redirect': redirect_to})
+
+    # Borrado explícito y garantizado de remember_token y nexus_session
+    rem_name = current_app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
+    sess_name = current_app.config.get('SESSION_COOKIE_NAME', 'nexus_session')
+    rem_domain = current_app.config.get('REMEMBER_COOKIE_DOMAIN')
+    sess_domain = current_app.config.get('SESSION_COOKIE_DOMAIN')
+    rem_path = current_app.config.get('REMEMBER_COOKIE_PATH', '/')
+    sess_path = current_app.config.get('SESSION_COOKIE_PATH', '/')
+
+    resp.delete_cookie(rem_name, domain=rem_domain, path=rem_path)
+    resp.delete_cookie(sess_name, domain=sess_domain, path=sess_path)
+    if rem_domain:
+        resp.delete_cookie(rem_name, path=rem_path)
+    if sess_domain:
+        resp.delete_cookie(sess_name, path=sess_path)
+
+    return resp
