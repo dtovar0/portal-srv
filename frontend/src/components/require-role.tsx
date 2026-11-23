@@ -10,7 +10,7 @@
 
 import type { Session } from '@/lib/types';
 import { useSession } from './session-provider';
-import { ErrorNote, Spinner } from './ui';
+import { ErrorNote, PantallaCarga } from './ui';
 
 /**
  * Permiso que exige una ruta o una entrada del menú.
@@ -50,7 +50,7 @@ export function RequireRole({
 }) {
   const { session, loading, error } = useSession();
 
-  if (loading) return <Spinner label="Cargando sesión…" />;
+  if (loading) return <PantallaCarga label="Cargando sesión…" subtexto="Validando permisos de rol…" />;
   if (error) return <ErrorNote message={error} />;
   if (!session) return null;
   if (!meetsRequirement(requires, session.permissions)) {

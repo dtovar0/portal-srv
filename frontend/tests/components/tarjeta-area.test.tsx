@@ -91,6 +91,34 @@ describe('TarjetaArea', () => {
     expect(onSelect).toHaveBeenCalledTimes(2);
     expect(onSelect).toHaveBeenCalledWith(AREA);
   });
+
+  it('soporta las variantes con imagen de fondo portada y banner', () => {
+    // 1. Variante portada
+    const { unmount: unmountPortada } = render(
+      <TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} onSelect={vi.fn()} variante="portada" />
+    );
+    expect(screen.getByRole('heading', { name: 'Finanzas' })).toBeTruthy();
+    expect(document.querySelectorAll('img').length).toBeGreaterThan(0);
+    unmountPortada();
+
+    // 2. Variante banner
+    const { unmount: unmountBanner } = render(
+      <TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} onSelect={vi.fn()} variante="banner" />
+    );
+    expect(screen.getByRole('heading', { name: 'Finanzas' })).toBeTruthy();
+    expect(document.querySelectorAll('img').length).toBeGreaterThan(0);
+    unmountBanner();
+
+    // 3. Demás variantes
+    const variantes = ['split', 'onda', 'directorio', 'bento', 'medallon'] as const;
+    for (const v of variantes) {
+      const { unmount } = render(
+        <TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} onSelect={vi.fn()} variante={v} />
+      );
+      expect(screen.getByRole('heading', { name: 'Finanzas' })).toBeTruthy();
+      unmount();
+    }
+  });
 });
 
 describe('TarjetaArea: CSS y contraste (AA en ambos temas)', () => {

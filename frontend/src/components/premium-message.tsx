@@ -6,6 +6,7 @@ export interface PremiumEmptyStateProps {
   icono?: NombreIcono;
   /** Pequeña etiqueta superior (eyebrow / badge de estado). */
   badge?: string;
+  badgeTestId?: string;
   /** Título principal de impacto visual. */
   title?: string;
   /** Mensaje descriptivo contextual. */
@@ -36,6 +37,7 @@ export interface PremiumEmptyStateProps {
 export function PremiumEmptyState({
   icono = 'info',
   badge,
+  badgeTestId,
   title,
   message,
   action,
@@ -48,52 +50,61 @@ export function PremiumEmptyState({
   const estilosVariante =
     variant === 'seamless'
       ? 'border-0 bg-transparent shadow-none rounded-none'
-      : 'rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/[0.04] via-panel-fill to-panel-fill shadow-1';
+      : 'rounded-3xl border border-primary/20 bg-gradient-to-b from-primary/[0.04] via-panel-fill/95 to-panel-fill shadow-lg backdrop-blur-md';
 
   return (
     <div
       role={role ?? undefined}
-      className={`relative flex h-full w-full flex-1 flex-col items-center justify-center overflow-hidden p-6 sm:p-8 text-center ${estilosVariante} ${className}`}
+      className={`relative flex h-full w-full flex-1 flex-col items-center justify-center overflow-hidden p-6 sm:p-10 text-center ${estilosVariante} ${className}`}
     >
-      {/* Halo de resplandor ambiental superior */}
+      {/* Halos de resplandor ambiental multicapa Cobalt & Violet */}
       <div
-        className="pointer-events-none absolute -top-16 left-1/2 size-48 -translate-x-1/2 rounded-full bg-primary/10 blur-2xl"
+        className="pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full bg-gradient-to-b from-primary/20 via-brand/10 to-transparent blur-3xl opacity-80"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-20 right-1/4 size-48 rounded-full bg-accent/10 blur-3xl opacity-50"
         aria-hidden="true"
       />
 
       {badge ? (
         <div className="mb-4 flex justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-primary-text shadow-xs">
+          <span
+            data-testid={badgeTestId}
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-primary-text shadow-2xs backdrop-blur-xs"
+          >
             {badge}
           </span>
         </div>
       ) : null}
 
-      {/* Caja de icono con marco doble elevado */}
-      <div
-        className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-brand/10 to-accent/15 text-primary-text shadow-xs"
-        aria-hidden="true"
-      >
-        <Icono nombre={icono} tamano="lg" ariaHidden={true} />
+      {/* Caja de icono multicapa estilo joya con aro concéntrico */}
+      <div className="relative mb-4 flex items-center justify-center" aria-hidden="true">
+        <div className="flex size-20 items-center justify-center rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-brand/5 to-accent/10 p-2 shadow-inner ring-1 ring-primary/10">
+          <div className="flex size-full items-center justify-center rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/25 via-brand/20 to-accent/25 text-primary-text shadow-md transition-transform duration-300 hover:scale-105">
+            <Icono nombre={icono} tamano="lg" ariaHidden={true} />
+          </div>
+        </div>
+        <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-primary ring-2 ring-panel-fill" />
       </div>
 
       {/* Bloque envoltorio del texto central con balance tipográfico */}
-      <div className="mx-auto flex max-w-xs sm:max-w-sm flex-col items-center justify-center text-center">
+      <div className="mx-auto flex max-w-xs sm:max-w-md flex-col items-center justify-center text-center">
         {title ? (
           <Titulo className="text-base sm:text-lg font-black tracking-tight text-body-text [text-wrap:balance]">
             {title}
           </Titulo>
         ) : null}
         <p
-          className={`text-sm leading-relaxed [text-wrap:balance] ${
-            title ? 'mt-1.5 text-label' : 'font-semibold text-body-text'
+          className={`text-xs sm:text-sm leading-relaxed [text-wrap:balance] ${
+            title ? 'mt-1.5 text-texto-secundario' : 'font-bold text-body-text'
           }`}
         >
           {message}
         </p>
       </div>
 
-      {action ? <div className="mt-6 flex justify-center gap-3">{action}</div> : null}
+      {action ? <div className="mt-5 flex justify-center gap-3">{action}</div> : null}
     </div>
   );
 }

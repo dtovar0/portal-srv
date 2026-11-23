@@ -79,11 +79,23 @@ function tarjeta(nombre: string) {
   return screen.getByRole('article', { name: nombre });
 }
 
-async function abrirSolicitud(nombre: string, renderizar: (ui: React.ReactElement) => unknown = render) {
+async function abrirSolicitud(
+  nombre: string,
+  renderizar: (ui: React.ReactElement) => unknown = render,
+  autoConfirmar = true,
+) {
   renderizar(<RequestCatalog />);
   const boton = await screen.findByRole('button', { name: `Solicitar acceso a ${nombre}` });
   fireEvent.click(boton);
-  return { boton, dialogo: screen.getByRole('dialog', { name: `Solicitar acceso a ${nombre}` }) };
+  const dialogo = screen.getByRole('dialog', { name: `Solicitar acceso a ${nombre}` });
+  if (autoConfirmar) {
+    const checkbox = within(dialogo).getByRole('checkbox');
+    fireEvent.click(checkbox);
+    const captcha = within(dialogo).getByTestId('captcha-word').textContent ?? '';
+    const inputCaptcha = within(dialogo).getByRole('textbox', { name: /código de seguridad/i });
+    fireEvent.change(inputCaptcha, { target: { value: captcha } });
+  }
+  return { boton, dialogo };
 }
 
 beforeEach(() => {
@@ -302,5 +314,35 @@ describe('errores del contrato', () => {
     const enviando = await screen.findByRole('button', { name: 'Enviando…' });
     expect(enviando).toHaveProperty('disabled', true);
     expect(requestsApi.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('verificación y seguridad en la solicitud', () => {
+  it('muestra la explicación de la herramienta, checkbox de responsabilidad y captcha por plataforma', async () => {
+    const { dialogo } = await abrirSolicitud('Nómina', render, false);
+    expect(within(dialogo).getByText('Descripción de Nómina')).toBeTruthy();
+    expect(within(dialogo).getByRole('checkbox')).toBeTruthy();
+    expect(within(dialogo).getByTestId('captcha-word')).toBeTruthy();
+    const boton = screen.getByRole('button', { name: 'Enviar solicitud' });
+    expect(boton).toHaveProperty('disabled', true);
+  });
+
+  it('el botón se habilita únicamente al aceptar términos y resolver el captcha', async () => {
+    const { dialogo } = await abrirSolicitud('Nómina', render, false);
+    const boton = screen.getByRole('button', { name: 'Enviar solicitud' });
+    const checkbox = within(dialogo).getByRole('checkbox');
+    const inputCaptcha = within(dialogo).getByRole('textbox', { name: /código de seguridad/i });
+    const captcha = within(dialogo).getByTestId('captcha-word').textContent!;
+
+    fireEvent.click(checkbox);
+    expect(boton).toHaveProperty('disabled', true);
+
+    fireEvent.change(inputCaptcha, { target: { value: 'WRONG' } });
+    expect(within(dialogo).getByText('Código no coincide')).toBeTruthy();
+    expect(boton).toHaveProperty('disabled', true);
+
+    fireEvent.change(inputCaptcha, { target: { value: captcha } });
+    expect(within(dialogo).getByText('Código verificado correctamente')).toBeTruthy();
+    expect(boton).toHaveProperty('disabled', false);
   });
 });

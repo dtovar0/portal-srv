@@ -47,6 +47,7 @@ export interface TabsProps<T extends string = string> {
   getTabId?: (id: T) => string;
   getPanelId?: (id: T) => string;
   className?: string;
+  variant?: 'default' | 'pills';
 }
 
 export function Tabs<T extends string = string>({
@@ -58,8 +59,10 @@ export function Tabs<T extends string = string>({
   getTabId,
   getPanelId,
   className = '',
+  variant = 'default',
 }: TabsProps<T>) {
   const botones = useRef<(HTMLButtonElement | null)[]>([]);
+  const isPills = variant === 'pills';
 
   const alPulsar = (event: React.KeyboardEvent<HTMLButtonElement>, indice: number) => {
     const destino = destinoPorTecla(event.key, indice, tabs.length);
@@ -73,7 +76,11 @@ export function Tabs<T extends string = string>({
 
   return (
     <div
-      className={`inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-2xl border border-panel-border bg-superficie-hundida/70 p-1.5 shadow-inner ${className}`}
+      className={
+        isPills
+          ? `flex flex-wrap items-center gap-2.5 w-full pb-4 border-b border-borde shrink-0 ${className}`
+          : `inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-2xl border border-panel-border bg-superficie-hundida/70 p-1.5 shadow-inner ${className}`
+      }
       role="tablist"
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledby}
@@ -82,6 +89,20 @@ export function Tabs<T extends string = string>({
         const isSelected = value === item.id;
         const idProp = getTabId ? getTabId(item.id) : `${item.id}-tab`;
         const panelProp = getPanelId ? getPanelId(item.id) : `${item.id}-panel`;
+
+        const estiloBoton = isPills
+          ? `group relative inline-flex h-12 min-h-12 w-48 sm:w-52 min-w-48 sm:min-w-52 items-center ${
+              item.badge !== undefined && item.badge !== null ? 'justify-between' : 'justify-center'
+            } gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold border shadow-xs transition-all duration-rapida cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              isSelected
+                ? 'border-primary bg-primary text-texto-sobre-accion shadow-1 ring-2 ring-primary/20'
+                : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:text-body-text hover:shadow-1'
+            }`
+          : `group relative inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-5 py-2.5 text-sm outline-none transition-all duration-corta focus-visible:ring-2 focus-visible:ring-primary ${
+              isSelected
+                ? 'border border-panel-border border-b-2 border-b-primary bg-superficie font-bold text-primary-text shadow-1 scale-[1.01]'
+                : 'border border-transparent text-label font-medium hover:border-panel-border/40 hover:bg-superficie/60 hover:text-body-text'
+            }`;
 
         return (
           <button
@@ -98,25 +119,33 @@ export function Tabs<T extends string = string>({
             disabled={item.disabled}
             onClick={() => !item.disabled && onChange(item.id)}
             onKeyDown={(event) => alPulsar(event, indice)}
-            className={`group relative inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-5 py-2.5 text-sm outline-none transition-all duration-corta focus-visible:ring-2 focus-visible:ring-primary ${
-              isSelected
-                ? 'border border-panel-border border-b-2 border-b-primary bg-superficie font-bold text-primary-text shadow-1 scale-[1.01]'
-                : 'border border-transparent text-label font-medium hover:border-panel-border/40 hover:bg-superficie/60 hover:text-body-text'
-            } ${item.disabled ? 'estado-deshabilitado pointer-events-none' : ''}`}
+            className={`${estiloBoton} ${item.disabled ? 'estado-deshabilitado pointer-events-none' : ''}`}
           >
             {item.icon ? (
               <Icono
                 nombre={item.icon}
                 tamano="sm"
                 ariaHidden={true}
-                className={isSelected ? 'text-primary-text' : 'text-label group-hover:text-body-text'}
+                className={`shrink-0 ${
+                  isPills
+                    ? isSelected
+                      ? 'text-texto-sobre-accion'
+                      : 'text-label group-hover:text-body-text'
+                    : isSelected
+                    ? 'text-primary-text'
+                    : 'text-label group-hover:text-body-text'
+                }`}
               />
             ) : null}
-            <span>{item.label}</span>
+            <span className="truncate">{item.label}</span>
             {item.badge !== undefined && item.badge !== null ? (
               <span
-                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  isSelected
+                className={`inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-bold tabular-nums shrink-0 transition-colors ${
+                  isPills
+                    ? isSelected
+                      ? 'bg-superficie/20 text-texto-sobre-accion'
+                      : 'bg-surface-container text-body-text border border-panel-border/50'
+                    : isSelected
                     ? 'bg-primary/15 text-primary-text'
                     : 'border border-panel-border/60 bg-superficie text-label'
                 }`}

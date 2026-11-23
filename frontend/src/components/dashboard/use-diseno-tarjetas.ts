@@ -8,14 +8,18 @@
 
 import { useEffect, useState } from 'react';
 import {
-  CLAVE_DISENO_TARJETAS, DISENO_POR_OMISION, esDisenoTarjeta, EVENTO_DISENO_TARJETAS, leerDisenoTarjetas,
+  CLAVE_DISENO_TARJETAS,
+  esDisenoTarjeta,
+  EVENTO_DISENO_TARJETAS,
+  leerDisenoTarjetas,
   type DisenoTarjeta,
 } from './diseno-tarjetas';
 
 export function useDisenoTarjetas(): DisenoTarjeta {
-  const [diseno, setDiseno] = useState<DisenoTarjeta>(DISENO_POR_OMISION);
+  const [diseno, setDiseno] = useState<DisenoTarjeta>(() => leerDisenoTarjetas());
 
   useEffect(() => {
+    // Sincronizar por si cambió en almacenamiento antes del montaje
     setDiseno(leerDisenoTarjetas());
     const alAplicar = (e: Event) => {
       const nuevo = (e as CustomEvent<unknown>).detail;

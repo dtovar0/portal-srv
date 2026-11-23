@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Badge, EmptyNote, ErrorNote, Note, Spinner, SuccessNote } from '@/components/ui';
+import { Badge, EmptyNote, ErrorNote, Note, PantallaCarga, Spinner, SuccessNote } from '@/components/ui';
 
 afterEach(() => {
   cleanup();
@@ -112,6 +112,27 @@ describe('DIS-062: Avisos y estados unificados', () => {
       const { container } = render(<Spinner size="sm" label="Guardando" />);
       const wrapper = container.querySelector('[role="status"]');
       expect(wrapper?.className).toContain('gap-2');
+    });
+
+    it('renderiza con subtexto explicativo en diseño enriquecido', () => {
+      render(<Spinner label="Cargando catálogo…" subtexto="Sincronizando información" />);
+      expect(screen.getByText('Cargando catálogo…')).toBeDefined();
+      expect(screen.getByText('Sincronizando información')).toBeDefined();
+    });
+  });
+
+  describe('PantallaCarga (Full Page Loader)', () => {
+    it('renderiza con rol status, marca corporativa, emblema y barra de progreso beam', () => {
+      const { container } = render(
+        <PantallaCarga label="Cargando sesión…" subtexto="Preparando tu espacio de trabajo…" />
+      );
+      const status = screen.getByRole('status');
+      expect(status).toBeDefined();
+      expect(screen.getByText('Portal de accesos')).toBeDefined();
+      expect(screen.getByText('Vivaro • Seguridad e Identidad')).toBeDefined();
+      expect(screen.getByText('Cargando sesión…')).toBeDefined();
+      expect(screen.getByText('Preparando tu espacio de trabajo…')).toBeDefined();
+      expect(container.querySelector('.nx-loading-beam')).toBeDefined();
     });
   });
 

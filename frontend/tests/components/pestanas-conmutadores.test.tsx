@@ -116,6 +116,34 @@ describe('Componente Tabs', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('la variante pills renderiza botones de pestañas simétricos con ancho unificado y estilo similar a portal topbar', () => {
+    const tabsPills = [
+      { id: 't1', label: 'Portal', icon: 'plataformas' as const },
+      { id: 't2', label: 'Correo', icon: 'solicitudes' as const },
+    ];
+    render(<Tabs tabs={tabsPills} value="t1" onChange={vi.fn()} variant="pills" />);
+    const buttons = screen.getAllByRole('tab');
+    expect(buttons).toHaveLength(2);
+    // Cada botón debe tener el ancho simétrico y altura de pastilla
+    buttons.forEach((btn) => {
+      expect(btn.className).toContain('w-48');
+      expect(btn.className).toContain('min-w-48');
+      expect(btn.className).toContain('h-12');
+      expect(btn.className).toContain('rounded-xl');
+    });
+    // Pestaña activa tiene estilo primario
+    expect(buttons[0].className).toContain('bg-primary');
+    expect(buttons[0].className).toContain('text-texto-sobre-accion');
+    // Pestaña inactiva tiene fondo neutro y borde
+    expect(buttons[1].className).toContain('bg-fondo');
+    expect(buttons[1].className).toContain('border-panel-border');
+    // El contenedor tablist incluye línea de separación inferior y padding simétrico
+    const tablist = screen.getByRole('tablist');
+    expect(tablist.className).toContain('border-b');
+    expect(tablist.className).toContain('border-borde');
+    expect(tablist.className).toContain('pb-4');
+  });
+
   it('TabPanel tiene role="tabpanel", foco por teclado (tabIndex=0) y enlazado accesible', () => {
     render(
       <TabPanel id="panel-1" tabId="tab-1">

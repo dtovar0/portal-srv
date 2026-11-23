@@ -10,8 +10,16 @@ import '../styles/components.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Portal de accesos',
-  description: 'Catálogo centralizado de plataformas',
+  title: 'Aduana - Control de Acceso',
+  description: 'Punto único de entrada y control para el ecosistema interno de plataformas (SSO y gestión centralizada de permisos)',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/brand/icon-32.png', type: 'image/png', sizes: '32x32' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/brand/icon-192.png',
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +32,13 @@ export default function RootLayout({
       <head>
         {/* FNC-032: restaura el tema guardado antes del primer pintado (sin destello). */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_RESTAURAR_TEMA }} />
+        {/* Tipografía Corporativa Oficial de Aduana (Montserrat, Inter, JetBrains Mono - §04) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         {/* DIS-044: `html` y `body` no se desplazan (global.css); lo hace esta raíz

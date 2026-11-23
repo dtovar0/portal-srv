@@ -59,6 +59,23 @@ describe('LoginForm', () => {
     expect(container.textContent).not.toMatch(/emergencia/i);
   });
 
+  it('enlaza a la portada institucional cuando PORTADA_ACTIVA es true', async () => {
+    vi.stubEnv('PORTADA_ACTIVA', 'true');
+    ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
+    render(<LoginForm />);
+    const enlace = await screen.findByRole('link', { name: /Conoce Aduana: Guía y Presentación de la Plataforma/ });
+    expect(enlace.getAttribute('href')).toBe('/');
+  });
+
+  it('oculta el enlace a la portada cuando PORTADA_ACTIVA es false', async () => {
+    vi.stubEnv('PORTADA_ACTIVA', 'false');
+    delete process.env.NEXT_PUBLIC_PORTADA_ACTIVA;
+    ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
+    render(<LoginForm />);
+    await screen.findByRole('button', { name: /Entrar con Authelia/ });
+    expect(screen.queryByRole('link', { name: /Conoce Aduana: Guía y Presentación de la Plataforma/ })).toBeNull();
+  });
+
   it('OIDC sin configurar: sin botón y con aviso', async () => {
     ctx.mockResolvedValue({ oidc_enabled: false, authenticated: false, emergency_available: true });
     render(<LoginForm />);
@@ -78,13 +95,13 @@ describe('LoginForm', () => {
     expect(screen.queryByRole('button', { name: /Authelia/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Iniciar sesión/ }));
     await waitFor(() => expect(loginLocal).toHaveBeenCalledWith('persona@ejemplo.test', 'clave'));
-    await waitFor(() => expect(window.location.href).toBe('/'));
+    await waitFor(() => expect(window.location.href).toBe('/dashboard'));
   });
 
   it('con sesión válida redirige a /', async () => {
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: true, emergency_available: true });
     render(<LoginForm />);
-    await waitFor(() => expect(window.location.href).toBe('/'));
+    await waitFor(() => expect(window.location.href).toBe('/dashboard'));
   });
 
   it('error del callback: toast genérico y URL limpia', async () => {
@@ -114,7 +131,7 @@ describe('AccesoEmergenciaForm', () => {
     render(<AccesoEmergenciaForm />);
     llenar();
     fireEvent.click(screen.getByRole('button', { name: /Iniciar sesión/ }));
-    await waitFor(() => expect(window.location.href).toBe('/'));
+    await waitFor(() => expect(window.location.href).toBe('/dashboard'));
     expect(loginLocal).toHaveBeenCalledWith('emergencia@x.test', 'clave');
   });
 

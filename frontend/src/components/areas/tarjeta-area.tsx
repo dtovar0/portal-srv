@@ -14,6 +14,7 @@ import { atributoTexto, textoLegible, variablesChipPlataforma } from '@/lib/colo
 import { enlaceSeguro } from '@/lib/enlace-seguro';
 import type { Area, Platform } from '@/lib/types';
 import { variablesCss } from '@/lib/variables-css';
+import { obtenerImagenFondoArea } from '@/lib/card-backgrounds';
 import { Icono, type NombreIcono } from '../icono';
 import { EstadoBadgeBoton } from '../estado-badge-boton';
 
@@ -48,15 +49,25 @@ function LogoPlataforma({ plataforma }: { plataforma: Platform }) {
   );
 }
 
-function Cifra({ icono, valor, etiqueta }: { icono: NombreIcono; valor: number; etiqueta: string }) {
+function Cifra({
+  icono,
+  valor,
+  etiqueta,
+  compacta = false,
+}: {
+  icono: NombreIcono;
+  valor: number;
+  etiqueta: string;
+  compacta?: boolean;
+}) {
   return (
-    <div className="nx-area-card__cifra flex min-w-0 items-center gap-3 rounded-xl border p-3">
-      <span className="nx-area-card__mini grid size-8 shrink-0 place-items-center rounded-lg" aria-hidden="true">
-        <Icono nombre={icono} tamano="sm" />
+    <div className={`nx-area-card__cifra flex min-w-0 items-center ${compacta ? 'gap-2 rounded-lg p-2' : 'gap-3 rounded-xl p-3'} border`}>
+      <span className={`nx-area-card__mini grid ${compacta ? 'size-6 rounded-md' : 'size-8 rounded-lg'} shrink-0 place-items-center`} aria-hidden="true">
+        <Icono nombre={icono} tamano={compacta ? 'xs' : 'sm'} />
       </span>
       <div className="min-w-0">
-        <p className="nx-area-card__valor text-xl font-extrabold leading-none tabular-nums">{valor}</p>
-        <p className="mt-1 truncate text-xs font-semibold uppercase tracking-wide text-label">{etiqueta}</p>
+        <p className={`nx-area-card__valor ${compacta ? 'text-base' : 'text-xl'} font-extrabold leading-none tabular-nums`}>{valor}</p>
+        <p className={`mt-0.5 truncate ${compacta ? 'text-[10px]' : 'text-xs'} font-semibold uppercase tracking-wide text-label`}>{etiqueta}</p>
       </div>
     </div>
   );
@@ -70,6 +81,8 @@ export function TarjetaArea({
   puedeEditar = false,
   actualizarEstado,
   onEstadoCambiado,
+  variante = 'estandar',
+  alturaEstandar = false,
 }: {
   area: Area;
   /** Plataformas del área dentro del alcance de quien mira (ya calculado por la pantalla). */
@@ -82,11 +95,673 @@ export function TarjetaArea({
   /** `PUT` del área con el estado nuevo. */
   actualizarEstado?: (status: 'Activo' | 'Inactivo') => Promise<unknown>;
   onEstadoCambiado?: () => void;
+  variante?: 'estandar' | 'split' | 'onda' | 'directorio' | 'bento' | 'medallon' | 'portada' | 'banner' | 'glass' | 'flotante';
+  /** Fija una altura uniforme de 240px (h-60) con dimensiones compactas para previsualización sin layout shift. */
+  alturaEstandar?: boolean;
 }) {
   const inactiva = area.status === 'Inactivo';
   const personas = area.users_count ?? 0;
   const color = !inactiva && textoLegible(area.color) ? area.color.trim() : undefined;
   const restantes = conteo - LOGOS_VISIBLES;
+  const claseAltura = alturaEstandar ? 'h-60 min-h-60 max-h-60' : 'min-h-[300px]';
+
+  if (variante === 'glass') {
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        style={variablesCss({ '--area-color': color })}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-primary/40 bg-gradient-to-br from-primary/10 via-superficie/80 to-accent/10 backdrop-blur-xl ${alturaEstandar ? 'p-3.5' : 'p-5'} text-left shadow-lg cursor-pointer transition-all hover:border-primary hover:shadow-[0_0_25px_rgba(var(--color-primary-rgb),0.25)]`}
+      >
+        <div className="absolute -top-12 -right-12 size-32 rounded-full bg-primary/20 blur-2xl pointer-events-none" />
+
+        <div className={`relative z-10 flex items-center justify-between ${alturaEstandar ? 'gap-2' : 'gap-3'}`}>
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className={`grid ${alturaEstandar ? 'size-8 rounded-xl' : 'size-11 rounded-2xl'} place-items-center bg-primary/20 border border-primary/30 text-primary-text shadow-[0_0_12px_rgba(var(--color-primary-rgb),0.2)]`}
+            >
+              <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'lg'} />
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary/15 text-primary-text border border-primary/30">
+              Área Neón
+            </span>
+          </div>
+
+          <EstadoBadgeBoton
+            tipo="area"
+            nombre={area.name}
+            activo={!inactiva}
+            editable={puedeEditar && Boolean(actualizarEstado)}
+            actualizar={(status) => actualizarEstado!(status)}
+            onCambiado={onEstadoCambiado}
+          />
+        </div>
+
+        <div className={`relative z-10 ${alturaEstandar ? 'my-1' : 'my-2'}`}>
+          <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-lg'} font-bold tracking-tight text-body-text group-hover:text-primary transition-colors`} title={area.name}>
+            {area.name}
+          </h3>
+          <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-texto-secundario" title={area.description ?? ''}>
+            {area.description || 'Área organizativa del sistema corporativo.'}
+          </p>
+        </div>
+
+        <div className={`relative z-10 grid grid-cols-2 gap-2 ${alturaEstandar ? 'my-1' : 'my-2'}`}>
+          <div className={`flex items-center gap-2 rounded-xl bg-superficie/60 backdrop-blur-md border border-primary/20 ${alturaEstandar ? 'p-2' : 'p-2.5'}`}>
+            <span className="grid size-6 place-items-center rounded-lg bg-primary/20 text-primary-text">
+              <Icono nombre="usuarios" tamano="xs" />
+            </span>
+            <div className="min-w-0">
+              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-body-text`}>{personas}</p>
+              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wider text-label">
+                {personas === 1 ? 'Persona' : 'Personas'}
+              </p>
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-2 rounded-xl bg-superficie/60 backdrop-blur-md border border-primary/20 ${alturaEstandar ? 'p-2' : 'p-2.5'}`}>
+            <span className="grid size-6 place-items-center rounded-lg bg-primary/20 text-primary-text">
+              <Icono nombre="plataformas" tamano="xs" />
+            </span>
+            <div className="min-w-0">
+              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-body-text`}>{conteo}</p>
+              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wider text-label">
+                {conteo === 1 ? 'Plataforma' : 'Plataformas'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className={`relative z-10 mt-auto ${alturaEstandar ? 'pt-1.5' : 'pt-2.5'} border-t border-primary/20 flex items-center justify-between gap-3`}>
+          <div className="flex items-center">
+            {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
+              <LogoPlataforma key={p.id} plataforma={p} />
+            ))}
+            {restantes > 0 ? (
+              <span className="-ml-2 grid size-7 shrink-0 place-items-center rounded-lg border-2 border-panel-border bg-superficie-hundida text-xs font-bold text-label shadow-1">
+                +{restantes}
+              </span>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            aria-label={`Área ${area.name}, ver plataformas.`}
+            className={`inline-flex ${alturaEstandar ? 'min-h-8 px-2.5' : 'min-h-9 px-3.5'} items-center gap-1 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 text-texto-sobre-accion font-bold text-xs transition-all shadow-md`}
+          >
+            <span>Ver área</span>
+            <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'flotante') {
+    const imagenFondo = obtenerImagenFondoArea(area.name);
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-slate-950 ${alturaEstandar ? 'p-2.5' : 'p-3.5'} text-left shadow-2 cursor-pointer transition-all hover:border-primary/60 hover:shadow-xl`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imagenFondo}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 pointer-events-none" />
+
+        <div className="relative z-10 flex items-center justify-between p-1">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/60 text-white/90 backdrop-blur-md border border-white/20">
+            {conteo} herramientas
+          </span>
+
+          <EstadoBadgeBoton
+            tipo="area"
+            nombre={area.name}
+            activo={!inactiva}
+            editable={puedeEditar && Boolean(actualizarEstado)}
+            actualizar={(status) => actualizarEstado!(status)}
+            onCambiado={onEstadoCambiado}
+          />
+        </div>
+
+        <div className={`relative z-10 mt-auto rounded-2xl bg-black/65 backdrop-blur-xl border border-white/20 ${alturaEstandar ? 'p-2.5 gap-1.5' : 'p-3.5 gap-2.5'} text-white shadow-2xl flex flex-col`}>
+          <div className={`flex items-center ${alturaEstandar ? 'gap-2' : 'gap-2.5'}`}>
+            <span className={`grid ${alturaEstandar ? 'size-7 text-xs rounded-lg' : 'size-9 text-sm rounded-xl'} place-items-center bg-primary text-white font-bold shadow-md shrink-0`}>
+              <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'md'} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-white group-hover:text-primary-text transition-colors`} title={area.name}>
+                {area.name}
+              </h3>
+              <p className="truncate text-[10px] text-slate-300">
+                {personas} colaboradores activos
+              </p>
+            </div>
+          </div>
+
+          <div className={`${alturaEstandar ? 'pt-1.5' : 'pt-2'} border-t border-white/15 flex items-center justify-between gap-2`}>
+            <div className="flex items-center">
+              {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
+                <LogoPlataforma key={p.id} plataforma={p} />
+              ))}
+              {restantes > 0 ? (
+                <span className="-ml-1.5 grid size-6 shrink-0 place-items-center rounded-md border border-white/20 bg-black/70 text-[9px] font-bold text-white">
+                  +{restantes}
+                </span>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              aria-label={`Área ${area.name}, ver plataformas.`}
+              className={`inline-flex ${alturaEstandar ? 'min-h-7 px-2.5 text-[11px]' : 'min-h-8 px-3 text-xs'} items-center gap-1 rounded-lg bg-white/25 hover:bg-primary text-white font-bold transition-all border border-white/30`}
+            >
+              <span>Explorar</span>
+              <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'portada') {
+    const imagenFondo = obtenerImagenFondoArea(area.name);
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-slate-950 ${alturaEstandar ? 'p-3' : 'p-4 sm:p-5'} text-left shadow-2 cursor-pointer transition-all hover:border-primary/60 hover:shadow-xl`}
+      >
+        {/* Imagen de fondo inmersiva con gradiente protector de legibilidad */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imagenFondo}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/35 pointer-events-none" />
+        <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl pointer-events-none" />
+
+        {/* Cabecera: Icono con vidrio esmerilado + Badge de estado */}
+        <div className={`relative z-10 flex items-center justify-between ${alturaEstandar ? 'gap-2' : 'gap-3'}`}>
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className={`grid ${alturaEstandar ? 'size-8 rounded-lg' : 'size-11 rounded-xl'} place-items-center bg-white/20 backdrop-blur-md border border-white/25 text-white shadow-md`}
+            >
+              <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'lg'} />
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/50 text-white/90 backdrop-blur-md border border-white/15">
+              DEPARTAMENTO
+            </span>
+          </div>
+
+          <EstadoBadgeBoton
+            tipo="area"
+            nombre={area.name}
+            activo={!inactiva}
+            editable={puedeEditar && Boolean(actualizarEstado)}
+            actualizar={(status) => actualizarEstado!(status)}
+            onCambiado={onEstadoCambiado}
+          />
+        </div>
+
+        {/* Cuerpo central: Nombre y descripción */}
+        <div className={`relative z-10 ${alturaEstandar ? 'my-1' : 'my-2'}`}>
+          <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-lg'} font-black tracking-tight text-white drop-shadow-sm group-hover:text-primary-text transition-colors`} title={area.name}>
+            {area.name}
+          </h3>
+          <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-slate-300 drop-shadow-xs" title={area.description ?? ''}>
+            {area.description || 'Área organizativa del sistema corporativo.'}
+          </p>
+        </div>
+
+        {/* Métricas con diseño glassmórfico de alta fidelidad */}
+        <div className={`relative z-10 grid grid-cols-2 gap-2 ${alturaEstandar ? 'my-1' : 'my-2'}`}>
+          <div className={`flex items-center gap-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 ${alturaEstandar ? 'p-1.5' : 'p-2'} text-white`}>
+            <span className="grid size-6 place-items-center rounded-lg bg-white/15 text-white">
+              <Icono nombre="usuarios" tamano="xs" />
+            </span>
+            <div className="min-w-0">
+              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-white`}>{personas}</p>
+              <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-wider text-slate-300">
+                {personas === 1 ? 'Persona' : 'Personas'}
+              </p>
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 ${alturaEstandar ? 'p-1.5' : 'p-2'} text-white`}>
+            <span className="grid size-6 place-items-center rounded-lg bg-white/15 text-white">
+              <Icono nombre="plataformas" tamano="xs" />
+            </span>
+            <div className="min-w-0">
+              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-white`}>{conteo}</p>
+              <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-wider text-slate-300">
+                {conteo === 1 ? 'Plataforma' : 'Plataformas'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Pie: Logos apilados + Botón Explorar */}
+        <div className={`relative z-10 mt-auto ${alturaEstandar ? 'pt-1.5' : 'pt-2.5'} border-t border-white/15 flex items-center justify-between gap-3`}>
+          <div className="flex items-center">
+            {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
+              <LogoPlataforma key={p.id} plataforma={p} />
+            ))}
+            {restantes > 0 ? (
+              <span className="-ml-2 grid size-7 shrink-0 place-items-center rounded-lg border-2 border-white/20 bg-black/60 backdrop-blur-sm text-xs font-bold text-white shadow-1">
+                +{restantes}
+              </span>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            aria-label={`Área ${area.name}, ver plataformas.`}
+            className={`inline-flex ${alturaEstandar ? 'min-h-8 px-2.5 text-[11px]' : 'min-h-9 px-3.5 text-xs'} items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white font-bold transition-all shadow-md group-hover:bg-primary group-hover:border-primary group-hover:text-white`}
+          >
+            <span>Ver plataformas</span>
+            <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'banner') {
+    const imagenFondo = obtenerImagenFondoArea(area.name);
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
+      >
+        {/* Cabecera Panorámica / Hero Banner con imagen fotográfica de fondo */}
+        <div className={`relative ${alturaEstandar ? 'h-20' : 'h-28'} w-full overflow-hidden shrink-0 bg-slate-900`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imagenFondo}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25 pointer-events-none" />
+
+          {/* Badges superiores sobre el banner */}
+          <div className={`relative z-10 flex items-center justify-between ${alturaEstandar ? 'p-2' : 'p-3'}`}>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/60 text-white/95 backdrop-blur-md border border-white/20">
+              DEPARTAMENTO
+            </span>
+
+            <EstadoBadgeBoton
+              tipo="area"
+              nombre={area.name}
+              activo={!inactiva}
+              editable={puedeEditar && Boolean(actualizarEstado)}
+              actualizar={(status) => actualizarEstado!(status)}
+              onCambiado={onEstadoCambiado}
+            />
+          </div>
+
+          {/* Chip de icono de área superpuesto en el banner */}
+          <div className="absolute bottom-2 left-3 z-10 flex items-center gap-1.5">
+            <span
+              className={`flex ${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} items-center justify-center rounded-xl bg-primary text-white font-black shadow-lg border-2 border-panel-fill`}
+              aria-hidden="true"
+            >
+              <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'md'} />
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-black/60 text-white/90 backdrop-blur-md border border-white/15">
+              {conteo} apps
+            </span>
+          </div>
+        </div>
+
+        {/* Contenido estructurado inferior */}
+        <div className={`flex flex-1 flex-col justify-between ${alturaEstandar ? 'p-3 pt-2 space-y-1.5' : 'p-4 pt-3 space-y-2.5'}`}>
+          <div>
+            <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-body-text group-hover:text-primary transition-colors`} title={area.name}>
+              {area.name}
+            </h3>
+            <p className="line-clamp-1 text-xs leading-relaxed text-texto-secundario mt-0.5" title={area.description ?? ''}>
+              {area.description || 'Área organizativa del sistema corporativo.'}
+            </p>
+          </div>
+
+          {/* Métricas compactas */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
+            <div className={`flex items-center gap-1.5 rounded-xl bg-superficie-hundida/70 border border-panel-border/80 ${alturaEstandar ? 'p-1.5' : 'p-2'}`}>
+              <span className="grid size-5 place-items-center rounded-lg bg-superficie text-primary-text shadow-xs">
+                <Icono nombre="usuarios" tamano="xs" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-black tabular-nums text-body-text leading-none">{personas}</p>
+                <p className="text-[8px] font-bold uppercase tracking-wider text-label mt-0.5">Personas</p>
+              </div>
+            </div>
+
+            <div className={`flex items-center gap-1.5 rounded-xl bg-superficie-hundida/70 border border-panel-border/80 ${alturaEstandar ? 'p-1.5' : 'p-2'}`}>
+              <span className="grid size-5 place-items-center rounded-lg bg-superficie text-primary-text shadow-xs">
+                <Icono nombre="plataformas" tamano="xs" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-black tabular-nums text-body-text leading-none">{conteo}</p>
+                <p className="text-[8px] font-bold uppercase tracking-wider text-label mt-0.5">Plataformas</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Pie: botón de acción */}
+          <div className={`pt-1.5 border-t border-panel-border/80 flex items-center justify-between gap-2 mt-auto`}>
+            <div className="flex items-center">
+              {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
+                <LogoPlataforma key={p.id} plataforma={p} />
+              ))}
+              {restantes > 0 ? (
+                <span className="-ml-1.5 grid size-6 shrink-0 place-items-center rounded-lg border border-panel-border bg-superficie-hundida text-[10px] font-bold text-label shadow-xs">
+                  +{restantes}
+                </span>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              aria-label={`Área ${area.name}, ver plataformas.`}
+              className={`inline-flex ${alturaEstandar ? 'min-h-8 px-2.5 text-[11px]' : 'min-h-9 px-3.5 text-xs'} items-center gap-1 rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
+            >
+              <span>Ver área</span>
+              <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'split') {
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        style={variablesCss({ '--area-color': color })}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
+      >
+        <div className={`bg-emerald-500/15 ${alturaEstandar ? 'p-2.5 h-20' : 'p-4 h-28'} flex flex-col justify-between shrink-0`}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-wider bg-black/40 text-emerald-200 px-2 py-0.5 rounded-md">
+              ÁREA CORPORATIVA
+            </span>
+            <EstadoBadgeBoton
+              tipo="area"
+              nombre={area.name}
+              activo={!inactiva}
+              editable={puedeEditar && Boolean(actualizarEstado)}
+              actualizar={(status) => actualizarEstado!(status)}
+              onCambiado={onEstadoCambiado}
+            />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className={`${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} rounded-xl flex items-center justify-center font-black text-white shadow-md border-2 border-white/30 bg-emerald-600`}>
+              {area.name.slice(0, 2).toUpperCase()}
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="text-xs font-bold text-emerald-950 dark:text-emerald-200 block truncate">{area.name}</span>
+              <span className="text-[10px] font-semibold text-label">{conteo} plataformas activas</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${alturaEstandar ? 'p-3 space-y-1.5' : 'p-4 space-y-2.5'} flex flex-1 flex-col justify-between`}>
+          <div>
+            <h3 className={`${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-body-text truncate`} title={area.name}>{area.name}</h3>
+            <p className="text-xs text-label mt-0.5 line-clamp-1">{area.description || 'Área organizativa del sistema.'}</p>
+          </div>
+          <div className={`${alturaEstandar ? 'pt-1.5' : 'pt-2'} border-t border-panel-border/80 flex items-center justify-between gap-3 mt-auto`}>
+            <div>
+              <span className={`${alturaEstandar ? 'text-lg' : 'text-xl'} font-black text-body-text tabular-nums`}>{personas}</span>
+              <span className="text-[9px] font-bold text-label block -mt-0.5">{personas === 1 ? 'colaborador' : 'colaboradores'}</span>
+            </div>
+            <button
+              type="button"
+              aria-label={`Área ${area.name}, ver plataformas.`}
+              className={`${alturaEstandar ? 'px-3 py-1.5 text-[11px]' : 'px-4 py-2 text-xs'} rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
+            >
+              Ver área →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'onda') {
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        style={variablesCss({ '--area-color': color })}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
+      >
+        <div>
+          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full flex flex-col justify-between text-white overflow-hidden bg-gradient-to-r from-amber-600 to-orange-500 shrink-0`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-black uppercase tracking-wider text-white/90">{area.name}</span>
+              <EstadoBadgeBoton
+                tipo="area"
+                nombre={area.name}
+                activo={!inactiva}
+                editable={puedeEditar && Boolean(actualizarEstado)}
+                actualizar={(status) => actualizarEstado!(status)}
+                onCambiado={onEstadoCambiado}
+              />
+            </div>
+            <div className={`text-center ${alturaEstandar ? 'text-xl' : 'text-2xl'} font-black drop-shadow-xs`}>
+              <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'md' : 'lg'} />
+            </div>
+            <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="absolute -bottom-1 inset-x-0 w-full h-8 text-panel-fill fill-current">
+              <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" />
+            </svg>
+          </div>
+          <div className={`${alturaEstandar ? 'p-3 space-y-1' : 'p-4 space-y-1.5'} text-center`}>
+            <h3 className={`${alturaEstandar ? 'text-sm' : 'text-base'} font-bold text-body-text`}>{area.name}</h3>
+            <p className="text-xs text-label line-clamp-1">{area.description || 'Área organizativa del sistema.'}</p>
+            <div className="text-[10px] font-bold text-label pt-0.5">
+              {personas} {personas === 1 ? 'persona' : 'personas'} • {conteo} plataformas
+            </div>
+          </div>
+        </div>
+        <div className={`${alturaEstandar ? 'p-3 pt-0' : 'p-4 pt-0'} text-center mt-auto`}>
+          <button
+            type="button"
+            className={`w-full max-w-[160px] mx-auto ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
+          >
+            Explorar área
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'directorio') {
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        style={variablesCss({ '--area-color': color })}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
+      >
+        <div>
+          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full bg-gradient-to-tr from-purple-950 via-slate-900 to-indigo-950 flex flex-col justify-between text-white shrink-0`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-black uppercase tracking-wider bg-black/40 text-purple-200 px-2 py-0.5 rounded-md self-start">
+                {area.name}
+              </span>
+              <EstadoBadgeBoton
+                tipo="area"
+                nombre={area.name}
+                activo={!inactiva}
+                editable={puedeEditar && Boolean(actualizarEstado)}
+                actualizar={(status) => actualizarEstado!(status)}
+                onCambiado={onEstadoCambiado}
+              />
+            </div>
+            <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-xs px-2.5 py-0.5 rounded-xl text-white self-start">
+              <span className="text-[9px] font-bold text-purple-200">{personas} integrantes</span>
+            </div>
+          </div>
+          <div className={`${alturaEstandar ? 'p-3 space-y-1' : 'p-4 space-y-1.5'}`}>
+            <h3 className={`${alturaEstandar ? 'text-sm' : 'text-base'} font-bold text-body-text`}>{area.name}</h3>
+            <p className="text-xs text-label line-clamp-1">{area.description || 'Área organizativa del sistema.'}</p>
+            <div className="flex items-center gap-1 flex-wrap pt-0.5">
+              {plataformas.slice(0, 3).map((p) => (
+                <span key={p.id} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-superficie-hundida text-label">
+                  {p.name}
+                </span>
+              ))}
+              {restantes > 0 ? <span className="text-[9px] font-bold text-label">+{restantes}</span> : null}
+            </div>
+          </div>
+        </div>
+        <div className={`${alturaEstandar ? 'p-3 pt-0' : 'p-4 pt-0'} flex gap-2 mt-auto`}>
+          <button type="button" className={`flex-1 ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all`}>
+            Ver área →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'bento') {
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        style={variablesCss({ '--area-color': color })}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill ${alturaEstandar ? 'p-3' : 'p-4 sm:p-5'} text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
+      >
+        <div>
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider text-white bg-primary">
+              Área
+            </span>
+            <EstadoBadgeBoton
+              tipo="area"
+              nombre={area.name}
+              activo={!inactiva}
+              editable={puedeEditar && Boolean(actualizarEstado)}
+              actualizar={(status) => actualizarEstado!(status)}
+              onCambiado={onEstadoCambiado}
+            />
+          </div>
+
+          <h3 className={`${alturaEstandar ? 'text-sm' : 'text-lg'} font-bold tracking-tight text-body-text`}>{area.name}</h3>
+          <p className="mt-0.5 line-clamp-1 text-xs text-label">{area.description || 'Área organizativa del sistema.'}</p>
+
+          <div className={`grid grid-cols-2 ${alturaEstandar ? 'gap-1.5 mt-2' : 'gap-2 mt-3'}`}>
+            <div className={`${alturaEstandar ? 'p-2' : 'p-2.5'} rounded-2xl bg-superficie-hundida/70 border border-panel-border/80 flex flex-col justify-between`}>
+              <span className="text-[9px] font-bold text-label uppercase">Equipo</span>
+              <span className={`${alturaEstandar ? 'text-base' : 'text-xl'} font-black text-body-text tabular-nums`}>{personas}</span>
+              <span className="text-[9px] text-label">{personas === 1 ? 'colaborador' : 'colaboradores'}</span>
+            </div>
+
+            <div className={`${alturaEstandar ? 'p-2' : 'p-2.5'} rounded-2xl bg-superficie-hundida/70 border border-panel-border/80 flex flex-col justify-between`}>
+              <span className="text-[9px] font-bold text-label uppercase">Herramientas</span>
+              <div className="flex items-center gap-1 my-0.5">
+                {plataformas.slice(0, 2).map((p) => (
+                  <span key={p.id} className="size-4 rounded bg-superficie border border-panel-border text-[7px] font-bold flex items-center justify-center text-body-text">
+                    {p.name.slice(0, 2).toUpperCase()}
+                  </span>
+                ))}
+                {restantes > 0 ? <span className="text-[9px] font-bold text-label">+{restantes}</span> : null}
+              </div>
+              <span className="text-[9px] font-bold text-primary-text">{conteo} activas</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={`mt-auto ${alturaEstandar ? 'pt-2' : 'pt-3'} border-t border-panel-border/80`}>
+          <button
+            type="button"
+            className={`w-full ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2.5 text-xs'} rounded-xl bg-superficie-hundida hover:bg-superficie border border-panel-border text-body-text font-bold transition-colors flex items-center justify-center gap-1.5`}
+          >
+            <span>Ver catálogo del área</span>
+            <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (variante === 'medallon') {
+    return (
+      <div
+        onClick={() => onSelect(area)}
+        data-state={inactiva ? 'inactiva' : 'activa'}
+        style={variablesCss({ '--area-color': color })}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-center shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
+      >
+        <div>
+          <div className={`${alturaEstandar ? 'h-14 px-3' : 'h-18 px-4'} w-full relative flex items-center justify-between bg-gradient-to-r from-primary to-accent`}>
+            <span className="text-[9px] font-bold text-white/90 uppercase tracking-widest bg-black/30 px-2 py-0.5 rounded-full">
+              Corporativo
+            </span>
+            <EstadoBadgeBoton
+              tipo="area"
+              nombre={area.name}
+              activo={!inactiva}
+              editable={puedeEditar && Boolean(actualizarEstado)}
+              actualizar={(status) => actualizarEstado!(status)}
+              onCambiado={onEstadoCambiado}
+            />
+          </div>
+
+          <div className={`${alturaEstandar ? '-mt-5 mb-0.5' : '-mt-7 mb-1'} flex justify-center`}>
+            <span className={`${alturaEstandar ? 'size-10 text-base' : 'size-14 text-xl'} rounded-full flex items-center justify-center text-white font-black shadow-xl border-4 border-panel-fill bg-primary`}>
+              <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'md'} />
+            </span>
+          </div>
+
+          <div className={`${alturaEstandar ? 'px-3 space-y-0.5' : 'px-4 space-y-1'}`}>
+            <h3 className={`${alturaEstandar ? 'text-sm' : 'text-base'} font-bold text-body-text tracking-tight`}>{area.name}</h3>
+            <p className="text-xs text-label line-clamp-1">{area.description || 'Área organizativa del sistema.'}</p>
+            <div className="inline-flex items-center gap-1.5 pt-0.5 px-2.5 py-0.5 rounded-full bg-superficie-hundida text-[9px] font-bold text-label">
+              <span className="inline-flex items-center gap-1">
+                <Icono nombre="usuarios" tamano="xs" ariaHidden={true} className="text-primary-text shrink-0" />
+                <span>{personas} miembros</span>
+              </span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1">
+                <Icono nombre="plataformas" tamano="xs" ariaHidden={true} className="text-primary-text shrink-0" />
+                <span>{conteo} plataformas</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${alturaEstandar ? 'p-2.5 pt-1' : 'p-4 pt-2'} mt-auto`}>
+          <button
+            type="button"
+            className={`w-full max-w-[170px] mx-auto ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} px-3 rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs flex items-center justify-center gap-1.5`}
+          >
+            <span>Explorar Área</span>
+            <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     // La tarjeta completa abre las plataformas con el ratón; el control accesible (teclado y
@@ -96,33 +771,35 @@ export function TarjetaArea({
       onClick={() => onSelect(area)}
       data-state={inactiva ? 'inactiva' : 'activa'}
       style={variablesCss({ '--area-color': color })}
-      className="nx-area-card group relative flex h-full min-h-56 min-w-12 cursor-pointer select-none flex-col overflow-hidden rounded-xl border border-panel-border bg-panel-fill text-left shadow-1"
+      className={`nx-area-card group relative flex h-full ${claseAltura} w-full min-w-12 cursor-pointer select-none flex-col justify-between overflow-hidden rounded-xl border border-panel-border bg-panel-fill text-left shadow-1`}
     >
-      <div className="nx-area-card__cabecera relative flex items-center gap-3 p-5 pb-4">
-        <span
-          aria-hidden="true"
-          data-texto={color ? atributoTexto(color) : undefined}
-          className="nx-area-card__icono relative grid size-12 shrink-0 place-items-center rounded-xl shadow-1"
-        >
-          <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano="lg" />
-        </span>
-        <div className="relative min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold tracking-tight text-body-text" title={area.name}>
-            {area.name}
-          </h3>
-          <p className="mt-0.5 line-clamp-2 text-sm leading-snug text-label" title={area.description ?? ''}>
-            {area.description || 'Área organizativa del sistema.'}
-          </p>
+      <div>
+        <div className={`nx-area-card__cabecera relative flex items-center ${alturaEstandar ? 'gap-2.5 p-3 pb-2' : 'gap-3 p-4 pb-3'}`}>
+          <span
+            aria-hidden="true"
+            data-texto={color ? atributoTexto(color) : undefined}
+            className={`nx-area-card__icono relative grid ${alturaEstandar ? 'size-9 rounded-lg' : 'size-11 rounded-xl'} shrink-0 place-items-center shadow-1`}
+          >
+            <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'md' : 'lg'} />
+          </span>
+          <div className="relative min-w-0 flex-1">
+            <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-body-text`} title={area.name}>
+              {area.name}
+            </h3>
+            <p className="mt-0.5 line-clamp-1 text-xs leading-snug text-label" title={area.description ?? ''}>
+              {area.description || 'Área organizativa del sistema.'}
+            </p>
+          </div>
+        </div>
+
+        <div className={`grid flex-1 grid-cols-2 content-center ${alturaEstandar ? 'gap-2 px-3 pb-2' : 'gap-2.5 px-4 pb-3'}`}>
+          <Cifra icono="usuarios" valor={personas} etiqueta={personas === 1 ? 'Persona' : 'Personas'} compacta={alturaEstandar} />
+          <Cifra icono="plataformas" valor={conteo} etiqueta={conteo === 1 ? 'Plataforma' : 'Plataformas'} compacta={alturaEstandar} />
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-2 content-center gap-2.5 px-5 pb-4">
-        <Cifra icono="usuarios" valor={personas} etiqueta={personas === 1 ? 'Persona' : 'Personas'} />
-        <Cifra icono="plataformas" valor={conteo} etiqueta={conteo === 1 ? 'Plataforma' : 'Plataformas'} />
-      </div>
-
-      <div className="nx-area-card__pie mt-auto flex items-center justify-between gap-3 border-t px-5 py-3">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className={`nx-area-card__pie mt-auto flex items-center justify-between gap-2 border-t ${alturaEstandar ? 'px-3 py-2' : 'px-4 py-3'}`}>
+        <div className="flex min-w-0 items-center gap-1.5">
           <EstadoBadgeBoton
             tipo="area"
             nombre={area.name}
@@ -137,7 +814,7 @@ export function TarjetaArea({
                 <LogoPlataforma key={p.id} plataforma={p} />
               ))}
               {restantes > 0 ? (
-                <span className="-ml-2 grid size-8 shrink-0 place-items-center rounded-lg border-2 border-panel-fill bg-superficie-hundida text-xs font-bold text-label shadow-1">
+                <span className={`-ml-2 grid ${alturaEstandar ? 'size-6 text-[10px]' : 'size-7 text-xs'} shrink-0 place-items-center rounded-lg border-2 border-panel-fill bg-superficie-hundida font-bold text-label shadow-1`}>
                   +{restantes}
                 </span>
               ) : null}
@@ -149,10 +826,10 @@ export function TarjetaArea({
         <button
           type="button"
           aria-label={`Área ${area.name}${inactiva ? ' (Inactiva)' : ''}, ${conteo} ${conteo === 1 ? 'plataforma' : 'plataformas'}. Ver plataformas.`}
-          className="nx-area-card__ir inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-bold"
+          className={`nx-area-card__ir inline-flex ${alturaEstandar ? 'min-h-7 px-2.5 text-[11px]' : 'min-h-8 px-3 text-xs'} shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full font-bold`}
         >
           Ver plataformas
-          <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} className="nx-area-card__flecha" />
+          <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} className="nx-area-card__flecha" />
         </button>
       </div>
     </div>

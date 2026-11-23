@@ -8,10 +8,10 @@ import { useAsync } from '@/lib/use-async';
 import { PageHeader } from './page-header';
 import { PlatformCard } from './platform-card';
 import { RegionDeAnuncios } from './region-de-anuncios';
-import { EmptyNote, ErrorNote, RegionDeAviso, Skeleton } from './ui';
+import { EmptyNote, ErrorNote, RegionDeAviso, Spinner } from './ui';
 
 export function FavoritesList() {
-  const { data, loading, error, reload } = useAsync(() => api.favorites(), []);
+  const { data, loading, error, reload } = useAsync(() => api.favorites(), [], 'nexus.platforms.favorites');
   const [anuncio, setAnuncio] = useState('');
   const encabezado = useRef<HTMLHeadingElement>(null);
   const contenedor = useRef<HTMLDivElement>(null);
@@ -53,7 +53,10 @@ export function FavoritesList() {
       </RegionDeAviso>
 
       {loading ? (
-        <Skeleton variant="tarjeta" count={4} ariaLabel="Cargando favoritos…" />
+        <div className="flex-1 flex flex-col items-center justify-center min-h-64 gap-3 text-label p-8">
+          <Spinner label="Cargando favoritos…" />
+          <span className="text-sm font-medium">Cargando favoritos…</span>
+        </div>
       ) : !error ? (
         (data ?? []).length === 0 ? (
           <EmptyNote message="Todavía no has marcado ninguna plataforma como favorita." />

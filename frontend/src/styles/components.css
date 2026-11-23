@@ -940,6 +940,7 @@ select::-ms-expand {
     transform: translateY(-2px);
     box-shadow: var(--sombra-2), 0 14px 30px -18px var(--nx-area);
     border-color: color-mix(in srgb, var(--nx-area) 55%, transparent);
+    z-index: 2;
 }
 /* Resplandor del color del área (DIS-102, más visible a pedido del dueño). Halo fuerte alrededor del
    icono (centro: x 44px = padding 20 + mitad de 48; y al 50 % porque el icono va centrado) que se apaga a 36px del centro, justo antes del texto,
@@ -1314,4 +1315,32 @@ select::-ms-expand {
 .nx-ind-opcion[aria-pressed='true'] {
     border-color: rgb(var(--color-accion));
     background: rgb(var(--color-accion-tenue));
+}
+
+/* Animación de haz luminoso para la barra de progreso de PantallaCarga */
+@keyframes nx-beam-move {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(250%);
+    }
+}
+
+.nx-loading-beam {
+    animation: nx-beam-move 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nx-loading-beam {
+        animation: none;
+        width: 100%;
+        opacity: 0.8;
+    }
+}
+
+/* Evita que los anillos y gráficas se vuelvan a animar al regresar al dashboard */
+.nx-sin-animacion-graficas .nx-ind__valor,
+.nx-sin-animacion-graficas .nx-ind__resto {
+    animation: none !important;
 }

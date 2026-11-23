@@ -36,7 +36,7 @@ vi.mock('@/components/session-provider', () => ({
   }),
 }));
 
-import { Dashboard } from '@/components/dashboard';
+import { Dashboard, resetearAnimacionGraficas } from '@/components/dashboard';
 import { api } from '@/lib/api';
 import { CLAVE_DISENO_TARJETAS, guardarDisenoTarjetas } from '@/components/dashboard/diseno-tarjetas';
 
@@ -52,6 +52,8 @@ afterEach(() => {
   estado.cargando = false;
   estado.resumenFalla = false;
   window.localStorage.clear();
+  window.sessionStorage.clear();
+  resetearAnimacionGraficas();
 });
 
 /** Tarjetas de contador (grupos con el nombre del indicador), sin el encabezado de la tabla alternativa. */
@@ -186,6 +188,19 @@ describe('Dashboard', () => {
       await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
       container.querySelectorAll('.nx-ind').forEach((t) => expect(t.getAttribute('data-diseno')).toBe('segmentos'));
       expect(container.querySelectorAll('.nx-ind__aro--vacio').length).toBeGreaterThan(0);
+    });
+
+    it('al regresar al dashboard en la misma sesión desactiva la re-animación de gráficas', async () => {
+      permisos.is_admin = false;
+      // Primera visita: se anima y se marca como animado
+      const { unmount } = render(<Dashboard />);
+      await screen.findByRole('heading', { level: 2, name: 'Actividad del portal' });
+      unmount();
+
+      // Segunda visita (usuario navega a otra sección y regresa):
+      const { container } = render(<Dashboard />);
+      const seccion = await screen.findByRole('region', { name: 'Actividad del portal' });
+      expect(seccion.className).toContain('nx-sin-animacion-graficas');
     });
   });
 });

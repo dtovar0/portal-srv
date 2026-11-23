@@ -13,6 +13,7 @@ Group=@SVC_GROUP@
 # server.js resuelve .next/static y public/ relativos a su propio directorio,
 # así que el WorkingDirectory debe ser standalone, no frontend/.
 WorkingDirectory=@PREFIX@/frontend/.next/standalone
+EnvironmentFile=-@PREFIX@/.env
 Environment=NODE_ENV=production
 Environment=PORT=@WEB_PORT@
 Environment=HOSTNAME=127.0.0.1

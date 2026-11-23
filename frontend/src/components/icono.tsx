@@ -3,7 +3,7 @@ import { TRAZOS, type NombreIcono } from './icono-trazos';
 
 export type { NombreIcono };
 
-export type TamanoIcono = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+export type TamanoIcono = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 interface IconoProps {
   nombre: NombreIcono;
@@ -11,6 +11,7 @@ interface IconoProps {
   className?: string;
   ariaLabel?: string;
   ariaHidden?: boolean;
+  relleno?: boolean;
 }
 
 const DIMENSIONES: Record<TamanoIcono, { width: number; height: number; clase: string }> = {
@@ -20,6 +21,7 @@ const DIMENSIONES: Record<TamanoIcono, { width: number; height: number; clase: s
   lg: { width: 24, height: 24, clase: 'w-6 h-6' },
   // xl (22 px) no está en la escala de Tailwind: lo fijan los atributos width/height
   xl: { width: 22, height: 22, clase: '' },
+  '2xl': { width: 28, height: 28, clase: 'w-7 h-7' },
 };
 
 /** Único punto de entrada de iconos de trazo. El color sale de `currentColor`. */
@@ -29,6 +31,7 @@ export const Icono: React.FC<IconoProps> = ({
   className = '',
   ariaLabel,
   ariaHidden,
+  relleno = false,
 }) => {
   const dim = DIMENSIONES[tamano] ?? DIMENSIONES.md;
   const oculto = ariaHidden ?? !ariaLabel;
@@ -38,7 +41,7 @@ export const Icono: React.FC<IconoProps> = ({
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
-      fill="none"
+      fill={relleno ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"

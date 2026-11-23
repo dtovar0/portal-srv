@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Evaluación previa a la instalación de Nexus en Rocky/RHEL 8 o 9.
+# Evaluación previa a la instalación de Aduana en Rocky/RHEL 8 o 9.
 #
 # No instala ni modifica nada: solo informa de qué hay, qué falta y qué
 # decisiones habrá que tomar. Ejecutarlo antes de install.sh.

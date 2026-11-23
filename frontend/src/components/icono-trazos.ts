@@ -28,6 +28,11 @@ export const TRAZOS = {
     'M4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z',
   ],
   catalogo: ['M21 8 12 3 3 8l9 5z', 'M3 8v8l9 5 9-5V8', 'M12 13v8'],
+  widget: [
+    'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
+    'M3 9h18',
+    'M9 21V9',
+  ],
   solicitudes: ['M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z', 'M14 3v6h6', 'm9 15 2 2 4-4'],
   aprobaciones: ['M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z', 'm8 12 3 3 5-6'],
   areas: ['m12 2 9 5-9 5-9-5z', 'm3 12 9 5 9-5', 'm3 17 9 5 9-5'],
@@ -63,6 +68,7 @@ export const TRAZOS = {
   'chevron-izq': ['m15 18-6-6 6-6'],
   'chevron-der': ['m9 6 6 6-6 6'],
   'chevron-abajo': ['m6 9 6 6 6-6'],
+  'flecha-izq': ['M19 12H5', 'M12 19l-7-7 7-7'],
   colapsar: ['m11 17-5-5 5-5', 'm18 17-5-5 5-5'],
 
   // Acciones
@@ -86,6 +92,12 @@ export const TRAZOS = {
   'escudo-ok': ['M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z', 'm9 12 2 2 4-4'],
   actividad: ['M22 12h-4l-3 9L9 3l-3 9H2'],
   documento: ['M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z', 'M14 3v6h6'],
+
+  // Diseño y variantes visuales
+  diseno: [
+    'M12 2a10 10 0 0 0-10 10c0 4.42 3.58 8 8 8h1a2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h2a5 5 0 0 0 5-5c0-4.42-4.03-8-10-8z',
+    'M7.5 10.5h.01M10.5 7.5h.01M13.5 7.5h.01M16.5 10.5h.01',
+  ],
 } as const satisfies Record<string, readonly string[]>;
 
 export type NombreIcono = keyof typeof TRAZOS;

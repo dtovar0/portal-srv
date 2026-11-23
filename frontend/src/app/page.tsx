@@ -1,10 +1,16 @@
-import { AppShell } from '@/components/app-shell';
-import { DashboardGate } from '@/components/dashboard-gate';
+import { redirect } from 'next/navigation';
+import { PaginaPortada } from '@/components/portada/pagina-portada';
+import { esPortadaActiva } from '@/lib/portada';
 
+/**
+ * Entrada pública:
+ * - con portada activa, siempre muestra la presentación;
+ * - con portada inactiva, entra directamente al flujo de autenticación.
+ */
 export default function Page() {
-  return (
-    <AppShell>
-      <DashboardGate />
-    </AppShell>
-  );
+  if (!esPortadaActiva()) {
+    redirect('/login');
+  }
+
+  return <PaginaPortada />;
 }

@@ -7,19 +7,21 @@ const permisos = (admin: boolean, area: boolean) => ({
 });
 
 describe('menú por rol', () => {
-  it('usuario ve solo Plataformas en General; admin ve además Gestión y Sistema', () => {
+  it('usuario ve solo Portal en General; admin ve además Gestión y Sistema con Plataformas en Gestión', () => {
     const usuario = seccionesVisibles(permisos(false, false));
     expect(usuario.map((s) => s.seccion)).toEqual(['General']);
-    expect(usuario[0].entradas.map((e) => e.label)).toEqual(['Plataformas']);
+    expect(usuario[0].entradas.map((e) => e.label)).toEqual(['Portal']);
     const admin = seccionesVisibles(permisos(false, true));
     expect(admin.map((s) => s.seccion)).toEqual(['General', 'Gestión', 'Sistema']);
+    expect(admin[0].entradas.map((e) => e.label)).toEqual(['Dashboard', 'Portal']);
+    expect(admin[1].entradas.map((e) => e.label)).toContain('Plataformas');
     expect(admin[1].entradas.map((e) => e.label)).not.toContain('Aprobaciones');
     expect(admin[2].entradas.map((e) => e.label)).toEqual(['Ajustes', 'Ejecuciones', 'Auditoría']);
   });
 
-  it('el usuario solo ve Plataformas; el admin ve más', () => {
+  it('el usuario solo ve Portal; el admin ve más', () => {
     const usuario = entradasVisibles(permisos(false, false)).map((e) => e.label);
-    expect(usuario).toEqual(['Plataformas']);
+    expect(usuario).toEqual(['Portal']);
     expect(usuario).not.toContain('Aprobaciones');
     expect(usuario).not.toContain('Notificaciones');
     expect(entradasVisibles(permisos(true, false)).map((e) => e.label)).toContain('Conectores');

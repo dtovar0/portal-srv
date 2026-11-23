@@ -7,6 +7,7 @@
  * de totales (DIS-037).
  */
 
+import React, { useEffect, useState } from 'react';
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -21,14 +22,14 @@ import type { DisenoTarjeta } from './dashboard/diseno-tarjetas';
 import { useDisenoTarjetas } from './dashboard/use-diseno-tarjetas';
 import { TarjetasIndicadores, type ContadorIndicador } from './dashboard/tarjetas-indicadores';
 import { useSession } from './session-provider';
-import { Card, ErrorNote, PanelHeader, PremiumEmptyState, RegionDeAviso, Skeleton } from './ui';
+import { Card, ErrorNote, PanelHeader, PremiumEmptyState, RegionDeAviso, Spinner } from './ui';
 import { DataTable } from './data-table';
 import { PageHeader } from './page-header';
 
 export function Dashboard() {
   const { session } = useSession();
-  const { data: stats, loading, error } = useAsync(() => api.stats(), []);
-  const { data: resumen } = useAsync(() => homeApi.summary().catch(() => null), []);
+  const { data: stats, loading, error } = useAsync(() => api.stats(), [], 'nexus.admin.stats');
+  const { data: resumen } = useAsync(() => homeApi.summary().catch(() => null), [], 'nexus.admin.home_summary');
   const administra = Boolean(session?.permissions.is_admin || session?.permissions.is_area_admin);
   const diseno = useDisenoTarjetas();
 
@@ -43,7 +44,10 @@ export function Dashboard() {
       ) : null}
 
       {loading ? (
-        <Skeleton variant="tarjeta" count={5} ariaLabel="Cargando estadísticas…" />
+        <div className="flex-1 flex flex-col items-center justify-center min-h-96 gap-3 text-label">
+          <Spinner label="Cargando estadísticas…" />
+          <span className="text-sm font-medium">Cargando estadísticas…</span>
+        </div>
       ) : stats ? (
         <Estadisticas stats={stats} administra={administra} resumen={resumen} diseno={diseno} />
       ) : null}
@@ -61,6 +65,38 @@ const TOKENS_GRAFICA = {
   texto: '--color-body-text',
 };
 
+let graficasYaAnimadasMemoria = false;
+
+export function resetearAnimacionGraficas(): void {
+  graficasYaAnimadasMemoria = false;
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.removeItem('nexus.dashboard.animado');
+    } catch {}
+  }
+}
+
+function yaSeAnimaronGraficas(): boolean {
+  if (graficasYaAnimadasMemoria) return true;
+  if (typeof window !== 'undefined') {
+    try {
+      return window.sessionStorage.getItem('nexus.dashboard.animado') === 'true';
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+function marcarGraficasAnimadas(): void {
+  graficasYaAnimadasMemoria = true;
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.setItem('nexus.dashboard.animado', 'true');
+    } catch {}
+  }
+}
+
 /** Contadores, gráfica, más visitadas y actividad en cuadrícula armónica responsiva de 2 filas. */
 function Estadisticas({
   stats,
@@ -74,6 +110,12 @@ function Estadisticas({
   diseno: DisenoTarjeta;
 }) {
   const { loading: cargandoSesion } = useSession();
+  const [animarGraficas] = useState(() => !yaSeAnimaronGraficas());
+
+  useEffect(() => {
+    marcarGraficasAnimadas();
+  }, []);
+
   const colores = useTokenColors(TOKENS_GRAFICA);
   const byArea = stats.platforms_by_area.filter((row) => row.count > 0);
   const verAreasYPlataformas = !cargandoSesion;
@@ -97,7 +139,10 @@ function Estadisticas({
   ];
 
   return (
-    <section aria-label="Actividad del portal" className="flex flex-1 min-h-0 flex-col gap-4">
+    <section
+      aria-label="Actividad del portal"
+      className={`flex flex-1 min-h-0 flex-col gap-4 ${!animarGraficas ? 'nx-sin-animacion-graficas' : ''}`}
+    >
       <h2 className="sr-only">Actividad del portal</h2>
 
       {/* Fila 1: contadores con el diseño elegido (DIS-112) */}
@@ -166,6 +211,7 @@ function Estadisticas({
                           name="Plataformas"
                           fill="url(#colorPlataformas)"
                           radius={[4, 4, 0, 0]}
+                          isAnimationActive={animarGraficas}
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -245,6 +291,7 @@ function Estadisticas({
                           name="Concurrencia"
                           fill="url(#colorVisitas)"
                           radius={[4, 4, 0, 0]}
+                          isAnimationActive={animarGraficas}
                         />
                       </BarChart>
                     </ResponsiveContainer>

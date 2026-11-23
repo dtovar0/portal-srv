@@ -41,6 +41,7 @@ export function esDisenoTarjeta(valor: unknown): valor is DisenoTarjeta {
 
 /** Lee la preferencia; ante cualquier falla del almacenamiento devuelve el diseño por omisión. */
 export function leerDisenoTarjetas(): DisenoTarjeta {
+  if (typeof window === 'undefined') return DISENO_POR_OMISION;
   try {
     const guardado = window.localStorage.getItem(CLAVE_DISENO_TARJETAS);
     return esDisenoTarjeta(guardado) ? guardado : DISENO_POR_OMISION;

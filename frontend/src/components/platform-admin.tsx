@@ -15,14 +15,28 @@ import { AreaAdminsPanel } from './areas/area-admins-panel';
 import { AreaForm } from './areas/area-form';
 import { TarjetaArea } from './areas/tarjeta-area';
 import { mensajeDeError } from './areas/area-errors';
+import { CapsulePager } from './capsule-pager';
 import { DataTable } from './data-table';
 import { Button, ConfirmDialog } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
 import { columnasPlataformas } from './platforms/platform-columns';
 import { MissingLinkNote } from './platforms/missing-link-note';
+import { AreaCardDesignDrawer } from './platforms/area-card-design-drawer';
+import { PlatformCardDesignDrawer } from './platforms/platform-card-design-drawer';
+import {
+  CLAVE_DISENO_CARDS,
+  CLAVE_DISENO_CARDS_AREA,
+  type AreaCardDesignVariant,
+  type CardDesignVariant,
+  leerForzarDisenoArea,
+  guardarForzarDisenoArea,
+  leerForzarDisenoPlataforma,
+  guardarForzarDisenoPlataforma,
+} from './platforms/user-view-settings';
 import { PlatformAccessPanel } from './platforms/platform-access-panel';
 import { PlatformForm } from './platforms/platform-form';
+import { PlatformGhostCard } from './platforms/platform-ghost-card';
 import { describeDeleteError } from './platforms/platform-save-errors';
 import { RequireRole } from './require-role';
 import { useSession } from './session-provider';
@@ -38,8 +52,8 @@ const CLASES_COLS: Record<number, string> = {
 // Filas que llenan el alto disponible sin bajar del mínimo de la tarjeta (14rem = `min-h-56`):
 // si no caben, el contenedor hace scroll en vez de encimar las tarjetas (DIS-103).
 const CLASES_ROWS: Record<number, string> = {
-  2: 'lg:grid-rows-[repeat(2,minmax(14rem,1fr))]',
-  3: 'lg:grid-rows-[repeat(3,minmax(14rem,1fr))]',
+  2: 'sm:grid-rows-[repeat(2,minmax(14rem,1fr))]',
+  3: 'sm:grid-rows-[repeat(3,minmax(14rem,1fr))]',
 };
 
 /** Cuadrículas que ofrece la pantalla (filas × columnas). Con 4 filas o 4 columnas la tarjeta
@@ -213,6 +227,88 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     setPageAreas(1);
     guardarDimGrid(CLAVE_GRID_FILAS, f);
     guardarDimGrid(CLAVE_GRID_COLUMNAS, c);
+  }, []);
+
+  // Configuración de diseño de tarjetas de área (Drawer lateral)
+  const [disenoCardsArea, setDisenoCardsArea] = useState<AreaCardDesignVariant>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const val = window.localStorage.getItem(CLAVE_DISENO_CARDS_AREA) as AreaCardDesignVariant;
+        if (
+          val === 'split' ||
+          val === 'onda' ||
+          val === 'directorio' ||
+          val === 'bento' ||
+          val === 'medallon' ||
+          val === 'estandar' ||
+          val === 'portada' ||
+          val === 'banner' ||
+          val === 'glass' ||
+          val === 'flotante'
+        ) {
+          return val;
+        }
+      } catch {}
+    }
+    return 'estandar';
+  });
+  const [drawerDisenoAbierto, setDrawerDisenoAbierto] = useState(false);
+  const botonDisenoRef = useRef<HTMLButtonElement>(null);
+  const [forzarDisenoArea, setForzarDisenoArea] = useState<boolean>(() => leerForzarDisenoArea());
+
+  const handleDisenoCardsAreaChange = useCallback((nuevo: AreaCardDesignVariant) => {
+    setDisenoCardsArea(nuevo);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(CLAVE_DISENO_CARDS_AREA, nuevo);
+      } catch {}
+    }
+  }, []);
+
+  const handleForzarDisenoAreaChange = useCallback((forzar: boolean) => {
+    setForzarDisenoArea(forzar);
+    guardarForzarDisenoArea(forzar);
+  }, []);
+
+  // Configuración de diseño de tarjetas de plataforma (Drawer lateral en Sección 2)
+  const [disenoCardsPlataforma, setDisenoCardsPlataforma] = useState<CardDesignVariant>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const val = window.localStorage.getItem(CLAVE_DISENO_CARDS) as CardDesignVariant;
+        if (
+          val === 'duotono' ||
+          val === 'enmarcada' ||
+          val === 'split' ||
+          val === 'glass' ||
+          val === 'editorial' ||
+          val === 'estandar' ||
+          val === 'compacta' ||
+          val === 'horizontal' ||
+          val === 'banner' ||
+          val === 'flotante'
+        ) {
+          return val;
+        }
+      } catch {}
+    }
+    return 'estandar';
+  });
+  const [drawerDisenoPlataformaAbierto, setDrawerDisenoPlataformaAbierto] = useState(false);
+  const botonDisenoPlataformaRef = useRef<HTMLButtonElement>(null);
+  const [forzarDisenoPlataforma, setForzarDisenoPlataforma] = useState<boolean>(() => leerForzarDisenoPlataforma());
+
+  const handleDisenoCardsPlataformaChange = useCallback((nuevo: CardDesignVariant) => {
+    setDisenoCardsPlataforma(nuevo);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(CLAVE_DISENO_CARDS, nuevo);
+      } catch {}
+    }
+  }, []);
+
+  const handleForzarDisenoPlataformaChange = useCallback((forzar: boolean) => {
+    setForzarDisenoPlataforma(forzar);
+    guardarForzarDisenoPlataforma(forzar);
   }, []);
 
   // Cerrar menús con click fuera o Escape
@@ -537,10 +633,10 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
       {!selectedArea ? (
         <div className="grid w-full flex-1 min-h-0 grid-cols-1 grid-rows-[auto_1fr] gap-4">
           {/* Fila 1: Barra de herramientas con Buscador de áreas y Botón Nuevo */}
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
             {/* Buscador de áreas */}
-            <div className="flex items-center gap-3 flex-1 min-w-0 max-w-2xl">
-              <div className="relative w-full max-w-md">
+            <div className="flex items-center gap-3 flex-1 min-w-0 max-w-xl">
+              <div className="relative w-full">
                 <label htmlFor="buscar-areas" className="sr-only">Buscar áreas</label>
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-label">
                   <Icono nombre="buscar" tamano="md" ariaHidden={true} />
@@ -573,8 +669,36 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
               </div>
             </div>
 
-            {/* A la derecha: Botones de Filtrar por estado y Configurar cuadrícula */}
+            {/* A la derecha: Botones de Diseño, Filtrar por estado y Configurar cuadrícula */}
             <div className="flex flex-wrap items-center gap-2.5">
+              {/* Botón: Configurar diseño de tarjetas de área (a la izquierda de Filtrar por estado, simétrico w-48) */}
+              <button
+                ref={botonDisenoRef}
+                type="button"
+                onClick={() => setDrawerDisenoAbierto(true)}
+                aria-label="Diseño: Configurar estilo de tarjetas de área"
+                aria-haspopup="dialog"
+                aria-expanded={drawerDisenoAbierto}
+                className={`inline-flex h-12 min-h-12 w-48 min-w-48 items-center justify-between gap-2 rounded-xl border px-3.5 text-xs font-semibold shadow-xs transition-all duration-rapida cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  drawerDisenoAbierto
+                    ? 'border-primary bg-primary/10 text-primary-text ring-2 ring-primary/20 shadow-1'
+                    : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:shadow-1'
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icono nombre="diseno" tamano="sm" ariaHidden={true} className="text-primary-text shrink-0" />
+                  <span className="font-bold text-body-text">Diseño</span>
+                </div>
+                <Icono
+                  nombre="chevron-der"
+                  tamano="xs"
+                  ariaHidden={true}
+                  className={`shrink-0 transition-transform duration-rapida ${
+                    drawerDisenoAbierto ? 'translate-x-0.5 text-primary-text' : 'text-label'
+                  }`}
+                />
+              </button>
+
               {/* Botón 1: Filtrar por estado */}
               <div ref={estadoRef} className="relative">
                 <button
@@ -809,14 +933,14 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
             ) : null}
 
             {displayAreas.length > 0 ? (
-              <div className="flex flex-col flex-1 w-full justify-between gap-4">
+              <div className="flex flex-col flex-1 w-full justify-between gap-4 h-full">
                 {/* Grid configurable: filas fijas que ocupan todo el alto; la tarjeta se reparte (DIS-102) */}
                 <div
                   role="region"
                   aria-label="Catálogo de áreas"
                   className={`grid grid-cols-1 ${CLASES_COLS[gridColumnas] ?? 'lg:grid-cols-3'} ${
-                    CLASES_ROWS[gridFilas] ?? 'lg:grid-rows-2'
-                  } gap-4 flex-1`}
+                    CLASES_ROWS[gridFilas] ?? 'sm:grid-rows-[repeat(2,minmax(14rem,1fr))]'
+                  } gap-4 flex-1 h-full`}
                 >
                   {displayAreas.map((area) => (
                     <TarjetaArea
@@ -828,15 +952,16 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                       puedeEditar={isSuperadmin || managedAreaIds.has(area.id)}
                       actualizarEstado={(status) => api.updateArea(area.id, { status })}
                       onEstadoCambiado={recargarTrasEstado}
+                      variante={disenoCardsArea}
                     />
                   ))}
 
                   {/* Huecos que completan solo la última fila (en escritorio); las filas vacías ya no se dibujan */}
                   {Array.from({ length: ghostCountAreas }).map((_, idx) => (
-                    <div
+                    <PlatformGhostCard
                       key={`ghost-area-${idx}`}
-                      aria-hidden="true"
-                      className="relative hidden min-h-56 h-full rounded-xl border border-dashed border-panel-border/70 bg-superficie/60 select-none pointer-events-none lg:block"
+                      icono="areas"
+                      texto="Espacio disponible"
                     />
                   ))}
                 </div>
@@ -847,36 +972,14 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                     <span className="font-semibold tabular-nums text-label">
                       {areasFiltradas.length} áreas registradas
                     </span>
-                    <nav
-                      aria-label="Paginación de áreas"
-                      className="flex items-center gap-1 rounded-xl border border-panel-border/80 bg-superficie/90 p-0.5 shadow-xs"
-                    >
-                      <button
-                        type="button"
-                        disabled={pageAreas <= 1}
-                        onClick={() => setPageAreas((p) => Math.max(1, p - 1))}
-                        className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:pointer-events-none disabled:text-label outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        aria-label="Página anterior de áreas"
-                        title="Página anterior"
-                      >
-                        <Icono nombre="chevron-izq" tamano="sm" ariaHidden={true} />
-                      </button>
-
-                      <span className="px-2.5 py-0.5 text-xs font-black tabular-nums tracking-wide text-body-text select-none">
-                        {pageAreas}/{totalPaginasAreas}
-                      </span>
-
-                      <button
-                        type="button"
-                        disabled={pageAreas >= totalPaginasAreas}
-                        onClick={() => setPageAreas((p) => Math.min(totalPaginasAreas, p + 1))}
-                        className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:pointer-events-none disabled:text-label outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        aria-label="Página siguiente de áreas"
-                        title="Página siguiente"
-                      >
-                        <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} />
-                      </button>
-                    </nav>
+                    <CapsulePager
+                      page={pageAreas}
+                      totalPages={totalPaginasAreas}
+                      onChange={setPageAreas}
+                      label="Paginación de áreas"
+                      ariaLabelAnterior="Página anterior de áreas"
+                      ariaLabelSiguiente="Página siguiente de áreas"
+                    />
                   </div>
                 ) : null}
               </div>
@@ -887,7 +990,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
         /* SECCIÓN 2: VISTA DE PLATAFORMAS DEL ÁREA SELECCIONADA */
         <div className="grid w-full flex-1 min-h-0 grid-cols-1 grid-rows-[auto_1fr] gap-4">
           {/* Fila 1: Barra de herramientas con Botón Volver, Buscador, Texto del área, y Botones de acción */}
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
             <div className="flex items-center gap-3 flex-1 min-w-0 max-w-3xl">
               {/* Botón Volver a áreas */}
               <Button
@@ -936,14 +1039,6 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                 ) : null}
               </div>
 
-              {/* Texto del área después del buscador */}
-              <div
-                className="inline-flex h-12 min-h-12 items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3.5 text-xs font-bold text-primary-text shadow-xs whitespace-nowrap shrink-0"
-                title={`Área activa: ${selectedArea.name}`}
-              >
-                <Icono nombre="areas" tamano="sm" ariaHidden={true} />
-                <span>{selectedArea.name}</span>
-              </div>
               {activeSelectedPlatformIds.size > 1 ? (
                 <span className="text-xs font-bold text-body-text whitespace-nowrap bg-panel-border/30 px-2.5 py-1 rounded-lg border border-panel-border/60">
                   {activeSelectedPlatformIds.size} plataformas seleccionadas
@@ -951,8 +1046,28 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
               ) : null}
             </div>
 
-            {/* A la derecha: Botones de Accesos, Editar, Eliminar y Nueva plataforma */}
+            {/* A la derecha: Botones de Diseño, Accesos, Editar, Eliminar y Nueva plataforma */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* Botón Diseño de plataformas (Drawer lateral con vista previa en vivo) */}
+              {canManage ? (
+                <Button
+                  ref={botonDisenoPlataformaRef}
+                  variant="fila"
+                  type="button"
+                  onClick={() => setDrawerDisenoPlataformaAbierto(true)}
+                  aria-label="Diseño"
+                  title="Configurar diseño de tarjetas de plataforma"
+                  className={`nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs ${
+                    drawerDisenoPlataformaAbierto
+                      ? 'border-primary bg-primary/10 text-primary-text ring-2 ring-primary/20'
+                      : ''
+                  }`}
+                >
+                  <Icono nombre="diseno" tamano="sm" ariaHidden={true} />
+                  <span>Diseño</span>
+                </Button>
+              ) : null}
+
               {/* Botón Accesos (Gestionar accesos a la plataforma seleccionada) */}
               {canManage ? (
                 <Button
@@ -1203,6 +1318,26 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
           onCancel={() => setRemovingArea(null)}
         />
       ) : null}
+
+      <AreaCardDesignDrawer
+        open={drawerDisenoAbierto}
+        onClose={() => setDrawerDisenoAbierto(false)}
+        disenoCardsArea={disenoCardsArea}
+        onDisenoCardsAreaChange={handleDisenoCardsAreaChange}
+        forzarDisenoArea={forzarDisenoArea}
+        onForzarDisenoAreaChange={handleForzarDisenoAreaChange}
+        devolverA={botonDisenoRef}
+      />
+
+      <PlatformCardDesignDrawer
+        open={drawerDisenoPlataformaAbierto}
+        onClose={() => setDrawerDisenoPlataformaAbierto(false)}
+        disenoCards={disenoCardsPlataforma}
+        onDisenoCardsChange={handleDisenoCardsPlataformaChange}
+        forzarDisenoPlataforma={forzarDisenoPlataforma}
+        onForzarDisenoPlataformaChange={handleForzarDisenoPlataformaChange}
+        devolverA={botonDisenoPlataformaRef}
+      />
     </div>
   );
 }

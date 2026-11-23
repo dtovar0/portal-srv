@@ -105,14 +105,14 @@ describe('Barra lateral', () => {
   it('al usuario común no se le muestra «Gestión»: no tiene entradas de administración', async () => {
     await montar('usuario');
     expect(lateral().queryByText('Gestión')).toBeNull();
-    expect(lateral().getByRole('link', { name: 'Plataformas' })).toBeTruthy();
+    expect(lateral().getByRole('link', { name: 'Portal' })).toBeTruthy();
   });
 
   it('el usuario no ve la sección Gestión con entradas de administración', async () => {
     await montar('usuario');
     expect(lateral().queryByRole('link', { name: 'Aprobaciones' })).toBeNull();
     expect(lateral().queryByRole('link', { name: 'Usuarios' })).toBeNull();
-    expect(lateral().getByRole('link', { name: 'Plataformas' })).toBeTruthy();
+    expect(lateral().getByRole('link', { name: 'Portal' })).toBeTruthy();
   });
 
   it('marca la pantalla actual con aria-current y los tokens de activo', async () => {
@@ -184,7 +184,7 @@ describe('Barra lateral', () => {
   it('sin pendientes o sin ser admin no hay contador ni se pide el resumen', async () => {
     await montar('usuario');
     expect(resumen).not.toHaveBeenCalled();
-    expect(lateral().getByRole('link', { name: 'Plataformas' }).textContent).toBe('Plataformas');
+    expect(lateral().getByRole('link', { name: 'Portal' }).textContent).toBe('Portal');
   });
 });
 
@@ -195,6 +195,27 @@ describe('Barra superior', () => {
     const nav = screen.getByRole('navigation', { name: 'Ruta' });
     expect(within(nav).getByText('Sistema')).toBeTruthy();
     expect(within(nav).getByText('Auditoría').getAttribute('aria-current')).toBe('page');
+  });
+
+  it('en /admin/platforms muestra «Gestión › Plataformas › Áreas» cuando no hay área seleccionada', async () => {
+    ruta.actual = '/admin/platforms';
+    await montar('administrador');
+    const nav = screen.getByRole('navigation', { name: 'Ruta' });
+    expect(within(nav).getByText('Gestión')).toBeTruthy();
+    expect(within(nav).getByText('Plataformas')).toBeTruthy();
+    expect(within(nav).getByText('Áreas').getAttribute('aria-current')).toBe('page');
+  });
+
+  it('en /admin/platforms muestra «Gestión › Plataformas › Nombre Área» directamente sin el nivel intermedio de Áreas', async () => {
+    ruta.actual = '/admin/platforms';
+    window.sessionStorage.setItem('portal_selected_area_name', 'Demo Finanzas');
+    await montar('administrador');
+    const nav = screen.getByRole('navigation', { name: 'Ruta' });
+    expect(within(nav).getByText('Gestión')).toBeTruthy();
+    expect(within(nav).getByText('Plataformas')).toBeTruthy();
+    expect(within(nav).queryByText('Áreas')).toBeNull();
+    expect(within(nav).getByText('Demo Finanzas').getAttribute('aria-current')).toBe('page');
+    window.sessionStorage.removeItem('portal_selected_area_name');
   });
 
   it('el botón de tema alterna claro y oscuro y lo guarda', async () => {

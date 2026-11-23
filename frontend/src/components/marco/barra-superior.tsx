@@ -10,6 +10,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { usePlatformsLayout } from '@/lib/platforms-layout';
 import { guardarDisenoTarjetas } from '../dashboard/diseno-tarjetas';
 import { SelectorDisenoTarjetas } from '../dashboard/selector-diseno-tarjetas';
 import { useDisenoTarjetas } from '../dashboard/use-diseno-tarjetas';
@@ -20,7 +21,7 @@ import { BotonIcono, CLASE_BOTON_ICONO } from './boton-icono';
 import { RutaNavegacion } from './ruta-navegacion';
 
 /** Ruta del dashboard, la única donde se ve el botón «Diseño de tarjetas» (DIS-113). */
-const RUTA_DASHBOARD = '/';
+const RUTA_DASHBOARD = '/dashboard';
 
 function DisenoTarjetasEnBarra() {
   const diseno = useDisenoTarjetas();
@@ -43,7 +44,10 @@ export function BarraSuperior({
   onAlternarTema: () => void;
   noLeidas: number;
 }) {
-  const enDashboard = usePathname() === RUTA_DASHBOARD;
+  const pathname = usePathname();
+  const enDashboard = pathname === RUTA_DASHBOARD;
+  const enPlataformas = pathname === '/platforms';
+  const { layout, setLayout } = usePlatformsLayout();
   const etiquetaMenu = colapsada ? 'Expandir menú' : 'Colapsar menú';
   const etiquetaTema = oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
   const etiquetaNotificaciones = noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : 'Notificaciones';
@@ -61,14 +65,20 @@ export function BarraSuperior({
       />
       <RutaNavegacion />
       <div className="ml-auto flex min-w-0 items-center gap-2">
-        <Link
-          href="/platforms"
-          aria-label="Catálogo de plataformas"
-          title="Catálogo de plataformas"
-          className={CLASE_BOTON_ICONO}
-        >
-          <Icono nombre="plataformas" />
-        </Link>
+        {enPlataformas ? (
+          <button
+            type="button"
+            onClick={() => setLayout(layout === 'topbar' ? 'sidebar' : 'topbar')}
+            title={layout === 'topbar' ? 'Cambiar a diseño con barra lateral' : 'Cambiar a diseño solo barra superior'}
+            aria-label={layout === 'topbar' ? 'Cambiar a diseño con barra lateral' : 'Cambiar a diseño solo barra superior'}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-borde bg-superficie px-3 py-1 text-xs font-medium text-navegacion hover:bg-surface-container hover:text-body-text focus-visible:ring-2 focus-visible:ring-primary outline-none"
+          >
+            <Icono nombre="ajustes" tamano="sm" />
+            <span className="hidden md:inline">
+              {layout === 'topbar' ? 'Vista: Topbar' : 'Vista: Sidebar'}
+            </span>
+          </button>
+        ) : null}
         {enDashboard ? <DisenoTarjetasEnBarra /> : null}
         <BotonIcono icono={oscuro ? 'sol' : 'luna'} etiqueta={etiquetaTema} onClick={onAlternarTema} />
         <Link href="/notifications" aria-label={etiquetaNotificaciones} title="Notificaciones" className={CLASE_BOTON_ICONO}>

@@ -23,7 +23,7 @@ export function FormularioLoginLocal() {
     setBusy(true);
     try {
       await api.loginLocal(email, password);
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     } catch (err) {
       avisar('error', err instanceof Error ? err.message : 'No se pudo iniciar sesión');
       setBusy(false);

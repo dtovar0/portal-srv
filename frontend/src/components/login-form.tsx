@@ -9,16 +9,18 @@
  * contraseña: solo entran cuentas locales.
  */
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { mensajeErrorOidc } from '@/lib/errores-oidc';
+import { esPortadaActiva } from '@/lib/portada';
 import type { AuthContext } from '@/lib/types';
 import { Button } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
 import { useToast } from './toast';
 import { FormularioLoginLocal } from './formulario-login-local';
-import { Card, Spinner } from './ui';
+import { Card, PantallaCarga } from './ui';
 
 /** Inicio del flujo OIDC: navegación completa, no `fetch`. */
 export const URL_INICIO_OIDC = '/api/v1/auth/oidc/login';
@@ -45,7 +47,7 @@ export function LoginForm() {
         if (!active) return;
         setContext(result);
         // Con sesión válida no hay nada que pedir.
-        if (result.authenticated) window.location.href = '/';
+        if (result.authenticated) window.location.href = '/dashboard';
       })
       .catch(() => {
         if (active) setContext({
@@ -57,11 +59,7 @@ export function LoginForm() {
   }, []);
 
   if (!context) {
-    return (
-      <div className="grid min-h-screen place-items-center">
-        <Spinner label="Comprobando acceso…" />
-      </div>
-    );
+    return <PantallaCarga label="Comprobando acceso…" subtexto="Conectando con el servidor corporativo…" />;
   }
 
   return (
@@ -69,14 +67,15 @@ export function LoginForm() {
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
           <span
-            className="mb-4 flex size-12 shrink-0 items-center justify-center rounded-2xl border border-superficie/20 bg-gradient-to-br from-primary via-brand to-accent text-texto-sobre-accion shadow-md"
+            className="mb-4 flex size-14 shrink-0 items-center justify-center rounded-2xl border border-[#334A60] bg-[#1B2A38] shadow-md p-2"
             aria-hidden="true"
           >
-            <Icono nombre="escudo-ok" tamano="lg" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-10 object-contain" width={40} height={40} />
           </span>
           <PageHeader
-            title="Portal de accesos"
-            description="Catálogo centralizado de plataformas"
+            title="Aduana: Control de Acceso"
+            description="Inicia sesión con tu cuenta corporativa para acceder a tus plataformas."
             className="text-center sm:flex-col sm:items-center"
           />
         </div>
@@ -100,6 +99,19 @@ export function LoginForm() {
             </p>
           )}
         </Card>
+
+        {esPortadaActiva() ? (
+          <div className="mt-4 text-center">
+            <Link
+              href="/"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 text-xs font-semibold text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg px-3 py-1.5"
+            >
+              <Icono nombre="info" tamano="xs" ariaHidden={true} />
+              <span>Conoce Aduana: Guía y Presentación de la Plataforma</span>
+            </Link>
+          </div>
+        ) : null}
+
       </div>
     </div>
   );

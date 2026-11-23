@@ -431,14 +431,14 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(screen.queryByText('Contabilidad')).toBeNull();
   });
 
-  it('en la sección 2 muestra el texto del área después del buscador y los botones de accesos, editar y eliminar con las reglas de selección', async () => {
+  it('en la sección 2 no muestra badge redundante de área pero sí los botones de accesos, editar y eliminar con las reglas de selección', async () => {
     comoSuperadmin();
     render(<PlatformAdmin />);
     fireEvent.click(await screen.findByText('Finanzas'));
     expect(await screen.findByText('Contabilidad')).toBeTruthy();
 
-    // Texto del área después del buscador
-    expect(screen.getByTitle('Área activa: Finanzas')).toBeTruthy();
+    // El badge redundante del área después del buscador fue removido
+    expect(screen.queryByTitle('Área activa: Finanzas')).toBeNull();
 
     // Sin selección: botones de toolbar deshabilitados con nombres genéricos
     const btnAccesos = screen.getByRole('button', { name: 'Accesos' });
@@ -490,6 +490,147 @@ describe('PlatformAdmin: cuadrícula de áreas y navegación a plataformas', () 
     expect(screen.getByText('Inactiva')).toBeTruthy();
     expect(screen.getByLabelText(/Área Operaciones \(Inactiva\)/)).toBeTruthy();
     expect(screen.getByLabelText(/Área Operaciones \(Inactiva\)/).closest('[data-state]')?.getAttribute('data-state')).toBe('inactiva');
+  });
+
+  it('el botón de diseño está a la izquierda del filtro de estado y abre el panel lateral de diseño de tarjetas de área', async () => {
+    render(<PlatformAdmin />);
+    await screen.findByText('Finanzas');
+
+    const btnDiseno = screen.getByRole('button', { name: /diseño/i });
+    const btnEstado = screen.getByRole('button', { name: /filtrar por estado/i });
+    const btnGrid = screen.getByRole('button', { name: /configurar cuadrícula/i });
+
+    // Simetría dimensional exacta: los 3 botones comparten w-48 min-w-48 y h-12 min-h-12
+    expect(btnDiseno.className).toContain('w-48');
+    expect(btnDiseno.className).toContain('min-w-48');
+    expect(btnDiseno.className).toContain('h-12');
+    expect(btnEstado.className).toContain('w-48');
+    expect(btnGrid.className).toContain('w-48');
+
+    // Verificar que el botón de diseño precede al botón de estado en el DOM (ubicado a su izquierda)
+    expect(btnDiseno.compareDocumentPosition(btnEstado) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // Abrir el drawer lateral de diseño
+    fireEvent.click(btnDiseno);
+
+    // Se despliega el panel lateral con las opciones de tarjetas de área
+    const drawer = await screen.findByRole('dialog', { name: 'Diseño de Tarjetas de Área' });
+    expect(drawer).toBeTruthy();
+    // Ahora incluye la sección de vista previa en vivo estandarizada con CapsulePager
+    expect(within(drawer).getByText('Vista Previa en Vivo')).toBeTruthy();
+    expect(within(drawer).getByText('Tarjeta de Área')).toBeTruthy();
+    expect(within(drawer).queryByRole('button', { name: 'Listo' })).toBeNull();
+
+    // El botón de cierre en la cabecera y el botón Cerrar en el pie están presentes
+    const botonesCerrar = within(drawer).getAllByRole('button', { name: 'Cerrar' });
+    expect(botonesCerrar.length).toBeGreaterThanOrEqual(2);
+
+    // En el footer debe existir el botón Reestablecer a la derecha
+    const btnReestablecer = within(drawer).getByRole('button', { name: 'Reestablecer' });
+    expect(btnReestablecer).toBeTruthy();
+
+    // Interruptor de forzar diseño
+    const toggleForzar = within(drawer).getByRole('switch', { name: /forzar diseño/i });
+    expect(toggleForzar.getAttribute('aria-checked')).toBe('false');
+
+    // Activar forzar diseño
+    fireEvent.click(toggleForzar);
+    expect(toggleForzar.getAttribute('aria-checked')).toBe('true');
+    expect(window.localStorage.getItem('nexus.platforms.force_area_card_design')).toBe('true');
+
+    // Navegar a la página 1 mediante CapsulePager para seleccionar Onda Curva SVG
+    const btnAnterior = within(drawer).getByRole('button', { name: 'Página anterior' });
+    fireEvent.click(btnAnterior);
+
+    // Seleccionar otra variante (ej. Onda Curva SVG)
+    const radioOnda = within(drawer).getByRole('radio', { name: /Onda Curva/i });
+    fireEvent.click(radioOnda);
+    expect(window.localStorage.getItem('nexus.platforms.area_card_design')).toBe('onda');
+
+    // Pulsar Reestablecer: restaura diseño a 'estandar' y desactiva forzar diseño
+    fireEvent.click(btnReestablecer);
+    expect(window.localStorage.getItem('nexus.platforms.area_card_design')).toBe('estandar');
+    expect(window.localStorage.getItem('nexus.platforms.force_area_card_design')).toBe('false');
+    expect(toggleForzar.getAttribute('aria-checked')).toBe('false');
+
+    // Cerrar el drawer pulsando el botón Cerrar del footer
+    fireEvent.click(botonesCerrar[1]);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Diseño de Tarjetas de Área' })).toBeNull());
+  });
+
+  it('en la sección 2 (plataformas) implementa el botón de diseño a la izquierda de accesos y abre el panel lateral con vista previa en vivo', async () => {
+    comoSuperadmin();
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByText('Finanzas'));
+    expect(await screen.findByText('Contabilidad')).toBeTruthy();
+
+    const btnDiseno = screen.getByRole('button', { name: 'Diseño' });
+    const btnAccesos = screen.getByRole('button', { name: 'Accesos' });
+
+    // Verificar que el botón de diseño está inmediatamente a la izquierda del botón de accesos en el DOM
+    expect(btnDiseno.compareDocumentPosition(btnAccesos) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // Abrir el drawer lateral de diseño de plataformas
+    fireEvent.click(btnDiseno);
+
+    // Se despliega el panel lateral con vista previa en vivo
+    const drawer = await screen.findByRole('dialog', { name: 'Diseño de Tarjetas de Plataforma' });
+    expect(drawer).toBeTruthy();
+    expect(within(drawer).getByText('Vista Previa en Vivo')).toBeTruthy();
+    expect(within(drawer).getByText('Tarjeta de Plataforma')).toBeTruthy();
+
+    // Paginador de 4 diseños por página (cuadrícula 2x2 para eliminar scroll)
+    expect(within(drawer).getByText('Pág. 2 de 3')).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Editorial/i })).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Estándar/i })).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Compacto/i })).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: 'Diseño Horizontal en fila' })).toBeTruthy();
+
+    // Navegar a Página 1
+    const btnPagAnt = within(drawer).getByRole('button', { name: 'Página anterior' });
+    fireEvent.click(btnPagAnt);
+    expect(within(drawer).getByText('Pág. 1 de 3')).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Duotono/i })).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Enmarcada/i })).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Split 50\/50/i })).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Glassmorphism/i })).toBeTruthy();
+
+    // Navegar a Página 3 (muestra los últimos 2 diseños + 2 ghost cards para simetría 2x2)
+    const btnPagSig = within(drawer).getByRole('button', { name: 'Página siguiente' });
+    fireEvent.click(btnPagSig); // Página 2
+    fireEvent.click(btnPagSig); // Página 3
+    expect(within(drawer).getByText('Pág. 3 de 3')).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Hero Banner/i })).toBeTruthy();
+    expect(within(drawer).getByRole('radio', { name: /Flotante Inmersiva/i })).toBeTruthy();
+    const ghostCards = within(drawer).getAllByTestId('platform-design-ghost-card');
+    expect(ghostCards).toHaveLength(2);
+
+    // Toggle para forzar diseño de plataforma (compacto, sin texto de descripción)
+    const toggleForzar = within(drawer).getByRole('switch', { name: /forzar diseño/i });
+    expect(toggleForzar.getAttribute('aria-checked')).toBe('false');
+
+    fireEvent.click(toggleForzar);
+    expect(toggleForzar.getAttribute('aria-checked')).toBe('true');
+    expect(window.localStorage.getItem('nexus.platforms.force_platform_card_design')).toBe('true');
+
+    // Cambiar a diseño flotante en página 3
+    const radioFlotante = within(drawer).getByRole('radio', { name: /Flotante Inmersiva/i });
+    fireEvent.click(radioFlotante);
+    expect(window.localStorage.getItem('nexus.platforms.card_design')).toBe('flotante');
+
+    // Botones de footer simétricos: Cerrar y Reestablecer
+    const btnReestablecer = within(drawer).getByRole('button', { name: 'Reestablecer' });
+    const botonesCerrar = within(drawer).getAllByRole('button', { name: 'Cerrar' });
+
+    // Pulsar Reestablecer restaura a estandar y desactiva forzado
+    fireEvent.click(btnReestablecer);
+    expect(window.localStorage.getItem('nexus.platforms.card_design')).toBe('estandar');
+    expect(window.localStorage.getItem('nexus.platforms.force_platform_card_design')).toBe('false');
+    expect(toggleForzar.getAttribute('aria-checked')).toBe('false');
+
+    // Cerrar el drawer
+    fireEvent.click(botonesCerrar[1]);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Diseño de Tarjetas de Plataforma' })).toBeNull());
   });
 });
 

@@ -35,8 +35,9 @@ export function BarraLateral({
       }`}
     >
       <div className="flex h-barra-superior shrink-0 items-center gap-3 border-b border-barra-lateral-borde px-5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-superficie/20 bg-gradient-to-br from-primary via-brand to-accent text-texto-sobre-accion shadow-xs">
-          <Icono nombre="escudo-ok" />
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#334A60] bg-[#1B2A38] shadow-xs p-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-7 object-contain" width={28} height={28} />
         </span>
         {colapsada ? null : (
           <span className="flex min-w-0 flex-col">

@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { PageHeader } from './page-header';
 import { useSession } from './session-provider';
-import { Tabs, TabPanel } from './tabs';
+import { Tabs, TabPanel, type TabItem } from './tabs';
 import { BackupTab } from './settings/backup-tab';
 import { BulkImportTab } from './settings/bulk-import-tab';
 import { DirectoryTab } from './settings/directory-tab';
@@ -22,18 +22,18 @@ export function SettingsPanel() {
 
   // La configuración del sistema es solo del superadmin; las preferencias, de
   // cada usuario.
-  const tabs: { id: Tab; label: string }[] = [
+  const tabs: TabItem<Tab>[] = [
     ...(isAdmin
       ? ([
-          { id: 'portal', label: 'Portal' },
-          { id: 'smtp', label: 'Correo' },
-          { id: 'templates', label: 'Plantillas' },
-          { id: 'ldap', label: 'Directorio' },
-          { id: 'backup', label: 'Respaldo' },
-          { id: 'bulk-import', label: 'Importación masiva' },
-        ] as { id: Tab; label: string }[])
+        { id: 'portal', label: 'Portal', icon: 'plataformas' },
+        { id: 'smtp', label: 'Correo', icon: 'solicitudes' },
+        { id: 'templates', label: 'Plantillas', icon: 'documento' },
+        { id: 'ldap', label: 'Directorio', icon: 'usuarios' },
+        { id: 'backup', label: 'Respaldo', icon: 'auditoria' },
+        { id: 'bulk-import', label: 'Importación masiva', icon: 'mas' },
+      ] as TabItem<Tab>[])
       : []),
-    { id: 'preferences', label: 'Mis preferencias' },
+    { id: 'preferences', label: 'Mis preferencias', icon: 'ajustes' },
   ];
 
   return (
@@ -47,6 +47,7 @@ export function SettingsPanel() {
         ariaLabel="Ajustes"
         getTabId={tabId}
         getPanelId={panelId}
+        variant="pills"
       />
 
       <TabPanel id={panelId(tab)} tabId={tabId(tab)} className="!mt-0 flex h-full w-full flex-1 min-h-0 flex-col">

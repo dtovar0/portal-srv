@@ -7,11 +7,17 @@
  * no depende solo del color).
  */
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Icono } from '../icono';
 import { useSession } from '../session-provider';
 import { seccionesVisibles } from './nav-items';
+import {
+  ModalTransicionPortal,
+  guardarOmitirModalPortal,
+  leerOmitirModalPortal,
+} from './modal-transicion-portal';
 
 /** «1 pendiente» / «2 pendientes». */
 function textoPendientes(n: number): string {
@@ -27,6 +33,14 @@ export interface NavPrincipalProps {
   enBarraLateral?: boolean;
 }
 
+function useSafeRouter(): { push: (href: string) => void } | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
+}
+
 export function NavPrincipal({
   onNavigate,
   colapsada = false,
@@ -35,7 +49,42 @@ export function NavPrincipal({
 }: NavPrincipalProps) {
   const { session } = useSession();
   const pathname = usePathname();
+  const router = useSafeRouter();
+  const [modalPortalAbierto, setModalPortalAbierto] = useState(false);
+
   if (!session) return null;
+
+  const alHacerClicItem = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
+    if (href === '/platforms' && pathname !== '/platforms') {
+      const omitir = leerOmitirModalPortal();
+      if (!omitir) {
+        event.preventDefault();
+        setModalPortalAbierto(true);
+        return;
+      }
+    }
+    onNavigate?.();
+  };
+
+  const handleConfirmarTransicion = (omitirSiguientes: boolean) => {
+    if (omitirSiguientes) {
+      guardarOmitirModalPortal(true);
+    }
+    setModalPortalAbierto(false);
+    onNavigate?.();
+    if (router) {
+      router.push('/platforms');
+    } else if (typeof window !== 'undefined') {
+      window.location.assign('/platforms');
+    }
+  };
+
+  const handleCancelarTransicion = () => {
+    setModalPortalAbierto(false);
+  };
 
   return (
     <nav className="flex flex-col gap-0.5" aria-label="Principal">
@@ -65,7 +114,7 @@ export function NavPrincipal({
                 aria-current={activo ? 'page' : undefined}
                 aria-label={colapsada ? nombre : undefined}
                 title={colapsada ? nombre : undefined}
-                onClick={onNavigate}
+                onClick={(e) => alHacerClicItem(e, item.href)}
                 className={`relative flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm outline-none transition-colors focus-visible:ring-2 ${
                   enBarraLateral ? 'focus-visible:ring-barra-lateral-foco' : 'focus-visible:ring-primary'
                 } ${
@@ -101,6 +150,13 @@ export function NavPrincipal({
           })}
         </div>
       ))}
+      {modalPortalAbierto ? (
+        <ModalTransicionPortal
+          abierto={modalPortalAbierto}
+          onConfirm={handleConfirmarTransicion}
+          onCancel={handleCancelarTransicion}
+        />
+      ) : null}
     </nav>
   );
 }
