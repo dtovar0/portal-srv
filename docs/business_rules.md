@@ -5384,3 +5384,26 @@ Un usuario que navega a `https://aduana.vivaro.com/login` encuentra inmediatamen
 ### Impacto
 
 Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
+
+
+Arquitectura Split-Screen Visual para la Pantalla de Login
+
+## Frontend y Autenticación
+
+### Regla
+
+La pantalla de acceso corporativo (`/login`) adopta un layout split-screen visual que equilibra la identidad institucional con la ergonomía de acceso sin sobrecargar al usuario con textos promocionales:
+1. **Columna Izquierda (Showcase Visual de la Plataforma)**: En pantallas de escritorio (`>= lg`), despliega un escaparate visual de alta fidelidad que enmarca la interfaz real de Aduana (`/screenshots/catalogo-plataformas.png`) dentro de una ventana estilizada de sistema operativo con semáforos de control (`bg-error`, `bg-warning`, `bg-success`) y badge de catálogo oficial. Se excluyen deliberadamente textos comerciales, bloques de marketing y listas de características para mantener la pulcritud y sobriedad de la herramienta.
+2. **Columna Derecha (Tarjeta de Autenticación)**: Contiene la tarjeta de acceso de 420px de ancho con acento perimetral superior en gradiente, isotipo oficial en contenedor dinámico sincronizado con el tema, estado de SSO corporativo y el botón de acción principal de alta visibilidad para Authelia.
+3. **Flujos de Acceso Local**:
+   - Con `OIDC_HABILITADO=false`: La interfaz detecta `local_login=true` y despliega automáticamente el formulario de credenciales locales (`FormularioLoginLocal`) para cuentas de base de datos.
+   - Con `OIDC_HABILITADO=true`: La entrada con credenciales locales de contingencia se realiza directamente a través de la ruta protegida `/acceso-emergencia`.
+4. **Restricciones Técnicas**: Uso exclusivo de tokens semánticos (cero colores literales o funciones de color directas), `min-h-screen` y total ausencia de clases de bloqueo de desplazamiento (`h-screen`, `h-dvh`, `overflow-hidden`).
+
+### Ejemplo
+
+Al acceder a `/login` en escritorio, el usuario observa a la izquierda una vista limpia de la interfaz del catálogo de plataformas en una ventana flotante elegante y a la derecha el botón de ingreso con Authelia SSO.
+
+### Impacto
+
+Afecta a [frontend/src/components/login-form.tsx](../frontend/src/components/login-form.tsx), [frontend/tests/components/auth/login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx) y [frontend/tests/components/raiz-desplazable.test.tsx](../frontend/tests/components/raiz-desplazable.test.tsx).
