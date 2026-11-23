@@ -67,7 +67,7 @@ class ProveedorOidc:
         self.fin_de_sesion = None
         # Claims del userinfo (Authelia 4.38+ publica ahí email y name).
         self.userinfo = {'sub': SUB, 'email': CORREO, 'name': NOMBRE,
-                         'email_verified': True}
+                         'email_verified': True, 'groups': ['app-aduana-users']}
         # Cambios al ID token: valores a reemplazar; `None` quita el claim.
         self.id_token_cambios = {}
         self.firmar_con_llave_ajena = False

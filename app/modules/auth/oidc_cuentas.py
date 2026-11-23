@@ -19,7 +19,7 @@ from datetime import datetime
 from app import db
 from app.authz import ROLE_ADMIN, ROLE_AREA_ADMIN, ROLE_USER
 from app.modules.auth.models import User
-from app.modules.auth.oidc import ERROR_CUENTA, ErrorOidc, Identidad
+from app.modules.auth.oidc import ERROR_CUENTA, ERROR_DENEGADO, ErrorOidc, Identidad
 from app.modules.auth.services import avisar_bloqueo, motivo_de_bloqueo
 from app.modules.users.roles import cambiar_rol
 
@@ -74,8 +74,14 @@ def rol_desde_grupos(grupos: tuple[str, ...] | list[str]) -> str | None:
 
 
 def cuenta_de_la_identidad(identidad: Identidad) -> CuentaOidc:
-    """Vincula o crea la cuenta de `identidad`; sincroniza el rol según grupos mapeados."""
+    """Vincula o crea la cuenta de `identidad`; exige grupo autorizado y sincroniza rol."""
     rol_mapeado = rol_desde_grupos(identidad.grupos)
+    if not rol_mapeado:
+        raise ErrorOidc(
+            ERROR_DENEGADO,
+            'OIDC: la cuenta no pertenece a ningún grupo autorizado en Authelia '
+            '(requiere app-aduana-users, app-aduana-admins o infraestructuraVoIP)'
+        )
 
     cuenta = User.query.filter_by(oidc_sub=identidad.sub).first()
     if cuenta is not None:
@@ -84,7 +90,7 @@ def cuenta_de_la_identidad(identidad: Identidad) -> CuentaOidc:
             _rechazar(cuenta, motivo)
         cuenta.nombre = identidad.nombre
         cuenta.last_login_at = datetime.now()
-        if rol_mapeado and cuenta.role != rol_mapeado:
+        if cuenta.role != rol_mapeado:
             cambiar_rol(cuenta, rol_mapeado)
         db.session.commit()
         return CuentaOidc(cuenta, False)
@@ -99,14 +105,13 @@ def cuenta_de_la_identidad(identidad: Identidad) -> CuentaOidc:
         cuenta.oidc_sub = identidad.sub
         cuenta.nombre = identidad.nombre
         cuenta.last_login_at = datetime.now()
-        if rol_mapeado and cuenta.role != rol_mapeado:
+        if cuenta.role != rol_mapeado:
             cambiar_rol(cuenta, rol_mapeado)
         db.session.commit()
         return CuentaOidc(cuenta, False)
 
-    rol_nuevo = rol_mapeado or ROLE_USER
     cuenta = User(email=identidad.correo, nombre=identidad.nombre,
-                  role=rol_nuevo, auth_source=ORIGEN_OIDC, is_active=True,
+                  role=rol_mapeado, auth_source=ORIGEN_OIDC, is_active=True,
                   oidc_sub=identidad.sub, last_login_at=datetime.now())
     db.session.add(cuenta)
     db.session.commit()
