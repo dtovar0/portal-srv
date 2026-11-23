@@ -5241,22 +5241,25 @@ Al seleccionar la variante «Editorial Suizo» o «Hero Banner» en el cajón la
 ### Impacto
 
 ... [truncated for diff preview]
+Afecta a [platform-card-design-drawer.tsx](../frontend/src/components/platforms/platform-card-design-drawer.tsx), [UI_GUIDE.md](../UI_GUIDE.md) y a las pruebas en [platform-admin.test.tsx](../frontend/tests/components/platform-admin.test.tsx).
 
+Diseño Premium Institucional en Acceso y Cierre de Sesión (Login / Logout)
 
-Rediseño Institucional del Inicio de Sesión de Aduana
-
-## Autenticación y Acceso
+## Autenticación
 
 ### Regla
 
-1. **Atmósfera Dark-First e Identidad Visual**: La pantalla de inicio de sesión (`LoginForm`) implementa un escenario inmersivo alineado con el manual corporativo de Aduana, utilizando el fondo corporativo con destellos ambientales en Cian Tecnológico (`--aduana-cyan`) y Naranja Control (`--aduana-orange`), prescindiendo de fondos planos desalineados o escudos genéricos.
-2. **Jerarquía Tipográfica e Isotipo**: Incorpora el isotipo canónico de Aduana (`isotype-aduana.png`) sobre contenedor Navy Profundo (`bg-aduana-bg border-aduana-border shadow-xl ring-4 ring-aduana-cyan/15`), titular de producto en tipografía Montserrat Display (`font-display text-2xl sm:text-3xl font-extrabold`) con distintivo institucional «Control de Acceso • Portal Vivaro» y microcopy canónico de bienvenida.
-3. **Controles y Botones Corporativos**: Tanto el formulario local (`FormularioLoginLocal`) como el botón OIDC de Authelia adoptan botones con gradiente corporativo Cian Tecnológico (`from-aduana-cyan to-aduana-cyan-hover`), inputs con halo de foco interactivo en cian y pie de página con enlace institucional a la guía de presentación de la plataforma y leyenda de seguridad de TI.
+Las vistas de acceso (`LoginForm`), autenticación local/emergencia (`FormularioLoginLocal`, `AccesoEmergenciaForm`) y cierre de sesión (`LogoutView`) implementan la identidad visual corporativa de Aduana (Manual de Marca):
+1. **Atmósfera Dark-First**: Lienzo centrado con Navy Profundo (`#1B2A38` / `bg-fondo`), sutil resplandor ambiental tecnológico en los vértices superiores e inferiores mediante halos difuminados en Cian Tecnológico (`#1CB5E0`) y Naranja Control (`#F26419`).
+2. **Contenedor de Isotipo Canónico**: Caja redondeada con borde (`border-aduana-border`), superficie oscura (`bg-superficie`), anillo de énfasis (`ring-4 ring-aduana-cyan/15`) y renderizado del isotipo oficial `/brand/isotype-aduana.png`.
+3. **Título Display y Microcopy**: Titulares en tipografía `Montserrat` (`font-display font-extrabold`), acompañados de insignias de seguridad (`Control de Acceso • Portal Vivaro`, `Desconexión segura completada`, `Superadmin Local • Modo Recuperación`) y textos descriptivos canónicos.
+4. **Tarjeta Principal con Borde de Acento**: Superficie `bg-panel-fill/95 backdrop-blur-xl` con barra superior en degradado de acento corporativo (`from-aduana-cyan to-aduana-orange`), inputs de alta ergonomía con focus ring cian y botones de acción principal en degradado corporativo (`from-aduana-cyan to-aduana-cyan-hover`) con microinteracción hover/active y estado deshabilitado accesible.
+5. **Cierre de Sesión Asistido**: `LogoutView` presenta confirmación nítida con isotipo oficial, estado accesible de desconexión y enlace de retorno directo en botón primario de alta visibilidad.
 
 ### Ejemplo
 
-Al acceder a `/login` tanto en modo OIDC como local, el usuario visualiza la tarjeta institucional de Aduana con el isotipo de la llave/circuito, halo de luces cian y naranja en las esquinas, tipografía Montserrat y botón de ingreso en gradiente cian tecnológico con ícono de verificación.
+Al ingresar a `/login`, el usuario es recibido por una pantalla inmersiva con el isotipo de Aduana en alta definición, la insignia «Control de Acceso • Portal Vivaro», la tarjeta de acceso con bisel degradado cian-naranja y el botón de acción en Cian Tecnológico. Al cerrar sesión en `/logout`, la vista despliega la insignia verde/cian de «Desconexión segura completada» junto con el botón «Volver a iniciar sesión» en formato primario destacado.
 
 ### Impacto
 
-Afecta a [login-form.tsx](../frontend/src/components/login-form.tsx), [formulario-login-local.tsx](../frontend/src/components/formulario-login-local.tsx), [UI_GUIDE.md](../UI_GUIDE.md) y a las pruebas en [login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx).
+Afecta a [login-form.tsx](../frontend/src/components/login-form.tsx), [formulario-login-local.tsx](../frontend/src/components/formulario-login-local.tsx), [logout-view.tsx](../frontend/src/components/logout-view.tsx), [acceso-emergencia-form.tsx](../frontend/src/components/acceso-emergencia-form.tsx), [UI_GUIDE.md](../UI_GUIDE.md) y a las pruebas en [login-oidc.test.tsx](../frontend/tests/components/auth/login-oidc.test.tsx).
