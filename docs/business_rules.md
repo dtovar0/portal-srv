@@ -5700,3 +5700,20 @@ Un usuario sin permisos accede a `https://netbox-mon.vivaro.com/login` y recibe 
 ### Impacto
 
 Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html), [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js) y [frontend/src/components/platforms/platforms-shell.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/platforms/platforms-shell.tsx).
+
+
+Botón Único de Acción en Página de Error 403
+
+## Infraestructura y Páginas de Error Nginx
+
+### Regla
+
+La página de error 403 (`deploy/errors/403.html`) simplifica su zona de acciones presentando exclusivamente un único botón de acción principal: "Solicitar acceso en ADUANA". Se retira de forma definitiva el botón secundario "Ir al Dashboard" para enfocar la experiencia del usuario hacia el flujo de solicitud contextual directa en `https://aduana.vivaro.com/platforms?buscar={slug_plataforma}`.
+
+### Ejemplo
+
+Al acceder a `https://netbox-mon.vivaro.com/login` y resultar denegado con 403, la tarjeta muestra únicamente el botón "Solicitar acceso en ADUANA". Al pulsar dicho botón, el usuario es redirigido a `https://aduana.vivaro.com/platforms?buscar=netbox-mon`.
+
+### Impacto
+
+Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html) y [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js).
