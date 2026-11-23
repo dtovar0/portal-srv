@@ -5299,3 +5299,23 @@ Al ingresar al Dashboard o cualquier vista dentro del layout principal con menú
 ### Impacto
 
 Afecta a [frontend/src/components/marco/barra-lateral.tsx](../frontend/src/components/marco/barra-lateral.tsx) y a la suite de pruebas unitarias en [frontend/tests/components/marco-admin.test.tsx](../frontend/tests/components/marco-admin.test.tsx).
+
+
+Sincronización Temática del Isotipo Corporativo de Aduana
+
+## Marca y Temas (Dark / Light Mode)
+
+### Regla
+
+El contenedor del isotipo oficial de Aduana (`isotype-aduana.png`) debe sincronizarse automáticamente con el tema activo de la interfaz utilizando los tokens semánticos `bg-superficie` y `border-panel-border`:
+- En **Tema Claro (Light)**: El fondo del isotipo es blanco puro (`#FFFFFF` / `bg-superficie`) con borde perimetral sutil (`#E2E8F0` / `border-panel-border`), evitando fondos oscuros fijos o cajas negras en cabeceras claras.
+- En **Tema Oscuro (Dark)**: El fondo del isotipo transmuta automáticamente al Navy Profundo corporativo (`#1A2634` / `--p-noche-850`) con borde perimetral tecnológico (`#334A60` / `--p-noche-700`).
+Se prohíbe el uso de colores hexadecimales fijos (`#1B2A38`, `#334A60`) en los contenedores del isotipo en cabeceras de navegación, barras laterales y pies de página.
+
+### Ejemplo
+
+Al alternar entre el tema claro y oscuro en la portada (`/`) o en el portal/dashboard (`/dashboard`), el contenedor del logotipo de Aduana en la barra superior y lateral cambia de fondo blanco a fondo azul noche oscuro, armonizando con la superficie de la interfaz.
+
+### Impacto
+
+Afecta a [frontend/src/components/portada/pagina-portada.tsx](../frontend/src/components/portada/pagina-portada.tsx), [frontend/src/components/marco/barra-lateral.tsx](../frontend/src/components/marco/barra-lateral.tsx), [frontend/src/components/platforms/platforms-topbar.tsx](../frontend/src/components/platforms/platforms-topbar.tsx) y [frontend/src/components/platforms/platforms-sidebar-view.tsx](../frontend/src/components/platforms/platforms-sidebar-view.tsx).
