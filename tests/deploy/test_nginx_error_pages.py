@@ -72,27 +72,28 @@ def test_tokens_de_diseno_corporativo_aduana():
     assert 'prefers-color-scheme: light' in tokens
 
 
-def test_mensajes_de_permisos_authelia_en_errores():
-    """Valida que 403 y 502 indiquen bloqueo de Authelia, solicitud de acceso vía ADUANA y atributos dinámicos."""
+def test_mensajes_claros_y_limpios_en_errores():
+    """Valida que 403 y 502 tengan mensajes cortos sin tecnicismos ni Authelia, sin detalle técnico y con icono."""
     for pagina in ('403.html', '502.html'):
         contenido = (DEPLOY_ERRORS / pagina).read_text(encoding='utf-8')
-        assert 'Authelia está bloqueando el acceso' in contenido, f'{pagina} no indica bloqueo de Authelia'
-        assert 'permisos' in contenido.lower(), f'{pagina} no menciona permisos'
-        assert 'solicitar el acceso al administrador a través de la plataforma ADUANA' in contenido, (
-            f'{pagina} no indica solicitar acceso al administrador vía plataforma ADUANA'
-        )
+        assert 'No tienes acceso al recurso solicitado' in contenido, f'{pagina} no contiene el texto requerido'
+        assert 'Tienes que pedir acceso a tu administrador' in contenido, f'{pagina} no contiene el texto de administrador'
+        assert 'Authelia' not in contenido, f'{pagina} no debe mencionar Authelia para no confundir al usuario'
+        assert 'technical-box' not in contenido, f'{pagina} no debe mostrar la caja de detalles técnicos'
         assert 'href="/platforms"' in contenido, f'{pagina} no enlaza a /platforms'
         assert 'Solicitar acceso en ADUANA' in contenido, f'{pagina} no tiene botón de solicitud en ADUANA'
         assert 'data-plataforma-nombre' in contenido, f'{pagina} no contiene data-plataforma-nombre'
-        assert 'data-plataforma-host' in contenido, f'{pagina} no contiene data-plataforma-host'
+        assert 'data-plataforma-icono' in contenido, f'{pagina} no contiene data-plataforma-icono'
+        assert 'data-plataforma-iniciales' in contenido, f'{pagina} no contiene data-plataforma-iniciales'
         assert 'data-link-aduana' in contenido, f'{pagina} no contiene data-link-aduana'
 
 
 def test_deteccion_dinamica_en_script_de_errores():
-    """Valida que error.js incluya la lógica para extraer el host y contextualizar el enlace de ADUANA."""
+    """Valida que error.js incluya la lógica para extraer el host, icono y contextualizar el enlace de ADUANA."""
     js = (DEPLOY_ERRORS / 'assets' / 'js' / 'error.js').read_text(encoding='utf-8')
     assert 'data-plataforma-nombre' in js
-    assert 'data-plataforma-host' in js
+    assert 'data-plataforma-icono' in js
+    assert 'data-plataforma-iniciales' in js
     assert 'data-link-aduana' in js
     assert 'buscar=' in js
 

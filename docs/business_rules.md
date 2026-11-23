@@ -5593,3 +5593,25 @@ Un usuario intenta ingresar a `https://terminal-packet.vivaro.com/core/` y es bl
 ### Impacto
 
 Afecta a [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js), [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html) y [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).
+
+
+Diseño Simplificado de Error por Falta de Acceso con Icono de Plataforma
+
+## Experiencia de Usuario y Comunicación Directa
+
+### Regla
+
+Las páginas de error `403.html` y `502.html` de Nginx se simplifican para el usuario final, eliminando tecnicismos y detalles de infraestructura interna:
+1. **Sin Mención a Proveedores Técnicos**: Se omite cualquier referencia a nombres de software de autenticación interna (como Authelia) que un usuario de nuevo ingreso desconoce.
+2. **Mensaje Breve y Directo**: Se comunica exclusivamente: «No tienes acceso al recurso solicitado. Tienes que pedir acceso a tu administrador para ingresar.»
+3. **Omisión de Detalles Técnicos**: Se retira el recuadro técnico de diagnóstico para evitar confusión o alarma innecesaria en el colaborador.
+4. **Icono y Nombre de Plataforma**: Se muestra en el cuerpo de la pantalla el icono/avatar dinámico de la plataforma requerida (con iniciales de respaldo) y su nombre formateado.
+5. **Botón a ADUANA**: Se mantiene el botón principal «Solicitar acceso en ADUANA» apuntando al catálogo para gestionar la solicitud de acceso de inmediato.
+
+### Ejemplo
+
+Un usuario que intenta abrir una plataforma sin tener los permisos asignados ve en pantalla el icono y título de la herramienta, acompañado únicamente del texto: «No tienes acceso al recurso solicitado. Tienes que pedir acceso a tu administrador para ingresar», junto al botón que lo envía a ADUANA.
+
+### Impacto
+
+Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html), [deploy/errors/assets/css/error.css](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/css/error.css) y [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js).
