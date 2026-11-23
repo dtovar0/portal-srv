@@ -6112,3 +6112,28 @@ Un administrador despliega el portal habiendo definido únicamente el remitente 
 
 ### Impacto
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Plantillas Visuales HTML, Cumplimiento de Cabeceras RFC 5322/2047 y Búsqueda Canónica en Directorio LDAP
+
+## Módulo
+Autenticación / Autoservicio / Notificaciones y Directorio
+
+### Regla
+1. **Cumplimiento Estricto de Cabeceras de Correo RFC 5322 y RFC 2047**:
+   Para evitar que servidores de correo corporativo (como Microsoft Exchange / Outlook) cataloguen los mensajes salientes como `<no sender address>` o adviertan riesgos de remitente:
+   - Toda cabecera `From:` con caracteres especiales o no-ASCII (como viñetas `•`) debe codificarse obligatoriamente mediante `formataddr((Header(sender_name, 'utf-8'), sender_email))`.
+   - Se debe definir explícitamente la cabecera `Sender: {sender_email}` y `Reply-To: {sender_email}` en el objeto MIME.
+   - La llamada de transmisión SMTP `smtp.send_message(msg, from_addr=sender_email)` debe pasar de manera explícita la dirección de envolvente `from_addr` (comando `MAIL FROM:<...>`), garantizando que la dirección del remitente sea canónica y RFC-válida.
+2. **Plantillas Institucionales Multipart (HTML + Texto Plano)**:
+   Los correos de verificación MFA, confirmación de cambio de contraseña y restablecimiento por enlace deben generarse con estructura `multipart/alternative`:
+   - Versión en texto plano para clientes de consola o lectores accesibles.
+   - Versión en HTML enriquecido con diseño institucional limpio: encabezado con degradado distintivo, tarjeta central con borde suave, caja destacada para el código de 6 dígitos con tipografía monoespaciada de gran visibilidad y aviso de expiración y advertencias de seguridad.
+3. **Búsqueda Canónica en `ClienteDirectorio`**:
+   Las consultas de usuario contra OpenLDAP deben utilizar exclusivamente el método nativo `buscar_usuario(identificador)` (que filtra por el atributo `cfg.atributo_usuario` / `uid`), eliminando cualquier invocación a métodos inexistentes como `buscar_por_uid`. En búsquedas que reciban correo electrónico, si la consulta por `buscar_por_correo` no produce resultados, se debe intentar secundariamente `buscar_usuario` extrayendo el nombre de cuenta previo al carácter `@`.
+
+### Ejemplo
+Un usuario `dtovar` solicita un código MFA de recuperación. El backend busca a `dtovar` llamando a `cliente.buscar_usuario('dtovar')` en LDAP sin generar errores de atributo. Al despachar el correo, el servidor SMTP envía el mensaje con cabecera `From: =?utf-8?...?= <authelia@vivaro.com>` y `Sender: authelia@vivaro.com`. En la bandeja de entrada de Outlook, el correo se muestra impecablemente firmado por "Authelia • Autoservicio de Identidad <authelia@vivaro.com>", sin la etiqueta `<no sender address>`, presentando una tarjeta HTML profesional con el código de 6 dígitos claramente visible.
+
+### Impacto
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

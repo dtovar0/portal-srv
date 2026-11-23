@@ -23,8 +23,10 @@ import smtplib
 import struct
 import time
 from datetime import datetime
+from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
 from app import db
@@ -197,13 +199,11 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
         logger.warning("Autoservicio MFA: No hay servidor SMTP configurado en el sistema para enviar a %s", destinatario)
         return False, "No hay un servidor de correo (SMTP) configurado en el sistema. Configura SMTP_SERVER o AUTOSERVICIO_SMTP_SERVER en el archivo .env o en Ajustes > Servidor de Correo."
 
-    msg = MIMEMultipart()
-    msg['From'] = f"{cfg['sender_name']} <{cfg['sender_email']}>"
-    msg['To'] = destinatario
-    msg['Subject'] = f"Authelia • Código de verificación: {codigo}"
-
     ttl_minutos = max(1, tiempo_expiracion_mfa() // 60)
-    cuerpo = (
+    brand_name = cfg.get('sender_name') or 'Authelia • Autoservicio de Identidad'
+    asunto = f"Authelia • Código de verificación: {codigo}"
+
+    cuerpo_plano = (
         f"Hola {nombre or destinatario},\n\n"
         "Has solicitado actualizar o recuperar tu contraseña corporativa en Authelia.\n\n"
         f"Tu código de seguridad de 6 dígitos es:\n\n"
@@ -212,10 +212,85 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
         "Si tú no iniciaste esta solicitud, puedes ignorar este correo de forma segura.\n\n"
         "— Authelia Identity and Access Management"
     )
-    msg.attach(MIMEText(cuerpo, 'plain'))
 
-    logger.info("Autoservicio MFA: Conectando a servidor SMTP %s:%s (cifrado: %s, auth: %s, origen: %s) para enviar código a %s",
-                cfg['server'], cfg['port'], cfg['encryption'], bool(cfg['username'] and cfg['password']), cfg.get('source'), destinatario)
+    cuerpo_html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 24px 32px; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">
+                Authelia &bull; Autoservicio de Identidad
+              </h1>
+              <p style="margin: 4px 0 0; font-size: 12px; color: #e0f2fe;">
+                Portal Seguro de Verificación y Recuperación de Contraseña
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px;">
+              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.5; color: #334155;">
+                Hola <strong>{nombre or destinatario}</strong>:
+              </p>
+              <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #475569;">
+                Has solicitado restablecer o actualizar la contraseña de tu cuenta corporativa.
+                Para verificar tu identidad y validar la titularidad de tu cuenta, utiliza el siguiente código de seguridad de 6 dígitos:
+              </p>
+              
+              <div style="background-color: #f8fafc; border: 2px dashed #0ea5e9; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+                <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0369a1; display: inline-block;">
+                  {codigo}
+                </span>
+                <p style="margin: 8px 0 0; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                  Válido durante {ttl_minutos} minutos
+                </p>
+              </div>
+
+              <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b;">
+                Introduce este código en el paso 2 del portal para continuar con la actualización de tu contraseña.
+              </p>
+
+              <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 16px;">
+                <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8;">
+                  ⚠️ <strong>¿No solicitaste este cambio?</strong> Si no realizaste esta solicitud, puedes ignorar este correo de forma segura. Tu contraseña actual no ha sido modificada.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                Authelia Identity and Access Management &bull; Vivaro
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+    # Construir mensaje multipart/alternative con cabeceras RFC 5322 y RFC 2047
+    msg = MIMEMultipart('alternative')
+    msg['From'] = formataddr((str(Header(cfg['sender_name'], 'utf-8')), cfg['sender_email']))
+    msg['Sender'] = cfg['sender_email']
+    msg['Reply-To'] = cfg['sender_email']
+    msg['To'] = destinatario
+    msg['Subject'] = Header(asunto, 'utf-8')
+
+    msg.attach(MIMEText(cuerpo_plano, 'plain', 'utf-8'))
+    msg.attach(MIMEText(cuerpo_html, 'html', 'utf-8'))
+
+    logger.info("Autoservicio MFA: Conectando a servidor SMTP %s:%s (cifrado: %s, auth: %s, remitente: %s) para enviar código a %s",
+                cfg['server'], cfg['port'], cfg['encryption'], bool(cfg['username'] and cfg['password']), cfg['sender_email'], destinatario)
 
     try:
         if cfg['encryption'] == 'ssl':
@@ -228,7 +303,7 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
             smtp.set_debuglevel(1)
         if cfg['username'] and cfg['password']:
             smtp.login(cfg['username'], cfg['password'])
-        smtp.send_message(msg)
+        smtp.send_message(msg, from_addr=cfg['sender_email'])
         smtp.quit()
         logger.info("Autoservicio MFA: Código de 6 dígitos enviado exitosamente a %s vía %s", destinatario, cfg['server'])
         return True, None
@@ -245,13 +320,10 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
         logger.info("Autoservicio: SMTP no activo al enviar confirmación de cambio a %s", destinatario)
         return False
 
-    msg = MIMEMultipart()
-    msg['From'] = f"{cfg['sender_name']} <{cfg['sender_email']}>"
-    msg['To'] = destinatario
-    msg['Subject'] = "Authelia • Confirmación de actualización de contraseña"
-
     ahora_str = time.strftime('%Y-%m-%d %H:%M:%S')
-    cuerpo = (
+    asunto = "Authelia • Confirmación de actualización de contraseña"
+
+    cuerpo_plano = (
         f"Hola {nombre or destinatario},\n\n"
         "Te confirmamos que la contraseña de tu cuenta corporativa ha sido actualizada exitosamente "
         "a través del portal de Autoservicio de Authelia.\n\n"
@@ -262,7 +334,74 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
         "Comunícate de inmediato con el equipo de Seguridad y Administración de TI.\n\n"
         "— Authelia Identity and Access Management"
     )
-    msg.attach(MIMEText(cuerpo, 'plain'))
+
+    cuerpo_html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 24px 32px; background: linear-gradient(135deg, #10b981, #059669); text-align: left;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">
+                ✅ Contraseña Actualizada Exitosamente
+              </h1>
+              <p style="margin: 4px 0 0; font-size: 12px; color: #ecfdf5;">
+                Authelia &bull; Autoservicio de Identidad
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px;">
+              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.5; color: #334155;">
+                Hola <strong>{nombre or destinatario}</strong>:
+              </p>
+              <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #475569;">
+                Te confirmamos que la contraseña de tu cuenta corporativa ha sido actualizada exitosamente a través del portal de Autoservicio.
+              </p>
+              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin: 20px 0;">
+                <p style="margin: 0; font-size: 13px; color: #166534;">
+                  <strong>Fecha y hora del cambio:</strong> {ahora_str}
+                </p>
+                <p style="margin: 6px 0 0; font-size: 12px; color: #15803d;">
+                  Tus nuevas credenciales han sido sincronizadas en el directorio corporativo y plataformas asociadas.
+                </p>
+              </div>
+              <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 16px;">
+                <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #b91c1c;">
+                  ⚠️ <strong>IMPORTANTE:</strong> Si tú NO realizaste este cambio, tu cuenta puede estar en riesgo. Comunícate de inmediato con el equipo de Seguridad y Administración de TI.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                Authelia Identity and Access Management &bull; Vivaro
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+    msg = MIMEMultipart('alternative')
+    msg['From'] = formataddr((str(Header(cfg['sender_name'], 'utf-8')), cfg['sender_email']))
+    msg['Sender'] = cfg['sender_email']
+    msg['Reply-To'] = cfg['sender_email']
+    msg['To'] = destinatario
+    msg['Subject'] = Header(asunto, 'utf-8')
+
+    msg.attach(MIMEText(cuerpo_plano, 'plain', 'utf-8'))
+    msg.attach(MIMEText(cuerpo_html, 'html', 'utf-8'))
 
     logger.info("Autoservicio: Conectando a servidor SMTP %s:%s para enviar confirmación de cambio a %s",
                 cfg['server'], cfg['port'], destinatario)
@@ -277,7 +416,7 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
             smtp.set_debuglevel(1)
         if cfg['username'] and cfg['password']:
             smtp.login(cfg['username'], cfg['password'])
-        smtp.send_message(msg)
+        smtp.send_message(msg, from_addr=cfg['sender_email'])
         smtp.quit()
         logger.info("Autoservicio: Notificación de cambio de contraseña enviada a %s", destinatario)
         return True
@@ -307,11 +446,11 @@ def solicitar_codigo_mfa(identificador):
     if directorio_activo():
         try:
             cliente = ClienteDirectorio()
-            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_por_uid(identificador)
+            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_usuario(identificador)
             if not persona and '@' in identificador:
                 # Si no se encontró por correo exacto, intentar por uid extrayendo la parte de usuario
                 usuario_parte = identificador.split('@')[0]
-                persona = cliente.buscar_por_uid(usuario_parte)
+                persona = cliente.buscar_usuario(usuario_parte)
             if persona:
                 correo = persona.correo or (identificador if '@' in identificador else None)
                 nombre = persona.nombre
@@ -513,7 +652,9 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
     if directorio_activo():
         try:
             cliente = ClienteDirectorio()
-            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_por_uid(identificador)
+            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_usuario(identificador)
+            if not persona and '@' in identificador:
+                persona = cliente.buscar_usuario(identificador.split('@')[0])
             if persona and persona.dn:
                 # Verificar clave actual contra LDAP
                 if not cliente.verificar_contrasena(persona, contrasena_actual):
@@ -605,11 +746,8 @@ def solicitar_recuperacion(correo, base_url=''):
         # Enviar correo con plantilla de Authelia
         cfg = resolver_smtp_autoservicio()
         if cfg:
-            msg = MIMEMultipart()
-            msg['From'] = f"{cfg['sender_name']} <{cfg['sender_email']}>"
-            msg['To'] = correo
-            msg['Subject'] = "Authelia • Restablecimiento de Contraseña"
-            cuerpo = (
+            asunto = "Authelia • Restablecimiento de Contraseña"
+            cuerpo_plano = (
                 f"Hola {nombre or correo},\n\n"
                 "Recibimos una solicitud para restablecer tu contraseña en Authelia SSO.\n\n"
                 f"Haz clic en el siguiente enlace seguro (válido por 15 minutos):\n"
@@ -617,7 +755,76 @@ def solicitar_recuperacion(correo, base_url=''):
                 "Si no solicitaste este cambio, puedes ignorar este mensaje.\n\n"
                 "— Authelia Identity and Access Management"
             )
-            msg.attach(MIMEText(cuerpo, 'plain'))
+            cuerpo_html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 24px 32px; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">
+                Authelia &bull; Restablecimiento de Contraseña
+              </h1>
+              <p style="margin: 4px 0 0; font-size: 12px; color: #e0f2fe;">
+                Portal Seguro de Autoservicio de Identidad
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px;">
+              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.5; color: #334155;">
+                Hola <strong>{nombre or correo}</strong>:
+              </p>
+              <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #475569;">
+                Recibimos una solicitud para restablecer tu contraseña en Authelia SSO.
+                Haz clic en el siguiente botón seguro para establecer tu nueva clave (enlace válido durante 15 minutos):
+              </p>
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="{enlace}" style="background-color: #0ea5e9; color: #ffffff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 14px 28px; border-radius: 10px; display: inline-block;">
+                  Restablecer mi Contraseña &rarr;
+                </a>
+              </div>
+              <p style="margin: 20px 0 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                O copia y pega el siguiente enlace en tu navegador:<br>
+                <a href="{enlace}" style="color: #0284c7; word-break: break-all;">{enlace}</a>
+              </p>
+              <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 16px;">
+                <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8;">
+                  ⚠️ Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                Authelia Identity and Access Management &bull; Vivaro
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+            msg = MIMEMultipart('alternative')
+            msg['From'] = formataddr((str(Header(cfg['sender_name'], 'utf-8')), cfg['sender_email']))
+            msg['Sender'] = cfg['sender_email']
+            msg['Reply-To'] = cfg['sender_email']
+            msg['To'] = correo
+            msg['Subject'] = Header(asunto, 'utf-8')
+
+            msg.attach(MIMEText(cuerpo_plano, 'plain', 'utf-8'))
+            msg.attach(MIMEText(cuerpo_html, 'html', 'utf-8'))
+
             try:
                 if cfg['encryption'] == 'ssl':
                     smtp = smtplib.SMTP_SSL(cfg['server'], cfg['port'], timeout=15)
@@ -629,7 +836,7 @@ def solicitar_recuperacion(correo, base_url=''):
                     smtp.set_debuglevel(1)
                 if cfg['username'] and cfg['password']:
                     smtp.login(cfg['username'], cfg['password'])
-                smtp.send_message(msg)
+                smtp.send_message(msg, from_addr=cfg['sender_email'])
                 smtp.quit()
                 logger.info("Autoservicio: Enlace de recuperación enviado exitosamente a %s", correo)
             except Exception as exc:
@@ -737,7 +944,9 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
     if directorio_activo():
         try:
             cliente = ClienteDirectorio()
-            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_por_uid(identificador)
+            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_usuario(identificador)
+            if not persona and '@' in identificador:
+                persona = cliente.buscar_usuario(identificador.split('@')[0])
             if persona and persona.dn:
                 escritor = EscritorDirectorio(cliente)
                 resultado = escritor.change_password(persona.dn, nueva_contrasena)

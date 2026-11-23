@@ -475,4 +475,51 @@ def test_enviar_correo_mfa_sin_smtp_retorna_error(monkeypatch):
     assert 'No hay un servidor de correo (SMTP) configurado' in error_msg
 
 
+def test_enviar_correo_mfa_cabeceras_rfc_y_html(monkeypatch):
+    """Verifica que el correo incluya Sender explícito, From RFC 2047 y contenido HTML."""
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_SERVER', 'smtp.test.local')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_SENDER_NAME', 'Authelia • Autoservicio de Identidad')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_SENDER_EMAIL', 'authelia@vivaro.com')
+    monkeypatch.setenv('AUTOSERVICIO_SMTP_ENCRYPTION', 'none')
+
+    mensajes_enviados = []
+
+    class MockSMTP:
+        def __init__(self, *args, **kwargs):
+            pass
+        def starttls(self):
+            pass
+        def login(self, u, p):
+            pass
+        def send_message(self, msg, from_addr=None):
+            mensajes_enviados.append((msg, from_addr))
+        def quit(self):
+            pass
+
+    monkeypatch.setattr('smtplib.SMTP', MockSMTP)
+
+    exito, err = _enviar_correo_mfa('operador@vivaro.com', '654321', nombre='Domingo Tovar')
+    assert exito is True
+    assert err is None
+    assert len(mensajes_enviados) == 1
+
+    msg, from_addr = mensajes_enviados[0]
+    assert from_addr == 'authelia@vivaro.com'
+    assert msg['Sender'] == 'authelia@vivaro.com'
+    assert 'authelia@vivaro.com' in msg['From']
+    assert msg['To'] == 'operador@vivaro.com'
+    assert msg.is_multipart()
+
+    # Verificar que contiene tanto texto como HTML
+    payloads = msg.get_payload()
+    assert len(payloads) == 2
+    part_plain = payloads[0].get_payload(decode=True).decode('utf-8')
+    part_html = payloads[1].get_payload(decode=True).decode('utf-8')
+    assert '654321' in part_plain
+    assert '654321' in part_html
+    assert 'Authelia' in part_html
+    assert 'Domingo Tovar' in part_html
+
+
+
 
