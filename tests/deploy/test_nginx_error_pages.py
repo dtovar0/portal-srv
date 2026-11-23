@@ -73,11 +73,16 @@ def test_tokens_de_diseno_corporativo_aduana():
 
 
 def test_mensajes_de_permisos_authelia_en_errores():
-    """Valida que 403 y 502 orienten al usuario a solicitar permisos en Authelia."""
+    """Valida que 403 y 502 indiquen bloqueo de Authelia y solicitud de acceso al administrador vía ADUANA."""
     for pagina in ('403.html', '502.html'):
         contenido = (DEPLOY_ERRORS / pagina).read_text(encoding='utf-8')
+        assert 'Authelia está bloqueando el acceso' in contenido, f'{pagina} no indica bloqueo de Authelia'
         assert 'permisos' in contenido.lower(), f'{pagina} no menciona permisos'
-        assert 'Authelia' in contenido, f'{pagina} no menciona Authelia'
+        assert 'solicitar el acceso al administrador a través de la plataforma ADUANA' in contenido, (
+            f'{pagina} no indica solicitar acceso al administrador vía plataforma ADUANA'
+        )
+        assert 'href="/platforms"' in contenido, f'{pagina} no enlaza a /platforms'
+        assert 'Solicitar acceso en ADUANA' in contenido, f'{pagina} no tiene botón de solicitud en ADUANA'
 
 
 def test_nginx_plantilla_declara_paginas_de_error():

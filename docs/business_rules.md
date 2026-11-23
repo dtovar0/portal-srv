@@ -5553,3 +5553,23 @@ Un colaborador que intenta ingresar a una plataforma restringida sin estar dado 
 ### Impacto
 
 Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html) y las pruebas en [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).
+
+
+Clarificación de Bloqueo por Authelia y Solicitud al Administrador en Plataforma ADUANA
+
+## Control de Acceso y Experiencia de Usuario
+
+### Regla
+
+En las páginas de error `403.html` (Forbidden) y `502.html` (Bad Gateway) de Nginx se establece con exactitud técnica y de experiencia de usuario:
+1. **Identificación de la Causa del Bloqueo**: Se indica explícitamente que Authelia (el proveedor SSO) está bloqueando el acceso porque la cuenta no cuenta con los permisos requeridos.
+2. **Canal Oficial de Gestión de Permisos**: Se aclara al usuario que el trámite de asignación de roles no se realiza en el proveedor de identidad, sino que debe solicitar el acceso al administrador a través de la plataforma ADUANA.
+3. **Acción Principal**: El botón primario de navegación («Solicitar acceso en ADUANA») dirige al catálogo de plataformas y gestión de solicitudes (`/platforms`).
+
+### Ejemplo
+
+Un usuario que navega a una herramienta interna sin la membresía de grupos necesaria visualiza en pantalla: «Authelia está bloqueando el acceso a esta plataforma porque tu cuenta no cuenta con los permisos necesarios. Para poder ingresar, debes solicitar el acceso al administrador a través de la plataforma ADUANA», con un botón directo hacia el catálogo de ADUANA.
+
+### Impacto
+
+Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html) y [tests/deploy/test_nginx_error_pages.py](file:///home/dtovar/bayblade/pokemon/tests/deploy/test_nginx_error_pages.py).

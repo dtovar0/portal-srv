@@ -25,9 +25,9 @@
         </span>
       </div>
 
-      <h1 class="error-title">Acceso no autorizado</h1>
+      <h1 class="error-title">Acceso bloqueado por Authelia</h1>
       <p class="error-desc">
-        No tienes permisos para acceder a esta plataforma. Tienes que solicitarlos en Authelia para que tu cuenta cuente con los roles y áreas asignados.
+        Authelia está bloqueando el acceso a esta plataforma porque tu cuenta no cuenta con los permisos necesarios. Para poder ingresar, debes solicitar el acceso al administrador a través de la plataforma ADUANA.
       </p>
 
       <div class="technical-box">
@@ -36,13 +36,13 @@
           <span>Authelia SSO</span>
         </div>
         <div class="technical-box-code">
-          HTTP 403 Forbidden · Acceso restringido. Solicita tus permisos en Authelia.
+          HTTP 403 Forbidden · Acceso bloqueado por Authelia. Solicita tu acceso al administrador a través de la plataforma ADUANA.
         </div>
       </div>
 
       <div class="actions-group">
-        <a href="/login" class="btn-primary">
-          Solicitar acceso en Authelia
+        <a href="/platforms" class="btn-primary">
+          Solicitar acceso en ADUANA
         </a>
         <a href="/dashboard" class="btn-secondary">
           Ir al Dashboard
