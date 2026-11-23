@@ -66,6 +66,8 @@ def test_logout_cierra_la_sesion(cliente_con_login, usuario_local):
 
     assert respuesta.status_code == 200
     assert respuesta.get_json() == {'status': 'success', 'redirect': None}
+    assert cliente_con_login.get_cookie('remember_token') is None
+    assert cliente_con_login.get_cookie(COOKIE_SESION) is None
     assert usuario_en_sesion(cliente_con_login) is None
     assert hay_auditoria('CIERRE DE SESIÓN',
                          'success', target=usuario_local.email)
