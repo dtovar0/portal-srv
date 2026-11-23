@@ -59,12 +59,12 @@ html, body {
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 520px;
+  max-width: 500px;
   background-color: var(--aduana-bg-surface);
   border: 1px solid var(--aduana-border);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
-  padding: var(--space-5) var(--space-5) var(--space-4) var(--space-5);
+  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-5);
   box-sizing: border-box;
   text-align: center;
 }
@@ -82,28 +82,67 @@ html, body {
   border-top-right-radius: var(--radius-card);
 }
 
-/* Contenedor del isotipo */
-.brand-badge {
+/* Encabezado sutil institucional */
+.brand-header {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.brand-mini-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+.brand-mini-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--aduana-text-muted);
+}
+
+/* Badge e icono de la plataforma solicitada */
+.platform-badge {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   margin: 0 auto var(--space-3) auto;
   border-radius: var(--radius-lg);
   border: 1px solid var(--aduana-border);
   background-color: var(--aduana-bg-main);
   box-shadow: var(--badge-shadow);
+  overflow: hidden;
 }
 
-.brand-badge img {
+.platform-icon {
   width: 44px;
   height: 44px;
   object-fit: contain;
   display: block;
 }
 
-/* Indicador del código HTTP */
+.platform-initials {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--aduana-cyan);
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+/* Utilidad oculta */
+.hidden {
+  display: none !important;
+}
+
+/* Indicador del código / estado */
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -111,9 +150,9 @@ html, body {
   padding: var(--space-1) var(--space-3);
   border-radius: 9999px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   margin-bottom: var(--space-3);
 }
 
@@ -129,12 +168,6 @@ html, body {
   border: 1px solid var(--status-warning-border);
 }
 
-.status-pill.status-info {
-  color: var(--status-info);
-  background-color: var(--status-info-bg);
-  border: 1px solid var(--status-info-border);
-}
-
 .status-dot {
   width: 8px;
   height: 8px;
@@ -143,51 +176,24 @@ html, body {
   background-color: currentColor;
 }
 
-/* Título */
+/* Título de la plataforma */
 .error-title {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   line-height: 1.25;
   margin: 0 0 var(--space-2) 0;
   letter-spacing: -0.02em;
   color: var(--aduana-text-primary);
+  word-break: break-word;
 }
 
-/* Descripción */
+/* Descripción concisa y clara */
 .error-desc {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--aduana-text-secondary);
-  margin: 0 0 var(--space-4) 0;
-}
-
-/* Recuadro de detalle técnico */
-.technical-box {
-  background-color: var(--aduana-bg-main);
-  border: 1px solid var(--aduana-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  margin-bottom: var(--space-4);
-  text-align: left;
-}
-
-.technical-box-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--aduana-text-muted);
-  text-transform: uppercase;
-  margin-bottom: var(--space-1);
-}
-
-.technical-box-code {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--aduana-text-secondary);
-  word-break: break-all;
+  margin: 0 0 var(--space-5) 0;
 }
 
 /* Botones de acción */
@@ -209,7 +215,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: 46px;
   padding: var(--space-2) var(--space-3);
   font-family: var(--font-display);
   font-size: 13px;

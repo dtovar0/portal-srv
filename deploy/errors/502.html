@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>502 Conexión No Disponible — ADUANA</title>
+  <title>Sin Acceso — ADUANA</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/errors/assets/brand/icon-32.png">
   <link rel="stylesheet" href="/errors/assets/css/error.css">
   <script src="/errors/assets/js/error.js" defer></script>
@@ -14,31 +14,27 @@
     <div class="glow-orange" aria-hidden="true"></div>
 
     <main class="error-card" role="main">
-      <div class="brand-badge" aria-hidden="true">
-        <img src="/errors/assets/brand/isotype-aduana.png" alt="Aduana">
+      <div class="brand-header">
+        <img src="/errors/assets/brand/isotype-aduana.png" alt="Aduana" class="brand-mini-logo">
+        <span class="brand-mini-title">ADUANA · Control de Acceso</span>
+      </div>
+
+      <div class="platform-badge" aria-hidden="true">
+        <img data-plataforma-icono src="" alt="" class="platform-icon hidden">
+        <span data-plataforma-iniciales class="platform-initials">PL</span>
       </div>
 
       <div>
         <span class="status-pill status-danger">
           <span class="status-dot"></span>
-          502 · BAD GATEWAY
+          502 · SIN ACCESO
         </span>
       </div>
 
-      <h1 class="error-title">Acceso bloqueado por Authelia</h1>
+      <h1 class="error-title" data-plataforma-nombre>Plataforma solicitada</h1>
       <p class="error-desc">
-        Authelia está bloqueando el acceso a <strong data-plataforma-nombre>esta plataforma</strong> porque tu cuenta no cuenta con los permisos requeridos. Tienes que solicitar el acceso al administrador a través de la plataforma ADUANA.
+        No tienes acceso al recurso solicitado. Tienes que pedir acceso a tu administrador para ingresar.
       </p>
-
-      <div class="technical-box">
-        <div class="technical-box-header">
-          <span>Control de acceso</span>
-          <span>Authelia SSO</span>
-        </div>
-        <div class="technical-box-code">
-          HTTP 502 Bad Gateway · Acceso denegado a <span data-plataforma-host>esta plataforma</span>. Solicita tu acceso al administrador a través de la plataforma ADUANA.
-        </div>
-      </div>
 
       <div class="actions-group">
         <a href="/platforms" class="btn-primary" data-link-aduana>
@@ -51,9 +47,8 @@
     </main>
 
     <footer class="error-footer" role="contentinfo">
-      <span class="error-footer-brand">ADUANA</span> · Control de Acceso y Gestión Centralizada de Permisos
+      <span class="error-footer-brand">ADUANA</span> · Gestión Centralizada de Permisos
     </footer>
   </div>
 </body>
 </html>
-
