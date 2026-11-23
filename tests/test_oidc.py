@@ -88,7 +88,7 @@ def test_primer_inicio_crea_cuenta_usuario_con_sub_y_abre_sesion(client, oidc):
     respuesta = oidc.entrar(client)
 
     assert respuesta.status_code == 302
-    assert _destino(respuesta) == '/'
+    assert _destino(respuesta) == '/dashboard'
     cuenta = User.query.filter_by(email=CORREO).one()
     assert (cuenta.role, cuenta.auth_source) == (ROLE_USER, 'sso')
     assert cuenta.oidc_sub == SUB
@@ -153,7 +153,7 @@ def test_despues_entra_solo_por_sub_aunque_cambie_el_correo(client, oidc,
 
     respuesta = oidc.entrar(client)
 
-    assert _destino(respuesta) == '/'
+    assert _destino(respuesta) == '/dashboard'
     assert User.query.count() == 1
     assert usuario_en_sesion(client) == cuenta.email
 
@@ -423,7 +423,7 @@ def test_correo_no_verificado(client, oidc):
 def test_sin_email_verified_se_acepta(client, oidc):
     del oidc.userinfo['email_verified']
 
-    assert _destino(oidc.entrar(client)) == '/'
+    assert _destino(oidc.entrar(client)) == '/dashboard'
 
 
 def test_callback_sin_configuracion(client, monkeypatch):

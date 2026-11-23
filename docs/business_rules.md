@@ -5493,3 +5493,23 @@ Un entorno de producción o desarrollo no incluye `AUTHELIA_ENABLED` ni `DEBUG_A
 ### Impacto
 
 Afecta a [.env](file:///.env), [.env.example](../.env.example), [docs/configuracion/VARIABLES.md](../docs/configuracion/VARIABLES.md) y a las pruebas de regresión en [tests/test_oidc.py](../tests/test_oidc.py).
+
+
+Redirección Canónica a Dashboard tras Autenticación OIDC
+
+## Autenticación y Navegación
+
+### Regla
+
+Tras un inicio de sesión exitoso mediante el proveedor OIDC (Authelia SSO), el flujo de retorno en el backend (`/api/v1/auth/oidc/callback`) redirige de manera canónica y directa a `/dashboard` en lugar de la raíz `/`:
+1. **Evitar Detención en Portada Institucional**: Si la portada informativa (`PORTADA_ACTIVA=true`) está habilitada, redirigir a la raíz causaba que el usuario autenticado quedara en la portada externa en vez de entrar directamente a la consola operativa.
+2. **Consistencia de Experiencia de Acceso**: Alinea el flujo federado OIDC con el flujo local y la navegación de frontend, los cuales dirigen siempre al usuario con sesión activa a su panel principal (`/dashboard`).
+3. **Mantenimiento de RUTA_INICIO**: La constante canónica `RUTA_INICIO` en `app/modules/api/auth.py` queda fijada como `/dashboard`.
+
+### Ejemplo
+
+Un usuario pulsa «Iniciar sesión con Authelia», completa el flujo en el IdP institucional y es devuelto a `https://aduana.vivaro.com/api/v1/auth/oidc/callback`. El servidor procesa el token OIDC, crea o actualiza la sesión y emite un `302 Found` con cabecera `Location: /dashboard`, llevando al usuario de inmediato a su panel de control.
+
+### Impacto
+
+Afecta a [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [tests/test_oidc.py](file:///home/dtovar/bayblade/pokemon/tests/test_oidc.py) y al flujo de inicio de sesión SSO con Authelia.
