@@ -266,3 +266,18 @@ def test_cliente_del_entorno_sin_configuracion_falla_cerrado():
     vaultwarden.reiniciar_cliente()
     with pytest.raises(GestorMalConfigurado):
         vaultwarden.cliente_del_entorno({})
+
+
+def test_cliente_del_entorno_deshabilitado_falla():
+    vaultwarden.reiniciar_cliente()
+    with pytest.raises(GestorMalConfigurado):
+        vaultwarden.cliente_del_entorno({'VAULTWARDEN_ENABLED': 'false'})
+
+
+def test_leer_sin_coleccion_configurada_falla(servidor):
+    entorno = {k: v for k, v in vf.ENTORNO.items() if k != 'VAULTWARDEN_COLLECTION_ID'}
+    cliente = ClienteVaultwarden(cargar_configuracion(entorno), transporte=servidor)
+    with pytest.raises(GestorMalConfigurado) as exc:
+        cliente.leer('cualquiera')
+    assert 'VAULTWARDEN_COLLECTION_ID' in str(exc.value)
+

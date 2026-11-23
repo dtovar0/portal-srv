@@ -31,7 +31,8 @@ from app.modules.secretos import cifrado
 from app.modules.secretos.configuracion import (MODO_BW,
                                                 ErrorConfiguracionSecretos,
                                                 cargar_configuracion,
-                                                cargar_configuracion_send)
+                                                cargar_configuracion_send,
+                                                vaultwarden_apagado)
 from app.modules.secretos.vaultwarden import (ESTADOS_TRANSITORIOS,
                                               ClienteVaultwarden,
                                               ErrorDeGestor, GestorCaido,
@@ -296,6 +297,9 @@ class SendsPorApi:
 
 def servicio_de_sends(entorno=None):
     """`SendsPorApi` o `SendsPorCli` según `VAULTWARDEN_SEND_MODO`."""
+    if vaultwarden_apagado(entorno):
+        raise SendRechazado('Vaultwarden está deshabilitado por configuración.',
+                            MOTIVO_SEND_DESHABILITADO)
     try:
         cfg = cargar_configuracion_send(entorno)
         if cfg.modo == MODO_BW:

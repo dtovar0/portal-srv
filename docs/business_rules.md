@@ -5984,3 +5984,22 @@ Si el operador `jdoe@vivaro.com` actualiza su clave en `/autoservicio`, recibe u
 ### Impacto
 
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/users/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/api.py), [app/modules/users/entrega_credenciales.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/entrega_credenciales.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+Control de Activación Explícita y Ámbito de Vaultwarden
+
+## Módulo
+Secretos / Vaultwarden
+
+### Regla
+1. **Interruptor Explícito (`VAULTWARDEN_ENABLED`)**:
+   La integración con Vaultwarden puede ser activada o desactivada explícitamente mediante la variable de entorno `VAULTWARDEN_ENABLED` (o sus alias `VAULTWARDEN_HABILITADO` y `VAULTWARDEN_ENABLE`).
+   - Si se define en `false`, `0`, `no`, `off`, `desactivado` o `disabled`, Vaultwarden queda totalmente inactivo; en el arranque del sistema (`validar_al_arrancar`) y en los scripts de despliegue (`deploy/secretos.sh`), no se exigen variables de conexión ni se interrumpe la ejecución fuera de desarrollo. Cualquier invocación a creación de Sends falla de manera controlada con `send_deshabilitado`.
+   - Si se define en `true`, `1`, `si`, `yes` o se configuran variables de conexión sin desactivación explícita, Vaultwarden opera normalmente.
+2. **Opcionalidad de `VAULTWARDEN_COLLECTION_ID` para Modo Sends**:
+   Cuando Vaultwarden se utiliza exclusivamente para la emisión de enlaces efímeros de Bitwarden Send (onboarding inicial y reenvío administrativo) y no como almacén de contraseñas de conectores, la variable `VAULTWARDEN_COLLECTION_ID` es opcional. El sistema permite el arranque y la creación de Sends sin exigir una colección de organización; únicamente si se invoca la lectura de credenciales de bóveda (`leer(referencia)`), se exige `VAULTWARDEN_COLLECTION_ID`.
+
+### Ejemplo
+Un entorno que solo usa Vaultwarden para Sends de onboarding define `VAULTWARDEN_ENABLED=true` con URL y credenciales de la cuenta de servicio, omitiendo `VAULTWARDEN_COLLECTION_ID`. El sistema arranca sin advertencias críticas y entrega los Sends correctamente. Si el administrador desactiva el servicio configurando `VAULTWARDEN_ENABLED=false`, el portal omite las validaciones de Vaultwarden y no detiene el arranque.
+
+### Impacto
+Afecta a [app/modules/secretos/configuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/secretos/configuracion.py), [app/modules/secretos/vaultwarden.py](file:///home/dtovar/bayblade/pokemon/app/modules/secretos/vaultwarden.py), [app/modules/secretos/sends.py](file:///home/dtovar/bayblade/pokemon/app/modules/secretos/sends.py), [deploy/secretos.sh](file:///home/dtovar/bayblade/pokemon/deploy/secretos.sh), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md).

@@ -40,7 +40,8 @@ from urllib.parse import urlencode
 
 from app.modules.secretos import cifrado
 from app.modules.secretos.configuracion import (ErrorConfiguracionSecretos,
-                                                cargar_configuracion)
+                                                cargar_configuracion,
+                                                vaultwarden_apagado)
 
 logger = logging.getLogger(__name__)
 
@@ -315,6 +316,10 @@ class ClienteVaultwarden:
 
     def _clave_coleccion(self, sesion, datos):
         coleccion = self._cfg.coleccion_id
+        if not coleccion:
+            raise GestorMalConfigurado(
+                'Vaultwarden: VAULTWARDEN_COLLECTION_ID no está configurado '
+                '(se requiere para leer secretos de la bóveda).')
         organizacion = None
         for item in _lista(datos, 'collections'):
             if str(_campo(item, 'id') or '').lower() == coleccion:
@@ -457,6 +462,8 @@ _CANDADO_CLIENTE = threading.Lock()
 def cliente_del_entorno(entorno=None):
     """Cliente compartido del proceso para la configuración vigente."""
     global _CLIENTE
+    if vaultwarden_apagado(entorno):
+        raise GestorMalConfigurado('Vaultwarden está deshabilitado por configuración.')
     try:
         cfg = cargar_configuracion(entorno)
     except ErrorConfiguracionSecretos as exc:

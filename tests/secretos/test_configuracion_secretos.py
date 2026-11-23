@@ -3,7 +3,9 @@ import pytest
 
 from app.modules.secretos.configuracion import (ErrorConfiguracionSecretos,
                                                 cargar_configuracion,
-                                                validar_al_arrancar)
+                                                configurado,
+                                                validar_al_arrancar,
+                                                vaultwarden_apagado)
 from tests.secretos import vaultwarden_falso as vf
 
 # IPv4 en forma decimal (equivale a una dirección de loopback): el host debe
@@ -56,3 +58,34 @@ def test_al_arrancar_fuera_de_dev_con_variables_incompletas_falla():
         validar_al_arrancar({'APP_ENV': 'production',
                              'VAULTWARDEN_URL': vf.URL})
     assert validar_al_arrancar({'APP_ENV': 'staging', **vf.ENTORNO}) is not None
+
+
+def test_vaultwarden_habilitado_y_apagado():
+    # Deshabilitado explícito
+    for valor in ('false', '0', 'no', 'off', 'desactivado'):
+        entorno = {'VAULTWARDEN_ENABLED': valor, 'VAULTWARDEN_URL': vf.URL}
+        assert vaultwarden_apagado(entorno) is True
+        assert configurado(entorno) is False
+        assert validar_al_arrancar({'APP_ENV': 'production', **entorno}) is None
+
+    # Alias en español y alternativa
+    assert vaultwarden_apagado({'VAULTWARDEN_HABILITADO': 'false'}) is True
+    assert vaultwarden_apagado({'VAULTWARDEN_ENABLE': 'false'}) is True
+
+    # Habilitado explícito
+    for valor in ('true', '1', 'si', 'yes'):
+        entorno = {'VAULTWARDEN_ENABLED': valor}
+        assert vaultwarden_apagado(entorno) is False
+        assert configurado(entorno) is True
+
+    # Valor inválido
+    with pytest.raises(ErrorConfiguracionSecretos):
+        vaultwarden_apagado({'VAULTWARDEN_ENABLED': 'quizas'})
+
+
+def test_coleccion_id_opcional_para_sends():
+    entorno = {k: v for k, v in vf.ENTORNO.items() if k != 'VAULTWARDEN_COLLECTION_ID'}
+    cfg = cargar_configuracion(entorno)
+    assert cfg.coleccion_id == ''
+    assert cfg.url == vf.URL
+

@@ -52,6 +52,12 @@ VAR_BW_SESSION = 'VAULTWARDEN_BW_SESSION'
 VAR_SEND_CADUCIDAD = 'ONBOARDING_SEND_EXPIRATION_DAYS'
 VAR_SEND_APERTURAS = 'ONBOARDING_SEND_MAX_ACCESS_COUNT'
 VAR_SEND_BORRADO = 'ONBOARDING_SEND_DELETION_DAYS'
+VAR_HABILITADO = 'VAULTWARDEN_ENABLED'
+VAR_HABILITADO_ES = 'VAULTWARDEN_HABILITADO'
+VAR_ENABLE_ALT = 'VAULTWARDEN_ENABLE'
+VARS_HABILITADO = (VAR_HABILITADO, VAR_HABILITADO_ES, VAR_ENABLE_ALT)
+VALORES_APAGADO = frozenset({'false', '0', 'no', 'off', 'desactivado', 'disabled'})
+VALORES_ENCENDIDO = frozenset({'true', '1', 'si', 'sí', 'yes', 'on', 'activado', 'enabled'})
 PREFIJO = 'VAULTWARDEN_'
 
 MODO_API = 'api'
@@ -116,11 +122,30 @@ def es_desarrollo(entorno=None):
     return _leer(entorno, VAR_ENTORNO).lower() == ENTORNO_DESARROLLO
 
 
-def configurado(entorno=None):
-    """`True` si alguna variable `VAULTWARDEN_*` tiene valor."""
+def vaultwarden_apagado(entorno=None):
+    """`True` si VAULTWARDEN_ENABLED (o sus alias) está explícitamente en falso."""
     entorno = os.environ if entorno is None else entorno
-    return any(clave.startswith(PREFIJO) and (valor or '').strip()
-               for clave, valor in entorno.items())
+    for var in VARS_HABILITADO:
+        val = _leer(entorno, var).lower()
+        if val:
+            if val in VALORES_APAGADO:
+                return True
+            if val in VALORES_ENCENDIDO:
+                return False
+            raise ErrorConfiguracionSecretos(f'{var} debe ser true o false.')
+    return False
+
+
+def configurado(entorno=None):
+    """`True` si Vaultwarden está habilitado y tiene variables de configuración."""
+    entorno = os.environ if entorno is None else entorno
+    if vaultwarden_apagado(entorno):
+        return False
+    for var in VARS_HABILITADO:
+        if _leer(entorno, var).lower() in VALORES_ENCENDIDO:
+            return True
+    return any(clave.startswith(PREFIJO) and clave not in VARS_HABILITADO
+               and (valor or '').strip() for clave, valor in entorno.items())
 
 
 def _requerida(entorno, nombre):
@@ -238,6 +263,13 @@ def cargar_configuracion_send(entorno=None):
 def cargar_configuracion(entorno=None):
     """Lee y valida `VAULTWARDEN_*`; lanza `ErrorConfiguracionSecretos`."""
     entorno = os.environ if entorno is None else entorno
+    coleccion_raw = _leer(entorno, VAR_COLECCION)
+    coleccion_id = ''
+    if coleccion_raw:
+        if not PATRON_UUID.fullmatch(coleccion_raw):
+            raise ErrorConfiguracionSecretos(
+                f'{VAR_COLECCION} debe ser el id (uuid) de la colección.')
+        coleccion_id = coleccion_raw.lower()
     return ConfiguracionVaultwarden(
         url=_url(entorno),
         ca_cert_file=_ca_cert_file(entorno),
@@ -247,17 +279,18 @@ def cargar_configuracion(entorno=None):
         correo=_formato(entorno, VAR_EMAIL, PATRON_CORREO,
                         'debe ser un correo.'),
         contrasena_maestra=_secreto(entorno, VAR_MASTER_PASSWORD),
-        coleccion_id=_formato(entorno, VAR_COLECCION, PATRON_UUID,
-                              'debe ser el id (uuid) de la colección.').lower(),
+        coleccion_id=coleccion_id,
         tiempo_espera=_tiempo_espera(entorno),
     )
 
 
 def validar_al_arrancar(entorno=None):
     """Fuera de dev y con alguna `VAULTWARDEN_*`, valida todo o detiene el
-    arranque. En dev o sin ninguna, `None`. Las variables del Send se validan
-    siempre (tienen valor por defecto)."""
+    arranque. En dev, sin ninguna o con VAULTWARDEN_ENABLED=false, `None`.
+    Las variables del Send se validan si Vaultwarden no está apagado."""
     entorno = os.environ if entorno is None else entorno
+    if vaultwarden_apagado(entorno):
+        return None
     cargar_configuracion_send(entorno)
     if es_desarrollo(entorno) or not configurado(entorno):
         return None

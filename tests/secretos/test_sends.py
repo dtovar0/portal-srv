@@ -424,3 +424,10 @@ def test_bw_rechaza_un_enlace_de_otro_servidor(cli):
 def test_bw_acepta_el_enlace_del_servidor_configurado(cli):
     servicio = sends.SendsPorCli(_cfg_bw(base_url='https://vault.pruebas.invalid'), ejecutor=cli)
     assert servicio.crear_texto(NOMBRE, TEXTO, ahora=AHORA).id == ID_SEND_BW
+
+
+def test_servicio_de_sends_deshabilitado_falla():
+    with pytest.raises(sends.SendRechazado) as exc:
+        sends.servicio_de_sends({'VAULTWARDEN_ENABLED': 'false'})
+    assert exc.value.motivo == sends.MOTIVO_SEND_DESHABILITADO
+

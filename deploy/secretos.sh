@@ -13,8 +13,7 @@
 # corre como root y el archivo no es de confianza).
 
 VW_REQUERIDAS=(VAULTWARDEN_URL VAULTWARDEN_CLIENT_ID VAULTWARDEN_CLIENT_SECRET
-               VAULTWARDEN_EMAIL VAULTWARDEN_MASTER_PASSWORD
-               VAULTWARDEN_COLLECTION_ID)
+               VAULTWARDEN_EMAIL VAULTWARDEN_MASTER_PASSWORD)
 
 # Valor no vacío: unas comillas vacías ("" o '') no cuentan.
 _vw_tiene_valor() {
@@ -31,6 +30,15 @@ revisar_vaultwarden() {
     app_env="$(_vw_valor "$env" APP_ENV | tr '[:upper:]' '[:lower:]')"
     if [[ "$app_env" == "development" ]]; then
         echo "OK APP_ENV=development: credenciales desde el .env (sin Vaultwarden)"
+        return 0
+    fi
+
+    # Revisar si Vaultwarden está explícitamente deshabilitado
+    local habilitado="$(_vw_valor "$env" VAULTWARDEN_ENABLED | tr '[:upper:]' '[:lower:]')"
+    [[ -z "$habilitado" ]] && habilitado="$(_vw_valor "$env" VAULTWARDEN_HABILITADO | tr '[:upper:]' '[:lower:]')"
+    [[ -z "$habilitado" ]] && habilitado="$(_vw_valor "$env" VAULTWARDEN_ENABLE | tr '[:upper:]' '[:lower:]')"
+    if [[ "$habilitado" =~ ^(false|0|no|off|desactivado|disabled)$ ]]; then
+        echo "OK Vaultwarden deshabilitado (VAULTWARDEN_ENABLED=false)"
         return 0
     fi
 
@@ -71,6 +79,17 @@ revisar_vaultwarden() {
             fallos=1
         fi
     done
+
+    if _vw_tiene_valor "$env" VAULTWARDEN_COLLECTION_ID; then
+        echo "OK VAULTWARDEN_COLLECTION_ID definida"
+    else
+        if _vw_tiene_valor "$env" LDAP_BIND_PASSWORD_REF; then
+            echo "FALTA VAULTWARDEN_COLLECTION_ID obligatoria si se usa LDAP_BIND_PASSWORD_REF"
+            fallos=1
+        else
+            echo "AVISO VAULTWARDEN_COLLECTION_ID sin definir (solo necesaria si se leen secretos de la bóveda, opcional para Sends)"
+        fi
+    fi
 
     url="$(_vw_valor "$env" VAULTWARDEN_URL)"
     if [[ -n "$url" ]]; then
