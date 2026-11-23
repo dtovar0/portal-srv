@@ -71,3 +71,19 @@ def test_fabricas_crean_area_y_plataforma(crear_area, crear_plataforma):
 def test_servicios_externos_bloqueados(app):
     with pytest.raises(ServicioExternoBloqueado):
         smtplib.SMTP('correo.invalid', 25)
+
+
+def test_context_incluye_marca_y_dominio(client, monkeypatch):
+    monkeypatch.setenv('APP_NAME', 'miportal')
+    monkeypatch.setenv('APP_TITLE', 'Mi Portal Corporativo')
+    monkeypatch.setenv('DOMAIN', 'portal.miempresa.com')
+    monkeypatch.setenv('SUPPORT_EMAIL', 'contacto@miempresa.com')
+
+    resp = client.get('/api/v1/auth/context')
+    assert resp.status_code == 200
+    datos = resp.get_json()
+    assert datos['app_name'] == 'miportal'
+    assert datos['app_title'] == 'Mi Portal Corporativo'
+    assert datos['domain'] == 'portal.miempresa.com'
+    assert datos['support_email'] == 'contacto@miempresa.com'
+

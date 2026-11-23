@@ -20,6 +20,7 @@ import { useToast } from './toast';
 import { FormularioLoginLocal } from './formulario-login-local';
 import { PantallaCarga } from './ui';
 import { AccesoDenegadoView } from './acceso-denegado-view';
+import { APP_TITLE } from '@/lib/branding';
 
 /** Inicio del flujo OIDC: navegación completa, no `fetch`. */
 export const URL_INICIO_OIDC = '/api/v1/auth/oidc/login';
@@ -78,7 +79,7 @@ export function LoginForm() {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center bg-fondo text-body-text select-none p-4 sm:p-6 lg:p-8">
       <PageHeader
-        title="Aduana: Control de Acceso"
+        title={`${APP_TITLE}: Control de Acceso`}
         description="Inicia sesión con tu cuenta corporativa para acceder a tus plataformas."
         className="sr-only"
       />
@@ -92,9 +93,9 @@ export function LoginForm() {
             <div className="flex items-center gap-2.5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie p-1 shadow-xs">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-6 object-contain" width={24} height={24} />
+                <img src="/brand/isotype-aduana.png" alt={APP_TITLE} className="size-6 object-contain" width={24} height={24} />
               </span>
-              <span className="font-display text-lg font-bold tracking-tight text-body-text">Aduana</span>
+              <span className="font-display text-lg font-bold tracking-tight text-body-text">{APP_TITLE}</span>
             </div>
 
             {/* Núcleo de inicio de sesión */}

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ToastProvider } from '@/components/toast';
 import { RAIZ_APP_ID } from '@/lib/raiz-app';
 import { SCRIPT_RESTAURAR_TEMA } from '@/lib/tema';
+import { APP_TITLE } from '@/lib/branding';
 // El orden importa: primero los tokens del portal, que definen las variables;
 // después sus clases; y al final las utilidades de Tailwind, que las consumen.
 import '../styles/tokens.css';
@@ -10,8 +11,8 @@ import '../styles/components.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Aduana - Control de Acceso',
-  description: 'Punto único de entrada y control para el ecosistema interno de plataformas (SSO y gestión centralizada de permisos)',
+  title: `${APP_TITLE} - Control de Acceso`,
+  description: `Punto único de entrada y control para el ecosistema interno de plataformas (SSO y gestión centralizada de permisos)`,
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

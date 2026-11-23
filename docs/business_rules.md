@@ -5795,3 +5795,33 @@ Sincronización de Grupos OIDC por Rol de Usuario y Convención de Plataformas
 ### Impacto
 
 Afecta a [app/modules/users/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/api.py), [app/modules/users/directory_accounts.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/directory_accounts.py), [app/modules/platforms/grupos.py](file:///home/dtovar/bayblade/pokemon/app/modules/platforms/grupos.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [tests/platforms/test_integracion_y_grupos.py](file:///home/dtovar/bayblade/pokemon/tests/platforms/test_integracion_y_grupos.py) y las configuraciones de Nginx para plataformas protegidas.
+
+
+Personalización del Nombre de Plataforma e Independencia de Dominio en el Instalador
+
+## Despliegue, Identidad e Instalación (deploy/install.sh)
+
+### Regla
+
+1. **Interacción y Desacoplamiento de Marca en la Instalación**:
+   El instalador (`deploy/install.sh`) no asume de forma fija el nombre "Aduana" ni el dominio "vivaro.com". Al ejecutarse en una terminal interactiva (sin flags explícitos ni en modo `--actualizar`), solicita al operador:
+   - El **nombre comercial / visible de la plataforma** (`APP_TITLE`, ej. `Aduana`, `Nexus`, `Portal TI`), permitiendo renombrar la interfaz completa del producto.
+   - El **identificador técnico de despliegue** (`APP_NAME`, derivado de `APP_TITLE` o de la carpeta), usado para las unidades systemd (`<name>-backend`, `<name>-frontend`, `<name>-worker`), los registros (`/var/log/<name>`) y la configuración de Nginx (`/etc/nginx/conf.d/<name>.conf`).
+   - El **dominio FQDN de instalación** (`DOMAIN`, ej. `aduana.tuempresa.com`, `portal.example.com`), eliminando cualquier amarre rígido a dominios institucionales predeterminados.
+2. **Propagación Automática a Variables de Entorno y Metadatos**:
+   Los valores configurados se registran de forma persistente en `.env` (`APP_NAME`, `APP_TITLE`, `NEXT_PUBLIC_APP_TITLE`, `DOMAIN`, `NEXT_PUBLIC_DOMAIN`) y se inyectan en:
+   - Las unidades systemd mediante marcadores `@APP_NAME@`, `@APP_TITLE@`, `@DOMAIN@`.
+   - La configuración de Nginx (`server_name @DOMAIN@`).
+   - Las páginas corporativas de error (`deploy/errors/*.html`) en las etiquetas `<meta name="portal-domain">` y `<meta name="portal-title">`.
+3. **Detección Dinámica de Origen en Scripts de Error**:
+   El script de páginas de error de Nginx (`deploy/errors/assets/js/error.js`) resuelve dinámicamente el origen del portal a partir de la etiqueta `<meta name="portal-domain">` (o de `window.location.origin`), garantizando que los enlaces de retorno o solicitud de acceso redirijan con precisión al dominio donde se encuentra alojada la plataforma sin depender de URLs estáticas.
+4. **Branding Dinámico en la Interfaz Web**:
+   El frontend Next.js consume `NEXT_PUBLIC_APP_TITLE` y `NEXT_PUBLIC_DOMAIN` mediante `lib/branding.ts`, asegurando que la barra lateral, la barra superior, la pantalla de inicio de sesión, el acceso de contingencia y la vista de acceso denegado reflejen inmediatamente el nombre elegido por el administrador.
+
+### Ejemplo
+
+Durante la instalación en un servidor independiente, el operador indica `Nexus` como nombre de la plataforma y `seguridad.midominio.org` como dominio. El instalador configura las unidades `nexus-backend`, `nexus-frontend` y `nexus-worker`, registra `DOMAIN=seguridad.midominio.org` en `.env` y genera el virtualhost en `/etc/nginx/conf.d/nexus.conf`. La interfaz web completa se titula "Nexus" y los enlaces de solicitud de acceso dirigen a `https://seguridad.midominio.org/platforms`.
+
+### Impacto
+
+Afecta a [deploy/install.sh](file:///home/dtovar/bayblade/pokemon/deploy/install.sh), [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js), [deploy/errors/*.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [frontend/next.config.ts](file:///home/dtovar/bayblade/pokemon/frontend/next.config.ts), [frontend/src/lib/branding.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/branding.ts), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

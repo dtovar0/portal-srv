@@ -16,7 +16,33 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  var ADUANA_ORIGIN = 'https://aduana.vivaro.com';
+  var metaPortal = document.querySelector('meta[name="portal-domain"]');
+  var portalDomain = metaPortal ? (metaPortal.getAttribute('content') || '').trim() : '';
+  var ADUANA_ORIGIN = '';
+
+  if (portalDomain && portalDomain.indexOf('@') === -1) {
+    ADUANA_ORIGIN = (portalDomain.indexOf('http://') === 0 || portalDomain.indexOf('https://') === 0)
+      ? portalDomain
+      : ('https://' + portalDomain);
+  } else if (window.location.origin && window.location.origin !== 'null') {
+    ADUANA_ORIGIN = window.location.origin;
+  } else {
+    ADUANA_ORIGIN = 'https://' + (window.location.hostname || 'localhost');
+  }
+
+  // Personalización del nombre de la plataforma si se definió meta portal-title
+  var metaTitle = document.querySelector('meta[name="portal-title"]');
+  var portalTitle = metaTitle ? (metaTitle.getAttribute('content') || '').trim() : '';
+  if (portalTitle && portalTitle.indexOf('@') === -1) {
+    var brandTitles = document.querySelectorAll('.brand-mini-title');
+    for (var b = 0; b < brandTitles.length; b++) {
+      brandTitles[b].textContent = portalTitle + ' · Control de Acceso';
+    }
+    var brandFooters = document.querySelectorAll('.error-footer-brand');
+    for (var f = 0; f < brandFooters.length; f++) {
+      brandFooters[f].textContent = portalTitle;
+    }
+  }
 
   var backButtons = document.querySelectorAll('[data-action="back"]');
   for (var j = 0; j < backButtons.length; j++) {

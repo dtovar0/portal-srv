@@ -7,8 +7,10 @@
  */
 
 import Link from 'next/link';
+import Link from 'next/link';
 import { FormularioLoginLocal } from './formulario-login-local';
 import { PageHeader } from './page-header';
+import { APP_TITLE } from '@/lib/branding';
 
 export function AccesoEmergenciaForm() {
   return (
@@ -28,10 +30,10 @@ export function AccesoEmergenciaForm() {
             <div className="flex items-center gap-2.5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie p-1 shadow-xs">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-6 object-contain" width={24} height={24} />
+                <img src="/brand/isotype-aduana.png" alt={APP_TITLE} className="size-6 object-contain" width={24} height={24} />
               </span>
               <div className="flex items-center gap-2">
-                <span className="font-display text-lg font-bold tracking-tight text-body-text">Aduana</span>
+                <span className="font-display text-lg font-bold tracking-tight text-body-text">{APP_TITLE}</span>
                 <span className="inline-flex items-center rounded-md border border-aduana-orange/30 bg-aduana-orange/10 px-1.5 py-0.5 text-[10px] font-bold text-aduana-orange">
                   Recuperación
                 </span>

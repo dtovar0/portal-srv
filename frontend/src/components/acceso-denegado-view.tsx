@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { Button } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
+import { APP_TITLE } from '@/lib/branding';
 
 export const URL_INICIO_OIDC = '/api/v1/auth/oidc/login';
 const SEGUNDOS_TEMPORIZADOR = 15;
@@ -86,10 +87,10 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
             <div className="flex items-center gap-2.5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie p-1 shadow-xs">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-6 object-contain" width={24} height={24} />
+                <img src="/brand/isotype-aduana.png" alt={APP_TITLE} className="size-6 object-contain" width={24} height={24} />
               </span>
               <span className="font-display text-base sm:text-lg font-bold tracking-tight text-body-text">
-                ADUANA <span className="text-texto-secundario font-normal">· Control de Acceso</span>
+                {APP_TITLE} <span className="text-texto-secundario font-normal">· Control de Acceso</span>
               </span>
             </div>
 
@@ -105,7 +106,7 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
               Sin acceso a la plataforma
             </h1>
             <p className="text-sm text-texto-secundario leading-relaxed">
-              No tienes acceso a la plataforma ADUANA con tu cuenta corporativa actual. Comunícate con tu superior inmediato para que gestione tu alta o envía un correo a soporte:
+              No tienes acceso a la plataforma {APP_TITLE} con tu cuenta corporativa actual. Comunícate con tu superior inmediato para que gestione tu alta o envía un correo a soporte:
             </p>
           </div>
 

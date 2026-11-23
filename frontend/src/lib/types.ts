@@ -255,6 +255,12 @@ export interface AuthContext {
   local_login?: boolean;
   /** Correo de soporte para solicitudes de acceso (ADUANA). */
   support_email?: string;
+  /** Identificador técnico del despliegue (ej. aduana, nexus). */
+  app_name?: string;
+  /** Nombre visible o comercial de la plataforma (ej. Aduana, Nexus). */
+  app_title?: string;
+  /** Dominio público configurado. */
+  domain?: string;
 }
 
 export interface InactiveUser {

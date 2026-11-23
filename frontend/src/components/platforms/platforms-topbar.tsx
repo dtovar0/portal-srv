@@ -28,6 +28,7 @@ import {
   leerBotonUsuarioCompacto,
 } from './user-view-settings';
 import { BotonRegresarAdmin } from './modal-transicion-admin';
+import { APP_TITLE } from '@/lib/branding';
 
 function limpiarUrlParams() {
   if (typeof window !== 'undefined' && window.location.search) {
@@ -129,11 +130,11 @@ export function PlatformsTopbar({
             aria-hidden="true"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/isotype-aduana.png" alt="Aduana" className="size-7 object-contain" width={28} height={28} />
+            <img src="/brand/isotype-aduana.png" alt={APP_TITLE} className="size-7 object-contain" width={28} height={28} />
           </span>
           <div className="flex flex-col">
-            <span className="text-sm font-bold leading-tight text-body-text">Aduana</span>
-            <span className="text-xs font-extrabold tracking-wider text-primary-text uppercase">Vivaro Launchpad</span>
+            <span className="text-sm font-bold leading-tight text-body-text">{APP_TITLE}</span>
+            <span className="text-xs font-extrabold tracking-wider text-primary-text uppercase">Control de Acceso</span>
           </div>
         </Link>
 

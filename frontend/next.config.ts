@@ -21,6 +21,14 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_PORTADA_ACTIVA:
       process.env.PORTADA_ACTIVA ?? process.env.NEXT_PUBLIC_PORTADA_ACTIVA ?? 'true',
+    NEXT_PUBLIC_APP_TITLE:
+      process.env.APP_TITLE ?? process.env.NEXT_PUBLIC_APP_TITLE ?? 'Aduana',
+    NEXT_PUBLIC_APP_NAME:
+      process.env.APP_NAME ?? process.env.NEXT_PUBLIC_APP_NAME ?? 'aduana',
+    NEXT_PUBLIC_DOMAIN:
+      process.env.DOMAIN ?? process.env.NEXT_PUBLIC_DOMAIN ?? '',
+    NEXT_PUBLIC_SUPPORT_EMAIL:
+      process.env.SUPPORT_EMAIL ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? 'aduana-app@vivaro.com',
   },
   async rewrites() {
     return rewritesDeDesarrollo(process.env);

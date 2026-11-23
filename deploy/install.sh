@@ -222,6 +222,58 @@ fi
 
 # shellcheck source=deploy/nombre_despliegue.sh
 . "$PREFIX/deploy/nombre_despliegue.sh"
+
+# Interacción en terminal interactiva si no se indicaron opciones por línea de órdenes
+if [[ -t 0 ]] && (( ! ACTUALIZAR )) && (( ! ACTUALIZAR_FRONTEND )); then
+    echo ""
+    echo "======================================================================"
+    echo "  ⚙️  Configuración de la Plataforma"
+    echo "======================================================================"
+
+    # 1. Nombre comercial / público de la plataforma (APP_TITLE)
+    if [[ -z "$APP_TITLE" ]]; then
+        sugerencia_titulo=""
+        if [[ -f "$PREFIX/.env" ]]; then
+            sugerencia_titulo="$(grep -E '^\s*(APP_TITLE|NEXT_PUBLIC_APP_TITLE)\s*=' "$PREFIX/.env" | head -n 1 | cut -d= -f2- | tr -d ' "\r')"
+        fi
+        : "${sugerencia_titulo:=Aduana}"
+        read -r -p "  * Nombre comercial / visible de la plataforma [$sugerencia_titulo]: " entrada_title
+        APP_TITLE="${entrada_title:-$sugerencia_titulo}"
+    fi
+
+    # 2. Identificador técnico del despliegue (APP_NAME para systemd, nginx y logs)
+    if [[ -z "$APP_NAME" ]]; then
+        sugerencia_name="$(tr '[:upper:]' '[:lower:]' <<< "$APP_TITLE" | sed -E 's/[^a-z0-9_-]+/-/g; s/^-+|-+$//g' | cut -c1-32)"
+        sugerencia_name="${sugerencia_name:-$(nombre_por_defecto "$PREFIX")}"
+        if ! nombre_despliegue_valido "$sugerencia_name"; then
+            sugerencia_name="$(nombre_por_defecto "$PREFIX")"
+        fi
+        while true; do
+            read -r -p "  * Identificador técnico (systemd, nginx, logs) [$sugerencia_name]: " entrada_name
+            candidato_name="${entrada_name:-$sugerencia_name}"
+            if nombre_despliegue_valido "$candidato_name"; then
+                APP_NAME="$candidato_name"
+                break
+            else
+                echo "    -> Identificador no válido. Debe comenzar con letra y contener solo minúsculas, dígitos, '-' o '_' (máx. 32 caracteres)." >&2
+            fi
+        done
+    fi
+
+    # 3. Dominio FQDN donde se instalará (DOMAIN)
+    if [[ -z "$DOMAIN" ]]; then
+        sugerencia_domain=""
+        if [[ -f "$PREFIX/.env" ]]; then
+            sugerencia_domain="$(grep -E '^\s*(DOMAIN|NEXT_PUBLIC_DOMAIN)\s*=' "$PREFIX/.env" | head -n 1 | cut -d= -f2- | tr -d ' "\r')"
+        fi
+        : "${sugerencia_domain:=portal.example.com}"
+        read -r -p "  * Dominio o FQDN donde se instalará (ej. aduana.tuempresa.com) [$sugerencia_domain]: " entrada_domain
+        DOMAIN="${entrada_domain:-$sugerencia_domain}"
+    fi
+    echo "======================================================================"
+    echo ""
+fi
+
 # El nombre acaba en rutas, unidades systemd y nginx (ver nombre_despliegue.sh).
 if [[ -z "$APP_NAME" ]]; then
     APP_NAME="$(nombre_por_defecto "$PREFIX")"
@@ -482,6 +534,36 @@ if [[ "$PORTADA_ESTADO" == "true" ]]; then
 else
     note "portada institucional: INACTIVA (ingreso directo a /login en productivo)"
 fi
+
+# Guardar nombre de plataforma, identificador y dominio en .env
+fijar_env_clave() {
+    local archivo="$1" clave="$2" valor="$3"
+    touch "$archivo"
+    if grep -qE "^\s*${clave}=" "$archivo"; then
+        sed -i -E "s|^\s*${clave}=.*|${clave}=${valor}|g" "$archivo"
+    else
+        echo "${clave}=${valor}" >> "$archivo"
+    fi
+}
+
+fijar_env_clave "$PREFIX/.env" "APP_NAME" "$APP_NAME"
+fijar_env_clave "$PREFIX/.env" "APP_TITLE" "$APP_TITLE"
+fijar_env_clave "$PREFIX/.env" "NEXT_PUBLIC_APP_TITLE" "$APP_TITLE"
+if [[ -n "$DOMAIN" && "$DOMAIN" != "_" ]]; then
+    fijar_env_clave "$PREFIX/.env" "DOMAIN" "$DOMAIN"
+    fijar_env_clave "$PREFIX/.env" "NEXT_PUBLIC_DOMAIN" "$DOMAIN"
+fi
+
+# Actualizar páginas de error corporativas con el dominio y nombre de la plataforma
+for err_html in "$PREFIX/deploy/errors"/*.html; do
+    [[ -f "$err_html" ]] || continue
+    if [[ -n "$DOMAIN" && "$DOMAIN" != "_" ]]; then
+        sed -i -E "s|<meta name=\"portal-domain\" content=\"[^\"]*\"|<meta name=\"portal-domain\" content=\"${DOMAIN}\"|g" "$err_html"
+    fi
+    if [[ -n "$APP_TITLE" ]]; then
+        sed -i -E "s|<meta name=\"portal-title\" content=\"[^\"]*\"|<meta name=\"portal-title\" content=\"${APP_TITLE}\"|g" "$err_html"
+    fi
+done
 # Vaultwarden y bind LDAP (FNC-068): mismas reglas que preflight; los valores
 # los pone una persona en el .env, nunca el instalador.
 # shellcheck source=deploy/secretos.sh
@@ -697,6 +779,8 @@ cat <<FIN
 
 Instalación terminada.
 
+  plataforma ${APP_TITLE} (${APP_NAME})
+  dominio    https://${DOMAIN:-_}
   backend    ${PREFIX} (127.0.0.1:${API_PORT})
   frontend   ${PREFIX}/frontend (127.0.0.1:${WEB_PORT})
   worker     ${WORKER_UNIT} (no escucha; journalctl -u ${WORKER_UNIT} -f)

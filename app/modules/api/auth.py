@@ -66,6 +66,7 @@ def _volver_a_entrada(codigo):
 @auth_api_bp.route('/context')
 def context():
     """Qué ofrecer en la pantalla de acceso. El frontend lo consulta antes de pintarla."""
+    import os
     return jsonify({
         'oidc_enabled': oidc.oidc_habilitado(),
         'authenticated': current_user.is_authenticated,
@@ -73,6 +74,10 @@ def context():
         'emergency_available': True,
         # Authelia apagado (FNC-158): `/login` muestra usuario y contraseña (solo cuentas locales).
         'local_login': login_local_por_oidc_apagado(),
+        'app_name': os.getenv('APP_NAME') or 'aduana',
+        'app_title': os.getenv('APP_TITLE') or os.getenv('NEXT_PUBLIC_APP_TITLE') or 'Aduana',
+        'domain': os.getenv('DOMAIN') or os.getenv('NEXT_PUBLIC_DOMAIN') or '',
+        'support_email': os.getenv('SUPPORT_EMAIL') or os.getenv('NEXT_PUBLIC_SUPPORT_EMAIL') or 'aduana-app@vivaro.com',
     })
 
 
