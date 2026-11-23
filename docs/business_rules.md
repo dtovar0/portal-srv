@@ -5615,3 +5615,36 @@ Un usuario que intenta abrir una plataforma sin tener los permisos asignados ve 
 ### Impacto
 
 Afecta a [deploy/errors/403.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/403.html), [deploy/errors/502.html](file:///home/dtovar/bayblade/pokemon/deploy/errors/502.html), [deploy/errors/assets/css/error.css](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/css/error.css) y [deploy/errors/assets/js/error.js](file:///home/dtovar/bayblade/pokemon/deploy/errors/assets/js/error.js).
+
+
+Mapeo de Grupos OIDC de Authelia y Asignación de Roles y Áreas
+
+## Autenticación, Autorización y Multitenancy
+
+### Regla
+
+1. **Mapeo de Grupos Authelia a Roles**:
+   La pertenencia a grupos enviada por Authelia mediante OIDC (claim `groups` habilitado con el scope `groups`) determina automáticamente el rol del usuario en la plataforma ADUANA según la siguiente jerarquía de precedencia:
+   - **Superadmin (`administrador`)**: Asignado al pertenecer al grupo configurado en `OIDC_GROUP_SUPERADMIN` (por omisión: `infraestructuraVoIP`).
+   - **Administrador de Área (`admin_area`)**: Asignado al pertenecer al grupo configurado en `OIDC_GROUP_AREA_ADMIN` (por omisión: `app-aduana-admins`).
+   - **Usuario Regular (`usuario`)**: Asignado al pertenecer al grupo configurado en `OIDC_GROUP_USER` (por omisión: `app-aduana-users`).
+   - Si la cuenta no pertenece a ningún grupo mapeado o no se especifican grupos, entra por omisión como `usuario`.
+   - La cuenta local de emergencia (`admin`) se mantiene reservada y protegida como punto de recuperación ante contingencias de conectividad o infraestructura SSO.
+
+2. **Sincronización Dinámica de Roles en SSO**:
+   En cada inicio de sesión exitoso por OIDC, si los grupos del colaborador cambiaron en Authelia, su rol en ADUANA se actualiza automáticamente. Si un usuario deja de ser `admin_area`, sus áreas administradas se limpian y sus accesos automáticos de administrador se revocan en la misma transacción auditada (`Evento.ROL_CAMBIADO`).
+
+3. **Gestión y Asignación de Áreas**:
+   - **Alta por Admin de Área**: Cuando un `admin_area` da de alta una nueva área (`POST /api/v1/areas`), él se convierte automáticamente en el administrador asignado a dicha área (`current_user.managed_areas.append(area)`).
+   - **Alta por Superadmin**: Cuando un `administrador` (superadmin) crea un área, no se asigna ningún administrador por defecto (`area.admins = []`), mostrándose como «Sin asignar» en el listado.
+   - **Visibilidad y Delegación para Superadmin**: El superadmin visualiza en el listado de áreas (`GET /api/v1/areas` y tabla en panel web) todas las áreas existentes y la lista de administradores asignados (`admins`, `admin_names`). La asignación y reasignación de administradores a cada área es controlada por el superadmin mediante `PUT /api/v1/users/<id>/managed-areas` desde el modal de administración de áreas.
+
+### Ejemplo
+
+1. Un colaborador que pertenece al grupo `infraestructuraVoIP` inicia sesión mediante Authelia y obtiene de inmediato el rol `administrador` (superadmin) en ADUANA.
+2. Un colaborador que pertenece a `app-aduana-admins` obtiene el rol `admin_area`. Al crear el área «Operaciones Marítimas», queda inmediatamente vinculado como su administrador.
+3. El superadmin crea el área «Carga General». El área queda registrada sin administradores («Sin asignar»), hasta que el superadmin asigna manualmente a un `admin_area` a través del panel de áreas.
+
+### Impacto
+
+Afecta a [app/modules/auth/oidc.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc.py), [app/modules/auth/oidc_cuentas.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc_cuentas.py), [app/modules/auth/oidc_configuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/oidc_configuracion.py), [app/modules/areas/api.py](file:///home/dtovar/bayblade/pokemon/app/modules/areas/api.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md) y [tests/test_oidc.py](file:///home/dtovar/bayblade/pokemon/tests/test_oidc.py).

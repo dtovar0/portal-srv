@@ -46,7 +46,7 @@ def test_login_redirige_a_authelia_con_pkce_state_y_nonce(client, oidc):
     assert parametros['response_type'] == 'code'
     assert parametros['client_id'] == CLIENT_ID
     assert parametros['redirect_uri'] == REDIRECT_URI
-    assert parametros['scope'] == 'openid profile email'
+    assert parametros['scope'] == 'openid profile email groups'
     assert parametros['code_challenge_method'] == 'S256'
     assert parametros['code_challenge']
     assert parametros['state'] and parametros['nonce']
@@ -204,6 +204,90 @@ def test_grupos_del_token_no_cambian_el_rol_de_una_cuenta_existente(
 
     db.session.refresh(cuenta)
     assert cuenta.role == rol
+
+
+# --------------------------------------------------------------------------- #
+# Mapeo de grupos OIDC de Authelia a roles (FNC-143)
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize('grupo,rol_esperado', [
+    ('infraestructuraVoIP', ROLE_ADMIN),
+    ('app-aduana-admins', ROLE_AREA_ADMIN),
+    ('app-aduana-users', ROLE_USER),
+    ('INFRAESTRUCTURAVOIP', ROLE_ADMIN),
+    ('App-Aduana-Admins', ROLE_AREA_ADMIN),
+])
+def test_mapeo_de_grupos_asigna_rol_en_cuenta_nueva(client, oidc, grupo, rol_esperado):
+    oidc.userinfo['groups'] = [grupo]
+
+    oidc.entrar(client)
+
+    cuenta = User.query.filter_by(email=CORREO).one()
+    assert cuenta.role == rol_esperado
+
+
+def test_prioridad_superadmin_sobre_admin_de_area(client, oidc):
+    oidc.userinfo['groups'] = ['app-aduana-admins', 'infraestructuraVoIP']
+
+    oidc.entrar(client)
+
+    cuenta = User.query.filter_by(email=CORREO).one()
+    assert cuenta.role == ROLE_ADMIN
+
+
+def test_cuenta_existente_sincroniza_rol_si_cambia_en_authelia(
+        client, oidc, crear_usuario):
+    cuenta = _cuenta_vinculada(crear_usuario, ROLE_USER, email=CORREO, sub=SUB)
+
+    # 1. Se le asigna grupo de admin de área en Authelia
+    oidc.userinfo['groups'] = ['app-aduana-admins']
+    oidc.entrar(client)
+    db.session.refresh(cuenta)
+    assert cuenta.role == ROLE_AREA_ADMIN
+
+    # 2. Se le promueve a superadmin en Authelia
+    oidc.userinfo['groups'] = ['infraestructuraVoIP']
+    oidc.entrar(client)
+    db.session.refresh(cuenta)
+    assert cuenta.role == ROLE_ADMIN
+
+    # 3. Se le degrada a usuario en Authelia
+    oidc.userinfo['groups'] = ['app-aduana-users']
+    oidc.entrar(client)
+    db.session.refresh(cuenta)
+    assert cuenta.role == ROLE_USER
+
+
+def test_degradacion_de_admin_de_area_limpia_areas_administradas(
+        client, oidc, crear_usuario):
+    from app.modules.core.models import Area
+    area = Area(name='Área Pruebas', status='active')
+    db.session.add(area)
+    db.session.commit()
+
+    cuenta = _cuenta_vinculada(crear_usuario, ROLE_AREA_ADMIN, email=CORREO, sub=SUB)
+    cuenta.managed_areas = [area]
+    db.session.commit()
+
+    # Usuario inicia sesión con grupo app-aduana-users (ya no es admin_area)
+    oidc.userinfo['groups'] = ['app-aduana-users']
+    oidc.entrar(client)
+
+    db.session.refresh(cuenta)
+    assert cuenta.role == ROLE_USER
+    assert cuenta.managed_areas == []
+
+
+def test_mapeo_con_variables_de_entorno_personalizadas(client, oidc, monkeypatch):
+    monkeypatch.setenv('OIDC_GROUP_SUPERADMIN', 'infra_custom')
+    monkeypatch.setenv('OIDC_GROUP_AREA_ADMIN', 'admins_custom')
+    monkeypatch.setenv('OIDC_GROUP_USER', 'users_custom')
+
+    oidc.userinfo['groups'] = ['infra_custom']
+    oidc.entrar(client)
+
+    cuenta = User.query.filter_by(email=CORREO).one()
+    assert cuenta.role == ROLE_ADMIN
 
 
 # --------------------------------------------------------------------------- #

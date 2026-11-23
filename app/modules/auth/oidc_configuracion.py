@@ -7,8 +7,8 @@ Variables (`docs/configuracion/VARIABLES.md`):
   secretos; sin valor por defecto, y nunca aparece en logs ni en mensajes.
 - `OIDC_REDIRECT_URI`: `https://<host del portal>/api/v1/auth/oidc/callback`,
   igual a la registrada en Authelia.
-- `OIDC_SCOPES`: por defecto `openid profile email`. Sin `groups`: el rol no
-  sale del token (SEG-10).
+- `OIDC_SCOPES`: por defecto `openid profile email groups`.
+  Incluye `groups` para que Authelia entregue la membresía de grupos (FNC-143).
 - `OIDC_LOGOUT_URL`: URL de cierre de sesión de Authelia (ADR-009 4B). Obligatoria
   fuera de desarrollo: sin ella, «Cerrar sesión» no cierra la sesión de Authelia y
   en un equipo compartido el siguiente entra como el anterior (revisión de seguridad).
@@ -42,7 +42,7 @@ VAR_ENTORNO = 'APP_ENV'
 ENTORNO_DESARROLLO = 'development'
 
 CLIENT_ID_POR_DEFECTO = 'portal'
-SCOPES_POR_DEFECTO = 'openid profile email'
+SCOPES_POR_DEFECTO = 'openid profile email groups'
 ESQUEMA = 'https'
 # Espera de cada llamada a Authelia (descubrimiento, JWKS, token, userinfo).
 TIEMPO_ESPERA_SEGUNDOS = 10
