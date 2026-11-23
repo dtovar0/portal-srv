@@ -63,7 +63,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-fondo p-4 sm:p-6 select-none">
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-fondo p-4 sm:p-6 select-none">
       {/* Ambient background glows de identidad Aduana */}
       <div className="pointer-events-none absolute -top-32 -left-32 size-96 rounded-full bg-aduana-cyan/15 blur-3xl" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-32 -right-32 size-96 rounded-full bg-aduana-orange/10 blur-3xl" aria-hidden="true" />
@@ -100,26 +100,28 @@ export function LoginForm() {
         </div>
 
         {/* Tarjeta principal de acceso */}
-        <Card className="relative overflow-hidden space-y-5 rounded-3xl border border-aduana-border bg-panel-fill/95 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-          <div className="h-1 w-full bg-gradient-to-r from-aduana-cyan via-aduana-cyan to-aduana-orange rounded-t-3xl -mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-6 overflow-hidden" aria-hidden="true" />
+        <Card className="relative rounded-3xl border border-aduana-border bg-panel-fill/95 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+          <div className="pointer-events-none absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-aduana-cyan via-aduana-cyan to-aduana-orange rounded-t-3xl" aria-hidden="true" />
 
-          {context.local_login ? (
-            <FormularioLoginLocal />
-          ) : context.oidc_enabled ? (
-            <Button
-              // Única acción de la pantalla: el foco empieza en ella.
-              autoFocus
-              onClick={() => { window.location.href = URL_INICIO_OIDC; }}
-              className="w-full py-3 min-h-12 bg-gradient-to-r from-aduana-cyan to-aduana-cyan-hover hover:brightness-110 active:scale-[0.98] font-display font-bold text-white shadow-lg shadow-aduana-cyan/25 rounded-xl border-0 transition-all flex items-center justify-center gap-2"
-            >
-              <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
-              Entrar con Authelia
-            </Button>
-          ) : (
-            <p className="text-sm text-label text-center py-2" role="status">
-              El inicio de sesión con Authelia no está disponible por ahora.
-            </p>
-          )}
+          <div className="space-y-5">
+            {context.local_login ? (
+              <FormularioLoginLocal />
+            ) : context.oidc_enabled ? (
+              <Button
+                // Única acción de la pantalla: el foco empieza en ella.
+                autoFocus
+                onClick={() => { window.location.href = URL_INICIO_OIDC; }}
+                className="w-full py-3 min-h-12 bg-gradient-to-r from-aduana-cyan to-aduana-cyan-hover hover:brightness-110 active:scale-[0.98] font-display font-bold text-white shadow-lg shadow-aduana-cyan/25 rounded-xl border-0 transition-all flex items-center justify-center gap-2"
+              >
+                <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+                Entrar con Authelia
+              </Button>
+            ) : (
+              <p className="text-sm text-label text-center py-2" role="status">
+                El inicio de sesión con Authelia no está disponible por ahora.
+              </p>
+            )}
+          </div>
         </Card>
 
         {/* Pie de pantalla */}
