@@ -229,3 +229,68 @@ def logout():
         resp.delete_cookie(sess_name, path=sess_path)
 
     return resp
+
+
+# ------------------------------------------------------------------ #
+# Autoservicio de Contraseña
+# ------------------------------------------------------------------ #
+
+@auth_api_bp.route('/autoservicio/politica', methods=['GET'])
+def autoservicio_politica():
+    """Retorna la política de contraseñas para validación en tiempo real."""
+    from app.modules.auth.autoservicio import obtener_politica_contrasena
+    return jsonify(obtener_politica_contrasena()), 200
+
+
+@auth_api_bp.route('/autoservicio/cambiar', methods=['POST'])
+def autoservicio_cambiar():
+    """Cambia la contraseña validando la contraseña actual (o si expiró)."""
+    from app.modules.auth.autoservicio import cambiar_contrasena, ErrorAutoservicio
+    data = request.get_json(silent=True) or {}
+    identificador = (data.get('identificador') or '').strip()
+    contrasena_actual = data.get('current_password') or ''
+    nueva_contrasena = data.get('new_password') or ''
+    try:
+        res = cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena)
+        return jsonify(res), 200
+    except ErrorAutoservicio as err:
+        return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http
+    except Exception as exc:
+        logger.error("Error en autoservicio/cambiar: %s", type(exc).__name__)
+        return jsonify({'status': 'error', 'message': 'Ocurrió un error interno procesando la solicitud.'}), 500
+
+
+@auth_api_bp.route('/autoservicio/solicitar-recuperacion', methods=['POST'])
+def autoservicio_solicitar_recuperacion():
+    """Envía el enlace de recuperación al correo corporativo si existe."""
+    from app.modules.auth.autoservicio import solicitar_recuperacion, ErrorAutoservicio
+    data = request.get_json(silent=True) or {}
+    correo = (data.get('email') or '').strip()
+    base_url = (request.host_url or os.getenv('BASE_URL') or '').rstrip('/')
+    try:
+        res = solicitar_recuperacion(correo, base_url=base_url)
+        return jsonify(res), 200
+    except ErrorAutoservicio as err:
+        return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http
+    except Exception as exc:
+        logger.error("Error en autoservicio/solicitar-recuperacion: %s", type(exc).__name__)
+        return jsonify({'status': 'error', 'message': 'Ocurrió un error interno procesando la solicitud.'}), 500
+
+
+@auth_api_bp.route('/autoservicio/restablecer', methods=['POST'])
+def autoservicio_restablecer():
+    """Aplica la nueva contraseña utilizando el token firmado."""
+    from app.modules.auth.autoservicio import restablecer_con_token, ErrorAutoservicio
+    data = request.get_json(silent=True) or {}
+    correo = (data.get('email') or '').strip()
+    token = (data.get('token') or '').strip()
+    nueva_contrasena = data.get('new_password') or ''
+    try:
+        res = restablecer_con_token(correo, token, nueva_contrasena)
+        return jsonify(res), 200
+    except ErrorAutoservicio as err:
+        return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http
+    except Exception as exc:
+        logger.error("Error en autoservicio/restablecer: %s", type(exc).__name__)
+        return jsonify({'status': 'error', 'message': 'Ocurrió un error interno procesando la solicitud.'}), 500
+

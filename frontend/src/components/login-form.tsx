@@ -125,6 +125,14 @@ export function LoginForm() {
                     <Icono nombre="candado" tamano="xs" ariaHidden={true} />
                     <span>Autenticación federada SSO</span>
                   </p>
+                  <div className="pt-1 text-center">
+                    <Link
+                      href="/autoservicio"
+                      className="text-xs font-medium text-texto-secundario hover:text-aduana-cyan transition-colors"
+                    >
+                      ¿Olvidaste o necesitas cambiar tu contraseña?
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <div className="py-2 text-center space-y-2">

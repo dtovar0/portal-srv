@@ -258,7 +258,7 @@ export const api = {
   clearNotifications: () =>
     request<{ status: string }>('/notifications', { method: 'DELETE' }),
 
-  // --- Autenticación ---
+  // --- Autenticación y Autoservicio ---
   authContext: () => request<AuthContext>('/auth/context'),
   /** Cuenta de emergencia (ADR-009 6A): única entrada con contraseña. */
   loginLocal: (email: string, password: string) =>
@@ -269,6 +269,26 @@ export const api = {
   logout: () =>
     request<{ status: string; redirect: string | null }>(
       '/auth/logout', { method: 'POST' }),
+
+  autoservicioPolitica: () =>
+    request<{ min_length: number; max_length: number; required_classes: string[]; symbols: string }>(
+      '/auth/autoservicio/politica'
+    ),
+  autoservicioCambiar: (datos: { identificador: string; current_password: string; new_password: string }) =>
+    request<{ status: string; message: string }>('/auth/autoservicio/cambiar', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+  autoservicioSolicitarRecuperacion: (datos: { email: string }) =>
+    request<{ status: string; message: string }>('/auth/autoservicio/solicitar-recuperacion', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+  autoservicioRestablecer: (datos: { email: string; token: string; new_password: string }) =>
+    request<{ status: string; message: string }>('/auth/autoservicio/restablecer', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
 
   /** Descarga el respaldo. Devuelve el Blob para que el navegador lo guarde. */
   downloadBackup: async () => {

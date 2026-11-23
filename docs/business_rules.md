@@ -5873,3 +5873,29 @@ En `acceso-emergencia-form.tsx`, la inserción de tokens de marca no debe re-dec
 ### Impacto
 
 Afecta a [frontend/src/components/acceso-emergencia-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/acceso-emergencia-form.tsx) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Autoservicio de Contraseñas y Sincronización con JumpServer
+
+## Autenticación y Autoservicio (app/modules/auth/autoservicio.py & frontend/src/app/autoservicio)
+
+### Regla
+
+1. **Centralización del Autoservicio en Aduana**:
+   Para resolver la limitación de IdPs como Authelia (que no emiten webhooks de contraseñas tras reseteos de autoservicio), Aduana centraliza el flujo de actualización y recuperación de contraseñas de los usuarios corporativos en la ruta `/autoservicio` (y `/cambiar-contrasena`).
+2. **Doble Modalidad de Autoservicio**:
+   - **Cambio Directo con Contraseña Previa**: Si el usuario conoce su contraseña actual (o está expirada/marcada con `pwdReset: TRUE` en LDAP), se valida contra OpenLDAP y se actualiza atómicamente mediante Password Modify (RFC 3062).
+   - **Recuperación con Token Temporal**: Si el usuario olvidó su contraseña, se genera un token criptográfico firmado (HMAC-SHA256 con TTL de 15 minutos) enviado por correo corporativo vía SMTP. Al confirmarlo, se actualiza la cuenta en el directorio sin requerir la contraseña anterior.
+3. **Sincronización Inmediata con JumpServer**:
+   En el mismo instante en que el backend de Aduana recibe la nueva contraseña en memoria, invoca el hook de sincronización hacia JumpServer/Vaultwarden (`sincronizar_jumpserver_o_externos`), garantizando que las credenciales para el autologeo a activos y bastiones nunca queden obsoletas ni desfasadas.
+4. **Protección Anti-Enumeración y Fuerza Bruta**:
+   - La solicitud de recuperación por correo responde siempre de forma genérica para no revelar qué identidades existen en el directorio.
+   - Las solicitudes fallidas acumulan eventos en la bitácora de auditoría e interactúan con el mecanismo de bloqueo por IP y cuenta (`bloqueado`).
+
+### Ejemplo
+
+Un usuario corporativo que utiliza el JumpServer para acceder a switches de red cambia su contraseña expirada desde `https://aduana.vivaro.com/autoservicio`. El backend actualiza `userPassword` en OpenLDAP e inmediatamente sincroniza la credencial hacia JumpServer. Cuando el usuario abre una sesión RDP/SSH en JumpServer, el autologeo funciona de forma transparente sin que deba reconfigurar su cuenta.
+
+### Impacto
+
+Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [frontend/src/app/autoservicio/page.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/app/autoservicio/page.tsx), [frontend/src/app/cambiar-contrasena/page.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/app/cambiar-contrasena/page.tsx), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
