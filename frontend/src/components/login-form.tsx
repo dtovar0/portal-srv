@@ -111,20 +111,40 @@ export function LoginForm() {
 
               {context.local_login ? (
                 <FormularioLoginLocal />
-              ) : context.oidc_enabled ? (
+              ) : (
                 <div className="space-y-4">
                   <Button
                     autoFocus
-                    onClick={() => { window.location.href = URL_INICIO_OIDC; }}
+                    onClick={() => {
+                      if (context.authelia_url && !context.oidc_enabled) {
+                        window.location.href = context.authelia_url;
+                        return;
+                      }
+                      window.location.href = URL_INICIO_OIDC;
+                    }}
                     className="w-full min-h-[50px] py-3.5 px-4 bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] font-display text-sm font-bold tracking-wide text-texto-sobre-accion shadow-md rounded-xl border-0 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                   >
-                    <Icono nombre="aprobar" tamano="sm" ariaHidden={true} />
-                    <span>Entrar con Authelia</span>
+                    <Icono nombre="escudo" tamano="sm" ariaHidden={true} />
+                    <span>Iniciar Sesión con Authelia</span>
                   </Button>
-                  <p className="flex items-center justify-center gap-1.5 text-xs text-texto-secundario text-center">
-                    <Icono nombre="candado" tamano="xs" ariaHidden={true} />
-                    <span>Autenticación federada SSO</span>
-                  </p>
+
+                  <div className="flex flex-col items-center gap-1 text-center">
+                    <p className="flex items-center justify-center gap-1.5 text-xs text-texto-secundario">
+                      <Icono nombre="candado" tamano="xs" ariaHidden={true} />
+                      <span>Autenticación federada Single Sign-On (SSO)</span>
+                    </p>
+                    {context.authelia_url && (
+                      <a
+                        href={context.authelia_url}
+                        className="text-[11px] text-aduana-cyan hover:underline font-semibold"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        Abrir portal de Authelia directamente ↗
+                      </a>
+                    )}
+                  </div>
+
                   <div className="pt-2">
                     <div className="rounded-2xl border border-panel-border/80 bg-fondo p-3 text-center space-y-1.5 shadow-xs">
                       <p className="text-xs font-semibold text-body-text">
@@ -142,18 +162,6 @@ export function LoginForm() {
                       </Link>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="py-2 text-center space-y-2">
-                  <div className="mx-auto flex size-10 items-center justify-center rounded-xl border border-aviso-borde bg-aviso-tenue text-aviso-texto">
-                    <Icono nombre="aviso" tamano="sm" />
-                  </div>
-                  <p className="text-xs text-label leading-relaxed" role="status">
-                    El inicio de sesión con Authelia no está disponible por ahora.
-                  </p>
-                  <p className="text-[11px] text-texto-secundario">
-                    Contacta a soporte técnico para asistencia.
-                  </p>
                 </div>
               )}
             </div>

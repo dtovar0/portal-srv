@@ -116,6 +116,7 @@
 | `ENABLE_NOTIFICATIONS` | Interruptor global de correo | `true` / `false` | `true` | `true` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `DEBUG_SMTP` | Traza del diálogo SMTP en consola | `true` / `false` | `false` | `false` | No | No | Sí | `notifications/services.py` | FNC-001, 2026-10-13 | Vigente |
 | `AUTOSERVICIO_BRAND_NAME` | Marca institucional en cabecera de autoservicio | texto | `Authelia` | `Authelia` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
+| `AUTHELIA_URL` | URL pública directa del portal de Authelia SSO | URL (`https://...`) | ninguna | `https://auth.vivaro.com` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_MFA_ENABLED` | Exige segundo factor (MFA) en autoservicio de contraseñas | `true` / `false` | `false` | `false` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_MFA_TIPO` | Método de segundo factor en autoservicio | `email` / `authenticator` / `ambos` | `email` | `email` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |
 | `AUTOSERVICIO_MFA_TTL_MINUTOS` | Tiempo de vida del código MFA por correo en minutos | entero | `10` | `10` | No | No | Sí | `auth/autoservicio.py` | FNC-171, 2026-11-23 | Vigente |

@@ -253,6 +253,8 @@ export interface AuthContext {
   emergency_available: boolean;
   /** Authelia apagado (`OIDC_HABILITADO=false`, FNC-158): `/login` pide usuario y contraseña (cuentas locales). */
   local_login?: boolean;
+  /** URL pública de Authelia SSO para redirección directa o enlace institucional. */
+  authelia_url?: string;
   /** Correo de soporte para solicitudes de acceso (ADUANA). */
   support_email?: string;
   /** Identificador técnico del despliegue (ej. aduana, nexus). */

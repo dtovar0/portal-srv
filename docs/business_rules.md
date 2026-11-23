@@ -6065,3 +6065,25 @@ Un usuario solicita un código MFA a las 10:00 AM recibiendo el número `482915`
 
 ### Impacto
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+Botón de Acceso a Authelia SSO y Redirección Directa desde Autoservicio y Login
+
+## Módulo
+Autenticación / Login / Autoservicio
+
+### Regla
+1. **Disponibilidad Permanente del Botón de Inicio de Sesión con Authelia**:
+   En la pantalla de acceso `/login`, el botón principal **"Iniciar Sesión con Authelia"** se muestra siempre activo e interactivo, eliminando cualquier bloqueo o pantalla muerta que indique que el servicio no está disponible.
+   - Si la federación OIDC está activa (`oidc_enabled`), el botón inicia el flujo de autorización estándar hacia `/api/v1/auth/oidc/login`.
+   - Si OIDC está en proceso de arranque o la URL de Authelia está configurada (`AUTHELIA_URL`), el botón redirige directamente al portal de Authelia SSO.
+   - Adicionalmente, se provee un enlace directo para abrir el portal de Authelia en caso de requerir acceso manual.
+2. **Acceso Sin Bloqueos al Autoservicio de Contraseña**:
+   La tarjeta informativa de Autoservicio de Contraseña permanece siempre visible en `/login`, garantizando que cualquier usuario con credenciales caducadas o sin sesión activa pueda acceder a `/autoservicio` sin depender del inicio de sesión.
+3. **Navegación Fluida hacia Authelia desde Autoservicio**:
+   En la pantalla de Autoservicio (`/autoservicio`), tanto el enlace de retorno en el pie de página como el botón final del Paso 4 dirigen al usuario directamente al portal de Authelia configurado vía `AUTHELIA_URL` (o a `/login`), permitiéndole autenticarse de inmediato tras renovar su clave.
+
+### Ejemplo
+Un usuario finaliza la actualización de su contraseña en el Paso 3 del Autoservicio. En la pantalla de éxito, presiona "Iniciar Sesión en Authelia →" y es enviado directamente al portal corporativo de Authelia SSO (o a la pantalla de acceso con el botón de entrada listo). Si visita `/login` mientras el backend se reinicia, ya no observa un mensaje de error restrictivo, sino el botón para entrar con Authelia y el acceso directo a recuperar su cuenta.
+
+### Impacto
+Afecta a [frontend/src/components/login-form.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/login-form.tsx), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [app/modules/api/auth.py](file:///home/dtovar/bayblade/pokemon/app/modules/api/auth.py), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example), [docs/configuracion/VARIABLES.md](file:///home/dtovar/bayblade/pokemon/docs/configuracion/VARIABLES.md) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

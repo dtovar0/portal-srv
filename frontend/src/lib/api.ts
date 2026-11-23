@@ -401,6 +401,7 @@ export interface AutoservicioConfig {
   mfa_tipo: 'email' | 'authenticator' | 'ambos';
   mfa_ttl_segundos?: number;
   mfa_ttl_minutos?: number;
+  authelia_url?: string;
   politica: {
     min_length: number;
     max_length: number;

@@ -385,6 +385,8 @@ def obtener_politica_contrasena():
 def obtener_configuracion_autoservicio():
     """Retorna la configuración de identidad, MFA y políticas para el frontend."""
     ttl_seg = tiempo_expiracion_mfa()
+    authelia_url = (os.getenv('AUTHELIA_URL') or os.getenv('AUTHELIA_SSO_URL') or
+                    os.getenv('OIDC_ISSUER_URL') or '').strip() or None
     return {
         'status': 'success',
         'brand_name': 'Authelia',
@@ -393,6 +395,7 @@ def obtener_configuracion_autoservicio():
         'mfa_tipo': tipo_mfa(),
         'mfa_ttl_segundos': ttl_seg,
         'mfa_ttl_minutos': max(1, ttl_seg // 60),
+        'authelia_url': authelia_url,
         'politica': cargar_politica().publica(),
     }
 

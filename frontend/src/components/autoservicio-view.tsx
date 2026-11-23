@@ -10,7 +10,6 @@
  * Paso 4: Confirmación de actualización exitosa y notificación remitida por correo.
  */
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { api, type AutoservicioConfig } from '@/lib/api';
 import { generarContrasenaSegura } from '@/lib/generador-contrasena';
@@ -666,12 +665,12 @@ export function AutoservicioView() {
               </div>
 
               <div className="pt-3 flex flex-col sm:flex-row items-center gap-3">
-                <Link
-                  href="/login"
+                <a
+                  href={config?.authelia_url || '/login'}
                   className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-accion font-bold text-sm py-3 px-4 rounded-xl border-0 shadow-md transition-all text-center"
                 >
                   <span>Iniciar Sesión en Authelia →</span>
-                </Link>
+                </a>
                 <button
                   type="button"
                   onClick={handleReiniciar}
@@ -685,12 +684,12 @@ export function AutoservicioView() {
 
           {/* Pie de página con enlace de retorno */}
           <div className="mt-8 pt-4 border-t border-panel-border/60 flex items-center justify-between text-xs">
-            <Link
-              href="/login"
+            <a
+              href={config?.authelia_url || '/login'}
               className="text-texto-secundario hover:text-body-text transition-colors flex items-center gap-1.5"
             >
-              <span>← Volver al login</span>
-            </Link>
+              <span>← Volver al login de Authelia</span>
+            </a>
             <span className="text-[11px] text-texto-secundario">Authelia Identity SSO</span>
           </div>
         </div>
