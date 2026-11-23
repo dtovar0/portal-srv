@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Instalación de Nexus en Rocky/RHEL 8 o 9.
+# Instalación de Aduana en Rocky/RHEL 8 o 9.
 #
 #   sudo ./deploy/install.sh [--name miapp] [--user cuenta] [--force]
 #                            [--domain portal.example.com] [--python /usr/bin/python3.11]
@@ -134,6 +134,7 @@ NO_PROXY_LIST="${no_proxy:-${NO_PROXY:-localhost,127.0.0.1,::1}}"
 # valor por defecto de deploy/puertos.sh.
 WEB_PORT="${WEB_PORT:-}"
 API_PORT="${API_PORT:-}"
+PORTADA_OPCION="${PORTADA_OPCION:-}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -156,6 +157,9 @@ while [[ $# -gt 0 ]]; do
         --skip-packages) SKIP_PKGS=1; shift ;;
         --actualizar) ACTUALIZAR=1; SKIP_PKGS=1; shift ;;
         --actualizar-frontend) ACTUALIZAR_FRONTEND=1; SKIP_PKGS=1; shift ;;
+        --portada) PORTADA_OPCION="$2"; shift 2 ;;
+        --con-portada) PORTADA_OPCION="true"; shift ;;
+        --sin-portada) PORTADA_OPCION="false"; shift ;;
         --nginx-conf) NGINX_MODO="$2"; shift 2 ;;
         -h|--help) sed -n '2,80p' "$0"; exit 0 ;;
         *) echo "Opción desconocida: $1" >&2; exit 2 ;;
@@ -468,6 +472,16 @@ API_PORT="$(resolver_puerto "$API_PORT" "$PREFIX/.env" API_PORT "$API_PORT_POR_D
     || die "API_PORT del .env debe ser un entero entre ${PUERTO_SERVICIO_MIN} y ${PUERTO_SERVICIO_MAX}"
 (( WEB_PORT != API_PORT )) || die "WEB_PORT y API_PORT no pueden ser iguales (${WEB_PORT})"
 note "puertos de loopback: frontend ${WEB_PORT}, backend ${API_PORT}"
+# Portada institucional y presentación de producto (DIS-118)
+# shellcheck source=deploy/portada_conf.sh
+. "$PREFIX/deploy/portada_conf.sh"
+PORTADA_ESTADO="$(decidir_portada_instalador "$PREFIX/.env" "$PORTADA_OPCION")" \
+    || die "falló la configuración de PORTADA_ACTIVA en el .env"
+if [[ "$PORTADA_ESTADO" == "true" ]]; then
+    note "portada institucional: ACTIVA (/portada y presentación disponibles)"
+else
+    note "portada institucional: INACTIVA (ingreso directo a /login en productivo)"
+fi
 # Vaultwarden y bind LDAP (FNC-068): mismas reglas que preflight; los valores
 # los pone una persona en el .env, nunca el instalador.
 # shellcheck source=deploy/secretos.sh
@@ -582,7 +596,7 @@ if (( ACTUALIZAR )); then
     actualizar_dependencias() { instalar_dependencias; }
     actualizar_migrar() {
         ( cd "$PREFIX" && "$PREFIX/venv/bin/alembic" upgrade head ) \
-            || die "falló 'alembic upgrade head' (ver el error de arriba; BD existente de NEXUS: antes, una vez, alembic stamp 0001)"
+            || die "falló 'alembic upgrade head' (ver el error de arriba; BD existente de ADUANA: antes, una vez, alembic stamp 0001)"
     }
     # Pasado el paso 1 ya se modificó algo: el mensaje genérico no lo niega.
     trap 'die "falló en la línea $LINENO."' ERR
@@ -692,7 +706,7 @@ Actualizar más adelante:  sudo git -C ${PREFIX} pull && sudo ${PREFIX}/deploy/i
 
 Pendiente:
   1. Migraciones, si es una actualización (después reiniciar backend y worker):
-       cd ${PREFIX} && venv/bin/alembic upgrade head   (BD existente de NEXUS: antes, una vez, alembic stamp 0001)
+       cd ${PREFIX} && venv/bin/alembic upgrade head   (BD existente de ADUANA: antes, una vez, alembic stamp 0001)
   2. Certificados y server_name en ${conf}
   3. Primer superadmin (instalación nueva) o cambiar la contraseña de \`admin\` (FNC-003):
        cd ${PREFIX} && sudo -u ${SVC_USER} venv/bin/flask --app run:app cuentas superadmin [--restablecer]

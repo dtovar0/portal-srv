@@ -169,6 +169,22 @@ export default {
         // Alias usados por el marcado de base.html
         bg: 'var(--color-body-bg)',
         text: 'var(--color-body-text)',
+
+        // Identidad Corporativa ADUANA (Manual de Identidad §06)
+        'aduana-bg-main': 'var(--aduana-bg-main)',
+        'aduana-bg-surface': 'var(--aduana-bg-surface)',
+        'aduana-bg-hover': 'var(--aduana-bg-hover)',
+        'aduana-border': 'var(--aduana-border)',
+        'aduana-text-primary': 'var(--aduana-text-primary)',
+        'aduana-text-secondary': 'var(--aduana-text-secondary)',
+        'aduana-cyan': 'var(--aduana-cyan)',
+        'aduana-cyan-hover': 'var(--aduana-cyan-hover)',
+        'aduana-orange': 'var(--aduana-orange)',
+        'aduana-orange-hover': 'var(--aduana-orange-hover)',
+        'status-approved': 'var(--status-approved)',
+        'status-pending': 'var(--status-pending)',
+        'status-rejected': 'var(--status-rejected)',
+        'status-info': 'var(--status-info)',
       },
       borderRadius: {
         base: 'var(--radius-base)',
@@ -197,6 +213,7 @@ export default {
         curva: 'var(--curva)',
       },
       fontFamily: {
+        display: ['var(--fuente-display)', 'var(--font-display)', 'Montserrat', 'sans-serif'],
         sans: ['var(--fuente-texto)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['var(--fuente-mono)', 'ui-monospace', 'monospace'],
       },

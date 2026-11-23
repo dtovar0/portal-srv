@@ -1,5 +1,11 @@
 import type { NextConfig } from 'next';
+import { resolve } from 'node:path';
+import { loadEnvConfig } from '@next/env';
 import { rewritesDeDesarrollo } from './rewrites-dev';
+
+// Carga el .env de la raíz del proyecto para que las variables estén disponibles en desarrollo y build
+const dirRaiz = process.cwd().endsWith('frontend') ? resolve(process.cwd(), '..') : process.cwd();
+loadEnvConfig(dirRaiz);
 
 /**
  * El backend Flask es la única fuente de datos y de sesión.
@@ -12,6 +18,10 @@ import { rewritesDeDesarrollo } from './rewrites-dev';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  env: {
+    NEXT_PUBLIC_PORTADA_ACTIVA:
+      process.env.PORTADA_ACTIVA ?? process.env.NEXT_PUBLIC_PORTADA_ACTIVA ?? 'true',
+  },
   async rewrites() {
     return rewritesDeDesarrollo(process.env);
   },

@@ -19,6 +19,129 @@ body {
     overflow: hidden;
 }
 
+/* Presentación de producto: movimiento sutil aplicado sobre capturas reales. */
+.nx-hero-stage {
+  min-height: calc(100svh - 4rem);
+  padding: clamp(2rem, 4vh, 3.5rem) 0;
+  background: radial-gradient(circle at 74% 35%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 6%, var(--color-fondo)), var(--color-fondo));
+}
+.nx-hero-stage::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .45;
+  background-image: linear-gradient(color-mix(in srgb, var(--color-panel-border) 45%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-panel-border) 45%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px; mask-image: linear-gradient(to bottom, black, transparent 82%);
+}
+.nx-hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "badge product"
+    "title product"
+    "copy product"
+    "actions product"
+    "proof proof";
+  min-height: calc(100svh - 8rem);
+  align-content: center;
+  align-items: center;
+  gap: clamp(1rem, 2vh, 1.5rem) clamp(2rem, 3.5vw, 3.5rem);
+  text-align: left;
+}
+.nx-hero-badge { grid-area: badge; justify-self: start; margin: 0; }
+.nx-hero-title { grid-area: title; margin: 0; }
+.nx-hero-title span { display: block; margin-top: .1em; }
+.nx-hero-copy { grid-area: copy; margin: 0; }
+.nx-hero-actions { grid-area: actions; margin: .5rem 0 0; }
+.nx-hero-product { grid-area: product; width: 100%; max-width: 100%; min-width: 0; }
+.nx-hero-proof { grid-area: proof; margin-top: clamp(1rem, 2.5vh, 2rem); border: 0; padding: 0; width: 100%; }
+.nx-hero-proof > div {
+  border-radius: 1rem;
+  border: 1px solid var(--color-panel-border);
+  background: color-mix(in srgb, var(--color-superficie) 85%, transparent);
+  padding: 1.125rem;
+  backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.nx-editorial-section > div > div:first-child, .nx-flow-section > div > div:first-child, .nx-showcase > div > div:first-child, .nx-security > div > div:first-child { text-align: left; margin-left: 0; }
+.nx-contrast-grid > div { min-height: 32rem; }
+.nx-flow-grid > div, .nx-security-grid > div { transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease; }
+.nx-flow-grid > div:hover, .nx-security-grid > div:hover { transform: translateY(-6px); box-shadow: 0 22px 50px color-mix(in srgb, var(--color-primary) 12%, transparent); }
+.nx-flow-grid > div { min-height: 19rem; }
+.nx-showcase { background: linear-gradient(180deg, var(--color-fondo), color-mix(in srgb, var(--color-primary) 6%, var(--color-fondo))); }
+.nx-showcase-frame { overflow: hidden; }
+
+@media (max-width: 1023px) {
+  .nx-hero-stage, .nx-hero-layout { min-height: auto; }
+  .nx-hero-layout { grid-template-columns: 1fr; grid-template-areas: "badge" "title" "copy" "actions" "product" "proof"; }
+  .nx-hero-product { width: 100%; margin-top: 1.5rem; }
+  .nx-product-image { max-height: none; width: 100%; }
+}
+@media (max-width: 767px) {
+  .nx-hero-stage { padding: 3rem 0; }
+  .nx-hero-proof { grid-template-columns: 1fr 1fr; margin-top: 2rem; }
+  .nx-contrast-grid > div { min-height: auto; }
+}
+.nx-product-frame {
+  transform: perspective(1400px) rotateX(1deg);
+  transform-origin: center;
+}
+
+.nx-product-image {
+  max-height: min(56svh, 560px);
+  object-fit: contain;
+  object-position: center;
+  transform: scale(1.002);
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 1024px) and (max-height: 760px) {
+  .nx-hero-stage { padding: 1.5rem 0; }
+  .nx-hero-layout { min-height: calc(100svh - 7rem); gap: .75rem 3rem; }
+  .nx-hero-title { font-size: clamp(2.75rem, 4.5vw, 4.5rem); }
+  .nx-hero-copy { font-size: 1rem; }
+  .nx-product-image { max-height: 50svh; }
+  .nx-hero-proof { margin-top: .75rem; }
+}
+
+@media (max-width: 1023px) {
+  .nx-product-image { max-height: none; width: 100%; }
+}
+
+.nx-product-frame:hover .nx-product-image { transform: scale(1.018); }
+
+.nx-product-sheen {
+  left: -60%;
+  animation: nx-sheen 7s ease-in-out infinite;
+}
+
+.nx-float-card { animation: nx-float 5s ease-in-out infinite; }
+.nx-reveal { animation: nx-reveal 650ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.nx-reveal-delay { animation-delay: 120ms; }
+
+@keyframes nx-reveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nx-sheen {
+  0%, 68% { left: -60%; opacity: 0; }
+  74% { opacity: 0.8; }
+  92%, 100% { left: 130%; opacity: 0; }
+}
+
+@keyframes nx-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-reveal, .nx-product-sheen, .nx-float-card { animation: none; }
+  .nx-product-frame, .nx-product-image, .nx-product-frame:hover .nx-product-image {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* DIS-038/DIS-044/DIS-073: bloqueo del desplazamiento del fondo con Modal o el menú
    móvil abiertos. `scrollbar-gutter: stable` en contenedores desplazables para
    evitar que al alternar `overflow: hidden` el contenido salte su ancho (CLS = 0). */
@@ -99,4 +222,3 @@ html.dark { color-scheme: dark; }
 *::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--color-primary) / 0.4);
 }
-

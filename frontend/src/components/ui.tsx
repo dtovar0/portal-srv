@@ -163,24 +163,45 @@ export function StatTile({
 export function Spinner({
   label = 'Cargando…',
   size = 'md',
+  subtexto,
   className = '',
 }: {
   label?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
+  subtexto?: string;
   className?: string;
 }) {
-  const containerClasses =
-    size === 'sm' ? 'flex items-center gap-2 text-label' : 'flex items-center gap-3 p-6 text-label';
+  if (size === 'sm') {
+    return (
+      <div className={`inline-flex items-center gap-2 text-label ${className}`} role="status">
+        <span className="relative flex size-4 shrink-0" aria-hidden="true">
+          <span className="absolute inset-0 rounded-full border-2 border-primary/20" />
+          <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+        </span>
+        {label ? <span className="text-xs font-bold">{label}</span> : null}
+      </div>
+    );
+  }
+
   return (
-    <div className={`${containerClasses} ${className}`} role="status">
-      <span
-        className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-panel-border border-t-primary"
-        aria-hidden="true"
-      />
-      <span className="text-sm font-bold">{label}</span>
+    <div
+      className={`flex flex-col items-center justify-center gap-3 p-6 text-center select-none ${className}`}
+      role="status"
+    >
+      <div className="relative flex items-center justify-center size-10 shrink-0" aria-hidden="true">
+        <span className="absolute inset-0 rounded-full border-2 border-primary/15" />
+        <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary border-r-brand animate-spin" />
+        <span className="size-2 rounded-full bg-primary/80 animate-pulse" />
+      </div>
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-sm font-bold tracking-tight text-body-text">{label}</span>
+        {subtexto ? <span className="text-xs text-label font-medium">{subtexto}</span> : null}
+      </div>
     </div>
   );
 }
+
+export { PantallaCarga, type PantallaCargaProps } from './pantalla-carga';
 
 export { Note, ErrorNote, EmptyNote } from './note';
 export type { NoteProps, NoteTone } from './note';

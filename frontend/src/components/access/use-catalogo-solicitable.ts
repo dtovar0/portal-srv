@@ -34,18 +34,36 @@ function aplicarSolicitadas(items: CatalogItem[], solicitadas: Solicitadas): Cat
 
 export function useCatalogoSolicitable(mias?: MisPlataformas) {
   const [solicitadas, setSolicitadas] = useState<Solicitadas>({});
+  const [favoritosLocales, setFavoritosLocales] = useState<Record<number, boolean>>({});
 
   const catalogo = useAsync(
     () => requestsApi.catalog().catch((err: unknown) => {
       throw new Error(describeCatalogError(err));
     }),
     [],
+    'nexus.access.catalog',
   );
 
   const unido = useMemo(
     () => unirCatalogo(catalogo.data ?? [], mias?.data ?? []),
     [catalogo.data, mias?.data],
   );
+
+  const miasAbribles = useMemo(() => {
+    if (Object.keys(favoritosLocales).length === 0) {
+      return unido.mias;
+    }
+    const mapa = new Map(unido.mias);
+    for (const [idStr, isFav] of Object.entries(favoritosLocales)) {
+      const id = Number(idStr);
+      const plat = mapa.get(id);
+      if (plat) {
+        mapa.set(id, { ...plat, is_favorite: isFav });
+      }
+    }
+    return mapa;
+  }, [unido.mias, favoritosLocales]);
+
   const items = useMemo(
     () => aplicarSolicitadas(unido.items, solicitadas),
     [unido.items, solicitadas],
@@ -60,12 +78,18 @@ export function useCatalogoSolicitable(mias?: MisPlataformas) {
     setSolicitadas((prev) => ({ ...prev, [platformId]: requestId }));
   }, []);
 
+  const marcarFavorito = useCallback((platformId: number, isFavorite: boolean) => {
+    setFavoritosLocales((prev) => ({ ...prev, [platformId]: isFavorite }));
+    mias?.reload();
+  }, [mias]);
+
   return {
     catalogo,
     items,
     areas,
-    /** Plataformas abribles por id de plataforma. */
-    mias: unido.mias,
+    /** Plataformas abribles por id de plataforma con estado reactivo de favoritos. */
+    mias: miasAbribles,
     marcarSolicitada,
+    marcarFavorito,
   };
 }

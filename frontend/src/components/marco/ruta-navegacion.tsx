@@ -39,7 +39,59 @@ export function RutaNavegacion() {
   const entrada = entradaDeRuta(pathname);
   if (!entrada) return null;
 
-  if (areaNombre && (pathname === '/admin/platforms' || pathname === '/platforms')) {
+  const limpiarArea = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('portal_selected_area_id');
+        sessionStorage.removeItem('portal_selected_area_name');
+      } catch {}
+      window.history.pushState({ areaId: null, areaName: null }, '', pathname);
+      window.dispatchEvent(new Event('popstate'));
+    }
+  };
+
+  // En la vista de administración de plataformas (/admin/platforms), la primera entrada son las áreas
+  if (pathname === '/admin/platforms') {
+    if (areaNombre) {
+      return (
+        <nav aria-label="Ruta" className="hidden items-center whitespace-nowrap text-sm text-texto-secundario lg:flex">
+          <span className="inline-flex min-h-11 items-center px-2 font-medium text-texto-secundario">
+            {entrada.seccion}
+          </span>
+          <Icono nombre="chevron-der" tamano="sm" />
+          <Link
+            href={pathname}
+            onClick={limpiarArea}
+            className="inline-flex min-h-12 items-center px-2 font-medium text-texto-secundario hover:text-primary-text transition-colors"
+          >
+            {entrada.label}
+          </Link>
+          <Icono nombre="chevron-der" tamano="sm" />
+          <span aria-current="page" className="inline-flex min-h-11 items-center px-2 font-semibold text-body-text">
+            {areaNombre}
+          </span>
+        </nav>
+      );
+    }
+
+    return (
+      <nav aria-label="Ruta" className="hidden items-center whitespace-nowrap text-sm text-texto-secundario lg:flex">
+        <span className="inline-flex min-h-11 items-center px-2 font-medium text-texto-secundario">
+          {entrada.seccion}
+        </span>
+        <Icono nombre="chevron-der" tamano="sm" />
+        <span className="inline-flex min-h-11 items-center px-2 font-medium text-texto-secundario">
+          {entrada.label}
+        </span>
+        <Icono nombre="chevron-der" tamano="sm" />
+        <span aria-current="page" className="inline-flex min-h-11 items-center px-2 font-semibold text-body-text">
+          Áreas
+        </span>
+      </nav>
+    );
+  }
+
+  if (areaNombre && pathname === '/platforms') {
     return (
       <nav aria-label="Ruta" className="hidden items-center whitespace-nowrap text-sm text-texto-secundario lg:flex">
         <span className="inline-flex min-h-11 items-center px-2 font-medium text-texto-secundario">
@@ -48,16 +100,7 @@ export function RutaNavegacion() {
         <Icono nombre="chevron-der" tamano="sm" />
         <Link
           href={pathname}
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              try {
-                sessionStorage.removeItem('portal_selected_area_id');
-                sessionStorage.removeItem('portal_selected_area_name');
-              } catch {}
-              window.history.pushState({ areaId: null, areaName: null }, '', pathname);
-              window.dispatchEvent(new Event('popstate'));
-            }
-          }}
+          onClick={limpiarArea}
           className="inline-flex min-h-12 items-center px-3 font-medium text-texto-secundario hover:text-primary-text transition-colors"
         >
           {entrada.label}

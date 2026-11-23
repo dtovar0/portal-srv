@@ -95,13 +95,13 @@ function Segmentos({ indicador, valor, desglose }: { indicador: ClaveIndicador; 
     <div className="relative grid gap-3.5">
       {desglose ? <ResumenPartes indicador={indicador} desglose={desglose} /> : null}
       <div className="flex flex-wrap items-center gap-3.5">
-        <div className="nx-ind__anillo nx-ind__anillo--segmentos">
+        <div className="nx-ind__anillo nx-ind__anillo--segmentos shrink-0">
           <AnilloIndicador desglose={desglose} grosor={GROSOR_SEGMENTOS} dosSegmentos />
           <span className="nx-ind__icono-aro relative grid place-items-center">
             <Icono nombre={def.icono} tamano="lg" />
           </span>
         </div>
-        <div className="grid min-w-24 flex-1 gap-1">
+        <div className="flex min-w-24 flex-1 flex-col items-center justify-center text-center gap-1">
           <span
             title={def.etiqueta}
             className="badge-titulo inline-flex w-fit max-w-full items-center truncate rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wide"

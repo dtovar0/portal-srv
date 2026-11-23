@@ -1,21 +1,16 @@
-import { AppShell } from '@/components/app-shell';
-import { PageHeader } from '@/components/page-header';
-import { PlatformsView } from '@/components/platforms-view';
+import { PlatformsPageShell } from '@/components/platforms/platforms-shell';
 
 /**
- * Plataformas: encabezado con PageHeader y una sola vista (DIS-030) con el catálogo
- * solicitable, el enlace y el favorito de cada plataforma.
+ * Plataformas: Portal de usuario (DIS-030, DIS-115).
+ *
+ * Presenta el catálogo de plataformas y herramientas corporativas según el diseño
+ * configurado por el usuario:
+ * - Opción A ('topbar'): Lanzador Launchpad con Hero Banner, pastillas de filtro y 4 columnas.
+ * - Opción B ('sidebar'): Espacio de trabajo Workspace con barra lateral de 264px y 3 columnas.
+ *
+ * El conmutador de diseño [ ⚙️ Vista: Topbar / Sidebar ] y el acceso para administradores
+ * [ ⚙️ Regresar al Panel Admin ] residen consistentemente en la barra superior de ambas vistas.
  */
 export default function Page() {
-  return (
-    <AppShell>
-      <div className="space-y-6">
-        <PageHeader
-          title="Plataformas"
-        />
-        <PlatformsView />
-      </div>
-    </AppShell>
-  );
+  return <PlatformsPageShell />;
 }
-

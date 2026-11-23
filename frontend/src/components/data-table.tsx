@@ -16,6 +16,7 @@
  */
 
 import React from 'react';
+import { CapsulePager } from './capsule-pager';
 import { Icono, type NombreIcono } from './icono';
 import { Card, EmptyNote, ErrorNote, Skeleton, Spinner } from './ui';
 
@@ -278,39 +279,14 @@ export function DataTable<T>({
                     </span>
 
                     {totalPages && totalPages > 1 && onPageChange ? (
-                      <nav
-                        aria-label={`Paginación de ${label.toLowerCase()}`}
-                        className="flex items-center gap-1 rounded-xl border border-panel-border/80 bg-superficie/90 p-0.5 shadow-xs"
-                      >
-                        <button
-                          type="button"
-                          disabled={(page ?? 1) <= 1}
-                          onClick={() => onPageChange(Math.max(1, (page ?? 1) - 1))}
-                          className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:opacity-30 disabled:pointer-events-none outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          aria-label={`Página anterior de ${label.toLowerCase()}`}
-                          title="Página anterior"
-                        >
-                          <Icono nombre="chevron-izq" tamano="sm" ariaHidden={true} />
-                        </button>
-
-                        <span
-                          className="px-2.5 py-0.5 text-xs font-black tabular-nums tracking-wide text-body-text select-none"
-                          aria-current="page"
-                        >
-                          {page ?? 1}/{totalPages}
-                        </span>
-
-                        <button
-                          type="button"
-                          disabled={(page ?? 1) >= totalPages}
-                          onClick={() => onPageChange(Math.min(totalPages, (page ?? 1) + 1))}
-                          className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:opacity-30 disabled:pointer-events-none outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          aria-label={`Página siguiente de ${label.toLowerCase()}`}
-                          title="Página siguiente"
-                        >
-                          <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} />
-                        </button>
-                      </nav>
+                      <CapsulePager
+                        page={page ?? 1}
+                        totalPages={totalPages}
+                        onChange={onPageChange}
+                        label={`Paginación de ${label.toLowerCase()}`}
+                        ariaLabelAnterior={`Página anterior de ${label.toLowerCase()}`}
+                        ariaLabelSiguiente={`Página siguiente de ${label.toLowerCase()}`}
+                      />
                     ) : null}
                   </div>
                 </td>

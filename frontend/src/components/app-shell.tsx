@@ -9,17 +9,13 @@
 import { Marco } from './marco/marco';
 import { ModalResponsiva } from './responsiva/modal-responsiva';
 import { SessionProvider, useSession } from './session-provider';
-import { ErrorNote, Spinner } from './ui';
+import { ErrorNote, PantallaCarga } from './ui';
 
 function Frame({ children }: { children: React.ReactNode }) {
   const { session, loading, error, actualizarSesion, recargarSesion } = useSession();
 
   if (loading) {
-    return (
-      <div className="grid min-h-screen place-items-center">
-        <Spinner label="Cargando sesión…" />
-      </div>
-    );
+    return <PantallaCarga label="Cargando sesión…" subtexto="Verificando credenciales de acceso…" />;
   }
 
   if (error) {

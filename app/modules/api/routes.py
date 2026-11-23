@@ -93,6 +93,8 @@ def me():
                             .count())
         firmada = (pendientes_firma == 0)
 
+    fecha_firma = getattr(current_user, 'responsiva_firmada_at', None) or (getattr(current_user, 'created_at', None) if firmada else None)
+
     return jsonify({
         'id': current_user.id,
         'email': current_user.email,
@@ -100,7 +102,7 @@ def me():
         'role': current_user.role,
         'auth_source': current_user.auth_source,
         'responsiva_firmada': firmada,
-        'responsiva_firmada_at': current_user.responsiva_firmada_at.isoformat() if getattr(current_user, 'responsiva_firmada_at', None) else None,
+        'responsiva_firmada_at': fecha_firma.isoformat() if fecha_firma else None,
         'responsiva_version': getattr(current_user, 'responsiva_version', '1.0') or '1.0',
         'areas': [{'id': a.id, 'name': a.name} for a in (current_user.areas or [])],
         'managed_areas': [{'id': a.id, 'name': a.name}
@@ -170,10 +172,12 @@ def get_responsiva():
     else:
         firmada = (len(grants_pendientes) == 0)
 
+    fecha_firma = getattr(current_user, 'responsiva_firmada_at', None) or (getattr(current_user, 'created_at', None) if firmada else None)
+
     return jsonify({
         'version': getattr(current_user, 'responsiva_version', '1.0') or '1.0',
         'firmada': firmada,
-        'firmada_at': current_user.responsiva_firmada_at.isoformat() if getattr(current_user, 'responsiva_firmada_at', None) else None,
+        'firmada_at': fecha_firma.isoformat() if fecha_firma else None,
         'titulo': titulo,
         'es_aprobacion': es_aprobacion,
         'contenido': (

@@ -27,10 +27,10 @@ export const SECCIONES: readonly SeccionNav[] = ['General', 'Gestión', 'Sistema
 
 /** Entradas por rol según la tabla de pantallas (REQUERIMIENTOS §4, FNC-070). */
 export const NAV: readonly NavItem[] = [
-  { href: '/', label: 'Dashboard', icono: 'panel', seccion: 'General', requires: 'any_admin' },
-  { href: '/platforms', label: 'Plataformas', icono: 'plataformas', seccion: 'General', oculto: true },
-  { href: '/admin/platforms', label: 'Plataformas', icono: 'plataformas', seccion: 'General', requires: 'any_admin' },
+  { href: '/dashboard', label: 'Dashboard', icono: 'panel', seccion: 'General', requires: 'any_admin' },
+  { href: '/platforms', label: 'Portal', icono: 'catalogo', seccion: 'General', requires: 'any_admin' },
   { href: '/requests', label: 'Mis solicitudes', icono: 'solicitudes', seccion: 'General', requires: 'any_admin', oculto: true },
+  { href: '/admin/platforms', label: 'Plataformas', icono: 'plataformas', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/approvals', label: 'Aprobaciones', icono: 'aprobaciones', seccion: 'Gestión', requires: 'any_admin', oculto: true },
   { href: '/areas', label: 'Áreas', icono: 'areas', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/users', label: 'Usuarios', icono: 'usuarios', seccion: 'Gestión', requires: 'any_admin' },
@@ -71,6 +71,7 @@ export function seccionesVisibles(
 /** Entrada de la ruta actual: coincidencia exacta o la de prefijo más largo (`/audit/users/3` → Auditoría). */
 export function entradaDeRuta(pathname: string | null | undefined): NavItem | null {
   if (!pathname) return null;
+  if (pathname === '/') return NAV.find((item) => item.href === '/dashboard') ?? null;
   const exacta = NAV.find((item) => item.href === pathname);
   if (exacta) return exacta;
   return NAV

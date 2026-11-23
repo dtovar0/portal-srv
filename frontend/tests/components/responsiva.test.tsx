@@ -83,7 +83,7 @@ describe('ModalResponsiva', () => {
 
     expect(await screen.findByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Carta Responsiva de Uso de Activos de Información y Plataformas Institucionales')).toBeTruthy();
-    expect(screen.getByText(/Hola, Usuario Nuevo/)).toBeTruthy();
+    expect(screen.queryByText(/Hola, Usuario Nuevo/)).toBeNull();
     expect(screen.getByText('Jira Software')).toBeTruthy();
     expect(screen.getByText('Área: Operaciones')).toBeTruthy();
     expect(screen.getByText('Texto legal de la responsiva institucional para el uso de plataformas.')).toBeTruthy();
@@ -92,7 +92,7 @@ describe('ModalResponsiva', () => {
     expect(screen.queryByRole('button', { name: 'Cerrar' })).toBeNull();
   });
 
-  it('el botón de firma permanece deshabilitado hasta marcar la casilla de aceptación', async () => {
+  it('el botón de firma permanece deshabilitado hasta marcar la casilla de aceptación y validar el captcha', async () => {
     const onFirmado = vi.fn();
     renderWithToast(
       <ModalResponsiva session={mockSessionNoFirmada} onFirmado={onFirmado} />,
@@ -102,10 +102,23 @@ describe('ModalResponsiva', () => {
     const botonFirmar = screen.getByRole('button', { name: /Firmar y acceder al portal/i }) as HTMLButtonElement;
     expect(botonFirmar.disabled).toBe(true);
 
-    // Marcar la casilla
+    // Marcar la casilla sin captcha aún no habilita el botón (evita firma por error)
     const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
     fireEvent.click(checkbox);
     expect(checkbox.checked).toBe(true);
+    expect(botonFirmar.disabled).toBe(true);
+
+    // Ingresar captcha incorrecto mantiene deshabilitado
+    expect(screen.queryByText('Evita firmas por error')).toBeNull();
+    const captchaWord = screen.getByTestId('captcha-word').textContent!;
+    const inputCaptcha = screen.getByRole('textbox', { name: /código de seguridad/i });
+    fireEvent.change(inputCaptcha, { target: { value: 'INCORRECTO' } });
+    expect(botonFirmar.disabled).toBe(true);
+    expect(screen.getByText('Código no coincide')).toBeTruthy();
+
+    // Ingresar captcha correcto habilita el botón de firmar y muestra validación en cabecera sin crecer contenedor
+    fireEvent.change(inputCaptcha, { target: { value: captchaWord } });
+    expect(screen.getByText('Código verificado correctamente')).toBeTruthy();
     expect(botonFirmar.disabled).toBe(false);
 
     // Enviar firma
@@ -126,7 +139,7 @@ describe('ModalResponsiva', () => {
       <ModalResponsiva session={mockSessionNoFirmada} onFirmado={onFirmado} />,
     );
 
-    expect(await screen.findByText('Nuevos Accesos Aprobados • Confirmación Requerida')).toBeTruthy();
+    expect(await screen.findByText('Carta Responsiva: Aprobación de Nuevos Accesos a Plataformas')).toBeTruthy();
     expect(screen.getByText('Plataformas recientemente aprobadas')).toBeTruthy();
     expect(screen.getByRole('button', { name: /Firmar y activar accesos/i })).toBeTruthy();
   });
@@ -157,16 +170,20 @@ describe('ModalResponsiva', () => {
     expect(segundo).not.toBe(primero);
   });
 
-  it('M4: mientras falta la casilla, un texto visible explica por qué «Firmar» está deshabilitado', async () => {
+  it('no muestra el texto "Marca la casilla para firmar" y ofrece captcha anti-error con regeneración de código', async () => {
     renderWithToast(<ModalResponsiva session={mockSessionNoFirmada} onFirmado={vi.fn()} />);
     await screen.findByRole('dialog');
-    const boton = screen.getByRole('button', { name: /Firmar y acceder al portal/i });
-    const id = boton.getAttribute('aria-describedby');
-    expect(id).toBeTruthy();
-    expect(document.getElementById(id as string)?.textContent).toBe('Marca la casilla para firmar');
-    fireEvent.click(screen.getByRole('checkbox'));
-    expect(boton.hasAttribute('aria-describedby')).toBe(false);
+    // Ya no debe existir el texto redundante
     expect(screen.queryByText('Marca la casilla para firmar')).toBeNull();
+
+    // Desafío de captcha visible
+    const palabraInicial = screen.getByTestId('captcha-word').textContent!;
+    expect(palabraInicial).toBeTruthy();
+
+    // Botón para generar otro código
+    const botonNuevoCodigo = screen.getByRole('button', { name: /generar otro código/i });
+    fireEvent.click(botonNuevoCodigo);
+    expect(screen.getByTestId('captcha-word')).toBeTruthy();
   });
 
   it('M5: la casilla usa el estilo estándar del proyecto', async () => {

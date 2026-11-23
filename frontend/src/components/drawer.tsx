@@ -27,6 +27,9 @@ export interface DrawerProps {
   className?: string;
   devolverA?: React.RefObject<HTMLElement | null>;
   focoInicial?: (contenedor: HTMLElement) => HTMLElement[];
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  sinPadding?: boolean;
 }
 
 export function Drawer({
@@ -41,6 +44,9 @@ export function Drawer({
   className = '',
   devolverA,
   focoInicial,
+  header,
+  footer,
+  sinPadding = false,
 }: DrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -100,25 +106,32 @@ export function Drawer({
             aria-label={ariaLabel ?? (title ? undefined : 'Panel lateral')}
             aria-labelledby={ariaLabel ? undefined : (title ? titleId : undefined)}
             tabIndex={-1}
-            className={`fixed inset-y-0 ${borderClass} z-50 ${width} overflow-y-auto bg-panel-fill p-4 shadow-2xl outline-none transition-transform duration-200 motion-reduce:transition-none`}
+            className={`fixed inset-y-0 ${borderClass} z-50 ${width} flex flex-col bg-panel-fill shadow-2xl outline-none transition-transform duration-200 motion-reduce:transition-none`}
           >
-            <div className="flex items-center justify-between gap-2 pb-4">
-              {title ? (
-                <p id={titleId} className="px-3 text-lg font-semibold text-body-text">
-                  {title}
-                </p>
-              ) : (
-                <span />
-              )}
-              <Button
-                variant="secondary"
-                onClick={onClose}
-                className="min-h-12 min-w-12 focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                Cerrar
-              </Button>
+            {header !== undefined ? (
+              header
+            ) : (
+              <div className="flex items-center justify-between gap-2 p-4 pb-4 shrink-0">
+                {title ? (
+                  <p id={titleId} className="px-3 text-lg font-semibold text-body-text">
+                    {title}
+                  </p>
+                ) : (
+                  <span />
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={onClose}
+                  className="min-h-12 min-w-12 focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            )}
+            <div className={`flex-1 min-h-0 overflow-y-auto ${sinPadding ? '' : 'p-4'}`}>
+              {children}
             </div>
-            {children}
+            {footer !== undefined ? footer : null}
           </div>
         </>
       ) : null}
