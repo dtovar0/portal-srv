@@ -201,7 +201,7 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
 
     ttl_minutos = max(1, tiempo_expiracion_mfa() // 60)
     brand_name = cfg.get('sender_name') or 'Authelia • Autoservicio de Identidad'
-    asunto = f"{brand_name} • Código de verificación: {codigo}"
+    asunto = f"Código de verificación: {codigo}"
 
     cuerpo_plano = (
         f"Hola {nombre or destinatario}:\n\n"
@@ -223,14 +223,14 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
+        <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="padding: 24px 32px; background-color: #0284c7; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
-              <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">
+            <td style="padding: 20px 28px; border-bottom: 1px solid #e2e8f0; text-align: left;">
+              <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em;">
                 {brand_name}
               </h1>
-              <p style="margin: 4px 0 0; font-size: 12px; color: #e0f2fe;">
-                Portal Seguro de Verificación y Autoservicio de Identidad
+              <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">
+                Verificación de identidad
               </p>
             </td>
           </tr>
@@ -240,8 +240,7 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
                 Hola <strong>{nombre or destinatario}</strong>:
               </p>
               <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #475569;">
-                Has solicitado restablecer o actualizar la contraseña de tu cuenta corporativa.
-                Para verificar tu identidad y validar la titularidad de tu cuenta, utiliza el siguiente código de seguridad de 6 dígitos:
+                Usa este código para continuar con el cambio de contraseña:
               </p>
               
               <div style="background-color: #f8fafc; border: 2px dashed #0284c7; border-radius: 12px; padding: 22px 20px; text-align: center; margin: 24px 0;">
@@ -249,17 +248,13 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
                   {codigo}
                 </span>
                 <p style="margin: 10px 0 0; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
-                  ⏱ Válido durante {ttl_minutos} minutos
+                  Válido durante {ttl_minutos} minutos
                 </p>
               </div>
 
-              <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b;">
-                Introduce este código en el paso 2 del portal para continuar con la actualización de tu contraseña.
-              </p>
-
               <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 16px;">
                 <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8;">
-                  ⚠️ <strong>¿No solicitaste este cambio?</strong> Si no realizaste esta solicitud, puedes ignorar este correo de forma segura. Tu contraseña actual no ha sido modificada.
+                                    <strong>¿No solicitaste este cambio?</strong> Ignora este correo. Tu contraseña no ha sido modificada.
                 </p>
               </div>
             </td>
@@ -322,7 +317,7 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
 
     ahora_str = time.strftime('%Y-%m-%d %H:%M:%S')
     brand_name = cfg.get('sender_name') or 'Authelia • Autoservicio de Identidad'
-    asunto = f"{brand_name} • Confirmación de actualización de contraseña"
+    asunto = "Contraseña actualizada"
 
     cuerpo_plano = (
         f"Hola {nombre or destinatario}:\n\n"
@@ -346,13 +341,13 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
+        <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="padding: 24px 32px; background-color: #059669; background: linear-gradient(135deg, #10b981, #059669); text-align: left;">
-              <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">
-                ✅ Contraseña Actualizada Exitosamente
+            <td style="padding: 20px 28px; border-bottom: 1px solid #e2e8f0; text-align: left;">
+              <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;">
+                Contraseña actualizada
               </h1>
-              <p style="margin: 4px 0 0; font-size: 12px; color: #ecfdf5;">
+              <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">
                 {brand_name} &bull; Autoservicio de Identidad
               </p>
             </td>
@@ -375,7 +370,7 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
               </div>
               <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 16px;">
                 <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #b91c1c;">
-                  ⚠️ <strong>IMPORTANTE:</strong> Si tú NO realizaste este cambio, tu cuenta puede estar en riesgo. Comunícate de inmediato con el equipo de Seguridad y Administración de TI.
+                  <strong>¿No fuiste tú?</strong> Si tú NO realizaste este cambio, tu cuenta puede estar en riesgo. Comunícate de inmediato con el equipo de Seguridad y Administración de TI.
                 </p>
               </div>
             </td>
@@ -764,7 +759,7 @@ def solicitar_recuperacion(correo, base_url=''):
         cfg = resolver_smtp_autoservicio()
         if cfg:
             brand_name = cfg.get('sender_name') or 'Authelia • Autoservicio de Identidad'
-            asunto = f"{brand_name} • Restablecimiento de Contraseña"
+            asunto = "Restablece tu contraseña"
             cuerpo_plano = (
                 f"Hola {nombre or correo}:\n\n"
                 f"Recibimos una solicitud para restablecer tu contraseña en {brand_name}.\n\n"
@@ -783,14 +778,14 @@ def solicitar_recuperacion(correo, base_url=''):
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
+        <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="padding: 24px 32px; background-color: #0284c7; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
-              <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">
+            <td style="padding: 20px 28px; border-bottom: 1px solid #e2e8f0; text-align: left;">
+              <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;">
                 {brand_name} &bull; Restablecimiento de Contraseña
               </h1>
-              <p style="margin: 4px 0 0; font-size: 12px; color: #e0f2fe;">
-                Portal Seguro de Autoservicio de Identidad
+              <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">
+                Recuperación de acceso
               </p>
             </td>
           </tr>

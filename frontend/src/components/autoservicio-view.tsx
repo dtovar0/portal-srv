@@ -260,58 +260,92 @@ export function AutoservicioView() {
   const nombreMarca = config?.brand_name || 'Authelia';
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center bg-fondo text-body-text select-none p-4 sm:p-6 lg:p-8">
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-fondo text-body-text p-4 sm:p-6">
       <PageHeader
         title={`${nombreMarca} — Autoservicio de Contraseña`}
         description="Portal oficial de autoservicio de credenciales corporativas protegido por Authelia Single Sign-On."
         className="sr-only"
       />
 
-      <main className="relative z-10 w-full max-w-xl">
-        <div className="rounded-3xl border border-panel-border bg-superficie shadow-2xl transition-all overflow-hidden p-6 sm:p-10">
+      <main className="relative z-10 w-full max-w-5xl">
+        <div className="grid overflow-hidden rounded-3xl border border-panel-border bg-superficie shadow-2 md:min-h-[600px] md:grid-cols-2">
+          <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-brand to-accent p-6 text-texto-sobre-accion sm:p-8 md:p-10" aria-label="Authelia, identidad corporativa">
+            <div className="absolute -right-20 -top-20 size-64 rounded-full border border-white/15 bg-white/10" aria-hidden="true" />
+            <div className="absolute -bottom-28 -left-20 size-72 rounded-full border border-white/10 bg-white/5" aria-hidden="true" />
+
+            <div className="relative flex items-center gap-3">
+              <span className="flex size-11 items-center justify-center rounded-xl border border-white/25 bg-white/15 shadow-xs backdrop-blur-sm">
+                <Icono nombre="escudo" tamano="lg" ariaHidden={true} />
+              </span>
+              <div>
+                <p className="font-display text-xl font-extrabold tracking-tight">{nombreMarca}</p>
+                <p className="text-xs font-semibold text-white/75">Identity Platform · SSO & MFA</p>
+              </div>
+            </div>
+
+            <div className="relative my-8 md:my-auto">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-white/70">Autoservicio seguro</p>
+              <h2 className="max-w-sm font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+                Recupera el acceso a tu cuenta
+              </h2>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-white/80">
+                Verifica tu identidad y crea una contraseña nueva en un flujo protegido por segundo factor.
+              </p>
+
+              <ul className="mt-6 hidden space-y-3 text-sm font-semibold text-white/90 md:block">
+                <li className="flex items-center gap-3">
+                  <span className="flex size-6 items-center justify-center rounded-full bg-white/15"><Icono nombre="aprobar" tamano="xs" ariaHidden={true} /></span>
+                  Verificación de identidad
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex size-6 items-center justify-center rounded-full bg-white/15"><Icono nombre="aprobar" tamano="xs" ariaHidden={true} /></span>
+                  Protección MFA
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex size-6 items-center justify-center rounded-full bg-white/15"><Icono nombre="aprobar" tamano="xs" ariaHidden={true} /></span>
+                  Sincronización corporativa
+                </li>
+              </ul>
+            </div>
+
+            <p className="relative hidden text-xs text-white/65 md:block">Acceso protegido por Authelia</p>
+          </aside>
+
+          <section className="flex min-w-0 flex-col p-5 sm:p-8 md:p-10">
           {/* Encabezado Institucional Authelia */}
-          <div className="flex items-center justify-between pb-6 border-b border-panel-border/70">
+          <div className="flex items-center justify-between pb-5 border-b border-panel-border/70">
             <div className="flex items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-aduana-cyan/40 bg-aduana-cyan/10 text-aduana-cyan p-1.5 shadow-xs">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accion-tenue text-texto-enlace p-1.5">
                 <Icono nombre="escudo" tamano="md" ariaHidden={true} />
               </span>
               <div>
                 <span className="font-display text-lg font-bold tracking-tight text-body-text block leading-tight">
                   {nombreMarca}
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-aduana-cyan">
-                  Identity Platform · SSO & MFA
+                <span className="text-[11px] text-texto-secundario">
+                  Autoservicio de identidad
                 </span>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-panel-border bg-fondo px-3 py-1 text-[11px] font-bold tracking-wider uppercase text-texto-secundario">
-              <Icono nombre="candado" tamano="xs" ariaHidden={true} />
-              Autoservicio
-            </span>
+            <Icono nombre="candado" tamano="sm" className="text-texto-secundario" ariaHidden={true} />
           </div>
 
           {/* Stepper / Indicador de Progreso Visual (Paso 1, 2, 3) */}
           {paso < 4 && (
-            <nav aria-label="Progreso del autoservicio" className="my-7">
+            <nav aria-label={`Paso ${paso} de 3`} className="my-5">
               <ol className="flex items-center w-full">
                 {/* Paso 1 */}
                 <li className="flex items-center flex-1">
                   <div
-                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 1
-                        ? 'bg-aduana-cyan text-texto-sobre-accion ring-4 ring-aduana-cyan/20'
+                    className={`flex items-center justify-center size-7 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 1
+                        ? 'bg-accion text-texto-sobre-accion'
                         : 'bg-panel-border text-texto-secundario'
                       }`}
                   >
                     {paso > 1 ? '✓' : '1'}
                   </div>
-                  <div className="ml-2.5 hidden sm:block">
-                    <p className={`text-[10px] font-bold uppercase tracking-wider ${paso >= 1 ? 'text-aduana-cyan' : 'text-texto-secundario'}`}>
-                      Paso 1
-                    </p>
-                    <p className="text-xs font-semibold text-body-text leading-tight">Identificación</p>
-                  </div>
                   <div
-                    className={`flex-1 mx-3 sm:mx-4 h-0.5 transition-colors ${paso >= 2 ? 'bg-aduana-cyan' : 'bg-panel-border'
+                    className={`flex-1 mx-2 h-px transition-colors ${paso >= 2 ? 'bg-accion' : 'bg-panel-border'
                       }`}
                   />
                 </li>
@@ -319,21 +353,15 @@ export function AutoservicioView() {
                 {/* Paso 2 */}
                 <li className="flex items-center flex-1">
                   <div
-                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 2
-                        ? 'bg-aduana-cyan text-texto-sobre-accion ring-4 ring-aduana-cyan/20'
+                    className={`flex items-center justify-center size-7 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 2
+                        ? 'bg-accion text-texto-sobre-accion'
                         : 'bg-panel-border text-texto-secundario'
                       }`}
                   >
                     {paso > 2 ? '✓' : '2'}
                   </div>
-                  <div className="ml-2.5 hidden sm:block">
-                    <p className={`text-[10px] font-bold uppercase tracking-wider ${paso >= 2 ? 'text-aduana-cyan' : 'text-texto-secundario'}`}>
-                      Paso 2
-                    </p>
-                    <p className="text-xs font-semibold text-body-text leading-tight">Código MFA</p>
-                  </div>
                   <div
-                    className={`flex-1 mx-3 sm:mx-4 h-0.5 transition-colors ${paso >= 3 ? 'bg-aduana-cyan' : 'bg-panel-border'
+                    className={`flex-1 mx-2 h-px transition-colors ${paso >= 3 ? 'bg-accion' : 'bg-panel-border'
                       }`}
                   />
                 </li>
@@ -341,18 +369,12 @@ export function AutoservicioView() {
                 {/* Paso 3 */}
                 <li className="flex items-center">
                   <div
-                    className={`flex items-center justify-center size-9 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 3
-                        ? 'bg-aduana-cyan text-texto-sobre-accion ring-4 ring-aduana-cyan/20'
+                    className={`flex items-center justify-center size-7 rounded-full font-bold text-xs shrink-0 transition-all ${paso >= 3
+                        ? 'bg-accion text-texto-sobre-accion'
                         : 'bg-panel-border text-texto-secundario'
                       }`}
                   >
                     {paso > 3 ? '✓' : '3'}
-                  </div>
-                  <div className="ml-2.5 hidden sm:block">
-                    <p className={`text-[10px] font-bold uppercase tracking-wider ${paso >= 3 ? 'text-aduana-cyan' : 'text-texto-secundario'}`}>
-                      Paso 3
-                    </p>
-                    <p className="text-xs font-semibold text-body-text leading-tight">Contraseña</p>
                   </div>
                 </li>
               </ol>
@@ -363,18 +385,15 @@ export function AutoservicioView() {
           {/* PASO 1: INTRODUCIR USUARIO O CORREO                       */}
           {/* ========================================================= */}
           {paso === 1 && (
-            <form onSubmit={handlePaso1Submit} className="space-y-4">
+            <form onSubmit={handlePaso1Submit} className="space-y-5">
               <div>
-                <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-body-text">
+                <h1 className="font-display text-xl font-bold tracking-tight text-body-text">
                   Introduce tu usuario o correo
                 </h1>
-                <p className="mt-1 text-xs text-texto-secundario leading-relaxed flex items-center gap-1.5">
-                  <Icono nombre="escudo" tamano="xs" className="text-aduana-cyan shrink-0" ariaHidden={true} />
-                  <span>Sin clave anterior; verificaremos tu identidad en el siguiente paso.</span>
-                </p>
+                <p className="mt-1.5 text-sm text-texto-secundario leading-relaxed">Verificaremos tu identidad antes de crear una nueva contraseña.</p>
               </div>
 
-              <Field label="Usuario o Correo Authelia">
+              <Field label="Usuario o correo Authelia">
                 <TextInput
                   type="text"
                   required
@@ -389,7 +408,7 @@ export function AutoservicioView() {
               <Button
                 type="submit"
                 disabled={cargando || !identificador.trim()}
-                className="w-full bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="min-h-12 w-full bg-accion hover:bg-accion-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 {cargando ? (
                   <>
@@ -409,8 +428,8 @@ export function AutoservicioView() {
           {paso === 2 && (
             <form onSubmit={handlePaso2Submit} className="space-y-4">
               <div>
-                <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-body-text">
-                  Código de Verificación
+                <h1 className="font-display text-xl font-bold tracking-tight text-body-text">
+                  Código de verificación
                 </h1>
                 <p className="mt-1 text-xs text-texto-secundario leading-relaxed">
                   {esPorCorreo
@@ -423,7 +442,7 @@ export function AutoservicioView() {
               <div className="rounded-xl border border-panel-border/80 bg-fondo/60 p-3 space-y-1.5 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 truncate">
-                    <Icono nombre="correo" tamano="xs" className="text-aduana-cyan shrink-0" ariaHidden={true} />
+                    <Icono nombre="correo" tamano="xs" className="text-texto-enlace shrink-0" ariaHidden={true} />
                     <span className="text-texto-secundario truncate">
                       Código enviado a <strong className="text-body-text">{maskedEmail || identificador}</strong>
                     </span>
@@ -431,7 +450,7 @@ export function AutoservicioView() {
                   <button
                     type="button"
                     onClick={() => setPaso(1)}
-                    className="text-aduana-cyan hover:underline text-[11px] font-semibold shrink-0 cursor-pointer"
+                    className="text-texto-enlace hover:underline text-[11px] font-semibold shrink-0 cursor-pointer"
                   >
                     Cambiar
                   </button>
@@ -444,7 +463,7 @@ export function AutoservicioView() {
                       type="button"
                       onClick={handleReenviarCodigo}
                       disabled={enviandoMfa || cooldownMfa > 0}
-                      className="text-aduana-cyan hover:underline font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="text-texto-enlace hover:underline font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {enviandoMfa
                         ? 'Enviando…'
@@ -456,7 +475,7 @@ export function AutoservicioView() {
                 )}
               </div>
 
-              <Field label="Código de Seguridad (6 dígitos)">
+              <Field label="Código de seguridad (6 dígitos)">
                 <TextInput
                   type="text"
                   inputMode="numeric"
@@ -471,18 +490,18 @@ export function AutoservicioView() {
                 />
               </Field>
 
-              <div className="flex items-center gap-3 pt-1">
+              <div className="grid grid-cols-2 gap-3 pt-1">
                 <Button
                   type="button"
                   onClick={() => setPaso(1)}
-                  className="px-4 py-3 bg-transparent border border-panel-border/70 hover:bg-panel-border/20 text-texto-secundario hover:text-body-text text-xs rounded-xl font-semibold transition-all cursor-pointer"
+                  className="min-h-12 w-full px-4 py-3 bg-transparent border border-panel-border/70 hover:bg-panel-border/20 text-texto-secundario hover:text-body-text text-sm rounded-xl font-semibold transition-all cursor-pointer"
                 >
                   ← Volver
                 </Button>
                 <Button
                   type="submit"
                   disabled={cargando || mfaCode.trim().length !== 6}
-                  className="flex-1 bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="min-h-12 w-full bg-accion hover:bg-accion-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   {cargando ? (
                     <>
@@ -503,15 +522,15 @@ export function AutoservicioView() {
           {paso === 3 && (
             <form onSubmit={handlePaso3Submit} className="space-y-4">
               <div>
-                <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-body-text">
-                  Nueva Contraseña
+                <h1 className="font-display text-xl font-bold tracking-tight text-body-text">
+                  Nueva contraseña
                 </h1>
                 <p className="mt-1 text-xs text-texto-secundario leading-relaxed">
-                  Ingresa tu nueva clave institucional o genera una automáticamente de {longitudGenerada} caracteres.
+                  Usa una clave nueva y segura. También puedes generar una automáticamente.
                 </p>
               </div>
 
-              <Field label="Nueva Contraseña">
+              <Field label="Nueva contraseña">
                 <TextInput
                   type={mostrarClaves ? 'text' : 'password'}
                   required
@@ -523,7 +542,7 @@ export function AutoservicioView() {
                 />
               </Field>
 
-              <Field label="Confirmar Nueva Contraseña">
+              <Field label="Confirmar nueva contraseña">
                 <TextInput
                   type={mostrarClaves ? 'text' : 'password'}
                   required
@@ -535,7 +554,7 @@ export function AutoservicioView() {
               </Field>
 
               {/* Barra de utilidades: Ver contraseñas y Generar contraseña */}
-              <div className="flex items-center justify-between text-xs pt-0.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
                 <button
                   type="button"
                   onClick={() => setMostrarClaves(!mostrarClaves)}
@@ -548,18 +567,18 @@ export function AutoservicioView() {
                 <button
                   type="button"
                   onClick={handleGenerarContrasena}
-                  className="text-aduana-cyan hover:underline transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
+                  className="text-texto-enlace hover:underline transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
                   title={`Genera una contraseña criptográficamente segura de ${longitudGenerada} caracteres`}
                 >
                   <Icono nombre="recargar" tamano="xs" ariaHidden={true} />
-                  <span>Generar contraseña segura</span>
+                  <span>Generar clave</span>
                 </button>
               </div>
 
               {/* Checklist de requisitos de seguridad */}
               <div className="rounded-xl border border-panel-border/80 bg-fondo/60 p-3 space-y-1.5 text-[11px]">
-                <p className="font-bold text-texto-secundario uppercase tracking-wider text-[10px]">
-                  Política de Seguridad Corporativa:
+                <p className="font-semibold text-texto-secundario text-xs">
+                  La contraseña debe incluir:
                 </p>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                   <span className={validaciones.longitud ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
@@ -583,12 +602,12 @@ export function AutoservicioView() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-1">
+              <div className={`grid gap-3 pt-1 ${tokenRecuperacion ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {!tokenRecuperacion && (
                   <Button
                     type="button"
                     onClick={() => setPaso(2)}
-                    className="px-4 py-3 bg-transparent border border-panel-border/70 hover:bg-panel-border/20 text-texto-secundario hover:text-body-text text-xs rounded-xl font-semibold transition-all cursor-pointer"
+                    className="min-h-12 w-full px-4 py-3 bg-transparent border border-panel-border/70 hover:bg-panel-border/20 text-texto-secundario hover:text-body-text text-sm rounded-xl font-semibold transition-all cursor-pointer"
                   >
                     ← Volver
                   </Button>
@@ -596,7 +615,7 @@ export function AutoservicioView() {
                 <Button
                   type="submit"
                   disabled={cargando || !contrasenaValida}
-                  className="flex-1 w-full bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="min-h-12 w-full bg-accion hover:bg-accion-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   {cargando ? (
                     <>
@@ -604,7 +623,7 @@ export function AutoservicioView() {
                       <span>Actualizando y sincronizando…</span>
                     </>
                   ) : (
-                    <span>Guardar Contraseña →</span>
+                    <span>Guardar contraseña</span>
                   )}
                 </Button>
               </div>
@@ -615,48 +634,32 @@ export function AutoservicioView() {
           {/* PASO 4: CONFIRMACIÓN Y NOTIFICACIÓN EXITOSA               */}
           {/* ========================================================= */}
           {paso === 4 && (
-            <div className="text-center py-4 space-y-5">
-              <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-exito-tenue border border-exito-borde text-exito-texto shadow-sm">
+            <div className="text-center py-3 space-y-5">
+              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-exito-tenue text-exito-texto">
                 <Icono nombre="aprobar" tamano="lg" ariaHidden={true} />
               </div>
 
               <div>
                 <h1 className="font-display text-2xl font-extrabold tracking-tight text-body-text">
-                  ¡Contraseña Actualizada con Éxito!
+                  Contraseña actualizada
                 </h1>
                 <p className="mt-2 text-xs text-texto-secundario leading-relaxed max-w-md mx-auto">
-                  Tu nueva contraseña corporativa ha sido aplicada y sincronizada atómicamente en{' '}
-                  <strong className="text-body-text">Authelia SSO</strong>,{' '}
-                  <strong className="text-body-text">OpenLDAP</strong> y{' '}
-                  <strong className="text-body-text">JumpServer</strong>.
+                  Ya puedes iniciar sesión con tu nueva contraseña. También te enviamos una confirmación por correo.
                 </p>
               </div>
 
-              {/* Notificación de correo de confirmación */}
-              <div className="rounded-2xl border border-panel-border bg-fondo p-4 text-left flex items-start gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-aduana-cyan/10 text-aduana-cyan mt-0.5">
-                  <Icono nombre="campana" tamano="sm" ariaHidden={true} />
-                </span>
-                <div className="space-y-1 text-xs">
-                  <p className="font-bold text-body-text">Notificación de confirmación enviada</p>
-                  <p className="text-texto-secundario leading-relaxed">
-                    Se ha enviado un correo a tu buzón institucional confirmando que la contraseña fue actualizada
-                    correctamente.
-                  </p>
-                </div>
-              </div>
 
-              <div className="pt-3 flex flex-col sm:flex-row items-center gap-3">
+              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <a
                   href={config?.authelia_url || '/login'}
-                  className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-accion font-bold text-sm py-3 px-4 rounded-xl border-0 shadow-md transition-all text-center"
+                  className="min-h-12 w-full inline-flex items-center justify-center gap-2 bg-accion hover:bg-accion-hover text-texto-sobre-accion font-bold text-sm py-3 px-4 rounded-xl border-0 transition-all text-center"
                 >
-                  <span>Iniciar Sesión en Authelia →</span>
+                  <span>Iniciar sesión</span>
                 </a>
                 <button
                   type="button"
                   onClick={handleReiniciar}
-                  className="w-full sm:w-auto text-xs text-texto-secundario hover:text-body-text font-semibold py-2 px-4 transition-colors cursor-pointer"
+                  className="min-h-12 w-full border border-panel-border text-sm text-texto-secundario hover:text-body-text hover:bg-fondo font-semibold py-3 px-4 rounded-xl transition-colors cursor-pointer"
                 >
                   Restablecer otra cuenta
                 </button>
@@ -665,15 +668,15 @@ export function AutoservicioView() {
           )}
 
           {/* Pie de página con enlace de retorno */}
-          <div className="mt-8 pt-4 border-t border-panel-border/60 flex items-center justify-between text-xs">
+          <div className="mt-6 pt-4 border-t border-panel-border/60 text-xs">
             <a
               href={config?.authelia_url || '/login'}
               className="text-texto-secundario hover:text-body-text transition-colors flex items-center gap-1.5"
             >
               <span>← Volver al login de Authelia</span>
             </a>
-            <span className="text-[11px] text-texto-secundario">Authelia Identity SSO</span>
           </div>
+          </section>
         </div>
       </main>
     </div>
