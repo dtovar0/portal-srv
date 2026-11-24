@@ -58,6 +58,7 @@ describe('AutoservicioView', () => {
     const shell = container.querySelector('main > div');
 
     expect(shell?.className).toContain('md:grid-cols-2');
-    expect(shell?.className).toContain('md:min-h-[600px]');
+    expect(shell?.className).toContain('md:h-[740px]');
+    expect(screen.queryByRole('button', { name: /Restablecer otra cuenta/i })).toBeNull();
   });
 });

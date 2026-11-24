@@ -244,19 +244,6 @@ export function AutoservicioView() {
     }
   };
 
-  // Reiniciar flujo
-  const handleReiniciar = () => {
-    setIdentificador('');
-    setMfaCode('');
-    setChallengeToken('');
-    setMaskedEmail('');
-    setNuevaContrasena('');
-    setConfirmarContrasena('');
-    setTokenRecuperacion('');
-    setCorreoToken('');
-    setPaso(1);
-  };
-
   const nombreMarca = config?.brand_name || 'Authelia';
 
   return (
@@ -268,7 +255,7 @@ export function AutoservicioView() {
       />
 
       <main className="relative z-10 w-full max-w-5xl">
-        <div className="grid overflow-hidden rounded-3xl border border-panel-border bg-superficie shadow-2 md:min-h-[600px] md:grid-cols-2">
+        <div className="grid overflow-hidden rounded-3xl border border-panel-border bg-superficie shadow-2 md:h-[740px] md:grid-cols-2">
           <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-brand to-accent p-6 text-texto-sobre-accion sm:p-8 md:p-10" aria-label="Authelia, identidad corporativa">
             <div className="absolute -right-20 -top-20 size-64 rounded-full border border-white/15 bg-white/10" aria-hidden="true" />
             <div className="absolute -bottom-28 -left-20 size-72 rounded-full border border-white/10 bg-white/5" aria-hidden="true" />
@@ -311,7 +298,7 @@ export function AutoservicioView() {
             <p className="relative hidden text-xs text-white/65 md:block">Acceso protegido por Authelia</p>
           </aside>
 
-          <section className="flex min-w-0 flex-col p-5 sm:p-8 md:p-10">
+          <section className="flex min-w-0 flex-col p-5 sm:p-8 md:overflow-y-auto md:p-10">
           {/* Encabezado Institucional Authelia */}
           <div className="flex items-center justify-between pb-5 border-b border-panel-border/70">
             <div className="flex items-center gap-3">
@@ -634,7 +621,7 @@ export function AutoservicioView() {
           {/* PASO 4: CONFIRMACIÓN Y NOTIFICACIÓN EXITOSA               */}
           {/* ========================================================= */}
           {paso === 4 && (
-            <div className="text-center py-3 space-y-5">
+            <div className="flex flex-1 flex-col justify-center text-center py-3 space-y-5">
               <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-exito-tenue text-exito-texto">
                 <Icono nombre="aprobar" tamano="lg" ariaHidden={true} />
               </div>
@@ -649,26 +636,19 @@ export function AutoservicioView() {
               </div>
 
 
-              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="pt-2">
                 <a
                   href={config?.authelia_url || '/login'}
                   className="min-h-12 w-full inline-flex items-center justify-center gap-2 bg-accion hover:bg-accion-hover text-texto-sobre-accion font-bold text-sm py-3 px-4 rounded-xl border-0 transition-all text-center"
                 >
                   <span>Iniciar sesión</span>
                 </a>
-                <button
-                  type="button"
-                  onClick={handleReiniciar}
-                  className="min-h-12 w-full border border-panel-border text-sm text-texto-secundario hover:text-body-text hover:bg-fondo font-semibold py-3 px-4 rounded-xl transition-colors cursor-pointer"
-                >
-                  Restablecer otra cuenta
-                </button>
               </div>
             </div>
           )}
 
           {/* Pie de página con enlace de retorno */}
-          <div className="mt-6 pt-4 border-t border-panel-border/60 text-xs">
+          <div className="mt-auto pt-4 border-t border-panel-border/60 text-xs">
             <a
               href={config?.authelia_url || '/login'}
               className="text-texto-secundario hover:text-body-text transition-colors flex items-center gap-1.5"
