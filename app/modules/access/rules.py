@@ -12,6 +12,8 @@ Decisiones del orquestador (pendientes de validar en la prueba de concepto):
 - El superadmin no recibe accesos: tiene acceso por defecto y no entra a los
   grupos LDAP (P6). `409 acceso_por_defecto` solo lo ve un superadmin; a un
   admin de área le da 404 (no revela quién es el superadmin).
+- El acceso automático del admin de área es de nivel `admin` y baja a
+  `usuario` al dejar de administrar (P6, 2026-11-24; FNC-185).
 - No se otorga a una cuenta inactiva: `409 cuenta_inactiva` (defensa en
   profundidad; el contrato no lo define).
 """
@@ -22,7 +24,7 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO,
                                       ESTADO_FALLIDO, ESTADO_FALLO_REVOCACION,
                                       ESTADO_REVOCADO, ESTADO_REVOCANDO,
                                       ESTADOS_OCUPANTES, LARGO_MOTIVO,
-                                      NIVEL_USUARIO, NIVELES,
+                                      NIVELES,
                                       ORIGEN_ADMIN_DE_AREA, ORIGEN_SOLICITUD,
                                       ORIGENES, RANGO_NIVEL)
 
@@ -53,9 +55,6 @@ def validar_datos(nivel, origen, request_id):
     if origen == ORIGEN_SOLICITUD and not isinstance(request_id, int):
         # F-AUD-02: todo acceso por solicitud dice qué solicitud lo originó.
         raise errores.validacion('request_id', 'Falta la solicitud.')
-    if origen == ORIGEN_ADMIN_DE_AREA and nivel != NIVEL_USUARIO:
-        raise errores.validacion('level', 'El acceso automático es de nivel '
-                                          'usuario.')  # P6
 
 
 def limpiar_motivo(motivo):
@@ -83,8 +82,13 @@ def _administra_area(usuario, area_id):
     return is_area_admin(usuario) and area_id in managed_area_ids(usuario)
 
 
-def validar_otorgamiento(actor, usuario, plataforma, origen):
-    """Quién puede otorgar qué a quién (SEC-AUTHZ-03/06/07/08)."""
+def validar_otorgamiento(actor, usuario, plataforma, origen, regreso=False):
+    """Quién puede otorgar qué a quién (SEC-AUTHZ-03/06/07/08).
+
+    `regreso` (FNC-185, solo origen `admin_de_area`): el acceso de nivel
+    `usuario` de quien dejó de administrar el área; sin él se exige que la
+    cuenta administre el área.
+    """
     if usuario is None or plataforma is None:
         raise errores.fuera_de_alcance()
     if origen == ORIGEN_ADMIN_DE_AREA:
@@ -93,9 +97,14 @@ def validar_otorgamiento(actor, usuario, plataforma, origen):
         # dice antes (`authz` trata a una cuenta inactiva como sin rol).
         if actor is None and not usuario.is_active:
             raise errores.cuenta_inactiva()
-        if actor is not None or not _administra_area(usuario,
-                                                     plataforma.area_id):
+        # El regreso a `usuario` de quien dejó de administrar el área (P6,
+        # 2026-11-24) no exige administrarla; todo lo demás sí.
+        if actor is not None or (not regreso and not
+                                 _administra_area(usuario, plataforma.area_id)):
             raise errores.fuera_de_alcance()
+        if regreso and plataforma.area_id not in {
+                a.id for a in (usuario.areas or [])}:
+            raise errores.fuera_de_alcance()  # P1: debe ser del área
     else:
         _validar_alcance_del_actor(actor, usuario, plataforma)
     if is_admin(usuario):

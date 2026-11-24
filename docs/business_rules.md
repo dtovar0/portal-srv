@@ -5632,7 +5632,7 @@ Mapeo de Grupos OIDC de Authelia y Asignación de Roles y Áreas
    - La cuenta local de emergencia (`admin`) se mantiene reservada y protegida como punto de recuperación ante contingencias de conectividad o infraestructura SSO.
 
 2. **Sincronización Dinámica de Roles en SSO**:
-   En cada inicio de sesión exitoso por OIDC, si los grupos del colaborador cambiaron en Authelia, su rol en ADUANA se actualiza automáticamente. Si un usuario deja de ser `admin_area`, sus áreas administradas se limpian y sus accesos automáticos de administrador se revocan en la misma transacción auditada (`Evento.ROL_CAMBIADO`).
+   En cada inicio de sesión exitoso por OIDC, si los grupos del colaborador cambiaron en Authelia, su rol en ADUANA se actualiza automáticamente. Si un usuario deja de ser `admin_area`, sus áreas administradas se limpian y sus accesos automáticos de administrador bajan a nivel `usuario` (grupo `-users`) y los conserva, en la misma transacción auditada (`Evento.ROL_CAMBIADO`; FNC-185).
 
 3. **Gestión y Asignación de Áreas**:
    - **Alta por Admin de Área**: Cuando un `admin_area` da de alta una nueva área (`POST /api/v1/areas`), él se convierte automáticamente en el administrador asignado a dicha área (`current_user.managed_areas.append(area)`).

@@ -389,20 +389,24 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - `services.otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None)` y `services.revocar(acceso, actor=None, motivo=None)`: cambian el acceso, encolan (`acceso-<id>-otorgar|revocar`) y auditan (`acceso_otorgado`, `acceso_revocado`) **sin commit**; `actor=None` = sistema (FNC-055).
 - Estados (contrato `accesos.md`): `en_proceso` → `activo`/`fallido`; `activo` → `revocando` → `revocado`/`fallo_revocacion`; reintento `fallido` → `en_proceso` y `fallo_revocacion` → `revocando` (`services.reabrir_acceso`, FNC-062, con `UPDATE` condicional sobre el estado fallido). Revocar solo desde `activo`.
 - P5: subir a `admin` pasa el `usuario` (debe estar `activo`) a `revocando` con `reemplazado_por_nivel_superior`; mismo nivel o inferior → `nivel_vigente`.
-- Reglas (`rules.py`): por solicitud, quien otorga administra la plataforma y la cuenta (`can_manage_user`) y la cuenta es del área (P1); `admin_de_area` solo el sistema, nivel `usuario`, a un admin del área; superadmin → `acceso_por_defecto`; propio → `operacion_propia`; un admin no revoca accesos `admin_de_area` ni de otros admins (404).
+- Reglas (`rules.py`): por solicitud, quien otorga administra la plataforma y la cuenta (`can_manage_user`) y la cuenta es del área (P1); `admin_de_area` solo el sistema: nivel `admin` a un admin del área, o nivel `usuario` (`regreso_de_admin`) a quien dejó de serlo (FNC-185); superadmin → `acceso_por_defecto`; propio → `operacion_propia`; un admin no revoca accesos `admin_de_area` ni de otros admins (404).
 - Errores: `ErrorDeAcceso` con `respuesta` = (mensaje, HTTP, `code`, `fields`) para `error_response`.
 - `manejadores.registrar()` (en `create_app`): el resultado del trabajo lleva el acceso a su estado en la misma transacción; transición inválida → solo log (SEC-CON-09).
 - `consultas.de_usuario(usuario_id, estados, area_ids=None)`: accesos de una cuenta para la API (FNC-058).
 - `consultas.plataformas_con_acceso_activo(usuario_id)`: subconsulta de `platform_id` con acceso `activo`; la usa `authz.scoped_platforms` (FNC-063).
 - `consultas.py`: `platforms.estado.accesos_vigentes` (→ `active_grants`, `409 plataforma_con_accesos`) y `areas.baja.tiene_accesos_vigentes` (`409 area_con_accesos`; ya no cuenta `user_areas`).
 
-### Acceso automático de los admins (`access/area_admin_sync.py`, FNC-055)
-- P6: cada admin de área activo recibe en cada plataforma de sus áreas un acceso `admin_de_area`, nivel `usuario`, otorgado por el sistema (`services.otorgar`, auditoría "sistema dio permisos de acceso a admin X"). El superadmin no.
+### Acceso automático de los admins (`access/area_admin_sync.py`, FNC-055, FNC-185)
+- P6 (dueño, 2026-11-24; antes `usuario` y se revocaba): cada plataforma tiene su grupo `-users` y `-admins`. Cada admin de área activo recibe en cada plataforma de sus áreas un acceso `admin_de_area` de nivel `admin` (`services.otorgar`, auditoría "sistema dio permisos de acceso a admin X"). El superadmin no.
+- Si ya tenía uno de nivel `usuario` (manual o por solicitud) sube a `admin` con el reemplazo de nivel de P5: el de `usuario` pasa a `revocando` (motivo `reemplazado_por_nivel_superior`) y el de `admin` a `en_proceso`, en la misma transacción (nunca en ambos grupos; se encolan los dos trabajos).
+- Al dejar de administrar el área (quitar el área o el rol): su acceso `admin_de_area` `admin` pasa a `revocando` (motivo `ya_no_administra_el_area`) y se otorga uno `admin_de_area` de nivel `usuario` (`regreso_de_admin=True`): conserva el acceso; sin acceso previo también queda con `usuario`; solo si es miembro del área (P1), si no se revoca; cuenta inactiva o superadmin: se revoca. Un `admin` por solicitud no se baja.
+- `ldap` sin `ldap_group_admin_dn`: queda en `usuario` (aviso en el log); al completar el grupo y sincronizar sube a `admin`.
 - Puntos de entrada, en la transacción del llamador (sin `commit`):
-  - `sincronizar_plataforma(plataforma)`: `POST /platforms` (tras `plataforma_creada`) y `PUT /platforms/<id>` al cambiar área, tipo o grupos;
-  - `sincronizar_cuenta(cuenta, areas_nuevas)`: `users.areas_administradas.asignar_areas_administradas` y `users.roles.cambiar_rol` (al dejar `admin_area`, tras `rol_cambiado`).
-- Revoca (`services.revocar`, motivo `ya_no_administra_el_area`) solo accesos `activo`; uno `en_proceso` lo revoca `manejadores.al_exito` al confirmarse el otorgar.
-- Solo otorga ante un evento: una revocación manual del superadmin no se deshace sola. No otorga si ya hay un vigente (cualquier nivel u origen) ni en `ldap` sin grupo de nivel `usuario`.
+  - `sincronizar_plataforma(plataforma, area_cambio=False)`: `POST /platforms` (tras `plataforma_creada`) y `PUT /platforms/<id>` al cambiar área, tipo o grupos; con `area_cambio` revoca los automáticos de quien no administra la nueva área;
+  - `sincronizar_cuenta(cuenta, areas_nuevas, areas_quitadas)`: `users.areas_administradas.asignar_areas_administradas` y `users.roles.cambiar_rol` (al dejar `admin_area`, tras `rol_cambiado`, con sus áreas previas);
+  - `ajustar_al_confirmar(acceso)`: `manejadores.al_exito` ajusta un acceso `en_proceso` que ya no corresponde al confirmarse.
+- Solo ajusta ante un evento: una revocación manual del superadmin no se deshace sola. No otorga en `ldap` sin grupo de nivel `usuario`.
+- Quien sale del área sin administrarla pierde también el `usuario` automático que conservó (`salida_de_area`).
 - Cambiar `area_id` con solo accesos automáticos ya no da 409 (`platforms.estado.accesos_que_impiden_mover`, `consultas.contar_vigentes_no_automaticos`); tipo y grupos siguen dando 409 (FNC-085).
 - Pendiente: desactivar una cuenta no revoca (FNC-084); plataformas existentes al desplegar (FNC-086); `DELETE /platforms/<id>` con accesos falla por FK (FNC-083).
 

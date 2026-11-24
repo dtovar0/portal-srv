@@ -27,6 +27,7 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO, ESTADO_F
                                       ORIGEN_ADMIN_DE_AREA)
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
+from app.modules.platforms.tipos import NIVEL_ADMIN
 from app.modules.provisioning import queue
 from app.modules.provisioning.reloj import ahora
 from app.modules.provisioning.tipos import (OPERACION_OTORGAR,
@@ -101,13 +102,15 @@ def _pedir_revocacion(acceso, actor, motivo, momento, manual=False):
 
 
 def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None,
-            manual=False):
+            manual=False, regreso_de_admin=False):
     """Crea el acceso `en_proceso` y su trabajo `otorgar`; lo devuelve.
 
     Con `manual=True` (plataforma sin conector) nace `activo` y sin trabajo.
+    `regreso_de_admin`: el sistema deja con nivel `usuario` a quien dejó de
+    administrar el área (FNC-185).
     """
     rules.validar_datos(nivel, origen, request_id)
-    rules.validar_otorgamiento(actor, usuario, plataforma, origen)
+    rules.validar_otorgamiento(actor, usuario, plataforma, origen, regreso_de_admin)
     reemplazado = rules.acceso_a_reemplazar(
         vigentes_de(usuario.id, plataforma.id), nivel)
 
@@ -136,9 +139,13 @@ def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None,
         # Aprovisionamiento condicionado a la firma de la responsiva única de TI
         if ya_firmo:
             _encolar(acceso, OPERACION_OTORGAR, plataforma)
-    detalle = (f'sistema dio permisos de acceso a admin {usuario.email}'
-               if origen == ORIGEN_ADMIN_DE_AREA else
-               f'Acceso nivel {nivel} a {plataforma.name} otorgado.')
+    if origen == ORIGEN_ADMIN_DE_AREA and nivel == NIVEL_ADMIN:
+        detalle = f'sistema dio permisos de acceso a admin {usuario.email}'
+    elif origen == ORIGEN_ADMIN_DE_AREA:
+        detalle = (f'sistema dejó a {usuario.email} con acceso de usuario en '
+                   f'{plataforma.name}.')
+    else:
+        detalle = f'Acceso nivel {nivel} a {plataforma.name} otorgado.'
     _auditar(Evento.ACCESO_OTORGADO, acceso, usuario, plataforma, None,
              detalle, actor is None)
     return acceso

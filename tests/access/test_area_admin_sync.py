@@ -1,8 +1,10 @@
 """Acceso automático de los admins a las plataformas de sus áreas (FNC-055).
 
-P6 (dueño, 2026-10-14): nivel `usuario`, origen `admin_de_area`, para todos
-los admins del área (incluido el creador); el superadmin no recibe nada; al
-quitarle el área a un admin se revocan sus accesos automáticos de esa área.
+P6 (dueño, 2026-11-24, FNC-185): nivel `admin`, origen `admin_de_area`, para
+todos los admins del área (incluido el creador); el superadmin no recibe nada;
+al quitarle el área a un admin su acceso baja a `usuario` (no se revoca; ver
+`test_area_admin_nivel.py`). Antes (2026-10-14) era nivel `usuario` y se
+revocaba.
 """
 import pytest
 from flask import g
@@ -17,7 +19,7 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO,
 from app.modules.audit.events import Evento
 from app.modules.audit.models import AuditLog
 from app.modules.core.models import Platform
-from app.modules.platforms.tipos import NIVEL_USUARIO, TIPO_CONECTOR, TIPO_LDAP
+from app.modules.platforms.tipos import NIVEL_ADMIN, NIVEL_USUARIO, TIPO_CONECTOR, TIPO_LDAP
 from tests import fabricas
 from tests.access.conftest import recargar
 
@@ -74,7 +76,7 @@ def test_alta_de_plataforma_otorga_a_todos_los_admins_del_area(
         [escena['admin'].id, escena['admin2'].id])
     for acceso in accesos:
         assert (acceso.level, acceso.status, acceso.granted_by) == (
-            NIVEL_USUARIO, ESTADO_EN_PROCESO, None)
+            NIVEL_ADMIN, ESTADO_EN_PROCESO, None)
         assert acceso.last_job_id is not None
     # Ni el admin de otra área, ni usuarios, ni el superadmin.
     assert not _de(escena['admin_otra'])
@@ -176,7 +178,7 @@ def test_asignar_un_admin_a_un_area_con_tres_plataformas_da_tres_accesos(
     accesos = _de(nuevo)
     assert len(accesos) == 3
     assert {a.platform.area_id for a in accesos} == {area_con_tres.id}
-    assert all(a.level == NIVEL_USUARIO for a in accesos)
+    assert all(a.level == NIVEL_ADMIN for a in accesos)
 
 
 def test_repetir_la_asignacion_no_duplica(escena, cliente_como, cola_falsa,
@@ -233,7 +235,7 @@ def con_automaticos(escena, cliente_como, cola_falsa, proveedor_simulado):
     return db.session.get(Platform, respuesta.get_json()['platform']['id'])
 
 
-def test_quitar_el_area_a_un_admin_revoca_sus_automaticos(
+def test_quitar_el_area_a_un_admin_baja_sus_automaticos(
         escena, cliente_como, cola_falsa, con_automaticos):
     respuesta = cliente_como(escena['super']).put(
         f'{A}/users/{escena["admin2"].id}/managed-areas',
@@ -268,7 +270,7 @@ def test_quitar_el_area_no_toca_accesos_por_solicitud(escena, cliente_como,
     assert recargar(por_solicitud.id).status == ESTADO_ACTIVO
 
 
-def test_degradar_a_usuario_revoca_sus_automaticos(escena, cliente_como,
+def test_degradar_a_usuario_baja_sus_automaticos(escena, cliente_como,
                                                   cola_falsa,
                                                   con_automaticos):
     respuesta = cliente_como(escena['super']).put(
@@ -279,23 +281,29 @@ def test_degradar_a_usuario_revoca_sus_automaticos(escena, cliente_como,
         ESTADO_REVOCANDO
 
 
-def test_acceso_en_proceso_de_un_admin_retirado_se_revoca_al_confirmarse(
+def test_acceso_en_proceso_de_un_admin_retirado_baja_al_confirmarse(
         escena, cliente_como, cola_falsa, proveedor_simulado):
-    cliente_como(escena['admin']).post(f'{A}/platforms',
-                                       json=_alta(escena['area'].id))
+    nueva = cliente_como(escena['admin']).post(
+        f'{A}/platforms', json=_alta(escena['area'].id)
+    ).get_json()['platform']['id']
     cliente_como(escena['super']).put(
         f'{A}/users/{escena["admin2"].id}/managed-areas',
         json={'area_ids': []})
-    en_proceso, = _de(escena['admin2'])
+    en_proceso, = [a for a in _de(escena['admin2'])
+                   if a.platform_id == nueva]
     assert en_proceso.status == ESTADO_EN_PROCESO
 
-    _activar_todo(cola_falsa)  # otorgar confirmado → el sistema lo revoca
+    _activar_todo(cola_falsa)  # otorgar confirmado → el sistema lo baja a `usuario`
 
+    # FNC-185: ya no se revoca; el `admin` baja a `usuario` y lo conserva.
     acceso = recargar(en_proceso.id)
     assert (acceso.status, acceso.revoke_reason) == (ESTADO_REVOCANDO,
                                                      MOTIVO_RETIRO_ADMIN)
     _activar_todo(cola_falsa)
     assert recargar(en_proceso.id).status == 'revocado'
+    base, = [a for a in _de(escena['admin2'], en_proceso.platform)
+             if a.level == NIVEL_USUARIO]
+    assert base.status == ESTADO_ACTIVO
     assert _de(escena['admin'])[0].status == ESTADO_ACTIVO
 
 
@@ -326,7 +334,7 @@ def test_mover_la_plataforma_cambia_los_automaticos_de_area(
         assert _de(escena[admin], con_automaticos)[0].status == \
             ESTADO_REVOCANDO
     nuevo, = _de(escena['admin_otra'], con_automaticos)
-    assert (nuevo.status, nuevo.level) == (ESTADO_EN_PROCESO, NIVEL_USUARIO)
+    assert (nuevo.status, nuevo.level) == (ESTADO_EN_PROCESO, NIVEL_ADMIN)
 
 
 def test_mover_con_accesos_por_solicitud_sigue_dando_409(escena, cliente_como,
