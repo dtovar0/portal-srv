@@ -54,9 +54,15 @@ def _parse_lista_areas(areas_raw: Any) -> List[str]:
 
 
 def procesar_usuarios(
-    registros: List[Dict[str, Any]], dry_run: bool = False
+    registros: List[Dict[str, Any]], dry_run: bool = False,
+    auth_source: str | None = None, actor: Any = None,
 ) -> Dict[str, Any]:
-    """Valida e importa una lista de usuarios."""
+    """Valida e importa una lista de usuarios.
+
+    `auth_source` fuerza el origen de las cuentas nuevas (la CLI `flask alta`
+    importa personas del directorio como `sso`); sin él rige `origen_de_alta()`.
+    `actor` decide qué roles se pueden asignar; sin él, el de la sesión.
+    """
     errores = []
     items_procesados = []
     creados = 0
@@ -130,7 +136,7 @@ def procesar_usuarios(
             items_procesados.append(item_resumen)
             continue
 
-        if not rol_asignable(rol_raw):
+        if not rol_asignable(rol_raw, actor):
             msg = f'El rol "{rol_raw}" no es válido. Usa "usuario" o "admin_area".'
             errores.append({'row': fila, 'item': email_raw, 'error': msg})
             item_resumen['status'] = 'error'
@@ -172,7 +178,7 @@ def procesar_usuarios(
                 email=email_raw,
                 nombre=nombre_final,
                 role=rol_raw,
-                auth_source=origen_de_alta(),
+                auth_source=auth_source or origen_de_alta(),
                 is_active=_activo(reg.get('is_active')),
             )
             nuevo_usuario.areas = areas_asignadas

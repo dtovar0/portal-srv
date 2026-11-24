@@ -5,6 +5,9 @@
 
 ## [Sin publicar]
 
+### Agregado
+- `flask alta` (`scripts/alta/alta.sh`): altas por CLI de áreas, plataformas y usuarios desde CSV, y `migrar-ldap` para importar a Aduana las personas de cualquier grupo de LDAP (cuenta `sso`, rol por grupo o `--rol`, grupo de Authelia del rol, superadmin siempre omitido). Rotación de contraseña solo con `--rotar-contrasena` (entrega por Send y correo; sin ella no se toca LDAP). Todos con `--dry-run` y resumen por fila (FNC-182, 2026-11-24).
+
 ### Corregido
 - Web: login simplificado: logo, título, botón de Authelia y una sola línea de ayuda («¿Olvidaste o caducó tu contraseña?» · «Portal de Authelia»); se quitan la nota SSO, la caja del autoservicio, el separador y el lema del pie; «Conoce Aduana» queda solo con la portada activa (DIS-121, 2026-11-24).
 - Autoservicio (regla de negocio): solo quien tiene cuenta activa en el portal puede cambiar o recuperar su contraseña de LDAP; quien existe solo en LDAP no recibe código ni enlace (respuesta genérica) y el cambio se rechaza con `403` sin tocar LDAP (FNC-181, 2026-11-24).
