@@ -670,11 +670,22 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
                 # Modificar en LDAP
                 escritor = EscritorDirectorio(cliente)
                 resultado = escritor.change_password(persona.dn, nueva_contrasena)
-                if not resultado.exitoso:
-                    raise ErrorAutoservicio('El directorio no pudo aplicar la nueva contraseña.', 500)
+                logger.info("Autoservicio: Cambio de contraseña LDAP para %s (DN: %s) -> exito=%s, motivo=%s",
+                            identificador, persona.dn, resultado.exito, resultado.motivo)
+                if not resultado.exito:
+                    raise ErrorAutoservicio(f'El directorio no pudo aplicar la nueva contraseña ({resultado.motivo or "error"}).', 500)
 
                 # Hook de sincronización JumpServer
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
+
+                # Sincronizar en BD local si el usuario también existe localmente
+                condiciones_local = [User.email.ilike(identificador)]
+                if '@' not in identificador:
+                    condiciones_local.append(User.email.ilike(f"{identificador}@%"))
+                user_local = User.query.filter(db.or_(*condiciones_local)).first()
+                if user_local:
+                    user_local.set_password(nueva_contrasena)
+                    db.session.commit()
 
                 # Notificación por correo confirmando la actualización
                 destinatario_correo = persona.correo or (identificador if '@' in identificador else None)
@@ -688,7 +699,8 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
         except ErrorAutoservicio:
             raise
         except Exception as exc:
-            logger.error("Error cambiando contraseña en LDAP (%s): %s", identificador, type(exc).__name__)
+            logger.error("Error cambiando contraseña en LDAP (%s): %s", identificador, exc, exc_info=True)
+            raise ErrorAutoservicio('Error al comunicarse con el directorio corporativo (LDAP).', 500)
 
     # 2. Búsqueda en Base de Datos Local
     condiciones = [User.email.ilike(identificador)]
@@ -885,12 +897,22 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
         try:
             cliente = ClienteDirectorio()
             persona = cliente.buscar_por_correo(correo_objetivo)
+            if not persona and '@' in correo_objetivo:
+                persona = cliente.buscar_usuario(correo_objetivo.split('@')[0])
             if persona and persona.dn:
                 escritor = EscritorDirectorio(cliente)
                 resultado = escritor.change_password(persona.dn, nueva_contrasena)
-                if not resultado.exitoso:
-                    raise ErrorAutoservicio('El directorio no pudo actualizar la contraseña.', 500)
+                logger.info("Autoservicio: Restablecimiento con token LDAP para %s (DN: %s) -> exito=%s, motivo=%s",
+                            correo_objetivo, persona.dn, resultado.exito, resultado.motivo)
+                if not resultado.exito:
+                    raise ErrorAutoservicio(f'El directorio no pudo actualizar la contraseña ({resultado.motivo or "error"}).', 500)
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
+
+                # Sincronizar en BD local si el usuario también existe localmente
+                user_local = User.query.filter(User.email.ilike(correo_objetivo)).first()
+                if user_local:
+                    user_local.set_password(nueva_contrasena)
+                    db.session.commit()
 
                 # Notificación por correo confirmando el restablecimiento
                 _enviar_correo_confirmacion_cambio(correo_objetivo, nombre=persona.nombre)
@@ -902,7 +924,8 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
         except ErrorAutoservicio:
             raise
         except Exception as exc:
-            logger.error("Error restableciendo contraseña en LDAP: %s", type(exc).__name__)
+            logger.error("Error restableciendo contraseña en LDAP: %s", exc, exc_info=True)
+            raise ErrorAutoservicio('Error al comunicarse con el directorio corporativo (LDAP).', 500)
 
     # Actualizar en BD local
     user = User.query.filter(User.email.ilike(correo_objetivo)).first()
@@ -956,10 +979,21 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
             if persona and persona.dn:
                 escritor = EscritorDirectorio(cliente)
                 resultado = escritor.change_password(persona.dn, nueva_contrasena)
-                if not resultado.exitoso:
-                    raise ErrorAutoservicio('El directorio no pudo aplicar la nueva contraseña.', 500)
+                logger.info("Autoservicio MFA: Restablecimiento en LDAP para %s (DN: %s) -> exito=%s, motivo=%s",
+                            identificador, persona.dn, resultado.exito, resultado.motivo)
+                if not resultado.exito:
+                    raise ErrorAutoservicio(f'El directorio no pudo aplicar la nueva contraseña ({resultado.motivo or "error"}).', 500)
 
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
+
+                # Sincronizar en BD local si el usuario también existe localmente
+                condiciones_local = [User.email.ilike(identificador)]
+                if '@' not in identificador:
+                    condiciones_local.append(User.email.ilike(f"{identificador}@%"))
+                user_local = User.query.filter(db.or_(*condiciones_local)).first()
+                if user_local:
+                    user_local.set_password(nueva_contrasena)
+                    db.session.commit()
 
                 destinatario_correo = persona.correo or (identificador if '@' in identificador else None)
                 if destinatario_correo:
@@ -969,10 +1003,13 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
                               target=persona.identificador, user_override=identificador,
                               detail='Contraseña restablecida directamente con MFA por el usuario en Autoservicio Authelia')
                 return {'status': 'success', 'message': 'Contraseña restablecida con éxito en Authelia y el directorio corporativo.'}
+            else:
+                logger.warning("Autoservicio MFA: Usuario '%s' no encontrado en LDAP a pesar de que el directorio está activo", identificador)
         except ErrorAutoservicio:
             raise
         except Exception as exc:
-            logger.error("Error restableciendo contraseña con MFA en LDAP (%s): %s", identificador, type(exc).__name__)
+            logger.error("Error restableciendo contraseña con MFA en LDAP (%s): %s", identificador, exc, exc_info=True)
+            raise ErrorAutoservicio('Error al comunicarse con el directorio corporativo (LDAP).', 500)
 
     # 2. Base de datos local
     condiciones = [User.email.ilike(identificador)]

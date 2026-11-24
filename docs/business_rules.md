@@ -6206,3 +6206,26 @@ Un administrador define en su `.env` la directiva `PASSWORD_POLICY_GENERATED_LEN
 
 ### Impacto
 Afecta a [app/modules/users/politica_contrasena.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/politica_contrasena.py), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Sincronización Transaccional Obligatoria y Manejo de Errores en Cambio de Contraseñas LDAP
+
+## Módulo
+Autoservicio / Directorio OpenLDAP / Autenticación y Seguridad
+
+### Regla
+1. **Consistencia Transaccional con el Directorio Corporativo (LDAP)**:
+   Cuando el directorio LDAP se encuentra activo (`directorio_activo() == True`), OpenLDAP constituye la fuente canónica de verdad para la autenticación en Authelia SSO (1FA). Si un usuario realiza un restablecimiento o cambio de contraseña en Autoservicio:
+   - La nueva contraseña se debe aplicar imperativamente en OpenLDAP mediante `EscritorDirectorio.change_password`.
+   - Si la operación de escritura en LDAP falla, es rechazada por directivas de política (`ppolicy`) o se interrumpe la comunicación, el sistema DEBE interrumpir el flujo inmediatamente y responder con un error HTTP 500 (`ErrorAutoservicio`).
+   - Queda estrictamente prohibido silenciar fallos de LDAP o simular un restablecimiento exitoso actualizando únicamente la base de datos local relacional.
+   - Tras la aplicación exitosa en LDAP, el sistema sincroniza de forma atómica el registro en la base de datos local (si existe) para garantizar consistencia entre Authelia SSO y el portal Aduana.
+2. **Propiedades de Acceso Robustas en Clases del Directorio**:
+   - `ResultadoEscritura` expone la propiedad `exitoso` como alias canónico de `exito` (`self.resultado.exito`), previniendo errores de tipo `AttributeError` al verificar el estado de las transacciones.
+   - `UsuarioDirectorio` expone las propiedades seguras `nombre` (resolviendo `cn` o `displayName`) y `correo` (resolviendo `mail`), evitando excepciones al consultar el perfil de la cuenta.
+
+### Ejemplo
+Un usuario con cuenta corporativa en OpenLDAP utiliza el asistente de recuperación con MFA en el portal de autoservicio. El servidor localiza la cuenta en OpenLDAP, invoca `change_password` y verifica `resultado.exito`. Si OpenLDAP actualiza la contraseña exitosamente, se sincroniza la base de datos local y el usuario puede iniciar sesión de inmediato en Authelia con la nueva contraseña. Si OpenLDAP rechazara el cambio por políticas de contraseña, el portal notifica el error de forma transparente en lugar de emitir un falso positivo.
+
+### Impacto
+Afecta a [app/modules/directory/errors.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/errors.py), [app/modules/directory/ldap_client.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/ldap_client.py), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

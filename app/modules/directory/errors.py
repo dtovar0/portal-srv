@@ -73,6 +73,10 @@ class ResultadoEscritura:
         return self.resultado.exito
 
     @property
+    def exitoso(self):
+        return self.resultado.exito
+
+    @property
     def reintentable(self):
         return self.resultado.reintentable
 

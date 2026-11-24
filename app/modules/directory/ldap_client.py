@@ -80,6 +80,18 @@ class UsuarioDirectorio:
     identificador: str
     atributos: dict = field(default_factory=dict)
 
+    @property
+    def nombre(self):
+        return (self.atributos.get('cn')
+                or self.atributos.get('displayName')
+                or self.identificador)
+
+    @property
+    def correo(self):
+        return (self.atributos.get('mail')
+                or self.atributos.get(ATRIBUTO_CORREO)
+                or '')
+
 
 def escapar_filtro(valor):
     """Escapa un valor para un filtro LDAP (RFC 4515): `*`, `(`, `)`, `\\`, NUL."""

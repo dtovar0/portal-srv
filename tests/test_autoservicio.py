@@ -521,5 +521,156 @@ def test_enviar_correo_mfa_cabeceras_rfc_y_html(monkeypatch):
     assert 'Domingo Tovar' in part_html
 
 
+def test_resultado_escritura_propiedades():
+    from app.modules.directory.errors import Resultado, ResultadoEscritura
+    res_ok = ResultadoEscritura(Resultado.HECHO, "uid=test,ou=users,dc=com")
+    assert res_ok.exito is True
+    assert res_ok.exitoso is True
+
+    res_err = ResultadoEscritura(Resultado.ERROR_PERMANENTE, "uid=test,ou=users,dc=com", motivo="error")
+    assert res_err.exito is False
+    assert res_err.exitoso is False
+
+
+def test_usuario_directorio_propiedades():
+    from app.modules.directory.ldap_client import UsuarioDirectorio
+    u = UsuarioDirectorio(
+        dn="uid=dtovar,ou=People,dc=vivaro,dc=com",
+        identificador="dtovar",
+        atributos={"mail": "dtovar@vivaro.com", "cn": "Domingo Tovar", "displayName": "Domingo A. Tovar"}
+    )
+    assert u.nombre == "Domingo Tovar"
+    assert u.correo == "dtovar@vivaro.com"
+
+    u_sin_perfil = UsuarioDirectorio(
+        dn="uid=sin_perfil,ou=People,dc=vivaro,dc=com",
+        identificador="sin_perfil"
+    )
+    assert u_sin_perfil.nombre == "sin_perfil"
+    assert u_sin_perfil.correo == ""
+
+
+def test_restablecer_directo_mfa_ldap_exitoso(app, monkeypatch):
+    """Verifica que restablecer_directo_mfa invoque correctamente al escritor LDAP y no falle con AttributeError."""
+    from app.modules.directory.errors import Resultado, ResultadoEscritura
+    from app.modules.directory.ldap_client import UsuarioDirectorio
+
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'authenticator')
+
+    with app.test_request_context():
+        u = User.query.filter_by(email="dtovar@vivaro.com").first()
+        if not u:
+            u = User(email="dtovar@vivaro.com", nombre="Domingo Tovar", role="usuario")
+            u.set_password("ClaveVieja12345678!")
+            db.session.add(u)
+            db.session.commit()
+
+        secret = _secret_totp_usuario("dtovar@vivaro.com")
+        key = base64.b32decode(secret.upper(), casefold=True)
+        ahora = int(time.time() // 30)
+        msg = struct.pack('>Q', ahora)
+        digest = hmac.new(key, msg, hashlib.sha1).digest()
+        o = digest[19] & 0x0f
+        val = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
+        codigo_valido = f"{val:06d}"
+
+        # Mock LDAP activo
+        monkeypatch.setattr('app.modules.auth.autoservicio.directorio_activo', lambda: True)
+
+        persona_ldap = UsuarioDirectorio(
+            dn="uid=dtovar,ou=People,dc=vivaro,dc=com",
+            identificador="dtovar",
+            atributos={"mail": "dtovar@vivaro.com", "cn": "Domingo Tovar"}
+        )
+
+        class ClienteFalso:
+            def buscar_por_correo(self, correo):
+                return persona_ldap if correo == "dtovar@vivaro.com" else None
+            def buscar_usuario(self, uid):
+                return persona_ldap if uid == "dtovar" else None
+
+        llamadas_cambio = []
+
+        class EscritorFalso:
+            def __init__(self, cliente=None):
+                pass
+            def change_password(self, dn, nueva_clave):
+                llamadas_cambio.append((dn, nueva_clave))
+                return ResultadoEscritura(Resultado.HECHO, dn)
+
+        monkeypatch.setattr('app.modules.auth.autoservicio.ClienteDirectorio', ClienteFalso)
+        monkeypatch.setattr('app.modules.auth.autoservicio.EscritorDirectorio', EscritorFalso)
+
+        res = restablecer_directo_mfa("dtovar@vivaro.com", "NuevaClaveSuperSegura2026!", codigo_valido)
+        assert res["status"] == "success"
+        assert len(llamadas_cambio) == 1
+        assert llamadas_cambio[0][0] == "uid=dtovar,ou=People,dc=vivaro,dc=com"
+        assert llamadas_cambio[0][1] == "NuevaClaveSuperSegura2026!"
+
+        # El usuario local también se sincronizó
+        u_actualizado = User.query.filter_by(email="dtovar@vivaro.com").first()
+        assert u_actualizado.check_password("NuevaClaveSuperSegura2026!") is True
+
+
+def test_restablecer_directo_mfa_ldap_rechazo_no_silencia(app, monkeypatch):
+    """Verifica que si LDAP rechaza la contraseña, se lance ErrorAutoservicio y no se reporte éxito."""
+    from app.modules.directory.errors import Resultado, ResultadoEscritura
+    from app.modules.directory.ldap_client import UsuarioDirectorio
+
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+    monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'authenticator')
+
+    with app.test_request_context():
+        u = User.query.filter_by(email="rechazo_ldap@vivaro.com").first()
+        if not u:
+            u = User(email="rechazo_ldap@vivaro.com", nombre="Rechazo LDAP", role="usuario")
+            u.set_password("ClaveVieja12345678!")
+            db.session.add(u)
+            db.session.commit()
+
+        secret = _secret_totp_usuario("rechazo_ldap@vivaro.com")
+        key = base64.b32decode(secret.upper(), casefold=True)
+        ahora = int(time.time() // 30)
+        msg = struct.pack('>Q', ahora)
+        digest = hmac.new(key, msg, hashlib.sha1).digest()
+        o = digest[19] & 0x0f
+        val = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
+        codigo_valido = f"{val:06d}"
+
+        monkeypatch.setattr('app.modules.auth.autoservicio.directorio_activo', lambda: True)
+
+        persona_ldap = UsuarioDirectorio(
+            dn="uid=rechazo_ldap,ou=People,dc=vivaro,dc=com",
+            identificador="rechazo_ldap",
+            atributos={"mail": "rechazo_ldap@vivaro.com", "cn": "Rechazo LDAP"}
+        )
+
+        class ClienteFalso:
+            def buscar_por_correo(self, correo):
+                return persona_ldap
+            def buscar_usuario(self, uid):
+                return persona_ldap
+
+        class EscritorFalso:
+            def __init__(self, cliente=None):
+                pass
+            def change_password(self, dn, nueva_clave):
+                return ResultadoEscritura(Resultado.ERROR_PERMANENTE, dn, motivo="contrasena_rechazada")
+
+        monkeypatch.setattr('app.modules.auth.autoservicio.ClienteDirectorio', ClienteFalso)
+        monkeypatch.setattr('app.modules.auth.autoservicio.EscritorDirectorio', EscritorFalso)
+
+        with pytest.raises(ErrorAutoservicio) as exc:
+            restablecer_directo_mfa("rechazo_ldap@vivaro.com", "NuevaClaveRechazada2026!", codigo_valido)
+        assert exc.value.codigo_http == 500
+        assert "directorio" in str(exc.value).lower()
+
+        # Comprobar que en BD local no se cambió a la clave rechazada
+        u_check = User.query.filter_by(email="rechazo_ldap@vivaro.com").first()
+        assert u_check.check_password("NuevaClaveRechazada2026!") is False
+
+
+
 
 
