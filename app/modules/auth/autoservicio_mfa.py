@@ -64,6 +64,32 @@ def _hash_codigo(codigo):
     return hashlib.sha256(codigo.strip().encode('utf-8')).hexdigest()
 
 
+def correo_de_la_cuenta(identificador):
+    """`(correo, nombre)` de la cuenta de `identificador` (LDAP primero, luego
+    el portal), o `(None, None)`. El código MFA se envía a ese correo y el
+    desafío solo vale para él (FNC-175)."""
+    correo = None
+    nombre = None
+    if directorio_activo():
+        try:
+            cliente = ClienteDirectorio()
+            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_usuario(identificador)
+            if not persona and '@' in identificador:
+                # Si no se encontró por correo exacto, intentar por uid extrayendo la parte de usuario
+                persona = cliente.buscar_usuario(identificador.split('@')[0])
+            if persona:
+                correo = persona.correo or (identificador if '@' in identificador else None)
+                nombre = persona.nombre
+        except Exception as exc:
+            logger.warning("Autoservicio MFA: Error al consultar LDAP (%s)", type(exc).__name__)
+    if not correo:
+        user = cuenta_del_portal(identificador)
+        if user:
+            correo = user.email
+            nombre = user.nombre or user.email
+    return (correo.lower() if correo else None), nombre
+
+
 def solicitar_codigo_mfa(identificador):
     """Genera y envía un código de 6 dígitos al correo del usuario y retorna un challenge_token."""
     identificador = (identificador or '').strip()
@@ -73,30 +99,7 @@ def solicitar_codigo_mfa(identificador):
     if bloqueado(identificador):
         raise ErrorAutoservicio('Has superado el límite de intentos. Espera unos minutos.', 429)
 
-    correo = None
-    nombre = None
-
-    # Búsqueda en OpenLDAP
-    if directorio_activo():
-        try:
-            cliente = ClienteDirectorio()
-            persona = cliente.buscar_por_correo(identificador) if '@' in identificador else cliente.buscar_usuario(identificador)
-            if not persona and '@' in identificador:
-                # Si no se encontró por correo exacto, intentar por uid extrayendo la parte de usuario
-                usuario_parte = identificador.split('@')[0]
-                persona = cliente.buscar_usuario(usuario_parte)
-            if persona:
-                correo = persona.correo or (identificador if '@' in identificador else None)
-                nombre = persona.nombre
-        except Exception as exc:
-            logger.warning("Autoservicio MFA: Error al consultar LDAP para '%s': %s", identificador, type(exc).__name__)
-
-    # Búsqueda en BD local si no se encontró en LDAP
-    if not correo:
-        user = cuenta_del_portal(identificador)
-        if user:
-            correo = user.email
-            nombre = user.nombre or user.email
+    correo, nombre = correo_de_la_cuenta(identificador)
 
     # Si no se encontró, responder como si se enviara (anti-enumeración)
     if not correo:
@@ -186,7 +189,14 @@ def validar_desafio_mfa(identificador, mfa_code, challenge_token=None):
         s = _obtener_serializador()
         try:
             data = s.loads(challenge_token, salt=SALT_MFA, max_age=tiempo_expiracion_mfa())
-            if data.get('code_hash') == _hash_codigo(mfa_code):
+            # FNC-175: el desafío solo vale para la cuenta a la que se envió el
+            # código; con el de otra cuenta, mismo error (sin enumeración).
+            correo_cuenta, _ = correo_de_la_cuenta((identificador or '').strip())
+            mismo_codigo = hmac.compare_digest(str(data.get('code_hash') or ''),
+                                               _hash_codigo(mfa_code))
+            misma_cuenta = bool(correo_cuenta) and hmac.compare_digest(
+                str(data.get('email') or '').lower(), correo_cuenta)
+            if mismo_codigo and misma_cuenta:
                 return True
             raise ErrorAutoservicio('Código de verificación de correo incorrecto.', 401)
         except SignatureExpired:
