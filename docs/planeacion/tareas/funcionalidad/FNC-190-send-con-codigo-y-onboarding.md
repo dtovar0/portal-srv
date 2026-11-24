@@ -46,6 +46,7 @@
 
 ## Impacto en elementos compartidos
 - `impacto.py` (última corrida) también lista `Respuesta`, `_clave_ldap`, `_como`, `_cuerpo`, `_entrega` y `_fallos`: son helpers privados de las pruebas nuevas, con el mismo nombre que otros de otros archivos de prueba; ningún código compartido cambia por ellos.
+- También listados por `impacto.py`: `_plantillas`, `_registrar`, `_url`, `_volcado`, `cliente_como` (fixtures locales de mis pruebas que sobrescriben el de `conftest.py` solo en su archivo, como ya hace `tests/users`) y `crear_texto` (parámetro opcional `codigo`, ya listado). Los de nombre repetido son privados de cada módulo; sin efecto en otras áreas.
 - Tabla de `impacto.py`: casi todo son coincidencias de nombre (`crear`, `usuarios`, `rotar`...); los reales son `EntregaCredenciales`, `enviar_credenciales`, `crear_send_texto`, `change_password` y `cambiar_contrasena`/`restablecer_*` (autoservicio).
 - `EscritorDirectorio.change_password` y `create_user`: ahora avisan a oyentes (usan el escritor: autoservicio, «Editar usuario», alta, entrega/worker, CLI, rotación).
 - `enviar_credenciales` / `crear_send_texto` / `construir_send`: parámetro nuevo opcional (`codigo`, `plantilla`).
