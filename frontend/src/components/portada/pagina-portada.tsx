@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Icono } from '../icono';
+import { PageHeader } from '../page-header';
 import { esPortadaActiva } from '@/lib/portada';
 import { elegirTema, leerTema } from '@/lib/tema';
 
@@ -127,7 +128,7 @@ export function PaginaPortada() {
           {/* Logotipo y Marca Oficial de Aduana */}
           <Link
             href="/"
-            className="flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl group"
+            className="min-w-12 min-h-12 flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl group"
             aria-label="Aduana - Control de Acceso"
           >
             <span
@@ -160,37 +161,37 @@ export function PaginaPortada() {
           <nav aria-label="Navegación de secciones" className="hidden lg:flex items-center gap-1 xl:gap-2 absolute left-1/2 -translate-x-1/2">
             <a
               href="#por-que"
-              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
+              className="inline-flex min-h-12 items-center rounded-lg px-3 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
             >
               ¿Por qué Aduana?
             </a>
             <a
               href="#como-funciona"
-              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
+              className="inline-flex min-h-12 items-center rounded-lg px-3 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
             >
               ¿Cómo funciona?
             </a>
             <a
               href="#capturas"
-              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
+              className="inline-flex min-h-12 items-center rounded-lg px-3 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
             >
               Capturas y Módulos
             </a>
             <a
               href="#seguridad"
-              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
+              className="inline-flex min-h-12 items-center rounded-lg px-3 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
             >
               Seguridad & Auditoría
             </a>
             <a
               href="#documentacion"
-              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
+              className="inline-flex min-h-12 items-center rounded-lg px-3 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
             >
               Documentación
             </a>
             <a
               href="#faq"
-              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
+              className="inline-flex min-h-12 items-center rounded-lg px-3 text-xs font-semibold text-texto-secundario hover:text-body-text hover:bg-surface-container transition-colors"
             >
               FAQ
             </a>
@@ -203,14 +204,14 @@ export function PaginaPortada() {
               onClick={alternarTema}
               aria-label={esOscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
               title={esOscuro ? 'Tema claro' : 'Tema oscuro'}
-              className="flex size-10 min-h-10 min-w-10 items-center justify-center rounded-xl border border-panel-border bg-superficie text-texto-secundario hover:text-primary-text hover:border-primary/40 hover:bg-surface-container transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-xs"
+              className="min-w-12 flex size-10 min-h-12 min-w-10 items-center justify-center rounded-xl border border-panel-border bg-superficie text-texto-secundario hover:text-primary-text hover:border-primary/40 hover:bg-surface-container transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-xs"
             >
               <Icono nombre={esOscuro ? 'sol' : 'luna'} tamano="sm" />
             </button>
 
             <Link
               href="/login"
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary via-brand to-accent px-4 py-2 text-xs sm:text-sm font-bold text-texto-sobre-accion shadow-sm shadow-primary/25 border border-white/20 hover:shadow-md hover:shadow-primary/40 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer text-center"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary via-brand to-accent px-4 py-2 text-xs sm:text-sm font-bold text-texto-sobre-accion shadow-sm shadow-primary/25 border border-arte-luz/20 hover:shadow-md hover:shadow-primary/40 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer text-center"
             >
               <Icono nombre="marca" tamano="xs" ariaHidden={true} />
               <span>Iniciar Sesión</span>
@@ -235,12 +236,17 @@ export function PaginaPortada() {
           </div>
 
           {/* Titular Principal */}
-          <h1 className="nx-hero-title font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-[-0.055em] text-body-text leading-[0.98]">
-            El acceso correcto.{' '}
-            <span className="bg-gradient-to-r from-aduana-cyan to-aduana-orange bg-clip-text text-transparent">
-              Para cada persona.
-            </span>
-          </h1>
+          <PageHeader
+            titleClassName="nx-hero-title font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-[-0.055em] text-body-text leading-[0.98]"
+            title={
+              <>
+                El acceso correcto.{' '}
+                <span className="bg-gradient-to-r from-aduana-cyan to-aduana-orange bg-clip-text text-transparent">
+                  Para cada persona.
+                </span>
+              </>
+            }
+          />
 
           {/* Subtítulo Descriptivo */}
           <p className="nx-hero-copy max-w-xl text-base sm:text-lg text-texto-secundario leading-relaxed">
@@ -252,7 +258,7 @@ export function PaginaPortada() {
           <div className="nx-hero-actions flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4">
             <Link
               href="/login"
-              className="inline-flex h-12 w-full sm:w-56 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-primary via-brand to-accent px-4 text-sm font-bold text-texto-sobre-accion shadow-md shadow-primary/25 border border-white/20 hover:shadow-lg hover:shadow-primary/35 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap text-center"
+              className="inline-flex h-12 w-full sm:w-56 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-primary via-brand to-accent px-4 text-sm font-bold text-texto-sobre-accion shadow-md shadow-primary/25 border border-arte-luz/20 hover:shadow-lg hover:shadow-primary/35 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap text-center"
             >
               <Icono nombre="marca" tamano="sm" ariaHidden={true} />
               <span>Iniciar Sesión</span>
@@ -571,12 +577,12 @@ export function PaginaPortada() {
             </div>
 
             {/* Marco de Imagen / Screenshot */}
-            <div className="overflow-hidden rounded-xl border border-panel-border/80 bg-surface-container flex items-center justify-center shadow-inner min-h-[360px] sm:min-h-[480px]">
+            <div className="overflow-hidden rounded-xl border border-panel-border/80 bg-surface-container flex items-center justify-center shadow-inner min-h-90 sm:min-h-120">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={capturaSeleccionada.src}
                 alt={capturaSeleccionada.titulo}
-                className="w-full h-auto max-h-[580px] object-contain rounded-lg transition-transform duration-300"
+                className="w-full h-auto max-h-145 object-contain rounded-lg transition-transform duration-300"
                 loading="lazy"
               />
             </div>
@@ -592,11 +598,11 @@ export function PaginaPortada() {
       <section id="seguridad" className="nx-security py-20 sm:py-28 border-b border-panel-border/60 bg-superficie/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="nx-security-shell grid grid-cols-1 gap-4 rounded-3xl border border-panel-border bg-superficie p-4 shadow-2 lg:grid-cols-12 lg:p-6">
-            <div className="relative flex min-h-[520px] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-brand to-accent p-8 text-texto-sobre-accion lg:col-span-4">
-              <div className="absolute -right-20 -top-20 size-64 rounded-full border border-white/20" aria-hidden="true" />
-              <div className="absolute -right-8 -top-8 size-40 rounded-full border border-white/20" aria-hidden="true" />
+            <div className="relative flex min-h-130 flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-brand to-accent p-8 text-texto-sobre-accion lg:col-span-4">
+              <div className="absolute -right-20 -top-20 size-64 rounded-full border border-arte-luz/20" aria-hidden="true" />
+              <div className="absolute -right-8 -top-8 size-40 rounded-full border border-arte-luz/20" aria-hidden="true" />
               <div className="relative">
-                <span className="mb-8 flex size-12 items-center justify-center rounded-xl border border-white/25 bg-white/15 shadow-xs" aria-hidden="true">
+                <span className="mb-8 flex size-12 items-center justify-center rounded-xl border border-arte-luz/25 bg-arte-luz/15 shadow-xs" aria-hidden="true">
                   <Icono nombre="escudo-ok" tamano="lg" />
                 </span>
                 <span className="text-xs font-black uppercase tracking-wider text-texto-sobre-accion/80">Arquitectura segura</span>
@@ -605,7 +611,7 @@ export function PaginaPortada() {
                   Identidad, privilegio mínimo y evidencia auditable operan como una sola capa de control.
                 </p>
               </div>
-              <div className="relative border-t border-white/25 pt-6 text-sm font-bold">Zero Trust · RBAC · OIDC · Auditoría</div>
+              <div className="relative border-t border-arte-luz/25 pt-6 text-sm font-bold">Zero Trust · RBAC · OIDC · Auditoría</div>
             </div>
 
             <div className="nx-security-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-8 lg:grid-rows-2">
@@ -697,7 +703,7 @@ export function PaginaPortada() {
               <div className="pt-4 border-t border-panel-border">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-primary-text hover:underline"
+                  className="min-w-12 min-h-12 inline-flex items-center gap-1 text-xs font-bold text-primary-text hover:underline"
                 >
                   <span>Ir al catálogo</span>
                   <Icono nombre="flecha-der" tamano="xs" />
@@ -721,7 +727,7 @@ export function PaginaPortada() {
               <div className="pt-4 border-t border-panel-border">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-brand-text hover:underline"
+                  className="min-w-12 min-h-12 inline-flex items-center gap-1 text-xs font-bold text-brand-text hover:underline"
                 >
                   <span>Panel de administración</span>
                   <Icono nombre="flecha-der" tamano="xs" />
@@ -745,7 +751,7 @@ export function PaginaPortada() {
               <div className="pt-4 border-t border-panel-border">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-accent-text hover:underline"
+                  className="min-w-12 min-h-12 inline-flex items-center gap-1 text-xs font-bold text-accent-text hover:underline"
                 >
                   <span>Ajustes de vista</span>
                   <Icono nombre="flecha-der" tamano="xs" />
@@ -828,7 +834,7 @@ export function PaginaPortada() {
 
             <Link
               href="/login"
-              className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-primary via-brand to-accent px-8 py-3.5 text-sm font-bold text-texto-sobre-accion shadow-lg shadow-primary/25 border border-white/20 hover:shadow-xl hover:shadow-primary/35 hover:brightness-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all cursor-pointer active:scale-[0.98] text-center"
+              className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-primary via-brand to-accent px-8 py-3.5 text-sm font-bold text-texto-sobre-accion shadow-lg shadow-primary/25 border border-arte-luz/20 hover:shadow-xl hover:shadow-primary/35 hover:brightness-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all cursor-pointer active:scale-[0.98] text-center"
             >
               <Icono nombre="marca" tamano="sm" ariaHidden={true} />
               <span>Iniciar Sesión en Aduana</span>
@@ -853,12 +859,12 @@ export function PaginaPortada() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium">
-              <a href="#por-que" className="hover:text-body-text transition-colors">¿Por qué Aduana?</a>
-              <a href="#como-funciona" className="hover:text-body-text transition-colors">Funcionamiento</a>
-              <a href="#capturas" className="hover:text-body-text transition-colors">Capturas</a>
-              <a href="#seguridad" className="hover:text-body-text transition-colors">Seguridad</a>
-              <a href="#documentacion" className="hover:text-body-text transition-colors">Documentación</a>
-              <Link href="/login" className="font-bold text-primary-text hover:underline">Iniciar Sesión</Link>
+              <a href="#por-que" className="min-w-12 min-h-12 inline-flex items-center hover:text-body-text transition-colors">¿Por qué Aduana?</a>
+              <a href="#como-funciona" className="min-w-12 min-h-12 inline-flex items-center hover:text-body-text transition-colors">Funcionamiento</a>
+              <a href="#capturas" className="min-w-12 min-h-12 inline-flex items-center hover:text-body-text transition-colors">Capturas</a>
+              <a href="#seguridad" className="min-w-12 min-h-12 inline-flex items-center hover:text-body-text transition-colors">Seguridad</a>
+              <a href="#documentacion" className="min-w-12 min-h-12 inline-flex items-center hover:text-body-text transition-colors">Documentación</a>
+              <Link href="/login" className="min-w-12 min-h-12 inline-flex items-center font-bold text-primary-text hover:underline">Iniciar Sesión</Link>
             </div>
           </div>
 

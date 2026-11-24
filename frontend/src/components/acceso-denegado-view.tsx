@@ -102,9 +102,7 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
 
           {/* Mensaje principal */}
           <div className="space-y-2">
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-body-text">
-              Sin acceso a la plataforma
-            </h1>
+            <PageHeader titleClassName="font-display text-2xl font-extrabold tracking-tight text-body-text" title="Sin acceso a la plataforma" />
             <p className="text-sm text-texto-secundario leading-relaxed">
               No tienes acceso a la plataforma {APP_TITLE} con tu cuenta corporativa actual. Comunícate con tu superior inmediato para que gestione tu alta o envía un correo a soporte:
             </p>
@@ -116,12 +114,12 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
               <span className="text-xs font-semibold text-texto-secundario uppercase tracking-wider">
                 Soporte y Solicitudes
               </span>
-              <span className="text-xs text-aduana-cyan font-mono font-bold">{emailSoporte}</span>
+              <span className="text-xs text-primary-text font-mono font-bold">{emailSoporte}</span>
             </div>
 
             <a
               href={mailtoUrl}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aduana-cyan hover:bg-aduana-cyan-hover text-white font-bold text-sm py-3 px-4 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-aduana-cyan/50 active:scale-[0.98]"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-aviso font-bold text-sm py-3 px-4 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-aduana-cyan/50 active:scale-[0.98]"
             >
               <Icono nombre="correo" tamano="sm" ariaHidden={true} />
               <span>Enviar correo a {emailSoporte}</span>
@@ -149,7 +147,7 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
             {/* Barra regresiva animada */}
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-panel-border/40">
               <div
-                className={`h-full transition-all duration-1000 ease-linear w-[var(--ancho-progreso)] ${
+                className={`h-full transition-all duration-1000 ease-linear w-progreso ${
                   pausado ? 'bg-texto-tenue' : 'bg-aduana-cyan'
                 }`}
                 style={{
@@ -189,11 +187,11 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
           <div className="pt-2 border-t border-panel-border/40 flex items-center justify-between text-xs text-texto-secundario">
             <Link
               href="/login"
-              className="text-aduana-cyan hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+              className="min-w-12 min-h-12 inline-flex items-center text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
             >
               ← Volver al inicio de sesión
             </Link>
-            <span className="text-[11px] text-texto-tenue">
+            <span className="text-xs text-texto-tenue">
               Vivaro • Control de Accesos
             </span>
           </div>

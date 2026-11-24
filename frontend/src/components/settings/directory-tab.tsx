@@ -119,7 +119,7 @@ export function DirectoryTab() {
                 onClick={probar}
                 aria-disabled={bloqueado || undefined}
                 aria-describedby={PISTA_ID}
-                className="aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary"
+                className="aria-disabled:opacity-deshabilitada focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {probando ? 'Probando…' : 'Probar conexión'}
               </Button>

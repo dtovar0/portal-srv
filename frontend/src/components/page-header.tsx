@@ -19,6 +19,8 @@ export interface PageHeaderProps {
   backHref?: string;
   backLabel?: string;
   h1Ref?: React.Ref<HTMLHeadingElement>;
+  /** Pantallas públicas sin barra superior (login, portada): el título se ve y lleva estas clases en vez de `sr-only`. */
+  titleClassName?: string;
   className?: string;
 }
 
@@ -29,6 +31,7 @@ export function PageHeader({
   backHref,
   backLabel = 'Volver',
   h1Ref,
+  titleClassName,
   className = '',
 }: PageHeaderProps) {
   const tieneHerramientas = Boolean(backHref || actions || description);
@@ -36,7 +39,7 @@ export function PageHeader({
   return (
     <header className={tieneHerramientas ? className : `${className} contents`.trim()}>
       {/* DIS-068: H1 único accesible para lectores de pantalla; el título visual está en la BarraSuperior */}
-      <h1 ref={h1Ref} tabIndex={-1} className="sr-only">
+      <h1 ref={h1Ref} tabIndex={-1} className={titleClassName ?? 'sr-only'}>
         {title}
       </h1>
 
