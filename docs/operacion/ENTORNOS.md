@@ -56,7 +56,7 @@ En sitio (FNC-129): el repositorio se clona donde se instala (normalmente `/opt/
 6. Unidades systemd a partir de las plantillas: backend, frontend y worker, con el servicio de BD local detectado (`mysqld`, `mariadb` o `mysql`) o el de `--db-service` en `After=`/`Wants=`; sin BD local, sin esa dependencia (FNC-125) (`reset-failed` del worker antes de `enable --now`).
 7. nginx en `/etc/nginx/conf.d/<nombre>.conf`, SELinux y firewalld.
 
-**No aplica migraciones**: se ejecuta `venv/bin/alembic upgrade head` a mano antes de reiniciar (ver `docs/backend/README.md` §7). Los SQL sueltos `utils/migrations/` se retiraron en FNC-028 (la línea base `0001` ya los incluye).
+**Aplica las migraciones** (`alembic upgrade head`) antes de arrancar los servicios (FNC-178; idempotente; `--actualizar` también). Respaldo de la BD: manual, antes (ver `docs/backend/README.md` §7). Los SQL sueltos `utils/migrations/` se retiraron en FNC-028 (la línea base `0001` ya los incluye).
 
 ## Servicios systemd
 

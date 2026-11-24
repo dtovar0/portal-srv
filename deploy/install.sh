@@ -73,11 +73,13 @@
 #   2. Comprobación del usuario de servicio (solo lo crea con --create-user)
 #   3. .env de la carpeta (debe existir) y permisos
 #   4. venv del backend y build del frontend
-#   5. Unidades systemd (backend, frontend y worker de aprovisionamiento)
-#   6. nginx como reverse proxy, con SELinux y firewalld
+#   5. alembic upgrade head (FNC-178)
+#   6. Unidades systemd (backend, frontend y worker de aprovisionamiento)
+#   7. nginx como reverse proxy, con SELinux y firewalld
 #
-# No toca la base de datos: las migraciones (Alembic) se aplican aparte, salvo
-# con --actualizar, que corre `alembic upgrade head` con los servicios detenidos.
+# Base de datos: corre `alembic upgrade head` antes de arrancar los servicios
+# (FNC-178; idempotente), y --actualizar lo hace con los servicios detenidos.
+# No crea la BD ni el usuario del motor: deben existir (preflight lo valida).
 
 set -Eeuo pipefail
 # Lo que crea el instalador (venv, node_modules, .next) queda sin escritura de
@@ -682,6 +684,16 @@ FIN
     exit 0
 fi
 
+# Esquema de la BD: fuera de desarrollo lo crean SOLO las migraciones
+# (FNC-160). Lo usan la instalación nueva (FNC-178) y --actualizar. Es
+# idempotente: con la BD al día no hace nada.
+migrar_bd() {
+    log "Migraciones de la base de datos (alembic upgrade head)"
+    ( cd "$PREFIX" && "$PREFIX/venv/bin/alembic" upgrade head ) \
+        || die "falló 'alembic upgrade head' (ver el error de arriba; BD existente de ADUANA: antes, una vez, alembic stamp 0001)"
+    note "migraciones al día"
+}
+
 # --- Actualización (--actualizar, FNC-159) ------------------------------------
 # validar → detener → dependencias → migrar → arrancar (deploy/actualizar.sh).
 if (( ACTUALIZAR )); then
@@ -699,10 +711,7 @@ if (( ACTUALIZAR )); then
             || die "las validaciones previas fallaron (puntos FALTA de arriba)"
     }
     actualizar_dependencias() { instalar_dependencias; }
-    actualizar_migrar() {
-        ( cd "$PREFIX" && "$PREFIX/venv/bin/alembic" upgrade head ) \
-            || die "falló 'alembic upgrade head' (ver el error de arriba; BD existente de ADUANA: antes, una vez, alembic stamp 0001)"
-    }
+    actualizar_migrar() { migrar_bd; }
     # Pasado el paso 1 ya se modificó algo: el mensaje genérico no lo niega.
     trap 'die "falló en la línea $LINENO."' ERR
     actualizar_despliegue "$BACKEND_UNIT" "$WORKER_UNIT" "$FRONTEND_UNIT" "$API_PORT"
@@ -716,6 +725,9 @@ FIN
 fi
 
 instalar_dependencias
+# Antes de arrancar los servicios: el backend no crea tablas fuera de
+# desarrollo y arrancaría sin esquema (FNC-178).
+migrar_bd
 
 # --- 6. Servicios ------------------------------------------------------------
 log "Servicios systemd"
