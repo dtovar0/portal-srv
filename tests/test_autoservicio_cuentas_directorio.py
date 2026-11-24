@@ -9,7 +9,7 @@
 import pytest
 
 from app import db
-from app.modules.auth import autoservicio
+from app.modules.auth import autoservicio, autoservicio_correo
 from app.modules.auth.autoservicio import (ErrorAutoservicio,
                                            cambiar_contrasena,
                                            generar_token_recuperacion,
@@ -68,7 +68,7 @@ def ldap_falso(monkeypatch):
     monkeypatch.setattr(autoservicio, 'directorio_activo', lambda: True)
     monkeypatch.setattr(autoservicio, 'ClienteDirectorio', ClienteFalso)
     monkeypatch.setattr(autoservicio, 'EscritorDirectorio', EscritorFalso)
-    monkeypatch.setattr(autoservicio, '_enviar_correo_confirmacion_cambio',
+    monkeypatch.setattr(autoservicio, 'enviar_correo_confirmacion_cambio',
                         lambda *a, **k: True)
     monkeypatch.setattr(autoservicio, 'sincronizar_jumpserver_o_externos',
                         lambda *a, **k: None)
@@ -160,12 +160,12 @@ def test_enlace_de_recuperacion_usa_base_url_y_no_el_host(
         app, client, cuenta_sso, ldap_falso, monkeypatch):
     monkeypatch.setenv('BASE_URL', BASE_URL_PRUEBA)
     enviados = []
-    monkeypatch.setattr(autoservicio, 'resolver_smtp_autoservicio', lambda: None)
+    monkeypatch.setattr(autoservicio_correo, 'resolver_smtp_autoservicio', lambda: None)
     original = autoservicio.generar_token_recuperacion
     monkeypatch.setattr(autoservicio, 'generar_token_recuperacion',
                         lambda correo: enviados.append(correo) or original(correo))
     registros = []
-    monkeypatch.setattr(autoservicio.logger, 'info',
+    monkeypatch.setattr(autoservicio_correo.logger, 'info',
                         lambda msg, *args: registros.append(msg % args))
 
     respuesta = client.post(
@@ -177,6 +177,7 @@ def test_enlace_de_recuperacion_usa_base_url_y_no_el_host(
     enlaces = [r for r in registros if 'enlace de recuperación' in r]
     assert enlaces and BASE_URL_PRUEBA in enlaces[0]
     assert 'atacante.invalid' not in enlaces[0]
+    assert 'token=' not in enlaces[0]  # FNC-174: el token no se escribe en el log
 
 
 def test_sin_base_url_no_se_genera_enlace(app, client, cuenta_sso, ldap_falso,

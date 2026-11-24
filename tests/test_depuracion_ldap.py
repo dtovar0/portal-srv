@@ -48,6 +48,10 @@ def test_activar_si_se_pide_activado_escribe_en_archivo(tmp_path, monkeypatch):
     log_app.info("Prueba mensaje autoservicio persistido")
     log_dir.info("Prueba mensaje directorio persistido")
     log_ldap.debug("Prueba mensaje ldap3 protocolo persistido")
+    # FNC-174: los módulos hijos del autoservicio también llegan al archivo.
+    from app.modules.auth import autoservicio_correo, autoservicio_externos, autoservicio_mfa
+    for modulo in (autoservicio_correo, autoservicio_mfa, autoservicio_externos):
+        modulo.logger.info("Prueba hijo %s persistido", modulo.__name__)
 
     # Forzar flush de manejadores
     for reg in (log_app, log_dir, log_ldap):
@@ -59,6 +63,8 @@ def test_activar_si_se_pide_activado_escribe_en_archivo(tmp_path, monkeypatch):
     assert "Prueba mensaje autoservicio persistido" in contenido
     assert "Prueba mensaje directorio persistido" in contenido
     assert "Prueba mensaje ldap3 protocolo persistido" in contenido
+    for nombre in ('autoservicio_correo', 'autoservicio_mfa', 'autoservicio_externos'):
+        assert f"Prueba hijo app.modules.auth.{nombre} persistido" in contenido
 
 
 def test_resolver_carpeta_logs_salta_directorio_solo_lectura(tmp_path, monkeypatch):
