@@ -568,14 +568,24 @@ def test_el_secreto_no_viaja_en_la_redireccion_ni_en_el_context(client, oidc):
 # Contexto
 # --------------------------------------------------------------------------- #
 
+# Claves de marca agregadas al contexto (contrato autenticacion: marca).
+CLAVES_DE_MARCA = {'authelia_url', 'app_name', 'app_title', 'domain',
+                   'support_email'}
+
+
+def _contexto_sin_marca(datos):
+    assert CLAVES_DE_MARCA <= set(datos)
+    return {k: v for k, v in datos.items() if k not in CLAVES_DE_MARCA}
+
+
 def test_context_con_oidc(client, oidc):
-    assert client.get(f'{A}/context').get_json() == {
+    assert _contexto_sin_marca(client.get(f'{A}/context').get_json()) == {
         'oidc_enabled': True, 'authenticated': False,
         'emergency_available': True, 'local_login': False}
 
 
 def test_context_sin_oidc(client):
-    assert client.get(f'{A}/context').get_json() == {
+    assert _contexto_sin_marca(client.get(f'{A}/context').get_json()) == {
         'oidc_enabled': False, 'authenticated': False,
         'emergency_available': True, 'local_login': False}
 

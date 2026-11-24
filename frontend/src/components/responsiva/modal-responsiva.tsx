@@ -289,7 +289,7 @@ export function ModalResponsiva({
                       maxLength={8}
                       autoComplete="off"
                       spellCheck={false}
-                      className="w-full h-11 px-3.5 rounded-xl border border-panel-border bg-fondo text-xs font-mono font-bold uppercase tracking-wider text-body-text placeholder:text-texto-secundario/60 placeholder:normal-case placeholder:font-sans placeholder:tracking-normal focus:border-primary focus:bg-superficie focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all"
+                      className="w-full h-11 px-3.5 rounded-xl border border-panel-border bg-fondo text-xs font-mono font-bold uppercase tracking-wider text-body-text placeholder:text-texto-secundario/85 placeholder:normal-case placeholder:font-sans placeholder:tracking-normal focus:border-primary focus:bg-superficie focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all"
                     />
                   </div>
                 </div>

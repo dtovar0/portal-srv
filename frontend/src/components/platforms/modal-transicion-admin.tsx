@@ -162,7 +162,7 @@ export function BotonRegresarAdmin({ className = CLASE_BOTON_ICONO }: { classNam
         aria-label="Regresar al panel de administración"
         title="Regresar al panel de administración"
         onClick={alHacerClicRegresar}
-        className={className}
+        className={`min-h-12 min-w-12 ${className}`}
       >
         <Icono nombre="panel" />
       </Link>

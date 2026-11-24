@@ -27,15 +27,21 @@ from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
+from urllib.parse import urlencode
+
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
 from app import db
 from app.modules.audit.services import add_audit_log
+from app.modules.auth.autoservicio_cuentas import (cuenta_del_portal,
+                                                  cuenta_local,
+                                                  sincronizar_cuenta_local)
 from app.modules.auth.limite_intentos import bloqueado
 from app.modules.auth.models import User
 from app.modules.directory.configuracion import directorio_activo
 from app.modules.directory.ldap_client import ClienteDirectorio, ErrorDirectorio
 from app.modules.directory.writer import EscritorDirectorio
+from app.modules.users.entrega_credenciales import url_del_portal
 from app.modules.users.politica_contrasena import (
     mensaje_de_incumplimiento,
     cargar_politica,
@@ -45,6 +51,12 @@ from app.modules.users.politica_contrasena import (
 logger = logging.getLogger(__name__)
 
 SALT_RECUPERACION = 'autoservicio-recuperacion-v1'
+RUTA_AUTOSERVICIO = '/autoservicio'
+# Respuesta única (exista o no la cuenta): no revela qué correos existen.
+RESPUESTA_RECUPERACION = {
+    'status': 'success',
+    'message': 'Si tu cuenta existe en Authelia, recibirás un correo con las instrucciones.',
+}
 SALT_MFA = 'autoservicio-mfa-challenge-v1'
 TOKEN_MAX_AGE_SEGUNDOS = 900  # 15 minutos
 MFA_MAX_AGE_SEGUNDOS = 600    # 10 minutos para código de 6 dígitos
@@ -455,10 +467,7 @@ def solicitar_codigo_mfa(identificador):
 
     # Búsqueda en BD local si no se encontró en LDAP
     if not correo:
-        condiciones = [User.email.ilike(identificador)]
-        if '@' not in identificador:
-            condiciones.append(User.email.ilike(f"{identificador}@%"))
-        user = User.query.filter(db.or_(*condiciones)).first()
+        user = cuenta_del_portal(identificador)
         if user:
             correo = user.email
             nombre = user.nombre or user.email
@@ -673,14 +682,8 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
                 # Hook de sincronización JumpServer
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
 
-                # Sincronizar en BD local si el usuario también existe localmente
-                condiciones_local = [User.email.ilike(identificador)]
-                if '@' not in identificador:
-                    condiciones_local.append(User.email.ilike(f"{identificador}@%"))
-                user_local = User.query.filter(db.or_(*condiciones_local)).first()
-                if user_local:
-                    user_local.set_password(nueva_contrasena)
-                    db.session.commit()
+                # Solo una cuenta local guarda la contraseña en la BD (FNC-168).
+                sincronizar_cuenta_local(identificador, nueva_contrasena)
 
                 # Notificación por correo confirmando la actualización
                 destinatario_correo = persona.correo or (identificador if '@' in identificador else None)
@@ -697,11 +700,8 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
             logger.error("Error cambiando contraseña en LDAP (%s): %s", identificador, exc, exc_info=True)
             raise ErrorAutoservicio('Error al comunicarse con el directorio corporativo (LDAP).', 500)
 
-    # 2. Búsqueda en Base de Datos Local
-    condiciones = [User.email.ilike(identificador)]
-    if '@' not in identificador:
-        condiciones.append(User.email.ilike(f"{identificador}@%"))
-    user = User.query.filter(db.or_(*condiciones)).first()
+    # 2. Cuenta local del portal (las del directorio solo cambian en LDAP).
+    user = cuenta_local(identificador)
 
     if user and user.password_hash and user.check_password(contrasena_actual):
         user.set_password(nueva_contrasena)
@@ -721,7 +721,7 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
     raise ErrorAutoservicio('Credenciales actuales incorrectas o cuenta inexistente.', 401)
 
 
-def solicitar_recuperacion(correo, base_url=''):
+def solicitar_recuperacion(correo):
     """Envía el enlace de recuperación si la cuenta existe."""
     correo = (correo or '').strip().lower()
     if not correo or '@' not in correo:
@@ -745,15 +745,20 @@ def solicitar_recuperacion(correo, base_url=''):
 
     # Verificar en BD local
     if not existe:
-        user = User.query.filter(User.email.ilike(correo)).first()
+        user = cuenta_local(correo)
         if user:
             existe = True
             nombre = user.nombre or user.email
 
     if existe:
+        origen = url_del_portal()
+        if not origen:
+            logger.error('Autoservicio: BASE_URL no configurada; no se envía '
+                         'el enlace de recuperación.')
+            return RESPUESTA_RECUPERACION
         token = generar_token_recuperacion(correo)
-        origen = base_url.rstrip('/') if base_url else (os.getenv('BASE_URL') or 'https://aduana.vivaro.com').rstrip('/')
-        enlace = f"{origen}/autoservicio?token={token}&email={correo}"
+        consulta = urlencode({'token': token, 'email': correo})
+        enlace = f"{origen}{RUTA_AUTOSERVICIO}?{consulta}"
         
         # Enviar correo con plantilla de Authelia
         cfg = resolver_smtp_autoservicio()
@@ -860,10 +865,7 @@ def solicitar_recuperacion(correo, base_url=''):
         add_audit_log('AUTOSERVICIO: RECUPERACION SOLICITADA', status='info', target=correo,
                       detail='Authelia: enlace de recuperación generado')
 
-    return {
-        'status': 'success',
-        'message': 'Si tu cuenta existe en Authelia, recibirás un correo con las instrucciones.',
-    }
+    return RESPUESTA_RECUPERACION
 
 
 def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challenge_token=None):
@@ -903,11 +905,8 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
                     raise ErrorAutoservicio(f'El directorio no pudo actualizar la contraseña ({resultado.motivo or "error"}).', 500)
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
 
-                # Sincronizar en BD local si el usuario también existe localmente
-                user_local = User.query.filter(User.email.ilike(correo_objetivo)).first()
-                if user_local:
-                    user_local.set_password(nueva_contrasena)
-                    db.session.commit()
+                # Solo una cuenta local guarda la contraseña en la BD (FNC-168).
+                sincronizar_cuenta_local(correo_objetivo, nueva_contrasena)
 
                 # Notificación por correo confirmando el restablecimiento
                 _enviar_correo_confirmacion_cambio(correo_objetivo, nombre=persona.nombre)
@@ -922,8 +921,8 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
             logger.error("Error restableciendo contraseña en LDAP: %s", exc, exc_info=True)
             raise ErrorAutoservicio('Error al comunicarse con el directorio corporativo (LDAP).', 500)
 
-    # Actualizar en BD local
-    user = User.query.filter(User.email.ilike(correo_objetivo)).first()
+    # Cuenta local del portal (las del directorio solo cambian en LDAP).
+    user = cuenta_local(correo_objetivo)
     if user:
         user.set_password(nueva_contrasena)
         db.session.commit()
@@ -981,14 +980,8 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
 
                 sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
 
-                # Sincronizar en BD local si el usuario también existe localmente
-                condiciones_local = [User.email.ilike(identificador)]
-                if '@' not in identificador:
-                    condiciones_local.append(User.email.ilike(f"{identificador}@%"))
-                user_local = User.query.filter(db.or_(*condiciones_local)).first()
-                if user_local:
-                    user_local.set_password(nueva_contrasena)
-                    db.session.commit()
+                # Solo una cuenta local guarda la contraseña en la BD (FNC-168).
+                sincronizar_cuenta_local(identificador, nueva_contrasena)
 
                 destinatario_correo = persona.correo or (identificador if '@' in identificador else None)
                 if destinatario_correo:
@@ -1006,11 +999,8 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
             logger.error("Error restableciendo contraseña con MFA en LDAP (%s): %s", identificador, exc, exc_info=True)
             raise ErrorAutoservicio('Error al comunicarse con el directorio corporativo (LDAP).', 500)
 
-    # 2. Base de datos local
-    condiciones = [User.email.ilike(identificador)]
-    if '@' not in identificador:
-        condiciones.append(User.email.ilike(f"{identificador}@%"))
-    user = User.query.filter(db.or_(*condiciones)).first()
+    # 2. Cuenta local del portal (las del directorio solo cambian en LDAP).
+    user = cuenta_local(identificador)
     if user:
         user.set_password(nueva_contrasena)
         db.session.commit()

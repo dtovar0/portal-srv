@@ -25,7 +25,7 @@ CAMPOS_NO_PERMITIDOS = frozenset({'managed_area_ids', 'auth_source',
                                   'password_hash'})
 
 # Origen de las cuentas locales (`POST /users` en desarrollo con la bandera de
-# FNC-077; si no, `ldap`: `auth/acceso_local.origen_de_alta`).
+# FNC-077; si no, `sso`: `auth/acceso_local.origen_de_alta`).
 ORIGEN_LOCAL = 'local'
 
 MODULO_AUDITORIA = 'Usuarios'

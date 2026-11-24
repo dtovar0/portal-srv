@@ -334,6 +334,17 @@ CASOS = (
     Caso('POST', f'{A}/auth/login', _fija(f'{A}/auth/login'), publica(410),
          _login_local, nota='Retirado (ADR-009): la emergencia usa /auth/local'),
     Caso('POST', f'{A}/auth/logout', _fija(f'{A}/auth/logout'), con_sesion()),
+    # Autoservicio de contraseña (públicas: la persona aún no tiene sesión).
+    # Sin cuerpo, las de escritura validan y responden 400 sin tocar nada.
+    Caso('GET', f'{A}/auth/autoservicio/configuracion',
+         _fija(f'{A}/auth/autoservicio/configuracion'), publica()),
+    Caso('GET', f'{A}/auth/autoservicio/politica',
+         _fija(f'{A}/auth/autoservicio/politica'), publica()),
+    *(Caso('POST', f'{A}/auth/autoservicio/{accion}',
+           _fija(f'{A}/auth/autoservicio/{accion}'), publica(400))
+      for accion in ('mfa/solicitar', 'mfa/verificar', 'cambiar',
+                     'solicitar-recuperacion', 'restablecer',
+                     'restablecer-mfa')),
 
     # ---- Lectura (routes.py) ----
     Caso('GET', f'{A}/me', _fija(f'{A}/me'), con_sesion()),

@@ -8,13 +8,19 @@ El inicio de sesión de las personas es OIDC con Authelia (`oidc.py`,
 # contraseña incorrecta (SEG-12).
 MENSAJE_CREDENCIALES = 'Credenciales incorrectas.'
 
+# Cuenta del directorio: vive en OpenLDAP y entra por Authelia (que está
+# entre el portal y LDAP). Decisión del dueño (2026-11-24, FNC-168): las altas
+# del portal también son `sso`; `ldap` queda solo como origen heredado
+# (la migración 0019 convierte las existentes).
+ORIGEN_SSO = 'sso'
+ORIGEN_LDAP_HEREDADO = 'ldap'
 # Origen de las cuentas dadas de alta en el directorio desde el portal.
-ORIGEN_DIRECTORIO = 'ldap'
+ORIGEN_DIRECTORIO = ORIGEN_SSO
 
-# Orígenes de cuentas del directorio (altas del portal en LDAP o inicio por
-# Authelia, que usa el mismo directorio). Una cuenta con otro origen o con contraseña local no se
-# vincula sola (decisión del dueño 2026-10-15: bloquear y avisar).
-ORIGENES_VINCULADOS = frozenset({'ldap', 'sso'})
+# Orígenes de cuentas del directorio: su contraseña vive solo en LDAP. Una
+# cuenta con otro origen o con contraseña local no se vincula sola
+# (decisión del dueño 2026-10-15: bloquear y avisar).
+ORIGENES_VINCULADOS = frozenset({ORIGEN_SSO, ORIGEN_LDAP_HEREDADO})
 MOTIVO_CONFLICTO = 'cuenta_local_en_conflicto'
 MOTIVO_DESACTIVADA = 'cuenta_desactivada'
 

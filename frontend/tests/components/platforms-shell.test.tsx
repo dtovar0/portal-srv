@@ -717,12 +717,12 @@ describe('PlatformsSidebarView - colapsar y restaurar barra lateral', () => {
     const tabPlataformas = screen.getByRole('tab', { name: /plataformas/i });
 
     // Pestañas con tamaño estandarizado simétrico
-    expect(tabGeneral.className).toContain('w-36');
-    expect(tabGeneral.className).toContain('sm:w-40');
-    expect(tabAreas.className).toContain('w-36');
-    expect(tabAreas.className).toContain('sm:w-40');
-    expect(tabPlataformas.className).toContain('w-36');
-    expect(tabPlataformas.className).toContain('sm:w-40');
+    expect(tabGeneral.className).toContain('w-48');
+    expect(tabGeneral.className).toContain('sm:w-52');
+    expect(tabAreas.className).toContain('w-48');
+    expect(tabAreas.className).toContain('sm:w-52');
+    expect(tabPlataformas.className).toContain('w-48');
+    expect(tabPlataformas.className).toContain('sm:w-52');
 
     fireEvent.click(tabPlataformas);
     expect(screen.getByText(/vista previa en vivo/i)).toBeDefined();

@@ -101,9 +101,7 @@ export function LoginForm() {
             {/* Núcleo de inicio de sesión */}
             <div className="my-auto py-10 space-y-6">
               <div>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-body-text">
-                  Iniciar Sesión
-                </h1>
+                <PageHeader titleClassName="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-body-text" title="Iniciar Sesión" />
                 <p className="mt-1.5 text-sm text-texto-secundario">
                   Ingresa con tu cuenta corporativa para continuar.
                 </p>
@@ -122,7 +120,7 @@ export function LoginForm() {
                       }
                       window.location.href = URL_INICIO_OIDC;
                     }}
-                    className="w-full min-h-[50px] py-3.5 px-4 bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] font-display text-sm font-bold tracking-wide text-texto-sobre-accion shadow-md rounded-xl border-0 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                    className="w-full min-h-12.5 py-3.5 px-4 bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] font-display text-sm font-bold tracking-wide text-texto-sobre-aviso shadow-md rounded-xl border-0 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                   >
                     <Icono nombre="escudo" tamano="sm" ariaHidden={true} />
                     <span>Iniciar Sesión con Authelia</span>
@@ -136,7 +134,7 @@ export function LoginForm() {
                     {context.authelia_url && (
                       <a
                         href={context.authelia_url}
-                        className="text-[11px] text-aduana-cyan hover:underline font-semibold"
+                        className="min-w-12 min-h-12 inline-flex items-center text-xs text-primary-text hover:underline font-semibold"
                         target="_blank"
                         rel="noreferrer noopener"
                       >
@@ -150,12 +148,12 @@ export function LoginForm() {
                       <p className="text-xs font-semibold text-body-text">
                         ¿Tu contraseña caducó o no puedes entrar?
                       </p>
-                      <p className="text-[11px] text-texto-secundario">
+                      <p className="text-xs text-texto-secundario">
                         No requieres iniciar sesión para actualizar o restablecer tu cuenta.
                       </p>
                       <Link
                         href="/autoservicio"
-                        className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-aduana-cyan hover:underline pt-0.5"
+                        className="min-w-12 min-h-12 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary-text hover:underline pt-0.5"
                       >
                         <Icono nombre="candado" tamano="xs" ariaHidden={true} />
                         <span>Autoservicio de Contraseña (sin iniciar sesión) →</span>
@@ -172,20 +170,20 @@ export function LoginForm() {
                 <div>
                   <Link
                     href="/"
-                    className="inline-flex items-center gap-1 text-aduana-cyan hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+                    className="min-w-12 min-h-12 inline-flex items-center gap-1 text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
                   >
                     <span>Conoce Aduana: Guía y Presentación de la Plataforma</span>
                   </Link>
                 </div>
               ) : null}
-              <p className="text-[11px] text-texto-tenue">
+              <p className="text-xs text-texto-tenue">
                 Vivaro • Gobernanza y Control Centralizado de Accesos TI
               </p>
             </div>
           </div>
 
           {/* PANEL DERECHO: Fotografía estética a sangre limpia */}
-          <div className="relative hidden md:block md:w-1/2 min-h-[460px] lg:min-h-[520px]">
+          <div className="relative hidden md:block md:w-1/2 min-h-115 lg:min-h-130">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/login-showcase.jpg"

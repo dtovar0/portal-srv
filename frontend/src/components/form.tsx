@@ -193,7 +193,7 @@ export function Toggle({
         aria-label={ariaLabel || label}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className="min-h-12 min-w-12 inline-flex items-center justify-center p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-12 min-w-12 inline-flex items-center justify-center p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-deshabilitada"
       >
         <span
           className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${

@@ -169,6 +169,12 @@ describe('vista única', () => {
     } as never);
     render(<PlatformsView />);
     fireEvent.click(await screen.findByRole('button', { name: 'Solicitar acceso a Nómina' }));
+    // El formulario exige la casilla de responsabilidad y el código de confirmación (DIS-013).
+    const dialogo = screen.getByRole('dialog', { name: 'Solicitar acceso a Nómina' });
+    fireEvent.click(within(dialogo).getByRole('checkbox'));
+    fireEvent.change(within(dialogo).getByRole('textbox', { name: /código de seguridad/i }), {
+      target: { value: within(dialogo).getByTestId('captcha-word').textContent ?? '' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
     await waitFor(() => expect(requestsApi.create).toHaveBeenCalledWith({ platform_id: 13, level: 'usuario' }));
     expect(await within(tarjeta('Nómina')).findByText('Solicitud pendiente')).toBeTruthy();

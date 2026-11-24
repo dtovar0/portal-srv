@@ -12,8 +12,8 @@ export interface ExcepcionAreaTactil {
 
 export const EXCEPCIONES: Record<string, ExcepcionAreaTactil> = {
   'components/areas/tarjeta-area.tsx': {
-    cantidad: 1,
-    motivo: '«Ver plataformas» es el control de teclado de la tarjeta; con el ratón o el dedo abre toda la tarjeta (más de 48 px de alto y todo su ancho), DIS-114.',
+    cantidad: 10,
+    motivo: 'En cada una de las 10 variantes de diseño, «Ver plataformas» es el control de teclado de la tarjeta; con el ratón o el dedo abre toda la tarjeta (más de 48 px de alto y todo su ancho), DIS-114.',
   },
   'components/estado-badge-boton.tsx': {
     cantidad: 1,

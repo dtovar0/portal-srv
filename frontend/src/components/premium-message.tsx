@@ -71,7 +71,7 @@ export function PremiumEmptyState({
         <div className="mb-4 flex justify-center">
           <span
             data-testid={badgeTestId}
-            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-primary-text shadow-2xs backdrop-blur-xs"
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-primary-text shadow-2xs backdrop-blur-xs"
           >
             {badge}
           </span>
