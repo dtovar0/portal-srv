@@ -6250,3 +6250,25 @@ Al configurar `DEBUG_LDAP=true` en `.env` y reiniciar el servicio, cualquier int
 
 ### Impacto
 Afecta a [.gitignore](file:///home/dtovar/bayblade/pokemon/.gitignore), [app/modules/directory/depuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/depuracion.py), [app/__init__.py](file:///home/dtovar/bayblade/pokemon/app/__init__.py), [tests/test_depuracion_ldap.py](file:///home/dtovar/bayblade/pokemon/tests/test_depuracion_ldap.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Resiliencia de Registro de Logs ante Sistemas de Archivos de Solo Lectura (Systemd ProtectSystem)
+
+## Módulo
+Infraestructura / Observabilidad / Despliegue y Hardening
+
+### Regla
+1. **Detección Dinámica de Permisos de Escritura de Logs**:
+   En entornos de producción protegidos por directivas de endurecimiento de systemd (`ProtectSystem=strict` o `ProtectSystem=full`), el árbol del proyecto (`/opt/portal` o `@PREFIX@`) se monta en modo de solo lectura (`[Errno 30] Read-only file system`).
+   - La resolución del directorio de registros (`resolver_carpeta_logs`) realiza una prueba activa de escritura antes de seleccionar un destino.
+   - Si la carpeta local `logs/` del proyecto es de solo lectura, el sistema busca de forma transparente el directorio autorizado por systemd (`/var/log/portal`, configurado en `ReadWritePaths`), o en su defecto `/tmp/portal_logs` (`PrivateTmp=true`).
+2. **Inmunidad ante Caídas por Fallos de E/S**:
+   - `activar_si_se_pide()` captura de forma preventiva cualquier excepción `OSError` o `PermissionError` al crear `FileHandler`.
+   - Bajo ninguna circunstancia se interrumpe el arranque del servidor web (Gunicorn) o del worker si el sistema de archivos prohíbe crear archivos de log.
+   - En caso de indisponibilidad de escritura en disco, las trazas continúan fluyendo a la consola estándar (`StreamHandler`) para su consumo mediante `journalctl`.
+
+### Ejemplo
+Un servidor Linux Rocky 9 despliega el backend bajo `/opt/portal` con `ProtectSystem=strict` en su unidad de systemd. Al habilitar `DEBUG_LDAP=true` e iniciar Gunicorn, el sistema detecta que `/opt/portal/logs` es de solo lectura y redirige automáticamente `ldap_debug.log` hacia `/var/log/portal/ldap_debug.log` (o `/tmp/portal_logs/ldap_debug.log`) sin arrojar `[Errno 30]` ni abortar los procesos trabajadores de Gunicorn.
+
+### Impacto
+Afecta a [app/modules/directory/depuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/depuracion.py), [tests/test_depuracion_ldap.py](file:///home/dtovar/bayblade/pokemon/tests/test_depuracion_ldap.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

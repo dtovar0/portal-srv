@@ -59,3 +59,34 @@ def test_activar_si_se_pide_activado_escribe_en_archivo(tmp_path, monkeypatch):
     assert "Prueba mensaje autoservicio persistido" in contenido
     assert "Prueba mensaje directorio persistido" in contenido
     assert "Prueba mensaje ldap3 protocolo persistido" in contenido
+
+
+def test_resolver_carpeta_logs_salta_directorio_solo_lectura(tmp_path, monkeypatch):
+    from app.modules.directory.depuracion import _es_directorio_escribible
+
+    dir_bloqueado = tmp_path / 'readonly'
+    dir_bloqueado.mkdir()
+    # Desactivar permisos de escritura
+    os.chmod(dir_bloqueado, 0o444)
+
+    try:
+        # La sonda de escritura debe detectar que no se puede escribir
+        assert _es_directorio_escribible(str(dir_bloqueado)) is False
+
+        # Con LOG_DIR apuntando a un directorio de solo lectura, resolver_carpeta_logs
+        # debe saltarlo y seleccionar un candidato con permisos reales
+        carpeta_elegida = resolver_carpeta_logs({'LOG_DIR': str(dir_bloqueado)})
+        assert carpeta_elegida != str(dir_bloqueado)
+        assert _es_directorio_escribible(carpeta_elegida) is True
+    finally:
+        os.chmod(dir_bloqueado, 0o755)
+
+
+def test_activar_si_se_pide_sin_carpeta_escribible_no_revienta(monkeypatch):
+    """Verifica que si ningún directorio es escribible, no lance [Errno 30] y use consola."""
+    monkeypatch.setattr('app.modules.directory.depuracion.resolver_carpeta_logs', lambda entorno=None: None)
+
+    res = activar_si_se_pide({VAR_DEBUG: 'true'})
+    assert res is True
+
+
