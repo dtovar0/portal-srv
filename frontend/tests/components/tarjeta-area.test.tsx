@@ -180,7 +180,6 @@ describe('TarjetaArea: CSS y contraste (AA en ambos temas)', () => {
         return v.startsWith('#') ? parseColor(v) : parseColor(v);
       };
       const panel = resolver('--color-panel-fill');
-      const hundida = resolver('--color-superficie-hundida');
       const cuerpo = resolver('--color-body-text');
       const etiqueta = resolver('--color-label-text');
       const mediciones: string[] = [];

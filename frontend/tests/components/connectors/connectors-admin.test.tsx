@@ -123,7 +123,8 @@ describe('reglas del formulario', () => {
   it('arma el cuerpo del contrato: recorta, conserva parámetros sin editor y omite los vacíos', () => {
     const base = formularioDesde(CONECTOR);
     const form = { ...base, host: ' erp.ejemplo.local ', params: { ...base.params, base_path: '' } };
-    const { base_path: _omitido, ...sinBase } = PARAMS_API;
+    const sinBase = Object.fromEntries(
+      Object.entries(PARAMS_API).filter(([clave]) => clave !== 'base_path'));
     expect(cuerpoConector(form, CONECTOR)).toEqual({
       type: 'api', host: 'erp.ejemplo.local', port: 443, params: sinBase,
       credential_ref: 'pokemon/contabilidad-api', active: true,

@@ -43,8 +43,6 @@ const PLATAFORMA = {
   id: 12, name: 'Contabilidad', description: 'ERP contable', area_id: 3, area_name: 'Finanzas',
   direct_link: 'https://erp.ejemplo.local', bg_color: '', text_color: '', status: 'Activo',
 } as Platform;
-const DN_USUARIO = 'cn=conta-usuario,ou=finanzas,ou=plataformas,dc=ejemplo,dc=local';
-const DN_ADMIN = 'cn=conta-admin,ou=finanzas,ou=plataformas,dc=ejemplo,dc=local';
 
 function comoSuperadmin() {
   permisos.is_admin = true;
@@ -754,7 +752,7 @@ describe('PlatformAdmin: accesibilidad (revisión de DIS-017)', () => {
       direct_link: 'https://facturas.ejemplo.local', bg_color: '', text_color: '', status: 'Activo',
     } as Platform;
     vi.mocked(api.platforms).mockResolvedValue([PLATAFORMA, plat2]);
-    vi.mocked(api.deletePlatform).mockResolvedValue({ ok: true } as any);
+    vi.mocked(api.deletePlatform).mockResolvedValue({ ok: true } as never);
 
     render(<PlatformAdmin initialAreaId={3} />);
     await screen.findByText('Contabilidad');

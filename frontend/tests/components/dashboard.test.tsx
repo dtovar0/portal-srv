@@ -198,7 +198,7 @@ describe('Dashboard', () => {
       unmount();
 
       // Segunda visita (usuario navega a otra sección y regresa):
-      const { container } = render(<Dashboard />);
+      render(<Dashboard />);
       const seccion = await screen.findByRole('region', { name: 'Actividad del portal' });
       expect(seccion.className).toContain('nx-sin-animacion-graficas');
     });

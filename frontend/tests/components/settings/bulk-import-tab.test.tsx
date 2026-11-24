@@ -5,7 +5,7 @@
  * y descarga de plantillas.
  */
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkImportTab } from '@/components/settings/bulk-import-tab';
 import { SettingsPanel } from '@/components/settings-panel';
@@ -58,7 +58,7 @@ describe('BulkImportTab (Ajustes › Importación masiva)', () => {
       text_color: '',
       portal_identity_type: 'icon',
       portal_icon: 'plataformas',
-    } as any);
+    } as never);
   });
 
   it('renderiza el selector de entidad y la guía de formato por omisión (usuarios)', () => {

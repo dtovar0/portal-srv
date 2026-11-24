@@ -35,7 +35,6 @@ function generarCodigoCaptcha(): string {
 }
 
 export function ModalResponsiva({
-  session,
   onFirmado,
   onCerrarSimulacion,
 }: {

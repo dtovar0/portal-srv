@@ -1,7 +1,7 @@
 /**
  * FNC-161: el campo Contraseña de «Editar usuario» según el origen de la cuenta.
  * - local: se guarda en el portal; ldap: se cambia en el directorio (solo superadmin)
- *   y muestra la política; sso: sin campo.
+ *   y muestra la política; sso (Authelia, mismo LDAP; FNC-166): igual que ldap.
  * - Vacío no se envía; el error del backend sale por aviso.
  */
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -83,7 +83,14 @@ describe('UserForm: contraseña (FNC-161)', () => {
     expect(usersApi.passwordPolicy).not.toHaveBeenCalled();
   });
 
-  it('cuenta sso: sin campo', () => {
+  it('cuenta sso, superadmin: campo del directorio con la política (regresión FNC-166)', async () => {
+    montar(usuario('sso'));
+    const ayuda = await screen.findByText(/Se cambia en el directorio LDAP/);
+    expect(screen.getByLabelText('Contraseña').getAttribute('aria-describedby')).toBe(ayuda.id);
+  });
+
+  it('cuenta sso, admin de área: sin campo', () => {
+    esSuperadmin = false;
     montar(usuario('sso'));
     expect(screen.queryByLabelText('Contraseña')).toBeNull();
   });
