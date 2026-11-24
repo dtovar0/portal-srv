@@ -18,7 +18,7 @@ autenticación.
 ## Instalación automatizada (Rocky/RHEL 8 o 9)
 
 - **En sitio** (FNC-129): se clona el repositorio donde se instalará, normalmente `/opt/<nombre>`, y el instalador se corre ahí.
-- El instalador solo instala dependencias, compila y configura servicios: usa el código de esa carpeta y **no copia nada** a otro lugar.
+- El instalador instala dependencias, compila, **aplica las migraciones** (`alembic upgrade head`, FNC-178) y configura servicios: usa el código de esa carpeta y **no copia nada** a otro lugar. La BD y su usuario deben existir.
 - El nombre por defecto es el de la carpeta (`/opt/portal` → `portal`); `--name` lo cambia.
 - `--prefix` ya no existe: si se pasa, termina con código 2.
 - Antes de instalar, crear `.env` en la carpeta a partir de `.env.example` y rellenar las credenciales.
@@ -323,10 +323,12 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## Migraciones
 
-No las aplica el instalador. Desde FNC-039 se usa Alembic: respaldo,
-`venv/bin/alembic upgrade head` y reinicio del backend y del worker
-(`sudo systemctl restart <nombre>-backend <nombre>-worker`). Una BD existente se
-marca una vez con `venv/bin/alembic stamp 0001` (ver `docs/backend/README.md` §7).
+Las aplica el instalador (Alembic, FNC-039): `install.sh` corre
+`alembic upgrade head` antes de arrancar los servicios (FNC-178) y
+`install.sh --actualizar` con los servicios detenidos (FNC-159). Es idempotente.
+Respaldar la BD antes de actualizar (no hay respaldo automático). Una BD
+heredada sin Alembic se marca una vez con `venv/bin/alembic stamp 0001` (ver
+`docs/backend/README.md` §7).
 
 Los SQL sueltos de `utils/migrations/001-004` se retiraron en FNC-028: la línea base `0001` ya contiene su efecto. Si un portal heredado aún guarda el logo como ruta `/assets/...` en `system_config.portal_icon`, hay que volver a subirlo desde Ajustes.
 
@@ -382,7 +384,7 @@ distinto del previsto.
 ## Base de datos (FNC-134, FNC-146)
 
 - Fuera de desarrollo (`APP_ENV` distinto de `development`, incluido vacío) el `.env` debe tener `DB_ENGINE=mysql` (MySQL o MariaDB) o `DB_ENGINE=postgresql`; SQLite solo existe con `APP_ENV=development`.
-- Con PostgreSQL: crear la base y el usuario dueño de ella (`CREATE DATABASE … OWNER …`), poner `DB_PORT=5432` (o vacío) y correr `alembic upgrade head` como en MySQL. El controlador (`psycopg2-binary`) ya está en `requirements.txt`.
+- Con PostgreSQL: crear la base y el usuario dueño de ella (`CREATE DATABASE … OWNER …`), poner `DB_PORT=5432` (o vacío) y correr el instalador (aplica `alembic upgrade head`, FNC-178). El controlador (`psycopg2-binary`) ya está en `requirements.txt`.
 - Cambiar de motor no mueve los datos: una instalación con datos en MySQL necesita migrarlos aparte (p. ej. `pgloader`) con respaldo previo.
 - La app y Alembic no arrancan sin él; `preflight.sh` marca `FALTA` e `install.sh` se detiene (`deploy/motor_bd.sh`, solo lee `APP_ENV` y `DB_ENGINE`).
 
