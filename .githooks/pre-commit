@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
+# Lineamientos para personas (FNC-173): mismas reglas que el hook de Claude.
 exec python3 "$(git rev-parse --show-toplevel)/scripts/lineamientos/precommit.py"

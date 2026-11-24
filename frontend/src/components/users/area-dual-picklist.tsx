@@ -220,7 +220,7 @@ export function AreaDualPicklist({
               variant="primary"
               disabled={captchaInput.trim().toUpperCase() !== captchaWord}
               onClick={confirmarTransferencia}
-              className="min-h-10 px-5 text-xs font-bold shadow-xs disabled:opacity-40"
+              className="min-h-10 px-5 text-xs font-bold shadow-xs disabled:opacity-deshabilitada"
             >
               Confirmar asignación
             </Button>

@@ -119,7 +119,7 @@ export function UserResponsivaSection({
       ) : null}
 
       {/* Contenido normativo */}
-      <div className="rounded-xl border border-panel-border bg-superficie shadow-xs overflow-hidden flex flex-col flex-1 min-h-[300px]">
+      <div className="rounded-xl border border-panel-border bg-superficie shadow-xs overflow-hidden flex flex-col flex-1 min-h-75">
         <div className="px-4 py-3 bg-superficie-hundida/70 border-b border-panel-border flex items-center justify-between">
           <span className="text-xs font-bold text-body-text uppercase tracking-wider">
             Términos y Lineamientos de Uso

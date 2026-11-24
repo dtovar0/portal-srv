@@ -62,7 +62,7 @@ export function RutaNavegacion() {
           <Link
             href={pathname}
             onClick={limpiarArea}
-            className="inline-flex min-h-12 items-center px-2 font-medium text-texto-secundario hover:text-primary-text transition-colors"
+            className="min-w-12 inline-flex min-h-12 items-center px-2 font-medium text-texto-secundario hover:text-primary-text transition-colors"
           >
             {entrada.label}
           </Link>

@@ -283,7 +283,7 @@ export function RequestFormModal({
               type="checkbox"
               checked={accepted}
               onChange={(e) => setAccepted(e.target.checked)}
-              className="nexus-checkbox mt-0.5 cursor-pointer size-4 rounded border-panel-border text-primary focus:ring-primary shrink-0"
+              className="nexus-checkbox mt-0.5 cursor-pointer size-4 rounded border-panel-border text-primary-text focus:ring-primary shrink-0"
             />
             <span>
               Confirmo que requiero acceso a <strong>{item.platform.name}</strong> para mis funciones laborales y me comprometo al uso responsable según las políticas institucionales de seguridad y confidencialidad.
@@ -353,7 +353,7 @@ export function RequestFormModal({
                 maxLength={8}
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full h-11 px-3.5 rounded-xl border border-panel-border bg-fondo text-xs font-mono font-bold uppercase tracking-wider text-body-text placeholder:text-texto-secundario/60 placeholder:normal-case placeholder:font-sans placeholder:tracking-normal focus:border-primary focus:bg-superficie focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all"
+                className="w-full h-11 px-3.5 rounded-xl border border-panel-border bg-fondo text-xs font-mono font-bold uppercase tracking-wider text-body-text placeholder:text-texto-secundario/85 placeholder:normal-case placeholder:font-sans placeholder:tracking-normal focus:border-primary focus:bg-superficie focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all"
               />
             </div>
           </div>

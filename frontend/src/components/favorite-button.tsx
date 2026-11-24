@@ -87,7 +87,7 @@ export function FavoriteButton({
           favorite
             ? 'bg-warning/15 border-warning/50 text-warning-text'
             : 'bg-surface-container/80 border-panel-border hover:border-primary/50 hover:bg-surface-container text-label'
-        } ${busy ? 'opacity-60 cursor-not-allowed' : ''} ${className}`}
+        } ${busy ? 'opacity-atenuada cursor-not-allowed' : ''} ${className}`}
       >
         <Icono
           nombre="favorito"
@@ -95,10 +95,10 @@ export function FavoriteButton({
           relleno={favorite}
           ariaHidden={true}
           className={`shrink-0 transition-transform group-hover:scale-110 ${
-            favorite ? 'text-amber-400' : 'text-label group-hover:text-body-text'
+            favorite ? 'text-arte-ambar-400' : 'text-label group-hover:text-body-text'
           }`}
         />
-        <span className="text-[11px] font-bold tracking-tight uppercase select-none">
+        <span className="text-xs font-bold tracking-tight uppercase select-none">
           {favorite ? 'Favorita' : 'Guardar'}
         </span>
       </button>
@@ -111,58 +111,58 @@ export function FavoriteButton({
   switch (variante) {
     case 'portada':
     case 'banner':
-      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-amber-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
+      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-arte-ambar-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
         favorite
-          ? 'bg-amber-500/30 border border-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.5)]'
-          : 'bg-black/50 border border-white/20 hover:border-white/40 hover:bg-black/70'
+          ? 'bg-warning/30 border border-arte-ambar-300 shadow-[0_0_16px_rgba(251,191,36,0.5)]'
+          : 'bg-arte-sombra/50 border border-arte-luz/20 hover:border-arte-luz/40 hover:bg-arte-sombra/70'
       }`;
       break;
 
     case 'flotante':
-      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-amber-400 hover:scale-105 active:scale-95 shadow-xl cursor-pointer ${
+      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-arte-ambar-400 hover:scale-105 active:scale-95 shadow-xl cursor-pointer ${
         favorite
-          ? 'bg-amber-500/35 border border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.5)]'
-          : 'bg-black/60 border border-white/30 hover:border-white/50 hover:bg-black/80'
+          ? 'bg-warning/35 border border-arte-ambar-300 shadow-[0_0_18px_rgba(251,191,36,0.5)]'
+          : 'bg-arte-sombra/60 border border-arte-luz/30 hover:border-arte-luz/50 hover:bg-arte-sombra/80'
       }`;
       break;
 
     case 'duotono':
-      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-purple-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
+      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-arte-purpura-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
         favorite
-          ? 'bg-purple-950/80 border border-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.4)]'
-          : 'bg-black/60 border border-purple-500/40 hover:border-purple-300 hover:bg-black/80'
+          ? 'bg-arte-purpura-950/80 border border-arte-ambar-400 shadow-[0_0_16px_rgba(251,191,36,0.4)]'
+          : 'bg-arte-sombra/60 border border-arte-purpura-500/40 hover:border-arte-purpura-300 hover:bg-arte-sombra/80'
       }`;
       break;
 
     case 'split':
-      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
+      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-arte-indigo-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
         favorite
-          ? 'bg-indigo-900/95 border border-amber-300 shadow-[0_0_14px_rgba(251,191,36,0.4)]'
-          : 'bg-indigo-950/80 border border-indigo-400/40 hover:border-indigo-300 hover:bg-indigo-900/90'
+          ? 'bg-arte-indigo-900/95 border border-arte-ambar-300 shadow-[0_0_14px_rgba(251,191,36,0.4)]'
+          : 'bg-arte-indigo-950/80 border border-arte-indigo-400/40 hover:border-arte-indigo-300 hover:bg-arte-indigo-900/90'
       }`;
       break;
 
     case 'enmarcada':
       containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
         favorite
-          ? 'bg-amber-500/20 border border-amber-400/80 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-          : 'bg-white/20 dark:bg-black/50 border border-panel-border/80 hover:bg-white/30 dark:hover:bg-black/70'
+          ? 'bg-warning/20 border border-arte-ambar-400/80 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+          : 'bg-superficie/40 border border-panel-border/80 hover:bg-superficie/60'
       }`;
       break;
 
     case 'evento':
-      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-full backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-amber-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
+      containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-full backdrop-blur-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-arte-ambar-400 hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
         favorite
-          ? 'bg-amber-500/25 border-2 border-solid border-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.5)]'
-          : 'bg-black/60 border-2 border-dashed border-amber-400/60 hover:border-amber-400 hover:bg-black/80'
+          ? 'bg-warning/25 border-2 border-solid border-arte-ambar-400 shadow-[0_0_16px_rgba(251,191,36,0.5)]'
+          : 'bg-arte-sombra/60 border-2 border-dashed border-arte-ambar-400/60 hover:border-arte-ambar-400 hover:bg-arte-sombra/80'
       }`;
       break;
 
     case 'glass':
       containerStyles = `group relative inline-flex min-h-12 min-w-12 size-12 shrink-0 items-center justify-center rounded-full backdrop-blur-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary hover:scale-110 active:scale-95 shadow-xl cursor-pointer ${
         favorite
-          ? 'bg-white/35 border border-amber-300 ring-2 ring-amber-400/50 shadow-[0_0_20px_rgba(251,191,36,0.5)]'
-          : 'bg-white/20 dark:bg-white/10 border border-white/50 dark:border-white/30 ring-2 ring-white/25 hover:bg-white/30'
+          ? 'bg-arte-luz/35 border border-arte-ambar-300 ring-2 ring-arte-ambar-400/50 shadow-[0_0_20px_rgba(251,191,36,0.5)]'
+          : 'bg-arte-luz/15 border border-arte-luz/40 ring-2 ring-arte-luz/25 hover:bg-arte-luz/30'
       }`;
       break;
 
@@ -190,7 +190,7 @@ export function FavoriteButton({
       aria-disabled={busy}
       onClick={toggle}
       aria-label={`Favorito: ${name}`}
-      className={`${containerStyles} ${busy ? 'opacity-60 cursor-not-allowed' : ''} ${className}`}
+      className={`min-w-12 min-h-12 inline-flex items-center ${containerStyles} ${busy ? 'opacity-atenuada cursor-not-allowed' : ''} ${className}`}
     >
       <Icono
         nombre="favorito"
@@ -199,8 +199,8 @@ export function FavoriteButton({
         ariaHidden={true}
         className={`transition-all duration-200 group-hover:scale-110 ${
           favorite
-            ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
-            : 'text-zinc-400/80 group-hover:text-amber-300'
+            ? 'text-arte-ambar-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
+            : 'text-texto-secundario group-hover:text-arte-ambar-300'
         }`}
       />
     </button>
