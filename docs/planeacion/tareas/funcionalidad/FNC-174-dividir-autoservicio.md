@@ -51,12 +51,35 @@
 | FNC-177 | Llaves de respaldo, escape HTML, `compare_digest`, texto SMTP al cliente | Media/Baja |
 
 ## Impacto en elementos compartidos
-| Elemento | Usado en | ¿Validado? |
-|---|---|---|
-| Logger `app.modules.auth.autoservicio` (+ hijos) | `directory/depuracion.py`, `tests/test_depuracion_ldap.py` | Sí, prueba nueva |
-| `ErrorAutoservicio` y 7 operaciones | `api/auth.py` | Sí, pruebas de API |
-| Variables `SMTP_*`, `DEBUG_SMTP`, `SECRET_KEY`, `OIDC_ISSUER_URL`, `AUTHELIA_URL`, `PASSWORD_POLICY_GENERATED_LENGTH` | otros módulos las leen también; solo cambió dónde las lee el autoservicio | Sí |
-| `.env.example` | quien lo copie: variables del autoservicio activas y vacías | Sí |
+
+Salida de `impacto.py` (2026-11-24). Las variables solo cambiaron de lugar de lectura en el autoservicio; su significado no cambió. `__init__`, `_entorno`, `quit` y `change_password` son coincidencias de nombre con código ajeno, no usos del autoservicio. A validar: logger del autoservicio y `directory/depuracion.py` (probado), `api/auth.py` (7 operaciones, probado) y `notifications/services.py` (comparte `SMTP_*` y `DEBUG_SMTP`).
+
+**⚠ Impacto en elementos compartidos** (comparado contra `develop`): este cambio toca 22 elemento(s) usados en otras secciones: app, app/modules, app/utils, frontend, frontend/src, frontend/tests, migrations/versions, tests, tests/areas, tests/connectors, tests/deploy, tests/directory, tests/provisioning, tests/secretos, tests/users. Valida cada una antes de integrar.
+
+| Elemento modificado | Tipo | Definido en | Usado en (fuera de la tarea) | Áreas afectadas | ¿Validado? |
+|---|---|---|---|---|---|
+| `AUTHELIA_URL` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/api/auth.py` | app/modules | ☐ |
+| `DEBUG_SMTP` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/notifications/services.py` | app/modules | ☐ |
+| `ErrorAutoservicio` | clase | `app/modules/auth/autoservicio.py`, `app/modules/auth/autoservicio_errores.py` | `app/modules/api/auth.py` | app/modules | ☐ |
+| `OIDC_ISSUER_URL` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/api/auth.py`, `app/modules/auth/oidc.py`, `app/modules/auth/oidc_configuracion.py`, `tests/deploy/test_oidc_sh.py`, `tests/oidc_simulado.py`, `tests/test_oidc_configuracion.py` | app/modules, tests, tests/deploy | ☐ |
+| `PASSWORD_POLICY_GENERATED_LENGTH` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/users/politica_contrasena.py` | app/modules | ☐ |
+| `SECRET_KEY` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/__init__.py`, `app/modules/provisioning/saneo.py`, `tests/conftest.py`, `tests/deploy/test_puertos_sh.py`, `tests/secretos/test_sends.py`, `tests/test_arranque.py` | app, app/modules, tests, tests/deploy, tests/secretos | ☐ |
+| `SMTP_ENCRYPTION` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/notifications/services.py`, `tests/test_notificaciones.py` | app/modules, tests | ☐ |
+| `SMTP_PASSWORD` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/notifications/api.py`, `app/modules/notifications/models.py`, `app/modules/notifications/services.py`, `app/modules/provisioning/saneo.py`, `frontend/src/components/settings/smtp-tab.tsx`, `migrations/versions/0013_vaciar_contrasena_smtp.py`, `tests/test_notificaciones.py`, `tests/test_secretos_en_respuestas.py` | app/modules, frontend/src, migrations/versions, tests | ☐ |
+| `SMTP_PORT` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/notifications/services.py`, `tests/test_notificaciones.py` | app/modules, tests | ☐ |
+| `SMTP_SERVER` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/notifications/api.py`, `app/modules/notifications/services.py`, `tests/test_notificaciones.py`, `tests/test_secretos_en_respuestas.py` | app/modules, tests | ☐ |
+| `SMTP_USER` | variable de entorno | `app/modules/auth/autoservicio.py` | `app/modules/notifications/services.py`, `tests/test_notificaciones.py`, `tests/test_secretos_en_respuestas.py` | app/modules, tests | ☐ |
+| `__init__` | función | `app/modules/auth/autoservicio.py`, `app/modules/auth/autoservicio_errores.py` | `app/modules/access/errores.py`, `app/modules/audit/parametros.py`, `app/modules/auth/oidc.py`, `app/modules/connectors/api_http.py`, `app/modules/connectors/base.py`, `app/modules/connectors/base_de_datos.py`, `app/modules/connectors/credenciales.py`, `app/modules/connectors/http_transporte.py` (+36) | app/modules, app/utils, tests, tests/areas, tests/connectors, tests/directory, tests/provisioning, tests/secretos, tests/users | ☐ |
+| `_entorno` | función | `app/modules/auth/autoservicio_correo.py` | `app/modules/connectors/credenciales.py`, `app/modules/secretos/sends.py`, `tests/test_oidc_configuracion.py` | app/modules, tests | ☐ |
+| `cambiar_contrasena` | función | `app/modules/auth/autoservicio.py` | `app/modules/api/auth.py`, `tests/connectors/test_credenciales_vaultwarden.py`, `tests/secretos/test_vaultwarden.py`, `tests/secretos/vaultwarden_falso.py` | app/modules, tests/connectors, tests/secretos | ☐ |
+| `change_password` | función | `tests/test_autoservicio_cuentas_directorio.py` | `app/modules/directory/writer.py`, `app/modules/users/directory_accounts.py`, `app/modules/users/entrega_credenciales.py`, `tests/directory/test_writer.py` | app/modules, tests/directory | ☐ |
+| `obtener_configuracion_autoservicio` | función | `app/modules/auth/autoservicio.py`, `app/modules/auth/autoservicio_config.py` | `app/modules/api/auth.py` | app/modules | ☐ |
+| `quit` | función | `tests/test_autoservicio.py` | `app/modules/notifications/services.py`, `frontend/tailwind.config.ts`, `frontend/tests/accesibilidad/colores-literales.excepciones.ts`, `tests/smtp_falso.py` | app/modules, frontend, frontend/tests, tests | ☐ |
+| `restablecer_con_token` | función | `app/modules/auth/autoservicio.py` | `app/modules/api/auth.py` | app/modules | ☐ |
+| `restablecer_directo_mfa` | función | `app/modules/auth/autoservicio.py` | `app/modules/api/auth.py` | app/modules | ☐ |
+| `solicitar_codigo_mfa` | función | `app/modules/auth/autoservicio.py`, `app/modules/auth/autoservicio_mfa.py` | `app/modules/api/auth.py` | app/modules | ☐ |
+| `solicitar_recuperacion` | función | `app/modules/auth/autoservicio.py` | `app/modules/api/auth.py` | app/modules | ☐ |
+| `verificar_codigo_mfa_paso2` | función | `app/modules/auth/autoservicio.py`, `app/modules/auth/autoservicio_mfa.py` | `app/modules/api/auth.py` | app/modules | ☐ |
 
 ## Bitácora
 - 2026-11-24: división, pruebas, revisión y auditoría de seguridad; cierre.
