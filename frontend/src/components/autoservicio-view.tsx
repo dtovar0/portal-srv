@@ -10,7 +10,6 @@
  * Paso 4: Confirmación de actualización exitosa y notificación remitida por correo.
  */
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { api, type AutoservicioConfig } from '@/lib/api';
 import { generarContrasenaSegura } from '@/lib/generador-contrasena';
@@ -361,25 +360,15 @@ export function AutoservicioView() {
           {/* PASO 1: INTRODUCIR USUARIO O CORREO                       */}
           {/* ========================================================= */}
           {paso === 1 && (
-            <form onSubmit={handlePaso1Submit} className="space-y-5">
+            <form onSubmit={handlePaso1Submit} className="space-y-4">
               <div>
                 <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-body-text">
                   Introduce tu usuario o correo
                 </h1>
-                <p className="mt-1.5 text-xs text-texto-secundario leading-relaxed">
-                  Ingresa tu cuenta corporativa para iniciar el restablecimiento seguro de tu contraseña.
+                <p className="mt-1 text-xs text-texto-secundario leading-relaxed flex items-center gap-1.5">
+                  <Icono nombre="escudo" tamano="xs" className="text-aduana-cyan shrink-0" ariaHidden={true} />
+                  <span>Sin clave anterior; verificaremos tu identidad en el siguiente paso.</span>
                 </p>
-              </div>
-
-              <div className="rounded-xl border border-aduana-cyan/30 bg-aduana-cyan/5 p-3 flex items-start gap-2.5 text-xs text-body-text">
-                <Icono nombre="escudo" tamano="sm" className="text-aduana-cyan shrink-0 mt-0.5" ariaHidden={true} />
-                <div className="leading-relaxed">
-                  <strong className="text-aduana-cyan">Sin necesidad de clave anterior: </strong>
-                  <span>
-                    Si tu contraseña expiró o la olvidaste, validaremos tu identidad mediante tu segundo factor de
-                    autenticación (MFA) en el siguiente paso.
-                  </span>
-                </div>
               </div>
 
               <Field label="Usuario o Correo Authelia">
@@ -397,7 +386,7 @@ export function AutoservicioView() {
               <Button
                 type="submit"
                 disabled={cargando || !identificador.trim()}
-                className="w-full bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 {cargando ? (
                   <>
@@ -405,7 +394,7 @@ export function AutoservicioView() {
                     <span>Preparando verificación…</span>
                   </>
                 ) : (
-                  <span>Continuar al Paso 2 →</span>
+                  <span>Continuar →</span>
                 )}
               </Button>
             </form>
@@ -415,47 +404,44 @@ export function AutoservicioView() {
           {/* PASO 2: ENVIAR/VALIDAR CÓDIGO MFA                         */}
           {/* ========================================================= */}
           {paso === 2 && (
-            <form onSubmit={handlePaso2Submit} className="space-y-5">
+            <form onSubmit={handlePaso2Submit} className="space-y-4">
               <div>
                 <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-body-text">
-                  Validación de Segundo Factor (MFA)
+                  Código de Verificación
                 </h1>
-                <p className="mt-1.5 text-xs text-texto-secundario leading-relaxed">
+                <p className="mt-1 text-xs text-texto-secundario leading-relaxed">
                   {esPorCorreo
-                    ? 'Hemos enviado un código numérico de 6 dígitos a tu buzón corporativo.'
-                    : 'Ingresa el código temporal de 6 dígitos de tu aplicación Authenticator (Google / Microsoft).'}
+                    ? 'Ingresa el código numérico de 6 dígitos enviado a tu correo corporativo.'
+                    : 'Ingresa el código temporal de 6 dígitos de tu aplicación Authenticator.'}
                 </p>
               </div>
 
-              {/* Detalle del destino / cuenta */}
-              <div className="rounded-xl border border-panel-border bg-fondo p-3 flex items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2 truncate">
-                  <Icono nombre="usuarios" tamano="xs" className="text-aduana-cyan shrink-0" ariaHidden={true} />
-                  <span className="text-texto-secundario truncate">
-                    Usuario: <strong className="text-body-text">{identificador}</strong>
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPaso(1)}
-                  className="text-aduana-cyan hover:underline text-[11px] font-semibold shrink-0 cursor-pointer"
-                >
-                  Cambiar
-                </button>
-              </div>
-
-              {/* Alerta de correo enviado si aplica */}
-              {esPorCorreo && (
-                <div className="rounded-xl border border-aduana-cyan/30 bg-aduana-cyan/5 p-3 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-texto-secundario">
-                      Destino: <strong className="text-body-text">{maskedEmail || identificador}</strong>
+              {/* Tarjeta única y consolidada de información */}
+              <div className="rounded-xl border border-panel-border/80 bg-fondo/60 p-3 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 truncate">
+                    <Icono nombre="correo" tamano="xs" className="text-aduana-cyan shrink-0" ariaHidden={true} />
+                    <span className="text-texto-secundario truncate">
+                      Código enviado a <strong className="text-body-text">{maskedEmail || identificador}</strong>
                     </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPaso(1)}
+                    className="text-aduana-cyan hover:underline text-[11px] font-semibold shrink-0 cursor-pointer"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+
+                {esPorCorreo && (
+                  <div className="flex items-center justify-between pt-1 border-t border-panel-border/40 text-[11px] text-texto-secundario">
+                    <span>Válido por {config?.mfa_ttl_minutos || 10} min</span>
                     <button
                       type="button"
                       onClick={handleReenviarCodigo}
                       disabled={enviandoMfa || cooldownMfa > 0}
-                      className="text-aduana-cyan hover:underline font-semibold text-[11px] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="text-aduana-cyan hover:underline font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {enviandoMfa
                         ? 'Enviando…'
@@ -464,11 +450,8 @@ export function AutoservicioView() {
                           : 'Reenviar código'}
                     </button>
                   </div>
-                  <p className="text-[11px] text-texto-secundario leading-relaxed">
-                    Revisa tu bandeja de entrada o carpeta de spam. El código expira en {config?.mfa_ttl_minutos || 10} minutos.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
 
               <Field label="Código de Seguridad (6 dígitos)">
                 <TextInput
@@ -481,22 +464,22 @@ export function AutoservicioView() {
                   value={mfaCode}
                   onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   autoComplete="one-time-code"
-                  className="font-mono text-center tracking-widest text-lg h-14"
+                  className="font-mono text-center tracking-[0.35em] text-xl font-bold h-13"
                 />
               </Field>
 
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-1">
                 <Button
                   type="button"
                   onClick={() => setPaso(1)}
-                  className="flex-1 bg-superficie border border-panel-border text-body-text hover:bg-fondo text-xs py-3 rounded-xl font-semibold cursor-pointer"
+                  className="px-4 py-3 bg-transparent border border-panel-border/70 hover:bg-panel-border/20 text-texto-secundario hover:text-body-text text-xs rounded-xl font-semibold transition-all cursor-pointer"
                 >
                   ← Volver
                 </Button>
                 <Button
                   type="submit"
                   disabled={cargando || mfaCode.trim().length !== 6}
-                  className="flex-2 bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="flex-1 bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   {cargando ? (
                     <>
@@ -504,7 +487,7 @@ export function AutoservicioView() {
                       <span>Verificando código…</span>
                     </>
                   ) : (
-                    <span>Validar y Continuar al Paso 3 →</span>
+                    <span>Continuar →</span>
                   )}
                 </Button>
               </div>
@@ -518,7 +501,7 @@ export function AutoservicioView() {
             <form onSubmit={handlePaso3Submit} className="space-y-4">
               <div>
                 <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-body-text">
-                  Establecer Nueva Contraseña
+                  Nueva Contraseña
                 </h1>
                 <p className="mt-1 text-xs text-texto-secundario leading-relaxed">
                   Ingresa tu nueva clave institucional o genera una automáticamente de 24 caracteres.
@@ -549,7 +532,7 @@ export function AutoservicioView() {
               </Field>
 
               {/* Barra de utilidades: Ver contraseñas y Generar contraseña */}
-              <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex items-center justify-between text-xs pt-0.5">
                 <button
                   type="button"
                   onClick={() => setMostrarClaves(!mostrarClaves)}
@@ -571,7 +554,7 @@ export function AutoservicioView() {
               </div>
 
               {/* Checklist de requisitos de seguridad */}
-              <div className="rounded-xl border border-panel-border/80 bg-fondo p-3 space-y-2 text-[11px]">
+              <div className="rounded-xl border border-panel-border/80 bg-fondo/60 p-3 space-y-1.5 text-[11px]">
                 <p className="font-bold text-texto-secundario uppercase tracking-wider text-[10px]">
                   Política de Seguridad Corporativa:
                 </p>
@@ -597,12 +580,12 @@ export function AutoservicioView() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-1">
                 {!tokenRecuperacion && (
                   <Button
                     type="button"
                     onClick={() => setPaso(2)}
-                    className="flex-1 bg-superficie border border-panel-border text-body-text hover:bg-fondo text-xs py-3 rounded-xl font-semibold cursor-pointer"
+                    className="px-4 py-3 bg-transparent border border-panel-border/70 hover:bg-panel-border/20 text-texto-secundario hover:text-body-text text-xs rounded-xl font-semibold transition-all cursor-pointer"
                   >
                     ← Volver
                   </Button>
@@ -610,7 +593,7 @@ export function AutoservicioView() {
                 <Button
                   type="submit"
                   disabled={cargando || !contrasenaValida}
-                  className="flex-2 w-full bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="flex-1 w-full bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] text-texto-sobre-accion font-bold text-sm py-3 rounded-xl border-0 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   {cargando ? (
                     <>
@@ -618,7 +601,7 @@ export function AutoservicioView() {
                       <span>Actualizando y sincronizando…</span>
                     </>
                   ) : (
-                    <span>Cambiar Contraseña</span>
+                    <span>Guardar Contraseña →</span>
                   )}
                 </Button>
               </div>

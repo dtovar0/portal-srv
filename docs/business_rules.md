@@ -6137,3 +6137,27 @@ Un usuario `dtovar` solicita un código MFA de recuperación. El backend busca a
 
 ### Impacto
 Afecta a [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Optimización Visual y Desaturación del Asistente de Autoservicio de Contraseña
+
+## Módulo
+Frontend / Autoservicio / UI & UX
+
+### Regla
+1. **Concisión y Claridad en Botones de Acción**:
+   Dado que el indicador superior (Stepper) ya informa de manera permanente el número y nombre del paso en el que se encuentra el usuario, los botones de avance deben emplear la etiqueta concisa **"Continuar →"** (o "Guardar Contraseña →" en el paso final), suprimiendo textos extensos y redundantes como "Validar y Continuar al Paso 3 →" o "Continuar al Paso 2 →".
+2. **Jerarquía Visual y Botones Secundarios Desaturados**:
+   El botón de retorno ("← Volver") se presenta con estilo secundario limpio y estilizado (borde tenue, fondo transparente y texto secundario con feedback en hover), evitando competir cromáticamente o en peso visual con el botón primario de acción (CTA en color institucional `aduana-cyan`).
+3. **Consolidación de Información en Tarjeta Única**:
+   En el Paso 2 (Validación MFA), se prohíbe la acumulación de cajas de información duplicadas que repitan el correo o usuario. Toda la metadata relevante (correo destinatario, opción de cambiar cuenta, tiempo de caducidad en minutos y botón de reenvío con temporizador cooldown) se unifica en una sola tarjeta compacta y accesible.
+4. **Legibilidad y Enfoque en Código de 6 Dígitos**:
+   El campo numérico de código de seguridad presenta un diseño de alta legibilidad, centrado, con tipografía monoespaciada, espaciado de dígitos amplio y altura táctil accesible.
+5. **Alivio de Carga Cognitiva**:
+   En el Paso 1 se suprimen banners pesados de advertencia en favor de textos de ayuda discretos e integrados, y en el Paso 3 el checklist de políticas de contraseñas se organiza en cuadrícula balanceada y compacta para evitar desplazamientos verticales excesivos en pantalla.
+
+### Ejemplo
+Al pasar al Paso 2 tras ingresar `dtovar@vivaro.com`, la pantalla ya no muestra dos cajas rectangulares independientes con el mismo correo, sino una tarjeta limpia consolidada que indica "Código enviado a dtovar@vivaro.com · Cambiar" y en la parte inferior "Válido por 10 min · Reenviar código". El botón principal indica claramente "Continuar →" y el botón secundario "← Volver" tiene un tratamiento visual ligero que no satura la interfaz.
+
+### Impacto
+Afecta a [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
