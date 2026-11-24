@@ -6161,3 +6161,27 @@ Al pasar al Paso 2 tras ingresar `dtovar@vivaro.com`, la pantalla ya no muestra 
 
 ### Impacto
 Afecta a [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Estandarización de Contraseñas a 16 Caracteres y Unificación de Diseño de Plantillas de Correo
+
+## Módulo
+Seguridad / Autoservicio / Notificaciones y Políticas de Contraseña
+
+### Regla
+1. **Longitud Generada Estandarizada a 16 Caracteres**:
+   La longitud por omisión de las contraseñas autogeneradas por el generador seguro del servidor (`LARGO_GENERADO` en `politica_contrasena.py`) y por el asistente de autoservicio en el frontend (`generarContrasenaSegura(16)`) se establece de forma homogénea en 16 caracteres (alineado al límite mínimo de la política corporativa `PASSWORD_POLICY_MIN_LENGTH=16`). Se actualizan todas las etiquetas, avisos de copiado al portapapeles y textos descriptivos para reflejar 16 caracteres.
+2. **Unificación y Compatibilidad de Plantillas de Correo Institucionales**:
+   Los correos de envío de código de verificación MFA, confirmación de actualización de contraseña y restablecimiento por enlace seguro adoptan la misma estructura y diseño institucional que la plantilla de entrega de credenciales iniciales:
+   - Contenedor de tarjeta limpia y accesible con ancho máximo de 540 px, bordes tenues `#e2e8f0` y tipografía corporativa legible (`-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif`).
+   - Encabezado con color de fondo sólido de respaldo (`background-color: #0284c7` en azul o `#059669` en verde) para garantizar que clientes de correo que no soportan degradados CSS (como Microsoft Outlook Desktop) nunca muestren el encabezado en blanco ni oculten el texto del título.
+   - Remitente y firma dinámica basada en la marca configurada (`AUTOSERVICIO_SMTP_SENDER_NAME` o fallback institucional).
+   - Bloque central destacado con el código de seguridad de 6 dígitos o confirmación de sincronización con el directorio corporativo (OpenLDAP y plataformas asociadas).
+   - Aviso de seguridad visible indicando las acciones preventivas si el usuario no originó la solicitud.
+   - Cabeceras RFC 5322 y RFC 2047 (`From`, `Sender`, `Reply-To`, `Subject`) y envío con `from_addr` canónico para prevenir etiquetas de `<no sender address>` en Outlook.
+
+### Ejemplo
+Al pulsar "Generar contraseña segura" en el paso 3 de recuperación o al crear un usuario en el portal, el sistema genera automáticamente una clave alfanumérica con símbolos de exactamente 16 caracteres y notifica "Contraseña de 16 caracteres generada y copiada al portapapeles". Al despachar el código MFA o la confirmación de cambio, el usuario recibe en Outlook un correo con diseño corporativo idéntico al de bienvenida/credenciales iniciales, con fondo sólido visible en el banner superior y firma de "Authelia • Autoservicio de Identidad".
+
+### Impacto
+Afecta a [app/modules/users/politica_contrasena.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/politica_contrasena.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

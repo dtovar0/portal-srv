@@ -110,17 +110,17 @@ export function AutoservicioView() {
   const tipoMfa = config?.mfa_tipo || 'email';
   const esPorCorreo = tipoMfa === 'email' || tipoMfa === 'ambos';
 
-  // Generador de contraseñas de alta seguridad (24 caracteres)
+  // Generador de contraseñas de alta seguridad (16 caracteres)
   const handleGenerarContrasena = () => {
     try {
-      const clave = generarContrasenaSegura(24);
+      const clave = generarContrasenaSegura(16);
       setNuevaContrasena(clave);
       setConfirmarContrasena(clave);
       setMostrarClaves(true);
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         navigator.clipboard.writeText(clave).catch(() => { });
       }
-      avisar('success', 'Contraseña de 24 caracteres generada y copiada al portapapeles.');
+      avisar('success', 'Contraseña de 16 caracteres generada y copiada al portapapeles.');
     } catch {
       avisar('error', 'No se pudo generar la contraseña.');
     }
@@ -504,7 +504,7 @@ export function AutoservicioView() {
                   Nueva Contraseña
                 </h1>
                 <p className="mt-1 text-xs text-texto-secundario leading-relaxed">
-                  Ingresa tu nueva clave institucional o genera una automáticamente de 24 caracteres.
+                  Ingresa tu nueva clave institucional o genera una automáticamente de 16 caracteres.
                 </p>
               </div>
 
@@ -546,7 +546,7 @@ export function AutoservicioView() {
                   type="button"
                   onClick={handleGenerarContrasena}
                   className="text-aduana-cyan hover:underline transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
-                  title="Genera una contraseña criptográficamente segura de 24 caracteres"
+                  title="Genera una contraseña criptográficamente segura de 16 caracteres"
                 >
                   <Icono nombre="recargar" tamano="xs" ariaHidden={true} />
                   <span>Generar contraseña segura</span>

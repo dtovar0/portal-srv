@@ -201,16 +201,16 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
 
     ttl_minutos = max(1, tiempo_expiracion_mfa() // 60)
     brand_name = cfg.get('sender_name') or 'Authelia • Autoservicio de Identidad'
-    asunto = f"Authelia • Código de verificación: {codigo}"
+    asunto = f"{brand_name} • Código de verificación: {codigo}"
 
     cuerpo_plano = (
-        f"Hola {nombre or destinatario},\n\n"
-        "Has solicitado actualizar o recuperar tu contraseña corporativa en Authelia.\n\n"
+        f"Hola {nombre or destinatario}:\n\n"
+        f"Has solicitado restablecer o actualizar tu contraseña corporativa en {brand_name}.\n\n"
         f"Tu código de seguridad de 6 dígitos es:\n\n"
         f"    {codigo}\n\n"
-        f"Este código es válido durante {ttl_minutos} minutos y es requerido para autorizar el cambio.\n"
-        "Si tú no iniciaste esta solicitud, puedes ignorar este correo de forma segura.\n\n"
-        "— Authelia Identity and Access Management"
+        f"Este código es válido durante {ttl_minutos} minutos y es requerido para autorizar el cambio.\n\n"
+        f"Si tú no iniciaste esta solicitud, puedes ignorar este correo de forma segura. Tu contraseña actual no ha sido modificada.\n\n"
+        f"— {brand_name}"
     )
 
     cuerpo_html = f"""<!DOCTYPE html>
@@ -225,12 +225,12 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
       <td align="center">
         <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="padding: 24px 32px; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
+            <td style="padding: 24px 32px; background-color: #0284c7; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
               <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">
-                Authelia &bull; Autoservicio de Identidad
+                {brand_name}
               </h1>
               <p style="margin: 4px 0 0; font-size: 12px; color: #e0f2fe;">
-                Portal Seguro de Verificación y Recuperación de Contraseña
+                Portal Seguro de Verificación y Autoservicio de Identidad
               </p>
             </td>
           </tr>
@@ -239,17 +239,17 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
               <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.5; color: #334155;">
                 Hola <strong>{nombre or destinatario}</strong>:
               </p>
-              <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #475569;">
+              <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #475569;">
                 Has solicitado restablecer o actualizar la contraseña de tu cuenta corporativa.
                 Para verificar tu identidad y validar la titularidad de tu cuenta, utiliza el siguiente código de seguridad de 6 dígitos:
               </p>
               
-              <div style="background-color: #f8fafc; border: 2px dashed #0ea5e9; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
-                <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0369a1; display: inline-block;">
+              <div style="background-color: #f8fafc; border: 2px dashed #0284c7; border-radius: 12px; padding: 22px 20px; text-align: center; margin: 24px 0;">
+                <span style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #0284c7; display: inline-block;">
                   {codigo}
                 </span>
-                <p style="margin: 8px 0 0; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
-                  Válido durante {ttl_minutos} minutos
+                <p style="margin: 10px 0 0; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                  ⏱ Válido durante {ttl_minutos} minutos
                 </p>
               </div>
 
@@ -267,7 +267,7 @@ def _enviar_correo_mfa(destinatario, codigo, nombre=None):
           <tr>
             <td style="padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                Authelia Identity and Access Management &bull; Vivaro
+                {brand_name} &bull; Vivaro
               </p>
             </td>
           </tr>
@@ -321,18 +321,19 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
         return False
 
     ahora_str = time.strftime('%Y-%m-%d %H:%M:%S')
-    asunto = "Authelia • Confirmación de actualización de contraseña"
+    brand_name = cfg.get('sender_name') or 'Authelia • Autoservicio de Identidad'
+    asunto = f"{brand_name} • Confirmación de actualización de contraseña"
 
     cuerpo_plano = (
-        f"Hola {nombre or destinatario},\n\n"
-        "Te confirmamos que la contraseña de tu cuenta corporativa ha sido actualizada exitosamente "
-        "a través del portal de Autoservicio de Authelia.\n\n"
+        f"Hola {nombre or destinatario}:\n\n"
+        f"Te confirmamos que la contraseña de tu cuenta corporativa ha sido actualizada exitosamente "
+        f"a través del portal de Autoservicio de {brand_name}.\n\n"
         f"Fecha y hora del cambio: {ahora_str}\n\n"
-        "Si tú realizaste este cambio, no requieres realizar ninguna acción adicional. Tus credenciales "
-        "han sido sincronizadas de forma inmediata con JumpServer y plataformas conectadas.\n\n"
-        "⚠️ IMPORTANTE: Si tú NO realizaste este cambio, tu cuenta puede estar en riesgo. "
-        "Comunícate de inmediato con el equipo de Seguridad y Administración de TI.\n\n"
-        "— Authelia Identity and Access Management"
+        f"Si tú realizaste este cambio, no requieres realizar ninguna acción adicional. Tus credenciales "
+        f"han sido sincronizadas de forma inmediata con el directorio corporativo y plataformas asociadas.\n\n"
+        f"⚠️ IMPORTANTE: Si tú NO realizaste este cambio, tu cuenta puede estar en riesgo. "
+        f"Comunícate de inmediato con el equipo de Seguridad y Administración de TI.\n\n"
+        f"— {brand_name}"
     )
 
     cuerpo_html = f"""<!DOCTYPE html>
@@ -347,12 +348,12 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
       <td align="center">
         <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="padding: 24px 32px; background: linear-gradient(135deg, #10b981, #059669); text-align: left;">
+            <td style="padding: 24px 32px; background-color: #059669; background: linear-gradient(135deg, #10b981, #059669); text-align: left;">
               <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">
                 ✅ Contraseña Actualizada Exitosamente
               </h1>
               <p style="margin: 4px 0 0; font-size: 12px; color: #ecfdf5;">
-                Authelia &bull; Autoservicio de Identidad
+                {brand_name} &bull; Autoservicio de Identidad
               </p>
             </td>
           </tr>
@@ -382,7 +383,7 @@ def _enviar_correo_confirmacion_cambio(destinatario, nombre=None):
           <tr>
             <td style="padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                Authelia Identity and Access Management &bull; Vivaro
+                {brand_name} &bull; Vivaro
               </p>
             </td>
           </tr>
@@ -746,14 +747,15 @@ def solicitar_recuperacion(correo, base_url=''):
         # Enviar correo con plantilla de Authelia
         cfg = resolver_smtp_autoservicio()
         if cfg:
-            asunto = "Authelia • Restablecimiento de Contraseña"
+            brand_name = cfg.get('sender_name') or 'Authelia • Autoservicio de Identidad'
+            asunto = f"{brand_name} • Restablecimiento de Contraseña"
             cuerpo_plano = (
-                f"Hola {nombre or correo},\n\n"
-                "Recibimos una solicitud para restablecer tu contraseña en Authelia SSO.\n\n"
+                f"Hola {nombre or correo}:\n\n"
+                f"Recibimos una solicitud para restablecer tu contraseña en {brand_name}.\n\n"
                 f"Haz clic en el siguiente enlace seguro (válido por 15 minutos):\n"
                 f"{enlace}\n\n"
-                "Si no solicitaste este cambio, puedes ignorar este mensaje.\n\n"
-                "— Authelia Identity and Access Management"
+                "Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.\n\n"
+                f"— {brand_name}"
             )
             cuerpo_html = f"""<!DOCTYPE html>
 <html lang="es">
@@ -767,9 +769,9 @@ def solicitar_recuperacion(correo, base_url=''):
       <td align="center">
         <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="padding: 24px 32px; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
+            <td style="padding: 24px 32px; background-color: #0284c7; background: linear-gradient(135deg, #0ea5e9, #0284c7); text-align: left;">
               <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">
-                Authelia &bull; Restablecimiento de Contraseña
+                {brand_name} &bull; Restablecimiento de Contraseña
               </h1>
               <p style="margin: 4px 0 0; font-size: 12px; color: #e0f2fe;">
                 Portal Seguro de Autoservicio de Identidad
@@ -782,11 +784,11 @@ def solicitar_recuperacion(correo, base_url=''):
                 Hola <strong>{nombre or correo}</strong>:
               </p>
               <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #475569;">
-                Recibimos una solicitud para restablecer tu contraseña en Authelia SSO.
+                Recibimos una solicitud para restablecer tu contraseña en {brand_name}.
                 Haz clic en el siguiente botón seguro para establecer tu nueva clave (enlace válido durante 15 minutos):
               </p>
               <div style="text-align: center; margin: 28px 0;">
-                <a href="{enlace}" style="background-color: #0ea5e9; color: #ffffff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 14px 28px; border-radius: 10px; display: inline-block;">
+                <a href="{enlace}" style="background-color: #0284c7; color: #ffffff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 14px 28px; border-radius: 10px; display: inline-block;">
                   Restablecer mi Contraseña &rarr;
                 </a>
               </div>
@@ -804,7 +806,7 @@ def solicitar_recuperacion(correo, base_url=''):
           <tr>
             <td style="padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                Authelia Identity and Access Management &bull; Vivaro
+                {brand_name} &bull; Vivaro
               </p>
             </td>
           </tr>

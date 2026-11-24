@@ -35,7 +35,7 @@ SIMBOLOS_POR_DEFECTO = '!#$%&()*+,-./:;<=>?@[]^_{}~'
 # nunca comillas, acento grave ni barra invertida.
 SIMBOLOS_PROHIBIDOS = frozenset('"\'`\\ ')
 # Largo de lo que genera el servidor (se ajusta al rango de la política).
-LARGO_GENERADO = 24
+LARGO_GENERADO = 16
 
 MENSAJE_OBLIGATORIA = 'Es obligatoria.'
 MENSAJE_TEXTO = 'Debe ser texto.'
