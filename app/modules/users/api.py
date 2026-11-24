@@ -32,6 +32,8 @@ from app.modules.auth.acceso_local import (contrasena_local_permitida,
                                            origen_de_alta)
 from app.modules.auth.models import User
 from app.modules.core.models import Area
+from app.modules.directory.configuracion import directorio_activo
+from app.modules.directory.writer import EscritorDirectorio
 from app.modules.users.areas_administradas import (CAMPO_AREAS,
                                                    asignar_areas_administradas,
                                                    validar_area_ids)
@@ -39,6 +41,7 @@ from app.modules.users.directory_accounts import (CAMPO_CONTRASENA,
                                                   CAMPOS_PERMITIDOS,
                                                   crear_cuenta_directorio,
                                                   validar_alta)
+from app.modules.users.grupos_de_rol import sincronizar_grupo_de_rol
 from app.modules.users.politica_contrasena import cargar_politica
 from app.modules.users.restablecer_contrasena import (aplicar_cambio,
                                                       validar_cambio)
@@ -49,6 +52,22 @@ from app.modules.users.serializacion import usuario_gestionado
 from app.utils.naming import sanitize_display_name
 
 users_api_bp = Blueprint('api_users', __name__, url_prefix='/api/v1')
+
+
+def _sincronizar_grupo_por_correo(correo, rol, quitar_del_otro=False):
+    """Grupo de Authelia del rol para la persona con `correo` en LDAP; un
+    fallo del directorio no detiene la petición (FNC-170)."""
+    if not directorio_activo():
+        return
+    try:
+        escritor = EscritorDirectorio()
+        persona = escritor.cliente.buscar_por_correo(correo)
+    except Exception as exc:  # solo el tipo: el texto puede nombrar a la persona
+        logger.warning('Grupo de rol: búsqueda en LDAP fallida (%s).',
+                       type(exc).__name__)
+        return
+    if persona is not None:
+        sincronizar_grupo_de_rol(escritor, persona.dn, rol, quitar_del_otro)
 
 
 @users_api_bp.route('/users/<int:user_id>/managed-areas', methods=['PUT'])
@@ -165,25 +184,8 @@ def create_user():
     db.session.add(user)
     db.session.commit()
 
-    # Sincronizar membresía de grupo OIDC en OpenLDAP si el directorio está activo
-    from app.modules.directory.configuracion import directorio_activo
-    if directorio_activo():
-        try:
-            import os
-            from app.modules.directory.writer import EscritorDirectorio
-            from app.authz import ROLE_AREA_ADMIN
-            escritor = EscritorDirectorio()
-            persona = escritor.cliente.buscar_por_correo(email)
-            if persona is not None:
-                if role in (ROLE_AREA_ADMIN, 'admin', 'admin_area', 'administrador'):
-                    grupo_oidc = (os.getenv('OIDC_GROUP_AREA_ADMIN') or os.getenv('LDAP_APP_ADMINS') or 'app-aduana-admins').strip()
-                else:
-                    grupo_oidc = (os.getenv('OIDC_GROUP_USER') or os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
-                dn_grupo = f'cn={grupo_oidc},{escritor.configuracion.grupos_base_dn}'
-                escritor.create_group(dn_grupo)
-                escritor.add_member(dn_grupo, persona.dn)
-        except Exception as exc:
-            logger.warning('No se pudo sincronizar usuario en grupo OIDC de LDAP: %s', exc)
+    # Grupo de Authelia según el rol, si la persona ya está en LDAP (FNC-170).
+    _sincronizar_grupo_por_correo(email, role)
 
     add_audit_log(f"CREAR USUARIO: {email}", module='Usuarios', target=email,
                   status='success')
@@ -224,29 +226,8 @@ def update_user(user_id):
 
     if change_role:
         cambiar_rol(target, new_role)
-        from app.modules.directory.configuracion import directorio_activo
-        if directorio_activo():
-            try:
-                import os
-                from app.modules.directory.writer import EscritorDirectorio
-                from app.authz import ROLE_AREA_ADMIN
-                escritor = EscritorDirectorio()
-                persona = escritor.cliente.buscar_por_correo(target.email)
-                if persona is not None:
-                    grupo_admins = (os.getenv('OIDC_GROUP_AREA_ADMIN') or os.getenv('LDAP_APP_ADMINS') or 'app-aduana-admins').strip()
-                    grupo_users = (os.getenv('OIDC_GROUP_USER') or os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
-                    dn_admins = f'cn={grupo_admins},{escritor.configuracion.grupos_base_dn}'
-                    dn_users = f'cn={grupo_users},{escritor.configuracion.grupos_base_dn}'
-                    if new_role == ROLE_AREA_ADMIN:
-                        escritor.create_group(dn_admins)
-                        escritor.add_member(dn_admins, persona.dn)
-                        escritor.remove_member(dn_users, persona.dn)
-                    else:
-                        escritor.create_group(dn_users)
-                        escritor.add_member(dn_users, persona.dn)
-                        escritor.remove_member(dn_admins, persona.dn)
-            except Exception as exc:
-                logger.warning('No se pudo actualizar grupo OIDC en LDAP tras cambio de rol: %s', exc)
+        _sincronizar_grupo_por_correo(target.email, new_role,
+                                      quitar_del_otro=True)
     if 'name' in data:
         target.nombre = sanitize_display_name(data['name'], fallback=target.email)
     if 'is_active' in data:

@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Usuarios: el alta, el cambio de rol y el alta en el directorio comparten `users/grupos_de_rol.py` para el grupo de Authelia del rol (sin nombres `app-aduana-*` repetidos ni el texto de la excepción en el log); `platforms/grupos.py` sin import dentro de la función ni literales. Variables que el código ya leía quedan documentadas (los alias, como heredados), `.gitignore` ignora `logs/` y `validar_proyecto.py` queda en 0 errores (FNC-170, 2026-11-24).
 - Web: la lista y la tarjeta de usuarios muestran «Directorio (Authelia)» para cuentas `sso` (antes, «sso» suelto y con el estilo de cuenta local); utilidad compartida `lib/origen-cuenta.ts` (FNC-169, 2026-11-24).
 - Web: el botón de favorito ya no usa `disabled` durante la petición (solo `aria-disabled`), así que conserva el foco del teclado; las pruebas de `tests/components/` quedan en verde, actualizadas a Portal/Plataformas, menú de usuario, login con botón persistente, 50 iconos y `/dashboard` (FNC-167, 2026-11-24).
 - Web: «Editar usuario» muestra el campo Contraseña (con la política) también para cuentas `sso` cuando edita el superadmin. `tsc` sin errores (prueba `platforms-shell` desalineada con `Session`, `PlatformsSidebarView` y `CatalogItem`) y lint en 0 errores y 0 advertencias (imports, variables y props sin uso; `any` en pruebas) (FNC-166, 2026-11-24).
