@@ -16,18 +16,20 @@ from app.modules.auth.autoservicio import (
     solicitar_codigo_mfa,
     validar_desafio_mfa,
     verificar_codigo_totp,
-    _secret_totp_usuario,
     ErrorAutoservicio,
     cambiar_contrasena,
     restablecer_con_token,
     restablecer_directo_mfa,
     verificar_codigo_mfa_paso2,
     tiempo_expiracion_mfa,
-    _obtener_serializador,
-    _hash_codigo,
-    SALT_MFA,
     resolver_smtp_autoservicio,
-    _enviar_correo_mfa,
+)
+from app.modules.auth.autoservicio_correo import enviar_correo_mfa
+from app.modules.auth.autoservicio_mfa import (
+    SALT_MFA,
+    _hash_codigo,
+    _obtener_serializador,
+    _secret_totp_usuario,
 )
 
 
@@ -151,7 +153,7 @@ def test_solicitar_mfa_usuario_existente_y_validacion(app, monkeypatch):
             codigos_enviados.append(codigo)
             return True
 
-        monkeypatch.setattr('app.modules.auth.autoservicio._enviar_correo_mfa', mock_enviar)
+        monkeypatch.setattr('app.modules.auth.autoservicio_mfa.enviar_correo_mfa', mock_enviar)
         monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
         monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'email')
 
@@ -227,7 +229,7 @@ def test_cambiar_contrasena_envia_correo_confirmacion_y_audita(app, monkeypatch)
             confirmaciones.append({'dest': dest, 'nombre': nombre})
             return True
 
-        monkeypatch.setattr('app.modules.auth.autoservicio._enviar_correo_confirmacion_cambio', mock_confirmacion)
+        monkeypatch.setattr('app.modules.auth.autoservicio.enviar_correo_confirmacion_cambio', mock_confirmacion)
         monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'false')
 
         resultado = cambiar_contrasena("usuario_confirm@vivaro.com", "OldPassword12345678!", "NewPasswordSegura2026!")
@@ -261,7 +263,7 @@ def test_restablecer_contrasena_envia_correo_confirmacion_y_audita(app, monkeypa
             confirmaciones.append({'dest': dest, 'nombre': nombre})
             return True
 
-        monkeypatch.setattr('app.modules.auth.autoservicio._enviar_correo_confirmacion_cambio', mock_confirmacion)
+        monkeypatch.setattr('app.modules.auth.autoservicio.enviar_correo_confirmacion_cambio', mock_confirmacion)
         monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'false')
 
         token = generar_token_recuperacion("usuario_token_audit@vivaro.com")
@@ -295,7 +297,6 @@ def test_restablecer_directo_mfa_exitoso(app, monkeypatch):
 
         # Derivar código TOTP válido
         import time, base64, hmac, hashlib, struct
-        from app.modules.auth.autoservicio import _secret_totp_usuario
         secret = _secret_totp_usuario("caducado_mfa@vivaro.com")
         key = base64.b32decode(secret.upper(), casefold=True)
         ahora = int(time.time() // 30)
@@ -468,9 +469,9 @@ def test_enviar_correo_mfa_sin_smtp_retorna_error(monkeypatch):
     """Verifica que sin servidor SMTP configurado retorne False y mensaje explicativo."""
     monkeypatch.delenv('AUTOSERVICIO_SMTP_SERVER', raising=False)
     monkeypatch.delenv('SMTP_SERVER', raising=False)
-    monkeypatch.setattr('app.modules.auth.autoservicio.resolver_smtp_autoservicio', lambda: None)
+    monkeypatch.setattr('app.modules.auth.autoservicio_correo.resolver_smtp_autoservicio', lambda: None)
 
-    exito, error_msg = _enviar_correo_mfa('test@vivaro.com', '123456')
+    exito, error_msg = enviar_correo_mfa('test@vivaro.com', '123456')
     assert exito is False
     assert 'No hay un servidor de correo (SMTP) configurado' in error_msg
 
@@ -498,7 +499,7 @@ def test_enviar_correo_mfa_cabeceras_rfc_y_html(monkeypatch):
 
     monkeypatch.setattr('smtplib.SMTP', MockSMTP)
 
-    exito, err = _enviar_correo_mfa('operador@vivaro.com', '654321', nombre='Domingo Tovar')
+    exito, err = enviar_correo_mfa('operador@vivaro.com', '654321', nombre='Domingo Tovar')
     assert exito is True
     assert err is None
     assert len(mensajes_enviados) == 1
