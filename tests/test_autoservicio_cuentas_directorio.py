@@ -99,6 +99,7 @@ def test_restablecer_con_enlace_cuenta_sso_solo_cambia_ldap(
 
 def test_restablecer_con_mfa_cuenta_sso_solo_cambia_ldap(
         app, cuenta_sso, ldap_falso, monkeypatch):
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')  # FNC-176
     monkeypatch.setattr(autoservicio, 'validar_desafio_mfa',
                         lambda *a, **k: None)
     with app.test_request_context():

@@ -7,6 +7,7 @@
   completo de una excepción (solo su tipo).
 """
 import logging
+from html import escape
 import smtplib
 import time
 from email.header import Header
@@ -134,6 +135,8 @@ def _marca(cfg):
 
 
 def _html_codigo_mfa(brand_name, saludo, codigo, ttl_minutos):
+    # FNC-177: el nombre viene del directorio o del portal; se escapa en HTML.
+    brand_name, saludo = escape(brand_name), escape(saludo)
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -196,6 +199,8 @@ def _html_codigo_mfa(brand_name, saludo, codigo, ttl_minutos):
 
 
 def _html_confirmacion(brand_name, saludo, ahora_str):
+    # FNC-177: el nombre viene del directorio o del portal; se escapa en HTML.
+    brand_name, saludo = escape(brand_name), escape(saludo)
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -256,6 +261,9 @@ def _html_confirmacion(brand_name, saludo, ahora_str):
 
 
 def _html_recuperacion(brand_name, saludo, enlace):
+    # FNC-177: el nombre viene del directorio o del portal; se escapa en HTML.
+    brand_name, saludo = escape(brand_name), escape(saludo)
+    enlace = escape(enlace, quote=True)
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -317,6 +325,10 @@ def _html_recuperacion(brand_name, saludo, enlace):
 </html>"""
 
 
+ENVIO_FALLIDO_MENSAJE = ('No se pudo enviar el código de verificación. '
+                         'Intenta de nuevo en unos minutos.')
+
+
 def enviar_correo_mfa(destinatario, codigo, nombre=None):
     """Envía el código de 6 dígitos mediante el servidor SMTP configurado.
     Retorna (True, None) si el envío fue exitoso, o (False, mensaje_error) si falló.
@@ -345,8 +357,8 @@ def enviar_correo_mfa(destinatario, codigo, nombre=None):
     error = _enviar_smtp(cfg, destinatario, asunto, cuerpo_plano, cuerpo_html, 'código MFA')
     if error is None:
         return True, None
-    return False, (f"Fallo al conectar con el servidor SMTP {cfg['server']}:{cfg['port']} "
-                   f"({type(error).__name__}: {error})")
+    # FNC-177: el detalle del servidor SMTP no se devuelve al cliente.
+    return False, ENVIO_FALLIDO_MENSAJE
 
 
 def enviar_correo_confirmacion_cambio(destinatario, nombre=None):

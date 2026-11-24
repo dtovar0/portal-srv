@@ -57,6 +57,11 @@ RESPUESTA_RECUPERACION = {
 }
 
 
+# FNC-176: respuesta cuando el MFA está apagado y se pide el restablecimiento directo.
+MENSAJE_SIN_MFA_DIRECTO = ('El restablecimiento sin contraseña requiere el segundo '
+                           'factor, que no está activado. Usa «¿Olvidaste tu '
+                           'contraseña?» para recibir un enlace por correo.')
+
 def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_code=None, challenge_token=None):
     """Cambia la contraseña validando la contraseña actual y segundo factor MFA si aplica."""
     identificador = (identificador or '').strip()
@@ -270,6 +275,11 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
 
     if bloqueado(identificador):
         raise ErrorAutoservicio('Has superado el límite de intentos fallidos. Intenta más tarde.', 429)
+
+    # FNC-176: sin contraseña previa ni enlace, el segundo factor es lo único
+    # que prueba la identidad; con MFA apagado no hay restablecimiento directo.
+    if not mfa_habilitado():
+        raise ErrorAutoservicio(MENSAJE_SIN_MFA_DIRECTO, 403)
 
     # El reseteo directo sin clave previa exige validar MFA
     if not mfa_code:

@@ -28,7 +28,6 @@ ALIAS_LONGITUD_GENERADA = 'AUTOSERVICIO_PASSWORD_LENGTH'
 VAR_JUMPSERVER_URL = 'JUMPSERVER_API_URL'
 ALIAS_JUMPSERVER_URL = 'JUMPSERVER_URL'
 VAR_JUMPSERVER_TOKEN = 'JUMPSERVER_API_TOKEN'
-VAR_SECRET_KEY = 'SECRET_KEY'
 VAR_DEBUG_SMTP = 'DEBUG_SMTP'
 
 # SMTP dedicado del autoservicio y SMTP general del portal.
@@ -65,8 +64,6 @@ MFA_MAX_AGE_SEGUNDOS = 600    # 10 minutos para código de 6 dígitos
 MFA_TTL_MINIMO_SEGUNDOS = 30
 MFA_TTL_MINIMO_MINUTOS_EN_SEGUNDOS = 60
 SEGUNDOS_POR_MINUTO = 60
-SECRETO_RESPALDO_SERIALIZADOR = 'authelia-fallback-secret'
-SECRETO_RESPALDO_TOTP = 'authelia-key'
 
 
 def leer_variable(*nombres):
@@ -78,10 +75,12 @@ def leer_variable(*nombres):
     return ''
 
 
-def clave_secreta(respaldo):
-    """Clave de firma de la aplicación; `respaldo` solo si no hay ninguna."""
+def clave_secreta():
+    """Clave de firma de la aplicación. Sin respaldo fijo (FNC-177): la app no
+    arranca sin `SECRET_KEY` (`app/__init__.py`), y una clave conocida
+    permitiría falsificar enlaces y códigos."""
     from flask import current_app
-    return current_app.config.get('SECRET_KEY') or os.getenv(VAR_SECRET_KEY, respaldo)
+    return current_app.config['SECRET_KEY']
 
 
 def smtp_depuracion_activa():
