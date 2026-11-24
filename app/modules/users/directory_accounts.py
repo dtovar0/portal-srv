@@ -8,7 +8,7 @@ Contrato: `POST /users/directory` en `docs/contratos/usuarios-directorio.md`.
 - Contraseña inicial (P8 modificada, ADR-008, FNC-138): `password` es
   obligatoria y el backend siempre la valida con `politica_contrasena`; se
   fija con Password Modify (RFC 3062) tras crear la entrada y nunca se guarda
-  ni se registra. La cuenta del portal es `auth_source='ldap'` con
+  ni se registra. La cuenta del portal es `auth_source='sso'` (FNC-168) con
   `password_hash` NULL (SEC-AUTH-04); el resto del ciclo de la contraseña sigue
   en Authelia. Si la `ppolicy` del directorio la rechaza: `422` en
   `fields.password` con mensaje propio y no se crea nada.

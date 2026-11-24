@@ -75,7 +75,7 @@ def test_alta_sin_contrasena_nace_de_directorio_sin_clave(escena, como,
 
     assert respuesta.status_code == 201, respuesta.get_data(as_text=True)
     cuenta = _cuenta(respuesta.get_json()['id'])
-    assert cuenta.auth_source == 'ldap'
+    assert cuenta.auth_source == 'sso'
     assert cuenta.password_hash is None
 
 
@@ -96,7 +96,7 @@ def test_alta_fuera_de_desarrollo_se_vincula_al_entrar_por_authelia(
     assert cliente.get('/api/v1/me').get_json()['role'] == ROLE_USER
     assert User.query.filter(db.func.lower(User.email) == correo).count() == 1
     cuenta = _cuenta(alta.get_json()['id'])
-    assert cuenta.auth_source == 'ldap'
+    assert cuenta.auth_source == 'sso'
     assert cuenta.password_hash is None
     assert cuenta.oidc_sub == oidc.userinfo['sub']
     assert cuenta.last_login_at is not None

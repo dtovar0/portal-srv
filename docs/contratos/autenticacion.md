@@ -29,6 +29,10 @@ Convenciones comunes: [README.md](README.md). Prefijo `/api/v1/auth`. La sesión
 | `authenticated` | bool | Hay sesión válida |
 | `emergency_available` | bool | La ruta `/auth/local` existe (siempre `true`; no hay enlace visible, ADR-009 6A) |
 | `local_login` | bool | `true` con `OIDC_HABILITADO=false` (FNC-158): `/login` pide usuario y contraseña y `/auth/local` acepta cualquier cuenta **local** activa; las de directorio u OIDC no entran |
+| `authelia_url` | string o `null` | `AUTHELIA_URL` (alias `AUTHELIA_SSO_URL`) o el emisor OIDC |
+| `app_name` / `app_title` | string | `APP_NAME` / `APP_TITLE` (por omisión `aduana` / `Aduana`) |
+| `domain` | string | `DOMAIN`; vacío si no está |
+| `support_email` | string | `SUPPORT_EMAIL` (por omisión el buzón de soporte del portal) |
 
 Se retiran `sso_enabled`, `sso_user` y `ldap_available`.
 
