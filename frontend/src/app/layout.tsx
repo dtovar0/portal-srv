@@ -10,16 +10,20 @@ import '../styles/global.css';
 import '../styles/components.css';
 import './globals.css';
 
+// DIS-122: los navegadores guardan el favicon aparte y no lo renuevan con
+// Ctrl+F5; cambiar esta versión al cambiar los íconos obliga a descargarlos.
+const VERSION_ICONOS = '2026-11-24';
+
 export const metadata: Metadata = {
   title: `${APP_TITLE} - Control de Acceso`,
   description: `Punto único de entrada y control para el ecosistema interno de plataformas (SSO y gestión centralizada de permisos)`,
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/brand/icon-32.png', type: 'image/png', sizes: '32x32' },
+      { url: `/favicon.ico?v=${VERSION_ICONOS}`, sizes: 'any' },
+      { url: `/brand/icon-32.png?v=${VERSION_ICONOS}`, type: 'image/png', sizes: '32x32' },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/brand/icon-192.png',
+    shortcut: `/favicon.ico?v=${VERSION_ICONOS}`,
+    apple: `/brand/icon-192.png?v=${VERSION_ICONOS}`,
   },
 };
 
