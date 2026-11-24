@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Web: las URL del favicon y los íconos llevan versión (`?v=`, constante `VERSION_ICONOS`) para que el navegador no conserve un ícono viejo o vacío de su caché (DIS-122, 2026-11-24).
 - Despliegue: la plantilla de nginx ya no describe el SSO por cabeceras (retirado en ADR-009); se aclara que el login es OIDC desde la app. Se conserva el borrado de `Remote-*` como defensa en profundidad (FNC-187, 2026-11-24).
 - Despliegue: nginx sirve `/favicon.ico` directo desde `frontend/public` (antes dependía de que Next.js estuviera arriba); el resumen de `install.sh` ya no pide migrar a mano (FNC-178) ni menciona las cabeceras SSO retiradas (FNC-186, 2026-11-24).
 - Usuarios: «Hacer admin»/«Quitar admin» en cuentas del directorio mueven primero el grupo de Authelia en LDAP (`app-aduana-users` ↔ `app-aduana-admins`); si no se puede, el rol no cambia y se responde `503 grupo_no_actualizado` / `503 directorio_no_disponible` / `409 cuenta_no_encontrada_en_directorio` (antes cambiaba el rol y el siguiente login lo revertía). `sincronizar_grupo_de_rol` ya revisa cada resultado de LDAP (antes solo excepciones) y no deja a nadie en ambos grupos (FNC-184, 2026-11-24).
