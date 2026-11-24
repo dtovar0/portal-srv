@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Web: login simplificado: logo, título, botón de Authelia y una sola línea de ayuda («¿Olvidaste o caducó tu contraseña?» · «Portal de Authelia»); se quitan la nota SSO, la caja del autoservicio, el separador y el lema del pie; «Conoce Aduana» queda solo con la portada activa (DIS-121, 2026-11-24).
 - Autoservicio (regla de negocio): solo quien tiene cuenta activa en el portal puede cambiar o recuperar su contraseña de LDAP; quien existe solo en LDAP no recibe código ni enlace (respuesta genérica) y el cambio se rechaza con `403` sin tocar LDAP (FNC-181, 2026-11-24).
 - Autoservicio: si no se puede restablecer porque la cuenta del portal no está en LDAP, el mensaje lo dice (`404`, «Tu cuenta no está en el directorio corporativo») o avisa que LDAP no está configurado (`503`), en lugar del genérico «No se encontró la cuenta» (FNC-179, 2026-11-24).
 - Web: el botón de guardar del autoservicio dice «Actualizando…» mientras trabaja (antes «Actualizando y sincronizando…») (DIS-120, 2026-11-24).
