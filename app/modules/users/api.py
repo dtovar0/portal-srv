@@ -45,6 +45,8 @@ from app.modules.users.grupos_de_rol import sincronizar_grupo_de_rol
 from app.modules.users.politica_contrasena import cargar_politica
 from app.modules.users.restablecer_contrasena import (aplicar_cambio,
                                                       validar_cambio)
+from app.modules.users.rol_en_directorio import (mover_grupo_de_rol,
+                                                  revertir_grupo_de_rol)
 from app.modules.users.roles import (CAMPOS_NO_PERMITIDOS, RESERVED_NAMES,
                                      cambiar_rol, es_el_mismo_rol,
                                      rol_asignable)
@@ -224,10 +226,14 @@ def update_user(user_id):
         if error:
             return error_response(*error)
 
+    rol_anterior = target.role
     if change_role:
+        # FNC-184: primero el grupo de Authelia en LDAP; si no se puede mover,
+        # el rol no cambia (si no, el siguiente login lo revertiría).
+        error = mover_grupo_de_rol(target, new_role)
+        if error:
+            return error_response(*error)
         cambiar_rol(target, new_role)
-        _sincronizar_grupo_por_correo(target.email, new_role,
-                                      quitar_del_otro=True)
     if 'name' in data:
         target.nombre = sanitize_display_name(data['name'], fallback=target.email)
     if 'is_active' in data:
@@ -236,6 +242,8 @@ def update_user(user_id):
         error = aplicar_cambio(target, contrasena)
         if error:
             db.session.rollback()
+            if change_role:
+                revertir_grupo_de_rol(target, rol_anterior)
             return error_response(*error)
         admin_correo = getattr(current_user, 'email', 'admin')
         add_audit_log('ADMIN: RESET PASSWORD', module='Usuarios',
