@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- **Seguridad** — Autoservicio: sin claves de firma de respaldo (solo `SECRET_KEY`), nombre y enlace escapados en el HTML de los correos, comparación en tiempo constante del TOTP y sin el detalle del servidor SMTP en la respuesta al cliente (FNC-177, 2026-11-24).
 - **Seguridad** (Crítica) — Autoservicio: el código MFA enviado a una cuenta ya no sirve para restablecer o verificar otra (el desafío queda ligado al correo de la cuenta; comparación en tiempo constante) (FNC-175, 2026-11-24).
 - **Seguridad** (Crítica) — Autoservicio: con `AUTOSERVICIO_MFA_ENABLED=false`, `POST /auth/autoservicio/restablecer-mfa` responde `403` en lugar de aceptar cualquier código; sin segundo factor solo queda el enlace por correo (FNC-176, 2026-11-24).
 - Autoservicio: `auth/autoservicio.py` (~1000 líneas) se divide en `autoservicio_errores`, `_config`, `_correo`, `_mfa` y `_externos` sin cambiar las respuestas de la API; un solo envío SMTP en lugar de tres copias; las variables y sus alias heredados se leen en un solo módulo; ningún log lleva el token del enlace ni el texto de una excepción; `.env.example` lista las variables del autoservicio y sus alias, vacías (FNC-174, 2026-11-24).

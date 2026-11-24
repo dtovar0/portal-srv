@@ -16,8 +16,6 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.modules.audit.services import add_audit_log
 from app.modules.auth.autoservicio_config import (LOGGER_AUTOSERVICIO,
-                                                  SECRETO_RESPALDO_SERIALIZADOR,
-                                                  SECRETO_RESPALDO_TOTP,
                                                   TOKEN_MAX_AGE_SEGUNDOS,
                                                   clave_secreta, mfa_habilitado,
                                                   tiempo_expiracion_mfa, tipo_mfa)
@@ -39,7 +37,7 @@ TOTP_BYTES_SECRETO = 20  # 160 bits
 
 
 def _obtener_serializador():
-    return URLSafeTimedSerializer(clave_secreta(SECRETO_RESPALDO_SERIALIZADOR))
+    return URLSafeTimedSerializer(clave_secreta())
 
 
 def generar_token_recuperacion(correo):
@@ -147,7 +145,7 @@ def solicitar_codigo_mfa(identificador):
 
 def _secret_totp_usuario(identificador):
     """Deriva un secreto TOTP estándar de 160 bits (base32) por usuario."""
-    secret_key = clave_secreta(SECRETO_RESPALDO_TOTP).encode('utf-8')
+    secret_key = clave_secreta().encode('utf-8')
     digest = hmac.new(secret_key, identificador.strip().lower().encode('utf-8'), hashlib.sha256).digest()
     return base64.b32encode(digest[:TOTP_BYTES_SECRETO]).decode('ascii')
 
@@ -166,7 +164,7 @@ def verificar_codigo_totp(identificador, codigo_totp):
             digest = hmac.new(key, msg, hashlib.sha1).digest()
             o = digest[19] & 0x0f
             valor = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 10 ** LONGITUD_CODIGO
-            if f"{valor:0{LONGITUD_CODIGO}d}" == codigo:
+            if hmac.compare_digest(f"{valor:0{LONGITUD_CODIGO}d}", codigo):
                 return True
         return False
     except Exception:
