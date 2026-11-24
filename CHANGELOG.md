@@ -5,6 +5,9 @@
 
 ## [Sin publicar]
 
+### Corregido
+- Usuarios: el superadmin ya puede cambiar desde «Editar usuario» la contraseña de las cuentas creadas al entrar por Authelia (`auth_source='sso'`), que viven en `LDAP_USERS_BASE_DN`; antes respondía `400 campo_no_permitido`. Se cambia en OpenLDAP con la política y usando el DN real encontrado por correo (FNC-165, 2026-11-24).
+
 ### Agregado
 - API: `GET /api/v1/stats` suma la clave `desglose` con `parte`/`resto` de áreas, plataformas, solicitudes, visitas y usuarios (este último solo para administradores), con el mismo alcance de cada contador; contrato `inicio` v1.1 (FNC-164, 2026-11-19).
 - Plataformas y áreas: al pasar a Inactivo, el worker mueve sus grupos LDAP a la OU `LDAP_GROUPS_INACTIVE_BASE_DN` y los regresa al reactivar (vacía = sin cambios); la API de plataformas expone `groups_location` y `groups_move_status`; migración 0018; guía `docs/operacion/GRUPOS-INACTIVOS.md` (FNC-163, 2026-11-19).
