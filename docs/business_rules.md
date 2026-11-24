@@ -6185,3 +6185,24 @@ Al pulsar "Generar contraseña segura" en el paso 3 de recuperación o al crear 
 
 ### Impacto
 Afecta a [app/modules/users/politica_contrasena.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/politica_contrasena.py), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Configuración de Longitud Generada en .env y Reactividad Dinámica en Autoservicio
+
+## Módulo
+Seguridad / Configuración / Autoservicio y Políticas de Contraseña
+
+### Regla
+1. **Configuración de Longitud Generada en Entorno**:
+   Se habilita la variable de entorno `PASSWORD_POLICY_GENERATED_LENGTH` (con fallback opcional en `AUTOSERVICIO_PASSWORD_LENGTH`), permitiendo definir en el archivo `.env` la longitud de caracteres para contraseñas generadas automáticamente tanto en el backend (`generar()` en `politica_contrasena.py`) como en el frontend de Autoservicio (`/autoservicio`).
+2. **Reactividad Dinámica en el Asistente**:
+   El endpoint `/auth/autoservicio/configuracion` expone la propiedad `password_length` calculada a partir de las variables de entorno (`PASSWORD_POLICY_GENERATED_LENGTH` o `PASSWORD_POLICY_MIN_LENGTH`, por defecto 16). El componente `AutoservicioView` se vincula de manera reactiva a esta configuración:
+   - Al pulsar "Generar contraseña segura", genera una clave con exactamente `password_length` caracteres.
+   - Los textos descriptivos, placeholders del campo de entrada y tooltips adaptan su redacción dinámicamente al valor recibido.
+   - El checklist de validación en tiempo real evalúa la longitud contra `config.politica.min_length`.
+
+### Ejemplo
+Un administrador define en su `.env` la directiva `PASSWORD_POLICY_GENERATED_LENGTH=16` (o `20`). Al ingresar al paso 3 de recuperación de contraseña, el asistente muestra automáticamente «Ingresa tu nueva clave institucional o genera una automáticamente de 16 caracteres» y genera una clave de 16 caracteres sin requerir recompilaciones manuales fijas en el código de la vista.
+
+### Impacto
+Afecta a [app/modules/users/politica_contrasena.py](file:///home/dtovar/bayblade/pokemon/app/modules/users/politica_contrasena.py), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [frontend/src/lib/api.ts](file:///home/dtovar/bayblade/pokemon/frontend/src/lib/api.ts), [frontend/src/components/autoservicio-view.tsx](file:///home/dtovar/bayblade/pokemon/frontend/src/components/autoservicio-view.tsx), [.env.example](file:///home/dtovar/bayblade/pokemon/.env.example) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

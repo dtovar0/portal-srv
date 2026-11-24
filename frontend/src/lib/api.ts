@@ -402,6 +402,7 @@ export interface AutoservicioConfig {
   mfa_ttl_segundos?: number;
   mfa_ttl_minutos?: number;
   authelia_url?: string;
+  password_length?: number;
   politica: {
     min_length: number;
     max_length: number;

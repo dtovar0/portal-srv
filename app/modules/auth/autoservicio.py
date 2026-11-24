@@ -603,6 +603,9 @@ def obtener_configuracion_autoservicio():
     ttl_seg = tiempo_expiracion_mfa()
     authelia_url = (os.getenv('AUTHELIA_URL') or os.getenv('AUTHELIA_SSO_URL') or
                     os.getenv('OIDC_ISSUER_URL') or '').strip() or None
+    cfg_gen = (os.getenv('PASSWORD_POLICY_GENERATED_LENGTH') or
+               os.getenv('AUTOSERVICIO_PASSWORD_LENGTH') or '').strip()
+    longitud_generada = int(cfg_gen) if cfg_gen.isdigit() else 16
     return {
         'status': 'success',
         'brand_name': 'Authelia',
@@ -613,6 +616,7 @@ def obtener_configuracion_autoservicio():
         'mfa_ttl_minutos': max(1, ttl_seg // 60),
         'authelia_url': authelia_url,
         'politica': cargar_politica().publica(),
+        'password_length': longitud_generada,
     }
 
 

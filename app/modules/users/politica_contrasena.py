@@ -172,7 +172,9 @@ def mensaje_de_incumplimiento(contrasena, politica=None):
 def generar(politica=None):
     """Contraseña aleatoria (`secrets`) que cumple siempre la política."""
     politica = politica or cargar_politica()
-    largo = min(max(LARGO_GENERADO, politica.largo_minimo),
+    configurado = os.getenv('PASSWORD_POLICY_GENERATED_LENGTH')
+    largo_base = int(configurado) if configurado and configurado.isdigit() else LARGO_GENERADO
+    largo = min(max(largo_base, politica.largo_minimo),
                 politica.largo_maximo)
     grupos = {CLASE_MAYUSCULAS: string.ascii_uppercase,
               CLASE_MINUSCULAS: string.ascii_lowercase,

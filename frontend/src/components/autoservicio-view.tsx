@@ -87,17 +87,20 @@ export function AutoservicioView() {
     }
   }, []);
 
+  const longitudRequerida = config?.politica?.min_length || 16;
+  const longitudGenerada = config?.password_length || longitudRequerida;
+
   // Validación de requisitos de política en tiempo real
   const validaciones = useMemo(() => {
     return {
-      longitud: nuevaContrasena.length >= 16,
+      longitud: nuevaContrasena.length >= longitudRequerida,
       mayuscula: /[A-Z]/.test(nuevaContrasena),
       minuscula: /[a-z]/.test(nuevaContrasena),
       numero: /[0-9]/.test(nuevaContrasena),
       simbolo: /[!#$%&()*+,\-./:;<=>?@[\]^_{}~]/.test(nuevaContrasena),
       coinciden: nuevaContrasena.length > 0 && nuevaContrasena === confirmarContrasena,
     };
-  }, [nuevaContrasena, confirmarContrasena]);
+  }, [nuevaContrasena, confirmarContrasena, longitudRequerida]);
 
   const contrasenaValida =
     validaciones.longitud &&
@@ -110,17 +113,17 @@ export function AutoservicioView() {
   const tipoMfa = config?.mfa_tipo || 'email';
   const esPorCorreo = tipoMfa === 'email' || tipoMfa === 'ambos';
 
-  // Generador de contraseñas de alta seguridad (16 caracteres)
+  // Generador de contraseñas de alta seguridad
   const handleGenerarContrasena = () => {
     try {
-      const clave = generarContrasenaSegura(16);
+      const clave = generarContrasenaSegura(longitudGenerada);
       setNuevaContrasena(clave);
       setConfirmarContrasena(clave);
       setMostrarClaves(true);
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         navigator.clipboard.writeText(clave).catch(() => { });
       }
-      avisar('success', 'Contraseña de 16 caracteres generada y copiada al portapapeles.');
+      avisar('success', `Contraseña de ${longitudGenerada} caracteres generada y copiada al portapapeles.`);
     } catch {
       avisar('error', 'No se pudo generar la contraseña.');
     }
@@ -504,7 +507,7 @@ export function AutoservicioView() {
                   Nueva Contraseña
                 </h1>
                 <p className="mt-1 text-xs text-texto-secundario leading-relaxed">
-                  Ingresa tu nueva clave institucional o genera una automáticamente de 16 caracteres.
+                  Ingresa tu nueva clave institucional o genera una automáticamente de {longitudGenerada} caracteres.
                 </p>
               </div>
 
@@ -513,7 +516,7 @@ export function AutoservicioView() {
                   type={mostrarClaves ? 'text' : 'password'}
                   required
                   autoFocus
-                  placeholder="Mínimo 16 caracteres"
+                  placeholder={`Mínimo ${longitudRequerida} caracteres`}
                   value={nuevaContrasena}
                   onChange={(e) => setNuevaContrasena(e.target.value)}
                   autoComplete="new-password"
@@ -546,7 +549,7 @@ export function AutoservicioView() {
                   type="button"
                   onClick={handleGenerarContrasena}
                   className="text-aduana-cyan hover:underline transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
-                  title="Genera una contraseña criptográficamente segura de 16 caracteres"
+                  title={`Genera una contraseña criptográficamente segura de ${longitudGenerada} caracteres`}
                 >
                   <Icono nombre="recargar" tamano="xs" ariaHidden={true} />
                   <span>Generar contraseña segura</span>
@@ -560,7 +563,7 @@ export function AutoservicioView() {
                 </p>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                   <span className={validaciones.longitud ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
-                    {validaciones.longitud ? '✓' : '•'} 16+ caracteres
+                    {validaciones.longitud ? '✓' : '•'} {longitudRequerida}+ caracteres
                   </span>
                   <span className={validaciones.mayuscula ? 'text-exito-texto font-semibold' : 'text-texto-secundario'}>
                     {validaciones.mayuscula ? '✓' : '•'} Mayúscula
