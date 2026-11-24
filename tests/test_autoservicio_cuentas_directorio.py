@@ -128,7 +128,7 @@ def test_cuenta_sso_fuera_del_directorio_no_recibe_hash_local(
         with pytest.raises(ErrorAutoservicio) as error:
             restablecer_con_token(CORREO, token, NUEVA)
 
-    assert error.value.codigo_http == 404
+    assert error.value.codigo_http == 503  # FNC-179: LDAP sin configurar
     assert _cuenta(cuenta_sso).password_hash is None
 
 
@@ -194,3 +194,43 @@ def test_sin_base_url_no_se_genera_enlace(app, client, cuenta_sso, ldap_falso,
 
     assert respuesta.status_code == 200  # misma respuesta: sin enumeración
     assert generados == []
+
+
+# --------------------------------------------------------------------------- #
+# FNC-179: el error dice por qué no se encontró la cuenta
+# --------------------------------------------------------------------------- #
+
+def test_cuenta_sso_sin_ldap_configurado_da_503_claro(app, cuenta_sso,
+                                                     monkeypatch):
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'false')
+    monkeypatch.setattr(autoservicio, 'directorio_activo', lambda: False)
+    with app.test_request_context():
+        token = generar_token_recuperacion(CORREO)
+        with pytest.raises(ErrorAutoservicio) as error:
+            restablecer_con_token(CORREO, token, NUEVA)
+
+    assert error.value.codigo_http == 503
+    assert error.value.mensaje == autoservicio.MENSAJE_DIRECTORIO_INACTIVO
+
+
+def test_cuenta_sso_que_no_esta_en_ldap_lo_dice(app, cuenta_sso, ldap_falso,
+                                                monkeypatch):
+    monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
+    monkeypatch.setattr(autoservicio, 'validar_desafio_mfa',
+                        lambda *a, **k: None)
+
+    class SinPersona:
+        def buscar_por_correo(self, correo):
+            return None
+
+        def buscar_usuario(self, uid):
+            return None
+
+    monkeypatch.setattr(autoservicio, 'ClienteDirectorio', SinPersona)
+    with app.test_request_context():
+        with pytest.raises(ErrorAutoservicio) as error:
+            restablecer_directo_mfa(UID, NUEVA, '123456')
+
+    assert error.value.codigo_http == 404
+    assert error.value.mensaje == autoservicio.MENSAJE_NO_EN_DIRECTORIO
+    assert _cuenta(cuenta_sso).password_hash is None

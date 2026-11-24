@@ -601,7 +601,7 @@ export function AutoservicioView() {
                   {cargando ? (
                     <>
                       <Icono nombre="recargar" tamano="xs" className="animate-spin" ariaHidden={true} />
-                      <span>Actualizando y sincronizando…</span>
+                      <span>Actualizando…</span>
                     </>
                   ) : (
                     <span>Guardar contraseña</span>
