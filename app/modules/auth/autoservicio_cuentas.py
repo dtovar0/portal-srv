@@ -46,3 +46,20 @@ def sincronizar_cuenta_local(identificador, nueva_contrasena):
         return
     cuenta.set_password(nueva_contrasena)
     db.session.commit()
+
+
+def cuenta_dada_de_alta(*identificadores):
+    """Cuenta ACTIVA del portal para el primer identificador que la tenga
+    (correo de LDAP, correo o usuario escritos); `None` si no hay.
+
+    Regla de negocio (dueño, 2026-11-24, FNC-181): solo quien está dado de
+    alta en el portal usa el autoservicio; una persona que solo existe en LDAP
+    no cambia ni recupera su contraseña por aquí.
+    """
+    for identificador in identificadores:
+        if not identificador:
+            continue
+        cuenta = cuenta_del_portal(identificador)
+        if cuenta is not None and cuenta.is_active:
+            return cuenta
+    return None

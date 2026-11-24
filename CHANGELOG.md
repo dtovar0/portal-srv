@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Autoservicio (regla de negocio): solo quien tiene cuenta activa en el portal puede cambiar o recuperar su contraseña de LDAP; quien existe solo en LDAP no recibe código ni enlace (respuesta genérica) y el cambio se rechaza con `403` sin tocar LDAP (FNC-181, 2026-11-24).
 - Autoservicio: si no se puede restablecer porque la cuenta del portal no está en LDAP, el mensaje lo dice (`404`, «Tu cuenta no está en el directorio corporativo») o avisa que LDAP no está configurado (`503`), en lugar del genérico «No se encontró la cuenta» (FNC-179, 2026-11-24).
 - Web: el botón de guardar del autoservicio dice «Actualizando…» mientras trabaja (antes «Actualizando y sincronizando…») (DIS-120, 2026-11-24).
 - Despliegue: `install.sh` (instalación nueva o reinstalación) aplica `alembic upgrade head` antes de arrancar los servicios; antes solo lo hacía `--actualizar` y, fuera de desarrollo, el backend arrancaba sin esquema. Una sola función `migrar_bd` para ambos caminos (FNC-178, 2026-11-24).
