@@ -4,10 +4,11 @@ El destino depende del origen de la cuenta (`auth_source`):
 
 - `local`: hash en la BD del portal (`set_password`), como hasta ahora, para
   cualquier cuenta local que quien edita pueda gestionar.
-- `ldap`: Password Modify en el directorio (nunca hay hash en la BD); la
-  contraseña debe cumplir la política `PASSWORD_POLICY_*` y solo la cambia el
-  superadmin.
-- cualquier otro origen (`sso`, `oidc`): se rechaza como campo no permitido.
+- `ldap` y `sso` (FNC-165: Authelia autentica contra el mismo OpenLDAP, así
+  que la cuenta `sso` vive en `LDAP_USERS_BASE_DN`): Password Modify en el
+  directorio (nunca hay hash en la BD); la contraseña debe cumplir la política
+  `PASSWORD_POLICY_*` y solo la cambia el superadmin.
+- cualquier otro origen: se rechaza como campo no permitido.
 
 La contraseña nunca se registra, se audita ni se devuelve. Las funciones
 devuelven `None` si salió bien o la tupla `(mensaje, HTTP, code)` del contrato.
@@ -18,6 +19,7 @@ from flask_login import current_user
 
 from app.authz import is_admin
 from app.modules.auth.acceso_local import es_origen_local
+from app.modules.auth.oidc_cuentas import ORIGEN_OIDC
 from app.modules.auth.services import ORIGEN_DIRECTORIO
 from app.modules.directory.configuracion import directorio_activo
 from app.modules.directory.ldap_client import ClienteDirectorio, ErrorDirectorio
@@ -41,15 +43,22 @@ DIRECTORIO_NO_DISPONIBLE = ('No se pudo actualizar la contraseña en el '
 CONTRASENA_INVALIDA = 'La contraseña no es válida.'
 
 
+# Orígenes cuya contraseña vive en el directorio: la cuenta creada por el
+# portal (`ldap`) y la creada al primer login por Authelia (`sso`, FNC-165).
+ORIGENES_EN_DIRECTORIO = frozenset({ORIGEN_DIRECTORIO, ORIGEN_OIDC})
+
+
 def es_cuenta_del_directorio(cuenta):
-    return (cuenta.auth_source or '') == ORIGEN_DIRECTORIO
+    return (cuenta.auth_source or '') in ORIGENES_EN_DIRECTORIO
 
 
-def _uid_en_directorio(cuenta):
-    """`uid` de la cuenta: el de su entrega de credenciales o, si no hay,
-    el que tenga en el directorio el correo de la cuenta.
+def _cuenta_en_directorio(cuenta):
+    """Identificador de la cuenta en el directorio: el `uid` de su entrega de
+    credenciales o, si no hay, el DN real de la entrada con el correo de la
+    cuenta bajo `LDAP_USERS_BASE_DN` (FNC-165: el DN encontrado, no uno
+    reconstruido con `LDAP_USER_ATTR`).
 
-    Devuelve `(uid, error)`: sin `uid` y sin `error` la cuenta no está en el
+    Devuelve `(identificador, error)`: sin ambos la cuenta no está en el
     directorio; con `error`, el directorio no respondió o es ambiguo."""
     entrega = cuenta.credential_delivery
     if entrega is not None and entrega.uid:
@@ -64,7 +73,7 @@ def _uid_en_directorio(cuenta):
         logger.error('Contraseña: fallo inesperado del directorio (%s).',
                      type(exc).__name__)
         return None, DIRECTORIO_NO_DISPONIBLE
-    return (persona.identificador if persona else None), None
+    return (persona.dn if persona else None), None
 
 
 def validar_cambio(cuenta, contrasena):
@@ -94,12 +103,12 @@ def aplicar_cambio(cuenta, contrasena):
         return None
     if not directorio_activo():
         return DIRECTORIO_NO_DISPONIBLE
-    uid, error = _uid_en_directorio(cuenta)
+    identificador, error = _cuenta_en_directorio(cuenta)
     if error:
         return error
-    if not uid:
+    if not identificador:
         return SIN_CUENTA_EN_DIRECTORIO
-    codigo = fijar_contrasena_en_directorio(uid, contrasena)
+    codigo = fijar_contrasena_en_directorio(identificador, contrasena)
     if codigo == CODIGO_CONTRASENA_RECHAZADA:
         return (MENSAJE_RECHAZO_DIRECTORIO, 400, 'contrasena_rechazada')
     if codigo:
