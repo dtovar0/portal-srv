@@ -103,7 +103,7 @@ export function LoginForm() {
               <div>
                 <PageHeader titleClassName="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-body-text" title="Iniciar Sesión" />
                 <p className="mt-1.5 text-sm text-texto-secundario">
-                  Ingresa con tu cuenta corporativa para continuar.
+                  Usa tu cuenta corporativa.
                 </p>
               </div>
 
@@ -126,60 +126,41 @@ export function LoginForm() {
                     <span>Iniciar Sesión con Authelia</span>
                   </Button>
 
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <p className="flex items-center justify-center gap-1.5 text-xs text-texto-secundario">
-                      <Icono nombre="candado" tamano="xs" ariaHidden={true} />
-                      <span>Autenticación federada Single Sign-On (SSO)</span>
-                    </p>
-                    {context.authelia_url && (
-                      <a
-                        href={context.authelia_url}
-                        className="min-w-12 min-h-12 inline-flex items-center text-xs text-primary-text hover:underline font-semibold"
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        Abrir portal de Authelia directamente ↗
-                      </a>
-                    )}
-                  </div>
-
-                  <div className="pt-2">
-                    <div className="rounded-2xl border border-panel-border/80 bg-fondo p-3 text-center space-y-1.5 shadow-xs">
-                      <p className="text-xs font-semibold text-body-text">
-                        ¿Tu contraseña caducó o no puedes entrar?
-                      </p>
-                      <p className="text-xs text-texto-secundario">
-                        No requieres iniciar sesión para actualizar o restablecer tu cuenta.
-                      </p>
-                      <Link
-                        href="/autoservicio"
-                        className="min-w-12 min-h-12 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary-text hover:underline pt-0.5"
-                      >
-                        <Icono nombre="candado" tamano="xs" ariaHidden={true} />
-                        <span>Autoservicio de Contraseña (sin iniciar sesión) →</span>
-                      </Link>
-                    </div>
-                  </div>
+                  {/* DIS-121: una sola línea de ayuda, sin cajas ni notas extra. */}
+                  <nav aria-label="Ayuda para iniciar sesión" className="flex flex-wrap items-center justify-center gap-x-2 text-xs text-texto-secundario">
+                    <Link
+                      href="/autoservicio"
+                      className="min-h-12 min-w-12 inline-flex items-center font-semibold text-primary-text hover:underline outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-control"
+                    >
+                      ¿Olvidaste o caducó tu contraseña?
+                    </Link>
+                    {context.authelia_url ? (
+                      <>
+                        <span aria-hidden="true">·</span>
+                        <a
+                          href={context.authelia_url}
+                          className="min-h-12 min-w-12 inline-flex items-center text-primary-text hover:underline outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-control"
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          Portal de Authelia ↗
+                        </a>
+                      </>
+                    ) : null}
+                  </nav>
                 </div>
               )}
             </div>
 
-            {/* Enlaces y notas al pie del formulario */}
-            <div className="space-y-2 pt-4 border-t border-panel-border/40 text-xs text-texto-secundario">
-              {esPortadaActiva() ? (
-                <div>
-                  <Link
-                    href="/"
-                    className="min-w-12 min-h-12 inline-flex items-center gap-1 text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
-                  >
-                    <span>Conoce Aduana: Guía y Presentación de la Plataforma</span>
-                  </Link>
-                </div>
-              ) : null}
-              <p className="text-xs text-texto-tenue">
-                Vivaro • Gobernanza y Control Centralizado de Accesos TI
-              </p>
-            </div>
+            {/* Pie: solo la presentación, si la portada está activa (DIS-121). */}
+            {esPortadaActiva() ? (
+              <Link
+                href="/"
+                className="min-h-12 min-w-12 inline-flex items-center self-start text-xs text-texto-secundario hover:text-primary-text hover:underline outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-control"
+              >
+                Conoce {APP_TITLE}
+              </Link>
+            ) : null}
           </div>
 
           {/* PANEL DERECHO: Fotografía estética a sangre limpia */}

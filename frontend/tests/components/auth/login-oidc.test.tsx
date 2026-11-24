@@ -63,7 +63,7 @@ describe('LoginForm', () => {
     vi.stubEnv('PORTADA_ACTIVA', 'true');
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
     render(<LoginForm />);
-    const enlace = await screen.findByRole('link', { name: /Conoce Aduana: Guía y Presentación de la Plataforma/ });
+    const enlace = await screen.findByRole('link', { name: /Conoce Aduana/ });
     expect(enlace.getAttribute('href')).toBe('/');
   });
 
@@ -73,11 +73,11 @@ describe('LoginForm', () => {
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
     render(<LoginForm />);
     await screen.findByRole('button', { name: /Iniciar Sesión con Authelia/ });
-    expect(screen.queryByRole('link', { name: /Conoce Aduana: Guía y Presentación de la Plataforma/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Conoce Aduana/ })).toBeNull();
   });
 
   // Botón persistente (306161e): ya no se oculta con OIDC apagado; si hay URL directa de Authelia,
-  // el botón lleva a ella y se ofrece además el enlace «Abrir portal de Authelia directamente».
+  // el botón lleva a ella y se ofrece además el enlace «Portal de Authelia».
   it('OIDC sin configurar: el botón persiste y lleva a la URL de Authelia', async () => {
     ctx.mockResolvedValue({
       oidc_enabled: false, authenticated: false, emergency_available: true,
@@ -88,7 +88,7 @@ describe('LoginForm', () => {
     expect(screen.queryByText(/no está disponible/)).toBeNull();
     fireEvent.click(boton);
     expect(window.location.href).toBe('https://auth.ejemplo.test');
-    const directo = screen.getByRole('link', { name: /Abrir portal de Authelia directamente/ });
+    const directo = screen.getByRole('link', { name: /Portal de Authelia/ });
     expect(directo.getAttribute('rel')).toContain('noopener');
   });
 
@@ -166,5 +166,18 @@ describe('LogoutView', () => {
     render(<LogoutView />);
     expect(await screen.findByText('Sesión cerrada')).toBeTruthy();
     expect(screen.getByRole('link').getAttribute('href')).toBe('/login');
+  });
+});
+
+describe('LoginForm simplificado (DIS-121)', () => {
+  it('solo ofrece el botón y una línea de ayuda; sin caja ni notas extra', async () => {
+    render(<LoginForm />);
+    await screen.findByRole('button', { name: /Iniciar Sesión con Authelia/ });
+    const ayuda = screen.getByRole('navigation', { name: 'Ayuda para iniciar sesión' });
+    expect(ayuda.textContent).toContain('¿Olvidaste o caducó tu contraseña?');
+    expect(screen.getByRole('link', { name: /Olvidaste o caducó tu contraseña/ }).getAttribute('href')).toBe('/autoservicio');
+    expect(screen.queryByText(/Autenticación federada/)).toBeNull();
+    expect(screen.queryByText(/No requieres iniciar sesión/)).toBeNull();
+    expect(screen.queryByText(/Gobernanza y Control Centralizado/)).toBeNull();
   });
 });
