@@ -10,7 +10,11 @@
 - Grupo del portal (FNC-170): cada persona queda también en el grupo que
   Authelia exige según su rol (`--sin-grupo-del-portal` no lo toca).
 - Rotación (`--rotar-contrasena`): decisión del operador; rota a todas las
-  personas procesables de la corrida, nuevas o ya existentes en el portal.
+  personas procesables de la corrida, nuevas o ya existentes en el portal;
+  el correo usa `--plantilla` (FNC-190, por omisión `onboarding_aduana`) y
+  trae el enlace del Send con su código de acceso.
+- `--solo UID` (repetible) limita la corrida a esas personas; `--enviar-a
+  CORREO` manda el correo de la rotación a ese buzón (FNC-190, solo CLI).
 """
 from app import db
 from app.authz import ROLE_ADMIN, ROLE_AREA_ADMIN, ROLE_USER, normalized_role
@@ -30,6 +34,7 @@ from app.modules.alta.resumen import (ACTUALIZADO, CREADO, ERROR, OMITIDO,
 from app.modules.auth.models import User
 from app.modules.auth.services import ORIGEN_SSO, normalizar_correo
 from app.modules.directory.ldap_client import ErrorDirectorio
+from app.modules.users.entrega_credenciales import SLUG_ONBOARDING
 from app.modules.users.grupos_de_rol import (nombre_grupo_admins,
                                              nombre_grupo_usuarios)
 from app.modules.users.roles import cambiar_rol
@@ -44,6 +49,8 @@ DETALLE_ADMIN_PORTAL = 'es superadmin en el portal; no se modifica'
 DETALLE_CREADA = 'cuenta del portal (sso), rol {rol}'
 DETALLE_ROL = 'rol {antes} → {despues}'
 DETALLE_DIRECTORIO = 'no se pudo consultar a la persona en el directorio'
+DETALLE_FUERA_DE_SOLO = 'fuera de --solo'
+DETALLE_SOLO_AUSENTE = '--solo: no es miembro de los grupos de la corrida'
 DETALLE_SIN_CUENTA = 'sin cuenta en el portal; no se rota'
 
 
@@ -73,8 +80,20 @@ def _personas(cliente, grupos, resumen):
     return personas
 
 
+def _limitar_a(personas, solo, resumen):
+    """Deja solo a las personas de `--solo`; las demás se reportan omitidas."""
+    pedidos = {uid.strip().lower() for uid in solo}
+    for clave, persona in sorted(personas.items()):
+        if clave not in pedidos:
+            resumen.agregar(persona.identificador, OMITIDO, DETALLE_FUERA_DE_SOLO)
+    for uid in sorted(pedidos - set(personas)):
+        resumen.agregar(uid, ERROR, DETALLE_SOLO_AUSENTE)
+    return {c: p for c, p in personas.items() if c in pedidos}
+
+
 def migrar(dry_run, rotar, nombres_de_grupo, rol_forzado, actualizar_rol,
-           sin_grupo_portal):
+           sin_grupo_portal, plantilla=SLUG_ONBOARDING, solo=(),
+           enviar_a=None):
     cliente = cliente_o_error()
     if rotar:
         exigir_entrega()
@@ -93,6 +112,8 @@ def migrar(dry_run, rotar, nombres_de_grupo, rol_forzado, actualizar_rol,
     admins = identificadores(cfg, leer_grupo(cliente, nombre_grupo_admins()))
 
     personas = _personas(cliente, grupos, resumen)
+    if solo:
+        personas = _limitar_a(personas, solo, resumen)
     nuevas, procesables = [], []   # procesables: (persona, correo, rol)
     for clave, persona in sorted(personas.items()):
         correo = normalizar_correo(persona.correo)
@@ -147,11 +168,12 @@ def migrar(dry_run, rotar, nombres_de_grupo, rol_forzado, actualizar_rol,
         if not rotar:
             continue
         if dry_run:
-            resumen.agregar(correo, ROTADO, 'se rotaría la contraseña de LDAP')
+            resumen.agregar(correo, ROTADO, rotacion.detalle_dry_run(enviar_a))
             continue
         cuenta = User.query.filter(db.func.lower(User.email) == correo).first()
         if cuenta is None:
             resumen.agregar(correo, ERROR, DETALLE_SIN_CUENTA)
             continue
-        resumen.lineas.append(rotacion.rotar(cuenta, persona.identificador))
+        resumen.lineas.append(rotacion.rotar(cuenta, persona.identificador,
+                                             plantilla, enviar_a))
     return resumen

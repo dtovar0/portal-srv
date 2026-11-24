@@ -10,6 +10,9 @@
 - `GET /api/v1/users/password-policy`: política de la contraseña inicial.
 - `POST /api/v1/users/<id>/credentials`: retirado (FNC-161, `410`); la
   contraseña se cambia con `PUT /users/<id>`.
+- `POST /api/v1/users/<id>/rotar-contrasena`: el superadmin rota la contraseña
+  de una cuenta del directorio y la entrega por Send con código y correo
+  (FNC-190, `rotar_contrasena.py`).
 - Alta, edición y baja de cuentas y el endpoint retirado de plataformas
   (FNC-029, movidos de `api/crud.py`).
 """
@@ -43,13 +46,15 @@ from app.modules.users.directory_accounts import (CAMPO_CONTRASENA,
                                                   validar_alta)
 from app.modules.users.grupos_de_rol import sincronizar_grupo_de_rol
 from app.modules.users.politica_contrasena import cargar_politica
-from app.modules.users.restablecer_contrasena import (aplicar_cambio,
-                                                      validar_cambio)
+from app.modules.users.restablecer_contrasena import (
+    aplicar_cambio, es_cuenta_del_directorio, validar_cambio)
 from app.modules.users.rol_en_directorio import (mover_grupo_de_rol,
                                                   revertir_grupo_de_rol)
 from app.modules.users.roles import (CAMPOS_NO_PERMITIDOS, RESERVED_NAMES,
                                      cambiar_rol, es_el_mismo_rol,
                                      rol_asignable)
+from app.modules.users.rotar_contrasena import (NO_ES_DEL_DIRECTORIO,
+                                                rotar_y_enviar)
 from app.modules.users.serializacion import usuario_gestionado
 from app.utils.naming import sanitize_display_name
 
@@ -136,6 +141,26 @@ def password_policy():
 def resend_credentials(user_id):
     """Retirado (FNC-161): la contraseña se cambia desde «Editar usuario»."""
     return endpoint_retirado(REEMPLAZO_CONTRASENA)
+
+
+@users_api_bp.route('/users/<int:user_id>/rotar-contrasena', methods=['POST'])
+@login_required
+@admin_required
+def rotate_password(user_id):
+    """Rota la contraseña de una cuenta del directorio y la entrega por Send
+    (con código) y correo. Sin cuerpo; la respuesta no lleva secretos."""
+    _, error = leer_cuerpo()
+    if error is not None:
+        return error
+    cuenta = db.session.get(User, user_id)
+    if cuenta is None:
+        return error_response(*NO_ENCONTRADO)
+    if not es_cuenta_del_directorio(cuenta):
+        return error_response(*NO_ES_DEL_DIRECTORIO)
+    estado, error = rotar_y_enviar(cuenta)
+    if error:
+        return error_response(*error)
+    return jsonify({'status': 'success', 'entrega': {'estado': estado}})
 
 
 @users_api_bp.route('/users', methods=['POST'])

@@ -32,6 +32,7 @@ from app.modules.users.directory_accounts import (
     CAMPO_APELLIDO as CAMPO_APELLIDO_API, CAMPO_CONTRASENA as CAMPO_CONTRASENA_API,
     CAMPO_CORREO as CAMPO_CORREO_API, CAMPO_NOMBRE as CAMPO_NOMBRE_API,
     CAMPO_UID as CAMPO_UID_API, crear_cuenta_directorio, validar_alta)
+from app.modules.users.entrega_credenciales import SLUG_ONBOARDING
 from app.modules.users.politica_contrasena import generar
 
 logger = logging.getLogger(__name__)
@@ -171,7 +172,7 @@ def _crear_en_ldap(reg, item, correo, resumen):
 
 
 def importar_usuarios(registros, dry_run, crear_en_ldap, omitir_si_existe,
-                      rotar):
+                      rotar, plantilla=SLUG_ONBOARDING, enviar_a=None):
     """Usuarios del CSV: portal siempre; LDAP solo con `crear_en_ldap`."""
     if (omitir_si_existe or rotar) and not crear_en_ldap:
         raise click.UsageError(MENSAJE_FLAGS)
@@ -234,11 +235,13 @@ def importar_usuarios(registros, dry_run, crear_en_ldap, omitir_si_existe,
         resumen.agregar(ENTIDAD_USUARIOS, ERROR, error)
         return resumen
     resumen_de_items(resultado, DETALLE_VINCULADO, resumen)
-    _grupo_y_rotacion(cliente, resultado, vinculados, rotar, dry_run, resumen)
+    _grupo_y_rotacion(cliente, resultado, vinculados, rotar, dry_run, resumen,
+                       plantilla, enviar_a)
     return resumen
 
 
-def _grupo_y_rotacion(cliente, resultado, vinculados, rotar, dry_run, resumen):
+def _grupo_y_rotacion(cliente, resultado, vinculados, rotar, dry_run, resumen,
+                      plantilla, enviar_a=None):
     """Para los vinculados creados: grupo del portal y, si se pide, rotación."""
     validos = {i.get('email') for i in resultado['items']
                if i.get('status') == ESTADO_FILA_VALIDA}
@@ -251,7 +254,8 @@ def _grupo_y_rotacion(cliente, resultado, vinculados, rotar, dry_run, resumen):
         if not rotar:
             continue
         if dry_run:
-            resumen.agregar(correo, ROTADO, 'se rotaría la contraseña de LDAP')
+            resumen.agregar(correo, ROTADO, rotacion.detalle_dry_run(enviar_a))
             continue
         cuenta = User.query.filter_by(email=correo).first()
-        resumen.lineas.append(rotacion.rotar(cuenta, persona.identificador))
+        resumen.lineas.append(rotacion.rotar(cuenta, persona.identificador,
+                                             plantilla, enviar_a))

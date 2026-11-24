@@ -192,6 +192,10 @@ def _registrar_cli_y_manejadores(app):
     # Proveedor `conector` del ejecutor y tipo `noop` en dev/pruebas (FNC-050).
     from app.modules.connectors import registrar as registrar_conectores
     registrar_conectores(app)
+    # Todo cambio de contraseña en LDAP se sincroniza con JumpServer (FNC-190).
+    from app.modules.integraciones.jumpserver import \
+        registrar as registrar_jumpserver
+    registrar_jumpserver()
     # El worker admite el reintento de entrega de credenciales (FNC-138).
     from app.modules.users.entrega_credenciales import \
         registrar as registrar_entregas

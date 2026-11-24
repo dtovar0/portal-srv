@@ -3,17 +3,19 @@
 Flujo de un intento (alta, reenvío o reintento del worker):
 1. la contraseña está fijada en OpenLDAP (Password Modify, `writer.py`);
 2. se crea un Send de texto (usuario, contraseña y URL del portal) con
-   `secretos/sends.py` y se manda por correo **solo el enlace**
-   (plantilla `credenciales_iniciales`, SEC-MAIL-05);
+   `secretos/sends.py`, protegido con un código de 6 dígitos nuevo (FNC-190), y
+   se manda por correo **solo el enlace y el código, en un bloque aparte**
+   (plantilla `credenciales_iniciales` u `onboarding_aduana`, la de
+   `credential_deliveries.plantilla`; SEC-MAIL-05);
 3. éxito → `enviadas`; cualquier falla → `pendientes` con un código corto
    (`CODIGO_*`) y el reintento del worker (mismo worker y cola RQ de los
    accesos; `tipos_de_trabajo`, ADR-008 3B).
 
 Reglas:
-- La contraseña nunca se guarda, ni su enlace, ni aparece en auditoría, logs,
+- La contraseña nunca se guarda, ni su enlace ni su código, ni aparece en auditoría, logs,
   errores o `repr`: vive solo en variables locales del intento.
 - Cada reintento genera una contraseña nueva (servidor, `secrets`), la fija en
-  LDAP y crea un Send nuevo (decisión 4): la escrita por el administrador solo
+  LDAP y crea un Send nuevo con un código nuevo (decisión 4): la escrita por el administrador solo
   sirve en el primer intento síncrono.
 - Sin notificaciones activas o sin `BASE_URL` no se crea ningún Send (no queda
   un Send huérfano): la entrega queda `pendientes`.
@@ -40,6 +42,7 @@ from app.modules.directory.errors import Resultado
 from app.modules.directory.writer import (MOTIVO_CONTRASENA_RECHAZADA,
                                           EscritorDirectorio)
 from app.modules.notifications import services
+from app.modules.notifications.models import NotificationTemplate
 from app.modules.notifications.access_notifications import (correos,
                                                             superadmins)
 from app.modules.provisioning.configuracion import cargar_configuracion
@@ -50,10 +53,11 @@ from app.modules.provisioning.tipos_de_trabajo import \
     registrar_tipo_de_trabajo
 from app.modules.secretos.sends import (MOTIVO_SEND_DESHABILITADO,
                                         SendRechazado, borrar_send,
-                                        crear_send_texto)
+                                        codigo_de_acceso, crear_send_texto)
 from app.modules.secretos.vaultwarden import ErrorDeGestor, GestorCaido
 from app.modules.users.models import (ESTADO_ENVIADAS, ESTADO_PENDIENTES,
                                       LARGO_RESERVADO_POR,
+                                      PLANTILLA_POR_OMISION,
                                       EntregaCredenciales)
 from app.modules.users.politica_contrasena import generar
 from app.modules.users.roles import MODULO_AUDITORIA
@@ -62,13 +66,18 @@ logger = logging.getLogger(__name__)
 
 # Nombre del trabajo que el worker acepta (por nombre: el mensaje no lleva código).
 FUNCION_ENTREGA = 'app.modules.users.entrega_credenciales.ejecutar_entrega'
-SLUG_INICIALES = 'credenciales_iniciales'
+SLUG_INICIALES = PLANTILLA_POR_OMISION
+SLUG_ONBOARDING = 'onboarding_aduana'
 SLUG_NO_ENTREGADAS = 'credenciales_no_entregadas'
+# Plantillas que llevan el enlace y el código del Send (se eligen por entrega).
+PLANTILLAS_DE_ENTREGA = (SLUG_INICIALES, SLUG_ONBOARDING)
 # Lista blanca de variables de cada plantilla (SEC-MAIL-02).
 CLAVES_POR_PLANTILLA = {
-    SLUG_INICIALES: ('nombre', 'usuario', 'enlace', 'url'),
+    SLUG_INICIALES: ('nombre', 'usuario', 'enlace', 'codigo', 'url'),
+    SLUG_ONBOARDING: ('nombre', 'usuario', 'enlace', 'codigo', 'url'),
     SLUG_NO_ENTREGADAS: ('usuario', 'correo_usuario', 'url'),
 }
+ACCION_REDIRIGIDA = 'CREDENCIALES REDIRIGIDAS'
 NOMBRE_DEL_SEND = 'Credenciales del portal'
 VAR_BASE_URL = 'BASE_URL'
 
@@ -81,6 +90,7 @@ CODIGO_SEND_DESHABILITADO = 'send_deshabilitado'
 CODIGO_CORREO = 'correo_no_enviado'
 CODIGO_DIRECTORIO = 'directorio_no_disponible'
 CODIGO_CONTRASENA_RECHAZADA = 'contrasena_rechazada'
+CODIGO_PLANTILLA_SIN_CODIGO = 'plantilla_sin_codigo'
 CODIGO_INESPERADO = 'error_inesperado'
 CODIGO_AGOTADOS = 'intentos_agotados'
 
@@ -126,6 +136,13 @@ def _codigo_de_gestor(exc):
     return CODIGO_GESTOR_MAL_CONFIGURADO
 
 
+def _plantilla_sin_codigo(slug):
+    """`True` si la plantilla (editada en Ajustes) ya no trae `{codigo}`: sin él
+    la persona no podría abrir el Send. Una plantilla ausente no se juzga aquí."""
+    plantilla = NotificationTemplate.query.filter_by(slug=slug).first()
+    return plantilla is not None and '{codigo}' not in (plantilla.body or '')
+
+
 def _borrar_sin_fallar(send_id):
     """Borra un Send; un fallo se registra sin detalle y nunca se propaga."""
     if not send_id:
@@ -137,16 +154,30 @@ def _borrar_sin_fallar(send_id):
                        type(exc).__name__)
 
 
-def enviar_credenciales(correo, nombre, uid, contrasena, send_anterior=None):
-    """Crea el Send y manda el enlace; `(None, send_id)` o `(codigo, None)`."""
+def enviar_credenciales(correo, nombre, uid, contrasena, send_anterior=None,
+                        plantilla=SLUG_INICIALES):
+    """Crea el Send con su código de acceso y manda el enlace y el código por
+    correo con `plantilla`; `(None, send_id)` o `(codigo_de_error, None)`.
+
+    El código de acceso es nuevo en cada llamada y no sale de esta función
+    más que hacia el Send y el correo.
+    """
+    if plantilla not in PLANTILLAS_DE_ENTREGA:
+        plantilla = SLUG_INICIALES
     if not services.notifications_enabled():
         return CODIGO_SIN_NOTIFICACIONES, None
     url = url_del_portal()
     if not url:
         return CODIGO_SIN_BASE_URL, None
+    if _plantilla_sin_codigo(plantilla):
+        logger.error('Credenciales: la plantilla %s no incluye {codigo}.',
+                     plantilla)
+        return CODIGO_PLANTILLA_SIN_CODIGO, None
+    codigo_acceso = codigo_de_acceso()
     try:
         send = crear_send_texto(NOMBRE_DEL_SEND,
-                                _texto_del_send(uid, contrasena, url))
+                                _texto_del_send(uid, contrasena, url),
+                                codigo=codigo_acceso)
     except ErrorDeGestor as exc:
         logger.warning('Credenciales: no se creó el Send (%s).',
                        type(exc).__name__)
@@ -157,14 +188,15 @@ def enviar_credenciales(correo, nombre, uid, contrasena, send_anterior=None):
         return CODIGO_INESPERADO, None
     try:
         respuesta = services.send_notification_by_slug(
-            SLUG_INICIALES, correo,
+            plantilla, correo,
             {'nombre': nombre or uid, 'usuario': uid,
-             'enlace': send.enlace, 'url': url})
+             'enlace': send.enlace, 'codigo': codigo_acceso, 'url': url})
         enviado = respuesta.get('status') == 'success'
     except Exception as exc:
         logger.error('Credenciales: fallo inesperado del correo (%s).',
                      type(exc).__name__)
         enviado = False
+    del codigo_acceso
     if not enviado:
         _borrar_sin_fallar(send.id)
         return CODIGO_CORREO, None
@@ -214,6 +246,14 @@ def marcar_enviada(entrega, send_id, momento, evento, como_sistema):
     entrega.locked_at = entrega.locked_by = None
     _auditar(evento, entrega.cuenta, 'success',
              'Credenciales entregadas por Send.', entrega, como_sistema)
+    if entrega.destinatario:  # solo CLI (`--enviar-a`); sin secretos
+        add_audit_log(f'{ACCION_REDIRIGIDA}: {entrega.uid} → '
+                      f'{entrega.destinatario}', status='warning',
+                      detail='Credenciales enviadas a un destinatario '
+                             'distinto del correo de la cuenta.',
+                      module=MODULO_AUDITORIA, target=entrega.cuenta.email,
+                      target_user_id=entrega.cuenta.id,
+                      as_system=como_sistema, commit=False)
 
 
 def marcar_pendiente(entrega, codigo, momento, cfg):
@@ -353,15 +393,18 @@ def ejecutar_entrega(entrega_id, worker=None):
         entrega = db.session.get(EntregaCredenciales, entrega_id,
                                  populate_existing=True)
         uid, send_anterior = entrega.uid, entrega.send_id
-        correo, nombre = entrega.cuenta.email, entrega.cuenta.nombre
+        plantilla = entrega.plantilla or PLANTILLA_POR_OMISION
+        # El destinatario sustituto (solo CLI) se respeta en cada reintento.
+        correo = entrega.destinatario or entrega.cuenta.email
+        nombre = entrega.cuenta.nombre
         db.session.rollback()
 
         contrasena = generar()
         codigo = fijar_contrasena_en_directorio(uid, contrasena)
         send_id = None
         if codigo is None:
-            codigo, send_id = enviar_credenciales(correo, nombre, uid,
-                                                  contrasena, send_anterior)
+            codigo, send_id = enviar_credenciales(
+                correo, nombre, uid, contrasena, send_anterior, plantilla)
         del contrasena
 
         if not _confirmar_reserva(entrega_id, worker):
