@@ -271,3 +271,19 @@ def test_install_actualizar_frontend_no_se_combina():
         r = subprocess.run(['bash', str(INSTALL), '--actualizar-frontend', otra],
                            capture_output=True, text=True, timeout=10)
         assert r.returncode == 2, (otra, r.stderr)
+
+
+def test_instalacion_nueva_migra_antes_de_arrancar_regresion_fnc_178():
+    """Fuera de desarrollo el backend no crea tablas: la instalación nueva
+    debe correr `alembic upgrade head` tras las dependencias y antes de
+    arrancar los servicios; --actualizar usa la misma función."""
+    texto = INSTALL.read_text()
+    assert 'migrar_bd() {' in texto
+    assert '"$PREFIX/venv/bin/alembic" upgrade head' in texto
+    assert 'actualizar_migrar() { migrar_bd; }' in texto
+    dependencias = texto.index('\ninstalar_dependencias\n')
+    migracion = texto.index('\nmigrar_bd\n')
+    arranque = texto.index('systemctl restart "$BACKEND_UNIT"')
+    assert dependencias < migracion < arranque
+    # Una sola definición del comando (sin copias divergentes).
+    assert texto.count('alembic" upgrade head') == 1

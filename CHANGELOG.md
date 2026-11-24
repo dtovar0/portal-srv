@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Despliegue: `install.sh` (instalación nueva o reinstalación) aplica `alembic upgrade head` antes de arrancar los servicios; antes solo lo hacía `--actualizar` y, fuera de desarrollo, el backend arrancaba sin esquema. Una sola función `migrar_bd` para ambos caminos (FNC-178, 2026-11-24).
 - **Seguridad** — Autoservicio: sin claves de firma de respaldo (solo `SECRET_KEY`), nombre y enlace escapados en el HTML de los correos, comparación en tiempo constante del TOTP y sin el detalle del servidor SMTP en la respuesta al cliente (FNC-177, 2026-11-24).
 - **Seguridad** (Crítica) — Autoservicio: el código MFA enviado a una cuenta ya no sirve para restablecer o verificar otra (el desafío queda ligado al correo de la cuenta; comparación en tiempo constante) (FNC-175, 2026-11-24).
 - **Seguridad** (Crítica) — Autoservicio: con `AUTOSERVICIO_MFA_ENABLED=false`, `POST /auth/autoservicio/restablecer-mfa` responde `403` en lugar de aceptar cualquier código; sin segundo factor solo queda el enlace por correo (FNC-176, 2026-11-24).
