@@ -32,7 +32,9 @@ from app.modules.auth.autoservicio_config import (  # noqa: F401 (re-exportados)
 from app.modules.auth.autoservicio_correo import (  # noqa: F401 (re-exportados)
     enviar_correo_confirmacion_cambio, enviar_correo_mfa,
     enviar_correo_recuperacion, resolver_smtp_autoservicio)
-from app.modules.auth.autoservicio_cuentas import cuenta_local, sincronizar_cuenta_local
+from app.modules.auth.autoservicio_cuentas import (cuenta_del_portal,
+                                                  cuenta_local,
+                                                  sincronizar_cuenta_local)
 from app.modules.auth.autoservicio_errores import ErrorAutoservicio
 from app.modules.auth.autoservicio_externos import sincronizar_jumpserver_o_externos
 from app.modules.auth.autoservicio_mfa import (  # noqa: F401 (re-exportados)
@@ -191,6 +193,29 @@ def solicitar_recuperacion(correo):
     return RESPUESTA_RECUPERACION
 
 
+# FNC-179: por qué no se pudo restablecer (la identidad ya se verificó con el
+# enlace o el MFA, así que el motivo concreto no revela cuentas ajenas).
+MENSAJE_DIRECTORIO_INACTIVO = ('El directorio corporativo (LDAP) no está configurado '
+                               'en el portal. Avisa al administrador.')
+MENSAJE_NO_EN_DIRECTORIO = ('Tu cuenta no está en el directorio corporativo (LDAP). '
+                            'Avisa al administrador.')
+MENSAJE_CUENTA_INEXISTENTE = 'No se encontró la cuenta de usuario especificada.'
+
+
+def _sin_cuenta(identificador):
+    """Error cuando ni LDAP ni una cuenta local del portal tienen la cuenta."""
+    cuenta = cuenta_del_portal(identificador)
+    if cuenta is None:
+        return ErrorAutoservicio(MENSAJE_CUENTA_INEXISTENTE, 404)
+    if not directorio_activo():
+        logger.error('Autoservicio: cuenta del directorio sin LDAP configurado '
+                     '(LDAP_URL vacía o directorio inactivo).')
+        return ErrorAutoservicio(MENSAJE_DIRECTORIO_INACTIVO, 503)
+    logger.warning('Autoservicio: la cuenta del portal no está en LDAP_USERS_BASE_DN '
+                   '(se buscó por correo y por usuario).')
+    return ErrorAutoservicio(MENSAJE_NO_EN_DIRECTORIO, 404)
+
+
 def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challenge_token=None):
     """Aplica la nueva contraseña utilizando el token firmado y segundo factor MFA si aplica."""
     correo = (correo or '').strip().lower()
@@ -259,7 +284,7 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
                       detail='Contraseña restablecida por el usuario en BD local mediante enlace temporal y MFA de Authelia')
         return {'status': 'success', 'message': 'Contraseña restablecida exitosamente en Authelia.'}
 
-    raise ErrorAutoservicio('No se encontró la cuenta en el directorio.', 404)
+    raise _sin_cuenta(correo_objetivo)
 
 
 def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge_token=None):
@@ -339,4 +364,4 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
                       detail='Contraseña local restablecida directamente con MFA en Autoservicio Authelia')
         return {'status': 'success', 'message': 'Contraseña restablecida con éxito en Authelia.'}
 
-    raise ErrorAutoservicio('No se encontró la cuenta de usuario especificada.', 404)
+    raise _sin_cuenta(identificador)
