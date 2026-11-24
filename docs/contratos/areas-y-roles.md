@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 3 (2026-11-19) |
+| Versión | 3.1 (2026-11-24) |
 | Proveedor | backend (FNC-044, FNC-045, FNC-055, FNC-161) |
 | Consumidores | web (FNC-069; pantallas DIS-016, DIS-019) |
 | Solicitudes | — |
@@ -68,8 +68,8 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 - `password` en `POST /users` (v2, FNC-077): el portal no fija contraseñas locales → `400 campo_no_permitido` (vacía = ausente; la cuenta nace sin clave); solo se acepta en desarrollo con la bandera. En `PUT /users/<id>` rige la regla de v3 (abajo); sin rol de admin → `403 sin_permiso`.
 - **`PUT /users/<id>` con `password` según el origen (v3, FNC-161; sustituye a las dos reglas de `PUT` anteriores):**
   - `local`: hash en la BD, para cualquier cuenta local que quien edita pueda gestionar (cuenta de emergencia incluida). Solo se exige que sea texto no vacío (`400 contrasena_invalida`).
-  - `ldap`: solo el superadmin (admin de área → `403 solo_superadmin`). Debe cumplir la política `PASSWORD_POLICY_*` (`400 contrasena_invalida` con la regla incumplida) y se cambia en OpenLDAP con Password Modify; **nunca** se guarda hash en la BD. La cuenta se ubica por el `uid` de su entrega de credenciales o, si no hay, por su correo en el directorio. Si el directorio la rechaza por su `ppolicy` → `400 contrasena_rechazada` (sin el texto del servidor); directorio inactivo, caído o ambiguo → `503 directorio_no_disponible`; sin cuenta en el directorio → `409 cuenta_no_encontrada_en_directorio`. Si falla, no se aplica ningún otro campo del mismo `PUT`.
-  - `sso` / `oidc`: `400 campo_no_permitido`.
+  - `ldap` y `sso` (v3.1, FNC-165: la cuenta `sso` nace al primer login por Authelia, que autentica contra el mismo OpenLDAP): solo el superadmin (admin de área → `403 solo_superadmin`). Debe cumplir la política `PASSWORD_POLICY_*` (`400 contrasena_invalida` con la regla incumplida) y se cambia en OpenLDAP con Password Modify; **nunca** se guarda hash en la BD. La cuenta se ubica por el `uid` de su entrega de credenciales o, si no hay, por su correo bajo `LDAP_USERS_BASE_DN` (se usa el DN encontrado). Si el directorio la rechaza por su `ppolicy` → `400 contrasena_rechazada` (sin el texto del servidor); directorio inactivo, caído o ambiguo → `503 directorio_no_disponible`; sin cuenta en el directorio → `409 cuenta_no_encontrada_en_directorio`. Si falla, no se aplica ningún otro campo del mismo `PUT`.
+  - cualquier otro origen: `400 campo_no_permitido`.
   - La contraseña nunca se registra, audita ni devuelve. «Reenviar credenciales» (`POST /users/<id>/credentials`) se retiró (`410`, [usuarios-directorio.md](usuarios-directorio.md) v3).
 - Origen en `POST /users` (v2, FNC-077): fuera de desarrollo la cuenta nace `auth_source=ldap` sin contraseña y se vincula cuando la persona entra por directorio o SSO con ese correo; con la bandera de desarrollo, `local`. El rol sigue las reglas de arriba.
 
@@ -114,3 +114,4 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 - Quien deja de pertenecer a un área (`PUT /areas/<id>/users` o `PUT /users/<id>/areas`) pierde sus accesos por solicitud en las plataformas de esa área, en la misma petición.
 - Se revocan como el sistema con motivo `ya_no_pertenece_al_area`: `activo` → `revocando` (trabajo `revocar`); sin conector, `en_proceso`/`activo`/`fallido` → `revocado`.
 - Un acceso `en_proceso` con LDAP o conector no se toca (su trabajo `otorgar` sigue); los automáticos de admin de área los resincroniza `area_admin_sync`.
+| 3.1 | 2026-11-24 | FNC-165 (pedido del dueño): `password` en `PUT /users/<id>` para cuentas `sso` sigue la regla de `ldap` (antes `400 campo_no_permitido`: **más permisivo**, solo superadmin). La búsqueda por correo usa el DN real. Cliente: `user-form.tsx` (FNC-166) |

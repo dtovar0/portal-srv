@@ -7,6 +7,7 @@
 
 ### Corregido
 - Web: «Editar usuario» muestra el campo Contraseña (con la política) también para cuentas `sso` cuando edita el superadmin. `tsc` sin errores (prueba `platforms-shell` desalineada con `Session`, `PlatformsSidebarView` y `CatalogItem`) y lint en 0 errores y 0 advertencias (imports, variables y props sin uso; `any` en pruebas) (FNC-166, 2026-11-24).
+- Usuarios: el superadmin ya puede cambiar desde «Editar usuario» la contraseña de las cuentas creadas al entrar por Authelia (`auth_source='sso'`), que viven en `LDAP_USERS_BASE_DN`; antes respondía `400 campo_no_permitido`. Se cambia en OpenLDAP con la política y usando el DN real encontrado por correo (FNC-165, 2026-11-24).
 
 ### Agregado
 - API: `GET /api/v1/stats` suma la clave `desglose` con `parte`/`resto` de áreas, plataformas, solicitudes, visitas y usuarios (este último solo para administradores), con el mismo alcance de cada contador; contrato `inicio` v1.1 (FNC-164, 2026-11-19).
