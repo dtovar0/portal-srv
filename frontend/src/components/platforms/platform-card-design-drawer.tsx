@@ -353,7 +353,7 @@ export function PlatformCardDesignDrawer({
         <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 sm:p-4 shadow-1 relative flex flex-col shrink-0">
           <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-panel-border/60 shrink-0">
             <h4 className="text-xs font-bold text-body-text">Tarjeta de Plataforma</h4>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30 shrink-0">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/10 text-success-text border border-success/30 shrink-0">
               <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
               Vista Previa en Vivo
             </span>

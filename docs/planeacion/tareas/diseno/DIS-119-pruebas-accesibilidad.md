@@ -52,3 +52,15 @@
 | `PantallaCarga` | opacidad por token (`dark:` fuera) | todas las pantallas con carga |
 | `tailwind.config.ts`, `tokens.css`, `global.css` | spacing extendido, colores `arte-*`, opacidades; fuera animaciones de la portada | todo el frontend |
 | `area-tactil.excepciones.ts` | `tarjeta-area.tsx` de 1 a 10 | prueba de área táctil |
+
+## Correcciones tras auditor-accesibilidad (2026-11-24)
+| Falla (medida) | Corrección |
+|---|---|
+| Blanco sobre degradado ámbar-600→naranja-500 (3.19 / 2.80) | Tokens nuevos `arte-ambar-700` y `arte-naranja-700` (≈5.0 / 5.2); `text-arte-luz` sin `/90` |
+| Badge «Activa» blanco sobre `success/80` (2.5–3.6) | `bg-success-fondo text-success-text` |
+| Iniciales blancas sobre `arte-esmeralda-600` (3.77) | `arte-esmeralda-700` (≈5.5) |
+| «ÁREA CORPORATIVA» `esmeralda-200` sobre `sombra/40` en claro (2.60) | `bg-success-fondo text-success-text` (4.75 / 8.38) |
+| `success-text` sobre `success/20` (4.17–4.46) | `success/10` (≈4.7–5.05) |
+| Favorito sin marcar `zinc-400/80` (2.07, ícono) | `text-texto-secundario` |
+| Previa: blanco sobre `aduana-cyan` (2.40) en botones de login, emergencia, acceso denegado y logout | `text-texto-sobre-aviso` (≈7.5) |
+| Previa: enlaces e ícono `text-aduana-cyan` en claro (2.2–2.4) | `text-primary-text` |

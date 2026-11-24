@@ -217,6 +217,7 @@
   --color-arte-ambar-400: 251 191 36;
   --color-arte-ambar-500: 245 158 11;
   --color-arte-ambar-600: 217 119 6;
+  --color-arte-ambar-700: 180 83 9;
   --color-arte-azul-500: 59 130 246;
   --color-arte-azul-900: 30 58 138;
   --color-arte-esmeralda-200: 167 243 208;
@@ -232,6 +233,7 @@
   --color-arte-indigo-950: 30 27 75;
   --color-arte-luz: 255 255 255;
   --color-arte-naranja-500: 249 115 22;
+  --color-arte-naranja-700: 194 65 12;
   --color-arte-pizarra-100: 241 245 249;
   --color-arte-pizarra-300: 203 213 225;
   --color-arte-pizarra-400: 148 163 184;
@@ -553,6 +555,7 @@
     --color-arte-ambar-400: 251 191 36;
     --color-arte-ambar-500: 245 158 11;
     --color-arte-ambar-600: 217 119 6;
+    --color-arte-ambar-700: 180 83 9;
     --color-arte-azul-500: 59 130 246;
     --color-arte-azul-900: 30 58 138;
     --color-arte-esmeralda-200: 167 243 208;
@@ -568,6 +571,7 @@
     --color-arte-indigo-950: 30 27 75;
     --color-arte-luz: 255 255 255;
     --color-arte-naranja-500: 249 115 22;
+    --color-arte-naranja-700: 194 65 12;
     --color-arte-pizarra-100: 241 245 249;
     --color-arte-pizarra-300: 203 213 225;
     --color-arte-pizarra-400: 148 163 184;
@@ -838,6 +842,7 @@ html.dark {
   --color-arte-ambar-400: 251 191 36;
   --color-arte-ambar-500: 245 158 11;
   --color-arte-ambar-600: 217 119 6;
+  --color-arte-ambar-700: 180 83 9;
   --color-arte-azul-500: 59 130 246;
   --color-arte-azul-900: 30 58 138;
   --color-arte-esmeralda-200: 167 243 208;
@@ -853,6 +858,7 @@ html.dark {
   --color-arte-indigo-950: 30 27 75;
   --color-arte-luz: 255 255 255;
   --color-arte-naranja-500: 249 115 22;
+  --color-arte-naranja-700: 194 65 12;
   --color-arte-pizarra-100: 241 245 249;
   --color-arte-pizarra-300: 203 213 225;
   --color-arte-pizarra-400: 148 163 184;

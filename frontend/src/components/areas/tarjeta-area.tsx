@@ -500,7 +500,7 @@ export function TarjetaArea({
       >
         <div className={`bg-success/15 ${alturaEstandar ? 'p-2.5 h-20' : 'p-4 h-28'} flex flex-col justify-between shrink-0`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider bg-arte-sombra/40 text-arte-esmeralda-200 px-2 py-0.5 rounded-md">
+            <span className="text-xs font-black uppercase tracking-wider bg-success-fondo text-success-text px-2 py-0.5 rounded-md">
               ÁREA CORPORATIVA
             </span>
             <EstadoBadgeBoton
@@ -513,7 +513,7 @@ export function TarjetaArea({
             />
           </div>
           <div className="flex items-center gap-2.5">
-            <span className={`${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} rounded-xl flex items-center justify-center font-black text-arte-luz shadow-md border-2 border-arte-luz/30 bg-arte-esmeralda-600`}>
+            <span className={`${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} rounded-xl flex items-center justify-center font-black text-arte-luz shadow-md border-2 border-arte-luz/30 bg-arte-esmeralda-700`}>
               {area.name.slice(0, 2).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">
@@ -555,9 +555,9 @@ export function TarjetaArea({
         className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
       >
         <div>
-          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full flex flex-col justify-between text-arte-luz overflow-hidden bg-gradient-to-r from-arte-ambar-600 to-arte-naranja-500 shrink-0`}>
+          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full flex flex-col justify-between text-arte-luz overflow-hidden bg-gradient-to-r from-arte-ambar-700 to-arte-naranja-700 shrink-0`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-arte-luz/90">{area.name}</span>
+              <span className="text-xs font-black uppercase tracking-wider text-arte-luz">{area.name}</span>
               <EstadoBadgeBoton
                 tipo="area"
                 nombre={area.name}

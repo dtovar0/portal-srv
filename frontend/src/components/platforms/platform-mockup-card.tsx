@@ -357,7 +357,7 @@ export function PlatformMockupCard({
               {iniciales}
             </span>
             {esActivo ? (
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-success/80 text-arte-luz backdrop-blur-md">
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-success-fondo text-success-text backdrop-blur-md">
                 Activa
               </span>
             ) : null}

@@ -120,7 +120,7 @@ export function LoginForm() {
                       }
                       window.location.href = URL_INICIO_OIDC;
                     }}
-                    className="w-full min-h-12.5 py-3.5 px-4 bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] font-display text-sm font-bold tracking-wide text-texto-sobre-accion shadow-md rounded-xl border-0 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                    className="w-full min-h-12.5 py-3.5 px-4 bg-aduana-cyan hover:bg-aduana-cyan-hover active:scale-[0.98] font-display text-sm font-bold tracking-wide text-texto-sobre-aviso shadow-md rounded-xl border-0 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                   >
                     <Icono nombre="escudo" tamano="sm" ariaHidden={true} />
                     <span>Iniciar Sesión con Authelia</span>
@@ -134,7 +134,7 @@ export function LoginForm() {
                     {context.authelia_url && (
                       <a
                         href={context.authelia_url}
-                        className="min-w-12 min-h-12 inline-flex items-center text-xs text-aduana-cyan hover:underline font-semibold"
+                        className="min-w-12 min-h-12 inline-flex items-center text-xs text-primary-text hover:underline font-semibold"
                         target="_blank"
                         rel="noreferrer noopener"
                       >
@@ -153,7 +153,7 @@ export function LoginForm() {
                       </p>
                       <Link
                         href="/autoservicio"
-                        className="min-w-12 min-h-12 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-aduana-cyan hover:underline pt-0.5"
+                        className="min-w-12 min-h-12 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary-text hover:underline pt-0.5"
                       >
                         <Icono nombre="candado" tamano="xs" ariaHidden={true} />
                         <span>Autoservicio de Contraseña (sin iniciar sesión) →</span>
@@ -170,7 +170,7 @@ export function LoginForm() {
                 <div>
                   <Link
                     href="/"
-                    className="min-w-12 min-h-12 inline-flex items-center gap-1 text-aduana-cyan hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+                    className="min-w-12 min-h-12 inline-flex items-center gap-1 text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
                   >
                     <span>Conoce Aduana: Guía y Presentación de la Plataforma</span>
                   </Link>

@@ -783,7 +783,7 @@ export function UserViewSettings({
                   </span>
                 </div>
                 <div className="h-10 w-full rounded-lg overflow-hidden border border-warning/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-                  <div className="h-5 w-full bg-gradient-to-r from-arte-ambar-600 to-arte-naranja-500 flex items-center justify-center text-xs text-arte-luz font-bold shrink-0">
+                  <div className="h-5 w-full bg-gradient-to-r from-arte-ambar-700 to-arte-naranja-700 flex items-center justify-center text-xs text-arte-luz font-bold shrink-0">
                     <Icono nombre="panel" tamano="xs" className="text-arte-luz" />
                   </div>
                   <div className="p-0.5 text-center flex items-center justify-center flex-1">
@@ -1175,7 +1175,7 @@ export function UserViewSettings({
               <div className="shrink-0">
                 <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-panel-border/80">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/10 text-success-text border border-success/30">
                       <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
                       Vista Previa en Vivo
                     </span>
@@ -1730,7 +1730,7 @@ export function UserViewSettings({
               <div className="shrink-0">
                 <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-panel-border/80">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/10 text-success-text border border-success/30">
                       <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
                       Vista Previa en Vivo
                     </span>

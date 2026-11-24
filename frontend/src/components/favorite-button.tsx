@@ -202,7 +202,7 @@ export function FavoriteButton({
         className={`transition-all duration-200 group-hover:scale-110 ${
           favorite
             ? 'text-arte-ambar-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
-            : 'text-arte-zinc-400/80 group-hover:text-arte-ambar-300'
+            : 'text-texto-secundario group-hover:text-arte-ambar-300'
         }`}
       />
     </button>

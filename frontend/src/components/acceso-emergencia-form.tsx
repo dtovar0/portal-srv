@@ -58,7 +58,7 @@ export function AccesoEmergenciaForm() {
               <div>
                 <Link
                   href="/login"
-                  className="min-w-12 min-h-12 inline-flex items-center gap-1 text-aduana-cyan hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+                  className="min-w-12 min-h-12 inline-flex items-center gap-1 text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
                 >
                   <span>← Volver al inicio de sesión corporativo</span>
                 </Link>

@@ -60,7 +60,7 @@ const VARIANTES_AREA: VarianteArea[] = [
     ariaLabel: 'Diseño de Área Onda Curva Asimétrica',
     renderPreview: () => (
       <div className="h-10 w-full rounded-lg overflow-hidden border border-warning/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-        <div className="h-5 w-full bg-gradient-to-r from-arte-ambar-600 to-arte-naranja-500 flex items-center justify-center text-xs text-arte-luz font-bold shrink-0">
+        <div className="h-5 w-full bg-gradient-to-r from-arte-ambar-700 to-arte-naranja-700 flex items-center justify-center text-xs text-arte-luz font-bold shrink-0">
           <Icono nombre="panel" tamano="xs" className="text-arte-luz" />
         </div>
         <div className="p-0.5 text-center flex items-center justify-center flex-1">
@@ -376,7 +376,7 @@ export function AreaCardDesignDrawer({
         <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 sm:p-4 shadow-1 relative flex flex-col shrink-0 overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-panel-border/60 shrink-0">
             <h4 className="text-xs font-bold text-body-text">Tarjeta de Área</h4>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30 shrink-0">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/10 text-success-text border border-success/30 shrink-0">
               <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
               Vista Previa en Vivo
             </span>

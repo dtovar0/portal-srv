@@ -114,12 +114,12 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
               <span className="text-xs font-semibold text-texto-secundario uppercase tracking-wider">
                 Soporte y Solicitudes
               </span>
-              <span className="text-xs text-aduana-cyan font-mono font-bold">{emailSoporte}</span>
+              <span className="text-xs text-primary-text font-mono font-bold">{emailSoporte}</span>
             </div>
 
             <a
               href={mailtoUrl}
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-aduana-cyan hover:bg-aduana-cyan-hover text-arte-luz font-bold text-sm py-3 px-4 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-aduana-cyan/50 active:scale-[0.98]"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-aviso font-bold text-sm py-3 px-4 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-aduana-cyan/50 active:scale-[0.98]"
             >
               <Icono nombre="correo" tamano="sm" ariaHidden={true} />
               <span>Enviar correo a {emailSoporte}</span>
@@ -187,7 +187,7 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
           <div className="pt-2 border-t border-panel-border/40 flex items-center justify-between text-xs text-texto-secundario">
             <Link
               href="/login"
-              className="min-w-12 min-h-12 inline-flex items-center text-aduana-cyan hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+              className="min-w-12 min-h-12 inline-flex items-center text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
             >
               ← Volver al inicio de sesión
             </Link>
