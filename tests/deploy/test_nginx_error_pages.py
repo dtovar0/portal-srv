@@ -108,3 +108,20 @@ def test_nginx_plantilla_declara_paginas_de_error():
     assert 'location ^~ /errors/' in tmpl
     assert 'alias @PREFIX@/deploy/errors/;' in tmpl
 
+
+
+def test_nginx_sirve_el_favicon_sin_depender_del_frontend_regresion_fnc_186():
+    """Con Next caído, `/favicon.ico` sigue saliendo del código."""
+    tmpl = (ROOT / 'deploy' / 'nginx.conf.tmpl').read_text()
+    assert 'location = /favicon.ico {' in tmpl
+    assert 'alias @PREFIX@/frontend/public/favicon.ico;' in tmpl
+    assert (ROOT / 'frontend' / 'public' / 'favicon.ico').is_file()
+    # Antes de `location /`, que manda todo a Next.
+    assert tmpl.index('location = /favicon.ico') < tmpl.index('    location / {')
+
+
+def test_resumen_de_install_no_pide_migrar_a_mano():
+    texto = (ROOT / 'deploy' / 'install.sh').read_text()
+    resumen = texto[texto.index('Pendiente:'):]
+    assert 'Migraciones, si es una actualización' not in resumen
+    assert 'cabeceras que solo nginx' not in resumen
