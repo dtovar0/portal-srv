@@ -183,6 +183,9 @@ def _registrar_cli_y_manejadores(app):
     # Primer superadmin sin contraseña fija (FNC-003).
     from app.modules.auth.cli import cuentas_cli
     app.cli.add_command(cuentas_cli)
+    # Altas por CLI y migración de LDAP: `flask alta ...` (FNC-182).
+    from app.modules.alta.cli import alta_cli
+    app.cli.add_command(alta_cli)
     # El resultado de cada trabajo actualiza el acceso otorgado (FNC-054).
     from app.modules.access.manejadores import registrar as registrar_accesos
     registrar_accesos()
