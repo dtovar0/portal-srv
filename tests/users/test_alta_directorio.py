@@ -105,7 +105,7 @@ def test_superadmin_crea_la_entrada_y_la_cuenta_con_su_contrasena_inicial(
     assert usuario['email'] == 'ana@pruebas.local'
     assert usuario['name'] == 'Ana Ruiz'
     assert usuario['role'] == ROLE_USER
-    assert usuario['auth_source'] == 'ldap'
+    assert usuario['auth_source'] == 'sso'
     assert usuario['is_active'] is True
     assert [{'id': a['id'], 'name': a['name']} for a in usuario['areas']] == [{'id': escena['B'], 'name': 'Área B'}]
     assert usuario['managed_areas'] == []
@@ -121,7 +121,7 @@ def test_superadmin_crea_la_entrada_y_la_cuenta_con_su_contrasena_inicial(
     assert CONTRASENA not in str(entrada)
 
     cuenta = _cuenta('ana@pruebas.local')
-    assert cuenta.auth_source == 'ldap'
+    assert cuenta.auth_source == 'sso'
     assert cuenta.password_hash is None
 
 
@@ -135,7 +135,7 @@ def test_el_alta_se_audita_con_el_actor(escena, directorio, cliente_como):
     assert evento.user == escena['super'].email
     assert evento.target_user_id == cuenta.id
     assert evento.after_state['uid'] == 'ana.ruiz'
-    assert evento.after_state['auth_source'] == 'ldap'
+    assert evento.after_state['auth_source'] == 'sso'
     assert 'password' not in str(evento.after_state)
 
 
@@ -361,7 +361,7 @@ def test_segunda_alta_igual_da_409(escena, directorio, cliente_como):
     _error(cliente.post(URL, json=_cuerpo()), 409, 'correo_duplicado')
     _error(cliente.post(URL, json=_cuerpo(email='otra@pruebas.local')), 409,
            'uid_duplicado')
-    assert User.query.filter_by(auth_source='ldap').count() == 1
+    assert User.query.filter_by(auth_source='sso').count() == 1
 
 
 # --------------------------------------------------------------------------- #

@@ -6,7 +6,7 @@
 
 | Elemento | Tipo | Dónde vive | Para qué | Usado en |
 |---|---|---|---|---|
-| `PageHeader` | Componente | `frontend/src/components/page-header.tsx` | Encabezado estándar de pantalla (`h1` único, descripción, acciones y migas de pan) (DIS-070) | Todas las pantallas del sistema |
+| `PageHeader` | Componente | `frontend/src/components/page-header.tsx` | Encabezado estándar de pantalla (`h1` único, descripción, acciones y migas de pan) (DIS-070); `titleClassName` muestra el título en pantallas públicas sin barra superior (DIS-119) | Todas las pantallas del sistema |
 | `PantallaListado`, `PantallaDetalle`, `PantallaFormulario`, `PantallaPanel` | Componentes plantilla | `frontend/src/components/plantillas/` | Plantillas canónicas de composición para listados, fichas, formularios y paneles (DIS-070) | Vistas y módulos |
 | `AlertDialog` | Componente | `frontend/src/components/alert-dialog.tsx` | Diálogos modales accesibles para confirmaciones y alertas críticas (DIS-074, DIS-075) | Confirmaciones en todas las vistas |
 | `Skeleton`, `RegionDeAviso` | Componentes | `frontend/src/components/ui.tsx` | Marcadores de carga accesibles sin CLS y zonas reservadas para notificaciones sin saltos (DIS-073) | Todas las pantallas |

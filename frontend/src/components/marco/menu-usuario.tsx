@@ -183,7 +183,7 @@ export function MenuUsuario({
               onClick={() => setAbierto(false)}
               className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-semibold text-body-text hover:bg-superficie-hundida transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             >
-              <Icono nombre="candado" tamano="sm" className="text-aduana-cyan" />
+              <Icono nombre="candado" tamano="sm" className="text-primary-text" />
               <span>Cambiar contraseña</span>
             </Link>
             <Link

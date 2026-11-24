@@ -76,7 +76,7 @@ def motivo_rechazo_login_local(cuenta):
 def origen_de_alta():
     """Origen de una cuenta de `POST /users`.
 
-    Fuera de desarrollo, `ldap` sin contraseña: la persona se vincula al
+    Fuera de desarrollo, `sso` sin contraseña (FNC-168): la persona se vincula al
     entrar por directorio o SSO con ese correo (`motivo_de_bloqueo`). Con la
     bandera de desarrollo, `local` (alta con contraseña para la PoC).
     """

@@ -101,7 +101,7 @@ def test_el_servidor_fija_el_origen(escena, como):
     respuesta = como(escena['admin_a']).post(f'{A}/users', json={
         'email': 'nuevo@pruebas.local', 'area_ids': [escena['A']]})
     assert respuesta.status_code == 201
-    assert _cuenta(respuesta.get_json()['id']).auth_source == 'ldap'
+    assert _cuenta(respuesta.get_json()['id']).auth_source == 'sso'
 
 
 @pytest.mark.parametrize('actor,rol', [
@@ -252,15 +252,19 @@ def test_admin_area_no_cambia_contrasena_de_cuenta_de_directorio(escena, como):
     assert _cuenta(escena['usuario_a']).check_password(CONTRASENA_FICTICIA)
 
 
-@pytest.mark.parametrize('origen', ('sso', 'oidc'))
-def test_nadie_cambia_la_contrasena_de_cuentas_de_sso(escena, como,
-                                                      origen):
+@pytest.mark.parametrize('origen, codigo', (
+    # FNC-165: `sso` va a LDAP con la política (esta clave no la cumple).
+    ('sso', 'contrasena_invalida'),
+    ('oidc', 'campo_no_permitido'),
+))
+def test_cuentas_no_locales_nunca_reciben_contrasena_local(escena, como,
+                                                           origen, codigo):
     cuenta = _cuenta(escena['usuario_a'])
     cuenta.auth_source = origen
     db.session.commit()
     respuesta = como(escena['super']).put(
         f"{A}/users/{escena['usuario_a']}", json={'password': CONTRASENA_NUEVA})
-    _codigo(respuesta, 400, 'campo_no_permitido')
+    _codigo(respuesta, 400, codigo)
     assert _cuenta(escena['usuario_a']).check_password(CONTRASENA_FICTICIA)
 
 

@@ -292,7 +292,7 @@ export function ActividadReciente() {
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:opacity-30 disabled:pointer-events-none outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:opacity-deshabilitada disabled:pointer-events-none outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label="Página anterior de actividad reciente"
                 title="Página anterior"
               >
@@ -310,7 +310,7 @@ export function ActividadReciente() {
                 type="button"
                 disabled={page >= paginas}
                 onClick={() => setPage((p) => Math.min(paginas, p + 1))}
-                className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:opacity-30 disabled:pointer-events-none outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex min-h-12 min-w-12 items-center justify-center rounded-lg text-primary-text transition-all hover:bg-surface-container active:scale-95 disabled:opacity-deshabilitada disabled:pointer-events-none outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label="Página siguiente de actividad reciente"
                 title="Página siguiente"
               >

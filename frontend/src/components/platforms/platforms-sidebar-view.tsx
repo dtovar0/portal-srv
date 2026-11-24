@@ -862,7 +862,7 @@ export function PlatformsSidebarView({
                       setSeccionActiva('responsiva');
                       setAreaSeleccionada(null);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs border cursor-pointer outline-none transition-all ${
+                    className={`min-h-12 w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs border cursor-pointer outline-none transition-all ${
                       seccionActiva === 'responsiva'
                         ? 'border-primary bg-primary text-texto-sobre-accion shadow-xs'
                         : 'border-barra-lateral-borde bg-barra-lateral-elemento/50 hover:border-primary/50 hover:bg-barra-lateral-elemento text-barra-lateral-texto'
@@ -937,7 +937,7 @@ export function PlatformsSidebarView({
                       setFiltroEstado('todos');
                       setTermino('');
                     }}
-                    className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     Catálogo
                   </button>
@@ -955,7 +955,7 @@ export function PlatformsSidebarView({
                         setFiltroEstado('todos');
                         setTermino('');
                       }}
-                      className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       Catálogo
                     </button>
@@ -974,7 +974,7 @@ export function PlatformsSidebarView({
                         setFiltroEstado('todos');
                         setTermino('');
                       }}
-                      className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       Catálogo
                     </button>
@@ -993,7 +993,7 @@ export function PlatformsSidebarView({
                       setFiltroEstado('todos');
                       setTermino('');
                     }}
-                    className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     Catálogo
                   </button>
@@ -1011,7 +1011,7 @@ export function PlatformsSidebarView({
                       setFiltroEstado('todos');
                       setTermino('');
                     }}
-                    className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     Catálogo
                   </button>

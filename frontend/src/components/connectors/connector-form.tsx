@@ -249,7 +249,7 @@ export function ConnectorForm({
         <Button
           type="submit"
           aria-disabled={sending || undefined}
-          className="aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary"
+          className="aria-disabled:opacity-deshabilitada focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Icono nombre="aprobar" tamano="sm" ariaHidden={true} className="mr-1.5" />
           {sending ? 'Guardando…' : 'Guardar conector'}

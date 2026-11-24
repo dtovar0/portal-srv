@@ -67,7 +67,7 @@ function Cifra({
       </span>
       <div className="min-w-0">
         <p className={`nx-area-card__valor ${compacta ? 'text-base' : 'text-xl'} font-extrabold leading-none tabular-nums`}>{valor}</p>
-        <p className={`mt-0.5 truncate ${compacta ? 'text-[10px]' : 'text-xs'} font-semibold uppercase tracking-wide text-label`}>{etiqueta}</p>
+        <p className={`mt-0.5 truncate ${compacta ? 'text-xs' : 'text-xs'} font-semibold uppercase tracking-wide text-label`}>{etiqueta}</p>
       </div>
     </div>
   );
@@ -103,7 +103,7 @@ export function TarjetaArea({
   const personas = area.users_count ?? 0;
   const color = !inactiva && textoLegible(area.color) ? area.color.trim() : undefined;
   const restantes = conteo - LOGOS_VISIBLES;
-  const claseAltura = alturaEstandar ? 'h-60 min-h-60 max-h-60' : 'min-h-[300px]';
+  const claseAltura = alturaEstandar ? 'h-60 min-h-60 max-h-60' : 'min-h-75';
 
   if (variante === 'glass') {
     return (
@@ -111,7 +111,7 @@ export function TarjetaArea({
         onClick={() => onSelect(area)}
         data-state={inactiva ? 'inactiva' : 'activa'}
         style={variablesCss({ '--area-color': color })}
-        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-primary/40 bg-gradient-to-br from-primary/10 via-superficie/80 to-accent/10 backdrop-blur-xl ${alturaEstandar ? 'p-3.5' : 'p-5'} text-left shadow-lg cursor-pointer transition-all hover:border-primary hover:shadow-[0_0_25px_rgba(var(--color-primary-rgb),0.25)]`}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-primary/40 bg-gradient-to-br from-primary/10 via-superficie/80 to-accent/10 backdrop-blur-xl ${alturaEstandar ? 'p-3.5' : 'p-5'} text-left shadow-lg cursor-pointer transition-all hover:border-primary hover:shadow-xl hover:shadow-primary/25`}
       >
         <div className="absolute -top-12 -right-12 size-32 rounded-full bg-primary/20 blur-2xl pointer-events-none" />
 
@@ -119,11 +119,11 @@ export function TarjetaArea({
           <div className="flex items-center gap-2">
             <span
               aria-hidden="true"
-              className={`grid ${alturaEstandar ? 'size-8 rounded-xl' : 'size-11 rounded-2xl'} place-items-center bg-primary/20 border border-primary/30 text-primary-text shadow-[0_0_12px_rgba(var(--color-primary-rgb),0.2)]`}
+              className={`grid ${alturaEstandar ? 'size-8 rounded-xl' : 'size-11 rounded-2xl'} place-items-center bg-primary/20 border border-primary/30 text-primary-text shadow-md shadow-primary/20`}
             >
               <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'lg'} />
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary/15 text-primary-text border border-primary/30">
+            <span className="px-2 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-primary/15 text-primary-text border border-primary/30">
               Área Neón
             </span>
           </div>
@@ -139,7 +139,7 @@ export function TarjetaArea({
         </div>
 
         <div className={`relative z-10 ${alturaEstandar ? 'my-1' : 'my-2'}`}>
-          <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-lg'} font-bold tracking-tight text-body-text group-hover:text-primary transition-colors`} title={area.name}>
+          <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-lg'} font-bold tracking-tight text-body-text group-hover:text-primary-text transition-colors`} title={area.name}>
             {area.name}
           </h3>
           <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-texto-secundario" title={area.description ?? ''}>
@@ -154,7 +154,7 @@ export function TarjetaArea({
             </span>
             <div className="min-w-0">
               <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-body-text`}>{personas}</p>
-              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wider text-label">
+              <p className="mt-0.5 truncate text-xs font-bold uppercase tracking-wider text-label">
                 {personas === 1 ? 'Persona' : 'Personas'}
               </p>
             </div>
@@ -166,7 +166,7 @@ export function TarjetaArea({
             </span>
             <div className="min-w-0">
               <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-body-text`}>{conteo}</p>
-              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wider text-label">
+              <p className="mt-0.5 truncate text-xs font-bold uppercase tracking-wider text-label">
                 {conteo === 1 ? 'Plataforma' : 'Plataformas'}
               </p>
             </div>
@@ -204,7 +204,7 @@ export function TarjetaArea({
       <div
         onClick={() => onSelect(area)}
         data-state={inactiva ? 'inactiva' : 'activa'}
-        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-slate-950 ${alturaEstandar ? 'p-2.5' : 'p-3.5'} text-left shadow-2 cursor-pointer transition-all hover:border-primary/60 hover:shadow-xl`}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-arte-luz/10 bg-arte-pizarra-950 ${alturaEstandar ? 'p-2.5' : 'p-3.5'} text-left shadow-2 cursor-pointer transition-all hover:border-primary/60 hover:shadow-xl`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -214,10 +214,10 @@ export function TarjetaArea({
           decoding="async"
           className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-arte-sombra/90 via-arte-sombra/50 to-arte-sombra/30 pointer-events-none" />
 
         <div className="relative z-10 flex items-center justify-between p-1">
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/60 text-white/90 backdrop-blur-md border border-white/20">
+          <span className="px-2 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-arte-sombra/60 text-arte-luz/90 backdrop-blur-md border border-arte-luz/20">
             {conteo} herramientas
           </span>
 
@@ -231,28 +231,28 @@ export function TarjetaArea({
           />
         </div>
 
-        <div className={`relative z-10 mt-auto rounded-2xl bg-black/65 backdrop-blur-xl border border-white/20 ${alturaEstandar ? 'p-2.5 gap-1.5' : 'p-3.5 gap-2.5'} text-white shadow-2xl flex flex-col`}>
+        <div className={`relative z-10 mt-auto rounded-2xl bg-arte-sombra/65 backdrop-blur-xl border border-arte-luz/20 ${alturaEstandar ? 'p-2.5 gap-1.5' : 'p-3.5 gap-2.5'} text-arte-luz shadow-2xl flex flex-col`}>
           <div className={`flex items-center ${alturaEstandar ? 'gap-2' : 'gap-2.5'}`}>
-            <span className={`grid ${alturaEstandar ? 'size-7 text-xs rounded-lg' : 'size-9 text-sm rounded-xl'} place-items-center bg-primary text-white font-bold shadow-md shrink-0`}>
+            <span className={`grid ${alturaEstandar ? 'size-7 text-xs rounded-lg' : 'size-9 text-sm rounded-xl'} place-items-center bg-primary text-arte-luz font-bold shadow-md shrink-0`}>
               <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'md'} />
             </span>
             <div className="min-w-0 flex-1">
-              <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-white group-hover:text-primary-text transition-colors`} title={area.name}>
+              <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-arte-luz group-hover:text-primary-text transition-colors`} title={area.name}>
                 {area.name}
               </h3>
-              <p className="truncate text-[10px] text-slate-300">
+              <p className="truncate text-xs text-arte-pizarra-300">
                 {personas} colaboradores activos
               </p>
             </div>
           </div>
 
-          <div className={`${alturaEstandar ? 'pt-1.5' : 'pt-2'} border-t border-white/15 flex items-center justify-between gap-2`}>
+          <div className={`${alturaEstandar ? 'pt-1.5' : 'pt-2'} border-t border-arte-luz/15 flex items-center justify-between gap-2`}>
             <div className="flex items-center">
               {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
                 <LogoPlataforma key={p.id} plataforma={p} />
               ))}
               {restantes > 0 ? (
-                <span className="-ml-1.5 grid size-6 shrink-0 place-items-center rounded-md border border-white/20 bg-black/70 text-[9px] font-bold text-white">
+                <span className="-ml-1.5 grid size-6 shrink-0 place-items-center rounded-md border border-arte-luz/20 bg-arte-sombra/70 text-xs font-bold text-arte-luz">
                   +{restantes}
                 </span>
               ) : null}
@@ -261,7 +261,7 @@ export function TarjetaArea({
             <button
               type="button"
               aria-label={`Área ${area.name}, ver plataformas.`}
-              className={`inline-flex ${alturaEstandar ? 'min-h-7 px-2.5 text-[11px]' : 'min-h-8 px-3 text-xs'} items-center gap-1 rounded-lg bg-white/25 hover:bg-primary text-white font-bold transition-all border border-white/30`}
+              className={`inline-flex ${alturaEstandar ? 'min-h-7 px-2.5 text-xs' : 'min-h-8 px-3 text-xs'} items-center gap-1 rounded-lg bg-arte-luz/25 hover:bg-primary text-arte-luz font-bold transition-all border border-arte-luz/30`}
             >
               <span>Explorar</span>
               <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
@@ -278,7 +278,7 @@ export function TarjetaArea({
       <div
         onClick={() => onSelect(area)}
         data-state={inactiva ? 'inactiva' : 'activa'}
-        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-slate-950 ${alturaEstandar ? 'p-3' : 'p-4 sm:p-5'} text-left shadow-2 cursor-pointer transition-all hover:border-primary/60 hover:shadow-xl`}
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-arte-luz/10 bg-arte-pizarra-950 ${alturaEstandar ? 'p-3' : 'p-4 sm:p-5'} text-left shadow-2 cursor-pointer transition-all hover:border-primary/60 hover:shadow-xl`}
       >
         {/* Imagen de fondo inmersiva con gradiente protector de legibilidad */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -289,19 +289,19 @@ export function TarjetaArea({
           decoding="async"
           className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/35 pointer-events-none" />
-        <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-arte-sombra/95 via-arte-sombra/70 to-arte-sombra/35 pointer-events-none" />
+        <div className="absolute inset-0 ring-1 ring-inset ring-arte-luz/10 rounded-3xl pointer-events-none" />
 
         {/* Cabecera: Icono con vidrio esmerilado + Badge de estado */}
         <div className={`relative z-10 flex items-center justify-between ${alturaEstandar ? 'gap-2' : 'gap-3'}`}>
           <div className="flex items-center gap-2">
             <span
               aria-hidden="true"
-              className={`grid ${alturaEstandar ? 'size-8 rounded-lg' : 'size-11 rounded-xl'} place-items-center bg-white/20 backdrop-blur-md border border-white/25 text-white shadow-md`}
+              className={`grid ${alturaEstandar ? 'size-8 rounded-lg' : 'size-11 rounded-xl'} place-items-center bg-arte-luz/20 backdrop-blur-md border border-arte-luz/25 text-arte-luz shadow-md`}
             >
               <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'lg'} />
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/50 text-white/90 backdrop-blur-md border border-white/15">
+            <span className="px-2 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-arte-sombra/50 text-arte-luz/90 backdrop-blur-md border border-arte-luz/15">
               DEPARTAMENTO
             </span>
           </div>
@@ -318,35 +318,35 @@ export function TarjetaArea({
 
         {/* Cuerpo central: Nombre y descripción */}
         <div className={`relative z-10 ${alturaEstandar ? 'my-1' : 'my-2'}`}>
-          <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-lg'} font-black tracking-tight text-white drop-shadow-sm group-hover:text-primary-text transition-colors`} title={area.name}>
+          <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-lg'} font-black tracking-tight text-arte-luz drop-shadow-sm group-hover:text-primary-text transition-colors`} title={area.name}>
             {area.name}
           </h3>
-          <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-slate-300 drop-shadow-xs" title={area.description ?? ''}>
+          <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-arte-pizarra-300 drop-shadow-xs" title={area.description ?? ''}>
             {area.description || 'Área organizativa del sistema corporativo.'}
           </p>
         </div>
 
         {/* Métricas con diseño glassmórfico de alta fidelidad */}
         <div className={`relative z-10 grid grid-cols-2 gap-2 ${alturaEstandar ? 'my-1' : 'my-2'}`}>
-          <div className={`flex items-center gap-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 ${alturaEstandar ? 'p-1.5' : 'p-2'} text-white`}>
-            <span className="grid size-6 place-items-center rounded-lg bg-white/15 text-white">
+          <div className={`flex items-center gap-2 rounded-xl bg-arte-luz/10 backdrop-blur-md border border-arte-luz/15 ${alturaEstandar ? 'p-1.5' : 'p-2'} text-arte-luz`}>
+            <span className="grid size-6 place-items-center rounded-lg bg-arte-luz/15 text-arte-luz">
               <Icono nombre="usuarios" tamano="xs" />
             </span>
             <div className="min-w-0">
-              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-white`}>{personas}</p>
-              <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-wider text-slate-300">
+              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-arte-luz`}>{personas}</p>
+              <p className="mt-0.5 truncate text-xs font-bold uppercase tracking-wider text-arte-pizarra-300">
                 {personas === 1 ? 'Persona' : 'Personas'}
               </p>
             </div>
           </div>
 
-          <div className={`flex items-center gap-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 ${alturaEstandar ? 'p-1.5' : 'p-2'} text-white`}>
-            <span className="grid size-6 place-items-center rounded-lg bg-white/15 text-white">
+          <div className={`flex items-center gap-2 rounded-xl bg-arte-luz/10 backdrop-blur-md border border-arte-luz/15 ${alturaEstandar ? 'p-1.5' : 'p-2'} text-arte-luz`}>
+            <span className="grid size-6 place-items-center rounded-lg bg-arte-luz/15 text-arte-luz">
               <Icono nombre="plataformas" tamano="xs" />
             </span>
             <div className="min-w-0">
-              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-white`}>{conteo}</p>
-              <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-wider text-slate-300">
+              <p className={`${alturaEstandar ? 'text-xs' : 'text-sm'} font-black leading-none tabular-nums text-arte-luz`}>{conteo}</p>
+              <p className="mt-0.5 truncate text-xs font-bold uppercase tracking-wider text-arte-pizarra-300">
                 {conteo === 1 ? 'Plataforma' : 'Plataformas'}
               </p>
             </div>
@@ -354,13 +354,13 @@ export function TarjetaArea({
         </div>
 
         {/* Pie: Logos apilados + Botón Explorar */}
-        <div className={`relative z-10 mt-auto ${alturaEstandar ? 'pt-1.5' : 'pt-2.5'} border-t border-white/15 flex items-center justify-between gap-3`}>
+        <div className={`relative z-10 mt-auto ${alturaEstandar ? 'pt-1.5' : 'pt-2.5'} border-t border-arte-luz/15 flex items-center justify-between gap-3`}>
           <div className="flex items-center">
             {plataformas.slice(0, LOGOS_VISIBLES).map((p) => (
               <LogoPlataforma key={p.id} plataforma={p} />
             ))}
             {restantes > 0 ? (
-              <span className="-ml-2 grid size-7 shrink-0 place-items-center rounded-lg border-2 border-white/20 bg-black/60 backdrop-blur-sm text-xs font-bold text-white shadow-1">
+              <span className="-ml-2 grid size-7 shrink-0 place-items-center rounded-lg border-2 border-arte-luz/20 bg-arte-sombra/60 backdrop-blur-sm text-xs font-bold text-arte-luz shadow-1">
                 +{restantes}
               </span>
             ) : null}
@@ -369,7 +369,7 @@ export function TarjetaArea({
           <button
             type="button"
             aria-label={`Área ${area.name}, ver plataformas.`}
-            className={`inline-flex ${alturaEstandar ? 'min-h-8 px-2.5 text-[11px]' : 'min-h-9 px-3.5 text-xs'} items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white font-bold transition-all shadow-md group-hover:bg-primary group-hover:border-primary group-hover:text-white`}
+            className={`inline-flex ${alturaEstandar ? 'min-h-8 px-2.5 text-xs' : 'min-h-9 px-3.5 text-xs'} items-center gap-1.5 rounded-xl bg-arte-luz/20 hover:bg-arte-luz/30 backdrop-blur-md border border-arte-luz/30 text-arte-luz font-bold transition-all shadow-md group-hover:bg-primary group-hover:border-primary group-hover:text-arte-luz`}
           >
             <span>Ver plataformas</span>
             <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
@@ -388,7 +388,7 @@ export function TarjetaArea({
         className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
       >
         {/* Cabecera Panorámica / Hero Banner con imagen fotográfica de fondo */}
-        <div className={`relative ${alturaEstandar ? 'h-20' : 'h-28'} w-full overflow-hidden shrink-0 bg-slate-900`}>
+        <div className={`relative ${alturaEstandar ? 'h-20' : 'h-28'} w-full overflow-hidden shrink-0 bg-arte-pizarra-900`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imagenFondo}
@@ -397,11 +397,11 @@ export function TarjetaArea({
             decoding="async"
             className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-arte-sombra/85 via-arte-sombra/45 to-arte-sombra/25 pointer-events-none" />
 
           {/* Badges superiores sobre el banner */}
           <div className={`relative z-10 flex items-center justify-between ${alturaEstandar ? 'p-2' : 'p-3'}`}>
-            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/60 text-white/95 backdrop-blur-md border border-white/20">
+            <span className="px-2 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-arte-sombra/60 text-arte-luz/95 backdrop-blur-md border border-arte-luz/20">
               DEPARTAMENTO
             </span>
 
@@ -418,12 +418,12 @@ export function TarjetaArea({
           {/* Chip de icono de área superpuesto en el banner */}
           <div className="absolute bottom-2 left-3 z-10 flex items-center gap-1.5">
             <span
-              className={`flex ${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} items-center justify-center rounded-xl bg-primary text-white font-black shadow-lg border-2 border-panel-fill`}
+              className={`flex ${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} items-center justify-center rounded-xl bg-primary text-arte-luz font-black shadow-lg border-2 border-panel-fill`}
               aria-hidden="true"
             >
               <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'md'} />
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-black/60 text-white/90 backdrop-blur-md border border-white/15">
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-arte-sombra/60 text-arte-luz/90 backdrop-blur-md border border-arte-luz/15">
               {conteo} apps
             </span>
           </div>
@@ -432,7 +432,7 @@ export function TarjetaArea({
         {/* Contenido estructurado inferior */}
         <div className={`flex flex-1 flex-col justify-between ${alturaEstandar ? 'p-3 pt-2 space-y-1.5' : 'p-4 pt-3 space-y-2.5'}`}>
           <div>
-            <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-body-text group-hover:text-primary transition-colors`} title={area.name}>
+            <h3 className={`truncate ${alturaEstandar ? 'text-sm' : 'text-base'} font-bold tracking-tight text-body-text group-hover:text-primary-text transition-colors`} title={area.name}>
               {area.name}
             </h3>
             <p className="line-clamp-1 text-xs leading-relaxed text-texto-secundario mt-0.5" title={area.description ?? ''}>
@@ -448,7 +448,7 @@ export function TarjetaArea({
               </span>
               <div className="min-w-0">
                 <p className="text-xs font-black tabular-nums text-body-text leading-none">{personas}</p>
-                <p className="text-[8px] font-bold uppercase tracking-wider text-label mt-0.5">Personas</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-label mt-0.5">Personas</p>
               </div>
             </div>
 
@@ -458,7 +458,7 @@ export function TarjetaArea({
               </span>
               <div className="min-w-0">
                 <p className="text-xs font-black tabular-nums text-body-text leading-none">{conteo}</p>
-                <p className="text-[8px] font-bold uppercase tracking-wider text-label mt-0.5">Plataformas</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-label mt-0.5">Plataformas</p>
               </div>
             </div>
           </div>
@@ -470,7 +470,7 @@ export function TarjetaArea({
                 <LogoPlataforma key={p.id} plataforma={p} />
               ))}
               {restantes > 0 ? (
-                <span className="-ml-1.5 grid size-6 shrink-0 place-items-center rounded-lg border border-panel-border bg-superficie-hundida text-[10px] font-bold text-label shadow-xs">
+                <span className="-ml-1.5 grid size-6 shrink-0 place-items-center rounded-lg border border-panel-border bg-superficie-hundida text-xs font-bold text-label shadow-xs">
                   +{restantes}
                 </span>
               ) : null}
@@ -479,7 +479,7 @@ export function TarjetaArea({
             <button
               type="button"
               aria-label={`Área ${area.name}, ver plataformas.`}
-              className={`inline-flex ${alturaEstandar ? 'min-h-8 px-2.5 text-[11px]' : 'min-h-9 px-3.5 text-xs'} items-center gap-1 rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
+              className={`inline-flex ${alturaEstandar ? 'min-h-8 px-2.5 text-xs' : 'min-h-9 px-3.5 text-xs'} items-center gap-1 rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
             >
               <span>Ver área</span>
               <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
@@ -498,9 +498,9 @@ export function TarjetaArea({
         style={variablesCss({ '--area-color': color })}
         className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
       >
-        <div className={`bg-emerald-500/15 ${alturaEstandar ? 'p-2.5 h-20' : 'p-4 h-28'} flex flex-col justify-between shrink-0`}>
+        <div className={`bg-success/15 ${alturaEstandar ? 'p-2.5 h-20' : 'p-4 h-28'} flex flex-col justify-between shrink-0`}>
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider bg-black/40 text-emerald-200 px-2 py-0.5 rounded-md">
+            <span className="text-xs font-black uppercase tracking-wider bg-success-fondo text-success-text px-2 py-0.5 rounded-md">
               ÁREA CORPORATIVA
             </span>
             <EstadoBadgeBoton
@@ -513,12 +513,12 @@ export function TarjetaArea({
             />
           </div>
           <div className="flex items-center gap-2.5">
-            <span className={`${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} rounded-xl flex items-center justify-center font-black text-white shadow-md border-2 border-white/30 bg-emerald-600`}>
+            <span className={`${alturaEstandar ? 'size-8 text-xs' : 'size-10 text-sm'} rounded-xl flex items-center justify-center font-black text-arte-luz shadow-md border-2 border-arte-luz/30 bg-arte-esmeralda-700`}>
               {area.name.slice(0, 2).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">
-              <span className="text-xs font-bold text-emerald-950 dark:text-emerald-200 block truncate">{area.name}</span>
-              <span className="text-[10px] font-semibold text-label">{conteo} plataformas activas</span>
+              <span className="text-xs font-bold text-success-text block truncate">{area.name}</span>
+              <span className="text-xs font-semibold text-label">{conteo} plataformas activas</span>
             </div>
           </div>
         </div>
@@ -531,12 +531,12 @@ export function TarjetaArea({
           <div className={`${alturaEstandar ? 'pt-1.5' : 'pt-2'} border-t border-panel-border/80 flex items-center justify-between gap-3 mt-auto`}>
             <div>
               <span className={`${alturaEstandar ? 'text-lg' : 'text-xl'} font-black text-body-text tabular-nums`}>{personas}</span>
-              <span className="text-[9px] font-bold text-label block -mt-0.5">{personas === 1 ? 'colaborador' : 'colaboradores'}</span>
+              <span className="text-xs font-bold text-label block -mt-0.5">{personas === 1 ? 'colaborador' : 'colaboradores'}</span>
             </div>
             <button
               type="button"
               aria-label={`Área ${area.name}, ver plataformas.`}
-              className={`${alturaEstandar ? 'px-3 py-1.5 text-[11px]' : 'px-4 py-2 text-xs'} rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
+              className={`${alturaEstandar ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-xs'} rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
             >
               Ver área →
             </button>
@@ -555,9 +555,9 @@ export function TarjetaArea({
         className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
       >
         <div>
-          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full flex flex-col justify-between text-white overflow-hidden bg-gradient-to-r from-amber-600 to-orange-500 shrink-0`}>
+          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full flex flex-col justify-between text-arte-luz overflow-hidden bg-gradient-to-r from-arte-ambar-700 to-arte-naranja-700 shrink-0`}>
             <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-wider text-white/90">{area.name}</span>
+              <span className="text-xs font-black uppercase tracking-wider text-arte-luz">{area.name}</span>
               <EstadoBadgeBoton
                 tipo="area"
                 nombre={area.name}
@@ -577,7 +577,7 @@ export function TarjetaArea({
           <div className={`${alturaEstandar ? 'p-3 space-y-1' : 'p-4 space-y-1.5'} text-center`}>
             <h3 className={`${alturaEstandar ? 'text-sm' : 'text-base'} font-bold text-body-text`}>{area.name}</h3>
             <p className="text-xs text-label line-clamp-1">{area.description || 'Área organizativa del sistema.'}</p>
-            <div className="text-[10px] font-bold text-label pt-0.5">
+            <div className="text-xs font-bold text-label pt-0.5">
               {personas} {personas === 1 ? 'persona' : 'personas'} • {conteo} plataformas
             </div>
           </div>
@@ -585,7 +585,7 @@ export function TarjetaArea({
         <div className={`${alturaEstandar ? 'p-3 pt-0' : 'p-4 pt-0'} text-center mt-auto`}>
           <button
             type="button"
-            className={`w-full max-w-[160px] mx-auto ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
+            className={`w-full max-w-40 mx-auto ${alturaEstandar ? 'py-1.5 text-xs' : 'py-2 text-xs'} rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs`}
           >
             Explorar área
           </button>
@@ -603,9 +603,9 @@ export function TarjetaArea({
         className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-panel-border bg-panel-fill text-left shadow-1 cursor-pointer transition-all hover:border-primary/50 hover:shadow-2`}
       >
         <div>
-          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full bg-gradient-to-tr from-purple-950 via-slate-900 to-indigo-950 flex flex-col justify-between text-white shrink-0`}>
+          <div className={`relative ${alturaEstandar ? 'h-20 p-2.5' : 'h-28 p-3.5'} w-full bg-gradient-to-tr from-arte-purpura-950 via-arte-pizarra-900 to-arte-indigo-950 flex flex-col justify-between text-arte-luz shrink-0`}>
             <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-wider bg-black/40 text-purple-200 px-2 py-0.5 rounded-md self-start">
+              <span className="text-xs font-black uppercase tracking-wider bg-arte-sombra/40 text-arte-purpura-200 px-2 py-0.5 rounded-md self-start">
                 {area.name}
               </span>
               <EstadoBadgeBoton
@@ -617,8 +617,8 @@ export function TarjetaArea({
                 onCambiado={onEstadoCambiado}
               />
             </div>
-            <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-xs px-2.5 py-0.5 rounded-xl text-white self-start">
-              <span className="text-[9px] font-bold text-purple-200">{personas} integrantes</span>
+            <div className="flex items-center gap-1.5 bg-arte-sombra/50 backdrop-blur-xs px-2.5 py-0.5 rounded-xl text-arte-luz self-start">
+              <span className="text-xs font-bold text-arte-purpura-200">{personas} integrantes</span>
             </div>
           </div>
           <div className={`${alturaEstandar ? 'p-3 space-y-1' : 'p-4 space-y-1.5'}`}>
@@ -626,16 +626,16 @@ export function TarjetaArea({
             <p className="text-xs text-label line-clamp-1">{area.description || 'Área organizativa del sistema.'}</p>
             <div className="flex items-center gap-1 flex-wrap pt-0.5">
               {plataformas.slice(0, 3).map((p) => (
-                <span key={p.id} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-superficie-hundida text-label">
+                <span key={p.id} className="px-1.5 py-0.5 rounded text-xs font-semibold bg-superficie-hundida text-label">
                   {p.name}
                 </span>
               ))}
-              {restantes > 0 ? <span className="text-[9px] font-bold text-label">+{restantes}</span> : null}
+              {restantes > 0 ? <span className="text-xs font-bold text-label">+{restantes}</span> : null}
             </div>
           </div>
         </div>
         <div className={`${alturaEstandar ? 'p-3 pt-0' : 'p-4 pt-0'} flex gap-2 mt-auto`}>
-          <button type="button" className={`flex-1 ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all`}>
+          <button type="button" className={`flex-1 ${alturaEstandar ? 'py-1.5 text-xs' : 'py-2 text-xs'} rounded-xl bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all`}>
             Ver área →
           </button>
         </div>
@@ -653,7 +653,7 @@ export function TarjetaArea({
       >
         <div>
           <div className="flex items-center justify-between gap-3 mb-1.5">
-            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider text-white bg-primary">
+            <span className="px-2 py-0.5 rounded-md text-xs font-black uppercase tracking-wider text-arte-luz bg-primary">
               Área
             </span>
             <EstadoBadgeBoton
@@ -671,22 +671,22 @@ export function TarjetaArea({
 
           <div className={`grid grid-cols-2 ${alturaEstandar ? 'gap-1.5 mt-2' : 'gap-2 mt-3'}`}>
             <div className={`${alturaEstandar ? 'p-2' : 'p-2.5'} rounded-2xl bg-superficie-hundida/70 border border-panel-border/80 flex flex-col justify-between`}>
-              <span className="text-[9px] font-bold text-label uppercase">Equipo</span>
+              <span className="text-xs font-bold text-label uppercase">Equipo</span>
               <span className={`${alturaEstandar ? 'text-base' : 'text-xl'} font-black text-body-text tabular-nums`}>{personas}</span>
-              <span className="text-[9px] text-label">{personas === 1 ? 'colaborador' : 'colaboradores'}</span>
+              <span className="text-xs text-label">{personas === 1 ? 'colaborador' : 'colaboradores'}</span>
             </div>
 
             <div className={`${alturaEstandar ? 'p-2' : 'p-2.5'} rounded-2xl bg-superficie-hundida/70 border border-panel-border/80 flex flex-col justify-between`}>
-              <span className="text-[9px] font-bold text-label uppercase">Herramientas</span>
+              <span className="text-xs font-bold text-label uppercase">Herramientas</span>
               <div className="flex items-center gap-1 my-0.5">
                 {plataformas.slice(0, 2).map((p) => (
-                  <span key={p.id} className="size-4 rounded bg-superficie border border-panel-border text-[7px] font-bold flex items-center justify-center text-body-text">
+                  <span key={p.id} className="size-4 rounded bg-superficie border border-panel-border text-xs font-bold flex items-center justify-center text-body-text">
                     {p.name.slice(0, 2).toUpperCase()}
                   </span>
                 ))}
-                {restantes > 0 ? <span className="text-[9px] font-bold text-label">+{restantes}</span> : null}
+                {restantes > 0 ? <span className="text-xs font-bold text-label">+{restantes}</span> : null}
               </div>
-              <span className="text-[9px] font-bold text-primary-text">{conteo} activas</span>
+              <span className="text-xs font-bold text-primary-text">{conteo} activas</span>
             </div>
           </div>
         </div>
@@ -694,7 +694,7 @@ export function TarjetaArea({
         <div className={`mt-auto ${alturaEstandar ? 'pt-2' : 'pt-3'} border-t border-panel-border/80`}>
           <button
             type="button"
-            className={`w-full ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2.5 text-xs'} rounded-xl bg-superficie-hundida hover:bg-superficie border border-panel-border text-body-text font-bold transition-colors flex items-center justify-center gap-1.5`}
+            className={`w-full ${alturaEstandar ? 'py-1.5 text-xs' : 'py-2.5 text-xs'} rounded-xl bg-superficie-hundida hover:bg-superficie border border-panel-border text-body-text font-bold transition-colors flex items-center justify-center gap-1.5`}
           >
             <span>Ver catálogo del área</span>
             <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
@@ -714,7 +714,7 @@ export function TarjetaArea({
       >
         <div>
           <div className={`${alturaEstandar ? 'h-14 px-3' : 'h-18 px-4'} w-full relative flex items-center justify-between bg-gradient-to-r from-primary to-accent`}>
-            <span className="text-[9px] font-bold text-white/90 uppercase tracking-widest bg-black/30 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-arte-luz/90 uppercase tracking-widest bg-arte-sombra/30 px-2 py-0.5 rounded-full">
               Corporativo
             </span>
             <EstadoBadgeBoton
@@ -728,7 +728,7 @@ export function TarjetaArea({
           </div>
 
           <div className={`${alturaEstandar ? '-mt-5 mb-0.5' : '-mt-7 mb-1'} flex justify-center`}>
-            <span className={`${alturaEstandar ? 'size-10 text-base' : 'size-14 text-xl'} rounded-full flex items-center justify-center text-white font-black shadow-xl border-4 border-panel-fill bg-primary`}>
+            <span className={`${alturaEstandar ? 'size-10 text-base' : 'size-14 text-xl'} rounded-full flex items-center justify-center text-arte-luz font-black shadow-xl border-4 border-panel-fill bg-primary`}>
               <Icono nombre={(area.icon as NombreIcono) || 'areas'} tamano={alturaEstandar ? 'sm' : 'md'} />
             </span>
           </div>
@@ -736,7 +736,7 @@ export function TarjetaArea({
           <div className={`${alturaEstandar ? 'px-3 space-y-0.5' : 'px-4 space-y-1'}`}>
             <h3 className={`${alturaEstandar ? 'text-sm' : 'text-base'} font-bold text-body-text tracking-tight`}>{area.name}</h3>
             <p className="text-xs text-label line-clamp-1">{area.description || 'Área organizativa del sistema.'}</p>
-            <div className="inline-flex items-center gap-1.5 pt-0.5 px-2.5 py-0.5 rounded-full bg-superficie-hundida text-[9px] font-bold text-label">
+            <div className="inline-flex items-center gap-1.5 pt-0.5 px-2.5 py-0.5 rounded-full bg-superficie-hundida text-xs font-bold text-label">
               <span className="inline-flex items-center gap-1">
                 <Icono nombre="usuarios" tamano="xs" ariaHidden={true} className="text-primary-text shrink-0" />
                 <span>{personas} miembros</span>
@@ -753,7 +753,7 @@ export function TarjetaArea({
         <div className={`${alturaEstandar ? 'p-2.5 pt-1' : 'p-4 pt-2'} mt-auto`}>
           <button
             type="button"
-            className={`w-full max-w-[170px] mx-auto ${alturaEstandar ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} px-3 rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs flex items-center justify-center gap-1.5`}
+            className={`w-full max-w-42.5 mx-auto ${alturaEstandar ? 'py-1.5 text-xs' : 'py-2 text-xs'} px-3 rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold transition-all shadow-xs flex items-center justify-center gap-1.5`}
           >
             <span>Explorar Área</span>
             <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
@@ -814,7 +814,7 @@ export function TarjetaArea({
                 <LogoPlataforma key={p.id} plataforma={p} />
               ))}
               {restantes > 0 ? (
-                <span className={`-ml-2 grid ${alturaEstandar ? 'size-6 text-[10px]' : 'size-7 text-xs'} shrink-0 place-items-center rounded-lg border-2 border-panel-fill bg-superficie-hundida font-bold text-label shadow-1`}>
+                <span className={`-ml-2 grid ${alturaEstandar ? 'size-6 text-xs' : 'size-7 text-xs'} shrink-0 place-items-center rounded-lg border-2 border-panel-fill bg-superficie-hundida font-bold text-label shadow-1`}>
                   +{restantes}
                 </span>
               ) : null}
@@ -826,7 +826,7 @@ export function TarjetaArea({
         <button
           type="button"
           aria-label={`Área ${area.name}${inactiva ? ' (Inactiva)' : ''}, ${conteo} ${conteo === 1 ? 'plataforma' : 'plataformas'}. Ver plataformas.`}
-          className={`nx-area-card__ir inline-flex ${alturaEstandar ? 'min-h-7 px-2.5 text-[11px]' : 'min-h-8 px-3 text-xs'} shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full font-bold`}
+          className={`nx-area-card__ir inline-flex ${alturaEstandar ? 'min-h-7 px-2.5 text-xs' : 'min-h-8 px-3 text-xs'} shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full font-bold`}
         >
           Ver plataformas
           <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} className="nx-area-card__flecha" />

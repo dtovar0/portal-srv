@@ -19,8 +19,7 @@ from flask_login import current_user
 
 from app.authz import is_admin
 from app.modules.auth.acceso_local import es_origen_local
-from app.modules.auth.oidc_cuentas import ORIGEN_OIDC
-from app.modules.auth.services import ORIGEN_DIRECTORIO
+from app.modules.auth.services import ORIGENES_VINCULADOS
 from app.modules.directory.configuracion import directorio_activo
 from app.modules.directory.ldap_client import ClienteDirectorio, ErrorDirectorio
 from app.modules.users.entrega_credenciales import (
@@ -43,9 +42,9 @@ DIRECTORIO_NO_DISPONIBLE = ('No se pudo actualizar la contraseña en el '
 CONTRASENA_INVALIDA = 'La contraseña no es válida.'
 
 
-# Orígenes cuya contraseña vive en el directorio: la cuenta creada por el
-# portal (`ldap`) y la creada al primer login por Authelia (`sso`, FNC-165).
-ORIGENES_EN_DIRECTORIO = frozenset({ORIGEN_DIRECTORIO, ORIGEN_OIDC})
+# Orígenes cuya contraseña vive en el directorio: `sso` (altas del portal y
+# primer login por Authelia) y el heredado `ldap` (FNC-165, FNC-168).
+ORIGENES_EN_DIRECTORIO = ORIGENES_VINCULADOS
 
 
 def es_cuenta_del_directorio(cuenta):

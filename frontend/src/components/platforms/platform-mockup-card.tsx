@@ -215,7 +215,7 @@ export function PlatformMockupCard({
       <Card
         as="article"
         aria-labelledby={tituloId}
-        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-slate-950 p-5 text-left shadow-2 transition-all hover:border-primary/60 hover:shadow-xl ${
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-arte-luz/10 bg-arte-pizarra-950 p-5 text-left shadow-2 transition-all hover:border-primary/60 hover:shadow-xl ${
           pendiente ? 'ring-2 ring-warning/50' : ''
         }`}
       >
@@ -229,16 +229,16 @@ export function PlatformMockupCard({
           className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
         />
         {/* Capa de contraste y gradiente para garantizar máxima legibilidad tipográfica */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/75 to-black/35 pointer-events-none" />
-        <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-arte-sombra/95 via-arte-sombra/75 to-arte-sombra/35 pointer-events-none" />
+        <div className="absolute inset-0 ring-1 ring-inset ring-arte-luz/10 rounded-3xl pointer-events-none" />
 
         {/* Cabecera flotante */}
         <div className="relative z-10 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-md border border-white/20 text-white font-black text-xs shadow-md">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-arte-luz/15 backdrop-blur-md border border-arte-luz/20 text-arte-luz font-black text-xs shadow-md">
               {iniciales}
             </span>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/50 text-white/90 backdrop-blur-md border border-white/15">
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-arte-sombra/50 text-arte-luz/90 backdrop-blur-md border border-arte-luz/15">
               {area.name}
             </span>
           </div>
@@ -259,16 +259,16 @@ export function PlatformMockupCard({
 
         {/* Cuerpo central: Información de la plataforma */}
         <div className="relative z-10 my-4 space-y-1.5">
-          <h3 id={tituloId} className="truncate text-lg font-bold tracking-tight text-white drop-shadow-sm group-hover:text-primary-text transition-colors" title={platform.name}>
+          <h3 id={tituloId} className="truncate text-lg font-bold tracking-tight text-arte-luz drop-shadow-sm group-hover:text-primary-text transition-colors" title={platform.name}>
             {platform.name}
           </h3>
-          <p className="line-clamp-2 text-xs leading-relaxed text-slate-300 drop-shadow-xs" title={platform.description || ''}>
+          <p className="line-clamp-2 text-xs leading-relaxed text-arte-pizarra-300 drop-shadow-xs" title={platform.description || ''}>
             {platform.description || 'Herramienta corporativa autorizada para colaboradores.'}
           </p>
         </div>
 
         {/* Pie: Botón de acción único prominente con estilo cinematográfico */}
-        <div className="relative z-10 pt-3 border-t border-white/15 flex items-center">
+        <div className="relative z-10 pt-3 border-t border-arte-luz/15 flex items-center">
           {esActivo && enlace ? (
             <a
               href={enlace}
@@ -291,13 +291,13 @@ export function PlatformMockupCard({
               type="button"
               onClick={(e) => onRequest(item, e.currentTarget)}
               aria-label={`Solicitar acceso a ${platform.name}`}
-              className="w-full min-h-12 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full min-h-12 px-4 rounded-xl bg-arte-luz hover:bg-arte-pizarra-100 text-arte-pizarra-900 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Solicitar acceso</span>
               <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
             </button>
           ) : (
-            <div className="w-full min-h-12 rounded-xl bg-black/40 border border-white/10 backdrop-blur-md px-4 flex items-center justify-center text-xs text-slate-400 italic">
+            <div className="w-full min-h-12 rounded-xl bg-arte-sombra/40 border border-arte-luz/10 backdrop-blur-md px-4 flex items-center justify-center text-xs text-arte-pizarra-400 italic">
               Sin permisos disponibles
             </div>
           )}
@@ -317,7 +317,7 @@ export function PlatformMockupCard({
         }`}
       >
         {/* Cabecera Panorámica / Hero Banner con imagen fotográfica */}
-        <div className={`relative ${alturaEstandar ? 'h-24' : 'h-28 sm:h-32'} w-full overflow-hidden shrink-0 bg-slate-900`}>
+        <div className={`relative ${alturaEstandar ? 'h-24' : 'h-28 sm:h-32'} w-full overflow-hidden shrink-0 bg-arte-pizarra-900`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imagenFondo}
@@ -326,11 +326,11 @@ export function PlatformMockupCard({
             decoding="async"
             className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-arte-sombra/85 via-arte-sombra/40 to-arte-sombra/20 pointer-events-none" />
 
           {/* Badges superiores sobre el banner */}
           <div className="relative z-10 flex items-center justify-between p-3.5">
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/60 text-white/95 backdrop-blur-md border border-white/20">
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-arte-sombra/60 text-arte-luz/95 backdrop-blur-md border border-arte-luz/20">
               {area.name}
             </span>
 
@@ -351,13 +351,13 @@ export function PlatformMockupCard({
           {/* Chip de iniciales superpuesto en el banner */}
           <div className="absolute bottom-2 left-4 z-10 flex items-center gap-2">
             <span
-              className={`flex size-11 items-center justify-center rounded-2xl font-black text-xs text-white shadow-lg border-2 border-panel-fill ${colorClase}`}
+              className={`flex size-11 items-center justify-center rounded-2xl font-black text-xs text-arte-luz shadow-lg border-2 border-panel-fill ${colorClase}`}
               aria-hidden="true"
             >
               {iniciales}
             </span>
             {esActivo ? (
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/80 text-white backdrop-blur-md">
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-success-fondo text-success-text backdrop-blur-md">
                 Activa
               </span>
             ) : null}
@@ -369,7 +369,7 @@ export function PlatformMockupCard({
           <div className="space-y-1">
             <h3
               id={tituloId}
-              className="truncate text-base font-bold tracking-tight text-body-text group-hover:text-primary transition-colors"
+              className="truncate text-base font-bold tracking-tight text-body-text group-hover:text-primary-text transition-colors"
               title={platform.name}
             >
               {platform.name}
@@ -428,7 +428,7 @@ export function PlatformMockupCard({
       <Card
         as="article"
         aria-labelledby={tituloId}
-        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-white/15 bg-slate-950 ${alturaEstandar ? 'p-3.5' : 'p-4'} text-left shadow-2 transition-all hover:border-primary/60 hover:shadow-xl ${
+        className={`group relative flex h-full ${claseAltura} w-full flex-col justify-between overflow-hidden rounded-3xl border border-arte-luz/15 bg-arte-pizarra-950 ${alturaEstandar ? 'p-3.5' : 'p-4'} text-left shadow-2 transition-all hover:border-primary/60 hover:shadow-xl ${
           pendiente ? 'ring-2 ring-warning/50' : ''
         }`}
       >
@@ -441,11 +441,11 @@ export function PlatformMockupCard({
           decoding="async"
           className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/35 to-black/85 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-arte-sombra/70 via-arte-sombra/35 to-arte-sombra/85 pointer-events-none" />
 
         {/* Cabecera flotante */}
         <div className={`relative z-10 flex items-center justify-between gap-3 ${alturaEstandar ? 'mb-2' : 'mb-4'}`}>
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/60 text-white/95 backdrop-blur-md border border-white/20">
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-arte-sombra/60 text-arte-luz/95 backdrop-blur-md border border-arte-luz/20">
             {area.name}
           </span>
 
@@ -464,10 +464,10 @@ export function PlatformMockupCard({
         </div>
 
         {/* Panel flotante de vidrio (Frosted Glass Card) en la parte inferior */}
-        <div className={`relative z-10 mt-auto rounded-2xl bg-black/75 backdrop-blur-xl border border-white/20 ${alturaEstandar ? 'p-3 gap-2.5' : 'p-4 gap-3'} shadow-2xl flex flex-col group-hover:border-white/30 transition-all`}>
+        <div className={`relative z-10 mt-auto rounded-2xl bg-arte-sombra/75 backdrop-blur-xl border border-arte-luz/20 ${alturaEstandar ? 'p-3 gap-2.5' : 'p-4 gap-3'} shadow-2xl flex flex-col group-hover:border-arte-luz/30 transition-all`}>
           <div className="flex items-center gap-3">
             <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md border border-white/30 text-white font-black text-xs shadow-md"
+              className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-arte-luz/20 backdrop-blur-md border border-arte-luz/30 text-arte-luz font-black text-xs shadow-md"
               aria-hidden="true"
             >
               {iniciales}
@@ -475,13 +475,13 @@ export function PlatformMockupCard({
             <div className="min-w-0 flex-1">
               <h3
                 id={tituloId}
-                className="truncate text-sm font-bold tracking-tight text-white drop-shadow-sm group-hover:text-primary-text transition-colors"
+                className="truncate text-sm font-bold tracking-tight text-arte-luz drop-shadow-sm group-hover:text-primary-text transition-colors"
                 title={platform.name}
               >
                 {platform.name}
               </h3>
               <p
-                className="line-clamp-1 text-xs text-slate-300 drop-shadow-xs"
+                className="line-clamp-1 text-xs text-arte-pizarra-300 drop-shadow-xs"
                 title={platform.description || ''}
               >
                 {platform.description || 'Herramienta corporativa autorizada.'}
@@ -490,7 +490,7 @@ export function PlatformMockupCard({
           </div>
 
           {/* Botón de acción integrado */}
-          <div className="pt-2 border-t border-white/15">
+          <div className="pt-2 border-t border-arte-luz/15">
             {esActivo && enlace ? (
               <a
                 href={enlace}
@@ -513,13 +513,13 @@ export function PlatformMockupCard({
                 type="button"
                 onClick={(e) => onRequest(item, e.currentTarget)}
                 aria-label={`Solicitar acceso a ${platform.name}`}
-                className="w-full min-h-12 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full min-h-12 px-4 rounded-xl bg-arte-luz hover:bg-arte-pizarra-100 text-arte-pizarra-900 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Solicitar acceso</span>
                 <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
               </button>
             ) : (
-              <div className="w-full min-h-12 rounded-xl bg-black/40 border border-white/10 backdrop-blur-md px-4 flex items-center justify-center text-xs text-slate-400 italic">
+              <div className="w-full min-h-12 rounded-xl bg-arte-sombra/40 border border-arte-luz/10 backdrop-blur-md px-4 flex items-center justify-center text-xs text-arte-pizarra-400 italic">
                 Sin permisos disponibles
               </div>
             )}
@@ -538,12 +538,12 @@ export function PlatformMockupCard({
           }`}
       >
         <div>
-          <div className={`relative ${alturaEstandar ? 'h-24' : 'h-36'} w-full rounded-2xl overflow-hidden bg-gradient-to-tr from-teal-800 to-emerald-600 shadow-inner flex items-center justify-center text-white`}>
+          <div className={`relative ${alturaEstandar ? 'h-24' : 'h-36'} w-full rounded-2xl overflow-hidden bg-gradient-to-tr from-arte-turquesa-800 to-arte-esmeralda-600 shadow-inner flex items-center justify-center text-arte-luz`}>
             <div className="text-center">
               <span className={`size-12 mx-auto rounded-xl flex items-center justify-center font-bold text-sm shadow-md ${colorClase}`}>
                 {iniciales}
               </span>
-              <span className="mt-1.5 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-white backdrop-blur-xs">
+              <span className="mt-1.5 inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-arte-sombra/40 text-arte-luz backdrop-blur-xs">
                 {area.name}
               </span>
             </div>
@@ -579,7 +579,7 @@ export function PlatformMockupCard({
               rel="noopener noreferrer"
               onClick={registerVisit}
               aria-label={`Abrir ${platform.name}`}
-              className="w-full max-w-[190px] mx-auto min-h-12 px-5 rounded-full bg-superficie-hundida hover:bg-superficie border border-panel-border/80 text-body-text font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="w-full max-w-47.5 mx-auto min-h-12 px-5 rounded-full bg-superficie-hundida hover:bg-superficie border border-panel-border/80 text-body-text font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span>Abrir Plataforma</span>
               <Icono nombre="abrir-externo" tamano="xs" ariaHidden={true} />
@@ -591,7 +591,7 @@ export function PlatformMockupCard({
               type="button"
               onClick={(e) => onRequest(item, e.currentTarget)}
               aria-label={`Solicitar acceso a ${platform.name}`}
-              className="w-full max-w-[190px] mx-auto min-h-12 px-5 rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+              className="w-full max-w-47.5 mx-auto min-h-12 px-5 rounded-full bg-primary hover:bg-primary/90 text-texto-sobre-accion font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             >
               <span>Solicitar Acceso</span>
               <Icono nombre="chevron-der" tamano="xs" ariaHidden={true} />
@@ -613,9 +613,9 @@ export function PlatformMockupCard({
           }`}
       >
         <div>
-          <div className={`relative ${alturaEstandar ? 'h-24' : 'h-40'} w-full bg-gradient-to-tr from-purple-950 via-indigo-900 to-purple-800 ${alturaEstandar ? 'p-2.5' : 'p-3.5'} flex flex-col justify-between text-white`}>
+          <div className={`relative ${alturaEstandar ? 'h-24' : 'h-40'} w-full bg-gradient-to-tr from-arte-purpura-950 via-arte-indigo-900 to-arte-purpura-800 ${alturaEstandar ? 'p-2.5' : 'p-3.5'} flex flex-col justify-between text-arte-luz`}>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider bg-black/50 text-purple-300 px-2 py-0.5 rounded-md border border-white/10 backdrop-blur-xs">
+              <span className="text-xs font-black uppercase tracking-wider bg-arte-sombra/50 text-arte-purpura-300 px-2 py-0.5 rounded-md border border-arte-luz/10 backdrop-blur-xs">
                 {area.name}
               </span>
               {mine ? (
@@ -631,7 +631,7 @@ export function PlatformMockupCard({
             </div>
 
             <div className="flex items-center gap-2.5">
-              <span className={`size-10 rounded-xl flex items-center justify-center font-bold text-xs shadow-md border border-white/20 ${colorClase}`}>
+              <span className={`size-10 rounded-xl flex items-center justify-center font-bold text-xs shadow-md border border-arte-luz/20 ${colorClase}`}>
                 {iniciales}
               </span>
             </div>
@@ -691,7 +691,7 @@ export function PlatformMockupCard({
           }`}
       >
         <div>
-          <div className={`relative ${alturaEstandar ? 'h-24' : 'h-36'} w-full rounded-2xl overflow-hidden bg-gradient-to-tr from-blue-900 to-indigo-700 p-3 flex flex-col justify-between text-white shadow-inner`}>
+          <div className={`relative ${alturaEstandar ? 'h-24' : 'h-36'} w-full rounded-2xl overflow-hidden bg-gradient-to-tr from-arte-azul-900 to-arte-indigo-700 p-3 flex flex-col justify-between text-arte-luz shadow-inner`}>
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-panel-fill text-body-text font-black text-xs shadow-xs">
                 {iniciales}
@@ -709,7 +709,7 @@ export function PlatformMockupCard({
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-white backdrop-blur-xs">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-arte-sombra/40 text-arte-luz backdrop-blur-xs">
                 {area.name}
               </span>
             </div>
@@ -767,9 +767,9 @@ export function PlatformMockupCard({
           }`}
       >
         {/* Mitad izquierda visual 45% */}
-        <div className={`${alturaEstandar ? 'w-[45%]' : 'sm:w-[45%]'} bg-gradient-to-tr from-indigo-950 via-slate-900 to-indigo-900 ${alturaEstandar ? 'p-3.5' : 'p-5'} flex flex-col justify-between text-white ${alturaEstandar ? 'min-h-full' : 'min-h-[160px]'} relative`}>
+        <div className={`${alturaEstandar ? 'w-9/20' : 'sm:w-9/20'} bg-gradient-to-tr from-arte-indigo-950 via-arte-pizarra-900 to-arte-indigo-900 ${alturaEstandar ? 'p-3.5' : 'p-5'} flex flex-col justify-between text-arte-luz ${alturaEstandar ? 'min-h-full' : 'min-h-40'} relative`}>
           <div className="flex items-center justify-between">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 backdrop-blur-xs border border-white/20">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-arte-luz/10 backdrop-blur-xs border border-arte-luz/20">
               {area.name}
             </span>
             {mine ? (
@@ -785,18 +785,18 @@ export function PlatformMockupCard({
           </div>
 
           <div className="py-2 text-center">
-            <span className={`size-14 mx-auto rounded-2xl flex items-center justify-center font-black text-xl shadow-lg border-2 border-white/20 ${colorClase}`}>
+            <span className={`size-14 mx-auto rounded-2xl flex items-center justify-center font-black text-xl shadow-lg border-2 border-arte-luz/20 ${colorClase}`}>
               {iniciales}
             </span>
           </div>
 
-          <div className="flex items-center justify-end text-[11px] text-white/80">
-            <span className="size-2 rounded-full bg-emerald-400" />
+          <div className="flex items-center justify-end text-xs text-arte-luz/80">
+            <span className="size-2 rounded-full bg-arte-esmeralda-400" />
           </div>
         </div>
 
         {/* Mitad derecha editorial 55% */}
-        <div className={`${alturaEstandar ? 'w-[55%]' : 'sm:w-[55%]'} ${alturaEstandar ? 'p-3.5' : 'p-5'} flex flex-col justify-between space-y-3`}>
+        <div className={`${alturaEstandar ? 'w-11/20' : 'sm:w-11/20'} ${alturaEstandar ? 'p-3.5' : 'p-5'} flex flex-col justify-between space-y-3`}>
           <div>
             <h3 id={tituloId} className="truncate text-base font-bold tracking-tight text-body-text group-hover:text-primary-text transition-colors" title={platform.name}>
               {platform.name}
@@ -869,10 +869,10 @@ export function PlatformMockupCard({
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary-text bg-primary/10 px-2 py-0.5 rounded-md">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary-text bg-primary/10 px-2 py-0.5 rounded-md">
                 {area.name}
               </span>
-              <span className="size-1.5 rounded-full bg-emerald-400" />
+              <span className="size-1.5 rounded-full bg-arte-esmeralda-400" />
             </div>
             <h3 id={tituloId} className="truncate text-base font-bold tracking-tight text-body-text mt-1.5" title={platform.name}>
               {platform.name}
@@ -930,7 +930,7 @@ export function PlatformMockupCard({
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary-text">
+            <span className="text-xs font-black uppercase tracking-widest text-primary-text">
               {area.name}
             </span>
             {mine ? (

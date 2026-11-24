@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 3 (2026-11-19) |
+| Versión | 3.1 (2026-11-24) |
 | Proveedor | backend (FNC-064; cliente FNC-040, FNC-041; v2: FNC-138) |
 | Consumidores | web (FNC-069; pantalla DIS-019; v2: FNC-139) |
 | Solicitudes | — |
@@ -30,7 +30,7 @@ Convenciones comunes: [README.md](README.md). P2: superadmin y admins (para sus 
 | `area_ids` | int[] | Sí para admin | 1–50; todas en alcance del actor (superadmin: cualquiera, puede ir vacío) |
 | `password` | string | **Sí (v2)** | Cumple la política de `GET /users/password-policy`; el servidor siempre la valida |
 
-- Rol siempre `usuario`; `auth_source = "ldap"`; `password_hash` NULL (SEC-AUTH-04). Elevar: solo superadmin, aparte.
+- Rol siempre `usuario`; `auth_source = "sso"` (v3.1, FNC-168; antes `"ldap"`); `password_hash` NULL (SEC-AUTH-04). Elevar: solo superadmin, aparte.
 - Entrada en la OU de personas de la convención `LDAP_*` (ADR-004); DN escapado (SEC-LDAP-06).
 - Contraseña (P8, modificada el 2026-11-18, ADR-008): el portal fija **solo la contraseña inicial** (alta y reenvío); el resto de su ciclo sigue en Authelia. Se escribe en OpenLDAP con Password Modify (RFC 3062): el servidor la cifra y aplica su `ppolicy`. **Nunca** se guarda en la BD, la auditoría ni los logs, ni aparece en respuestas o correos.
 - Escritura síncrona al directorio; si falla (incluida la contraseña), no se crea nada en la BD y la entrada recién creada se retira.
@@ -110,3 +110,4 @@ Solo superadmin (resto: 401/403). Fuente única: variables `LDAP_*` (ADR-004); s
 | 1 | 2026-10-19 | `email` ≤ 120 en lugar de ≤ 254 (motivo: `users.email` es `String(120)`; más largo daría 500 en Postgres), solo ASCII y único también en el directorio (FNC-064, revisión de seguridad). **Restrictivo** (un valor antes válido ahora da `422`/`409`); sigue v1 porque ningún cliente lo usaba en producción (FNC-069 solo en simulado). Decisión del orquestador (pendiente de validar en la prueba de concepto) |
 | 2 | 2026-11-18 | **Incompatible**: `password` pasa de prohibido (`400 campo_no_permitido`, P8) a obligatorio; nuevos `GET /users/password-policy`, `POST /users/<id>/credentials`, `credentials_status` y `credentials_sent_at` en `ManagedUser`. Motivo: ADR-008 (onboarding con Send de Vaultwarden), aprobado por el dueño el 2026-11-18. El cliente v1 deja de funcionar sin `password`: FNC-138 (backend) y FNC-139 (web) se integran juntas (FNC-135) |
 | 3 | 2026-11-19 | FNC-161 (pedido del dueño): `POST /users/<id>/credentials` (reenviar) se retira (`410`); su función la cumple el cambio de contraseña de `PUT /users/<id>`. **Incompatible** para quien llamaba la ruta (solo la web, ya ajustada). Decisión del orquestador (pendiente de validar) |
+| 3.1 | 2026-11-24 | FNC-168: la cuenta del portal nace `auth_source="sso"` (vive en LDAP y entra por Authelia); migración 0019 |

@@ -180,7 +180,7 @@ export function ConnectorPanel({
                   onClick={probar}
                   aria-disabled={probando || undefined}
                   aria-describedby={`${titleId}-prueba-pista`}
-                  className="aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary"
+                  className="aria-disabled:opacity-deshabilitada focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <Icono nombre="actividad" tamano="sm" ariaHidden={true} className="mr-1.5" />
                   {probando ? 'Probando…' : 'Probar conexión'}

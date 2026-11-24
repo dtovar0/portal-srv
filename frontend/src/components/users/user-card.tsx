@@ -3,6 +3,7 @@
 /** Tarjeta de un usuario en la lista: datos, insignias de rol y acciones de fila. */
 
 import type { ManagedUser } from '@/lib/types';
+import { esCuentaDelDirectorio, etiquetaOrigen } from '@/lib/origen-cuenta';
 import { Button } from '../form';
 import { Badge, Card } from '../ui';
 import { ETIQUETA_CREDENCIALES } from './estado-entrega';
@@ -51,11 +52,11 @@ export function UserCard({
             {user.is_active ? 'Activo' : 'Inactivo'}
           </Badge>
           <Badge
-            tone={user.auth_source === 'ldap' ? 'primary' : 'slate'}
-            icon={user.auth_source === 'ldap' ? 'plataformas' : 'documento'}
-            title={user.auth_source}
+            tone={esCuentaDelDirectorio(user.auth_source) ? 'primary' : 'slate'}
+            icon={esCuentaDelDirectorio(user.auth_source) ? 'plataformas' : 'documento'}
+            title={etiquetaOrigen(user.auth_source)}
           >
-            {user.auth_source}
+            {etiquetaOrigen(user.auth_source)}
           </Badge>
           {user.credentials_status ? (
             <Badge
