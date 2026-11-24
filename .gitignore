@@ -46,7 +46,8 @@ backups/
 storage/
 uploads/
 # Logs de ejecución (cualquier carpeta logs/); docs/logs/ es la bitácora versionada
-logs/
+logs/*
+!logs/.gitkeep
 !docs/logs/
 # Sistema operativo y editores
 Thumbs.db

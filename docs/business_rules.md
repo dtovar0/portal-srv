@@ -6229,3 +6229,24 @@ Un usuario con cuenta corporativa en OpenLDAP utiliza el asistente de recuperaci
 
 ### Impacto
 Afecta a [app/modules/directory/errors.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/errors.py), [app/modules/directory/ldap_client.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/ldap_client.py), [app/modules/auth/autoservicio.py](file:///home/dtovar/bayblade/pokemon/app/modules/auth/autoservicio.py), [tests/test_autoservicio.py](file:///home/dtovar/bayblade/pokemon/tests/test_autoservicio.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+
+Directorio Canónico de Logs y Persistencia de Trazas en Modo Debug
+
+## Módulo
+Infraestructura / Observabilidad / Directorio OpenLDAP
+
+### Regla
+1. **Preservación y Creación Automática del Directorio de Logs**:
+   El proyecto versiona el directorio `logs/` mediante un archivo centinela `logs/.gitkeep`, configurando `.gitignore` para ignorar archivos generados (`logs/*`) sin suprimir el directorio base (`!logs/.gitkeep`). En tiempo de ejecución, la función `resolver_carpeta_logs()` asegura la existencia física de la carpeta `logs/` en la raíz del proyecto o en la ruta definida por `LOG_DIR`/`LOGDIR`.
+2. **Persistencia Unificada de Registros de Depuración**:
+   Al habilitar `DEBUG_LDAP=true`:
+   - El sistema inicializa automáticamente la carpeta `logs/` y crea el archivo `logs/ldap_debug.log`.
+   - Se canalizan simultáneamente las operaciones de bajo nivel del protocolo (`ldap3`) y los registros de aplicación de alto nivel (`app.modules.directory`, `app.modules.auth.autoservicio`, `app.modules.users.entrega_credenciales`) hacia `logs/ldap_debug.log` con nivel `DEBUG`.
+   - La inicialización se ejecuta tanto en la importación de clientes LDAP como en el arranque de la aplicación Flask (`create_app`), garantizando que las trazas de autoservicio y cambios de contraseña se persistan de inmediato en disco.
+
+### Ejemplo
+Al configurar `DEBUG_LDAP=true` en `.env` y reiniciar el servicio, cualquier intento de recuperación de contraseña o consulta en OpenLDAP escribe en `logs/ldap_debug.log` tanto los mensajes de negocio ("Autoservicio MFA: Restablecimiento en LDAP para dtovar -> exito=True") como las tramas de la librería ldap3 (BIND, MODIFY PASSWORD, RESULT), permitiendo auditar la interacción completa sin depender exclusivamente de journald.
+
+### Impacto
+Afecta a [.gitignore](file:///home/dtovar/bayblade/pokemon/.gitignore), [app/modules/directory/depuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/depuracion.py), [app/__init__.py](file:///home/dtovar/bayblade/pokemon/app/__init__.py), [tests/test_depuracion_ldap.py](file:///home/dtovar/bayblade/pokemon/tests/test_depuracion_ldap.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).

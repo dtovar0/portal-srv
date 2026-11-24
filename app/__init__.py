@@ -281,6 +281,8 @@ def create_app(config_overrides=None):
     """
     app = Flask(__name__, template_folder=None, static_folder=None)
     _configurar(app, config_overrides)
+    from app.modules.directory.depuracion import activar_si_se_pide
+    activar_si_se_pide()
     _validar_configuracion()
     _iniciar_extensiones(app)
     # CSRF de la API por origen y cookie SameSite=Lax (FNC-008).
