@@ -824,14 +824,14 @@ Instalación terminada.
 Actualizar más adelante:  sudo git -C ${PREFIX} pull && sudo ${PREFIX}/deploy/install.sh --actualizar
 
 Pendiente:
-  1. Migraciones, si es una actualización (después reiniciar backend y worker):
-       cd ${PREFIX} && venv/bin/alembic upgrade head   (BD existente de ADUANA: antes, una vez, alembic stamp 0001)
-  2. Certificados y server_name en ${conf}
-  3. Primer superadmin (instalación nueva) o cambiar la contraseña de \`admin\` (FNC-003):
+  1. Certificados y server_name en ${conf}
+     (las migraciones ya se aplicaron: FNC-178; BD heredada de ADUANA sin
+     Alembic: antes, una vez, venv/bin/alembic stamp 0001)
+  2. Primer superadmin (instalación nueva) o cambiar la contraseña de \`admin\` (FNC-003):
        cd ${PREFIX} && sudo -u ${SVC_USER} venv/bin/flask --app run:app cuentas superadmin [--restablecer]
-  4. Comprobar:  curl -s localhost:${API_PORT}/api/v1/auth/context
+  3. Comprobar:  curl -s localhost:${API_PORT}/api/v1/auth/context
                  curl -s -o /dev/null -w '%{http_code}\\n' localhost:${WEB_PORT}/login
 
-Los puertos ${API_PORT} y ${WEB_PORT} escuchan solo en loopback a propósito: el backend
-deduce la identidad del SSO de cabeceras que solo nginx debe poder inyectar.
+Los puertos ${API_PORT} y ${WEB_PORT} escuchan solo en loopback a propósito: todo el
+tráfico entra por nginx (TLS, cabeceras de seguridad y páginas de error).
 FIN
