@@ -49,16 +49,13 @@ vi.mock('@/components/session-provider', () => ({
   }),
 }));
 
-import { ApiError, api } from '@/lib/api';
+import { api } from '@/lib/api';
 import { grantsApi } from '@/lib/access/grants';
 import { UsersList } from '@/components/users-list';
 import {
-  ESTADO_PARA_ADMIN,
   MENSAJE_SUPERADMIN,
   SIN_ACCION,
   UserAccessPanel,
-  avisoRevocacion,
-  mensajeVacioAccesos,
   motivoSinRevocar,
 } from '@/components/users/user-access-panel';
 

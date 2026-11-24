@@ -8,7 +8,7 @@
  * - Quitar admin: `role: usuario` con el efecto explicado.
  * - Errores del contrato sin texto del servidor; `aria-disabled` al enviar.
  */
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AreaRef, ManagedUser } from '@/lib/types';
 

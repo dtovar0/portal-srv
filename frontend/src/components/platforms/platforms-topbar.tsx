@@ -21,7 +21,6 @@ import { BotonIcono, CLASE_BOTON_ICONO } from '../marco/boton-icono';
 import { MenuUsuario } from '../marco/menu-usuario';
 import { MenuNotificaciones } from './menu-notificaciones';
 import { Icono } from '../icono';
-import { usePlatformsLayout } from '@/lib/platforms-layout';
 import type { Session } from '@/lib/types';
 import {
   EVENTO_BOTON_USUARIO_COMPACTO,
@@ -92,7 +91,6 @@ export function PlatformsTopbar({
   }, []);
 
   const etiquetaTema = oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
-  const etiquetaNotificaciones = noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : 'Notificaciones';
 
   // Solo mostrar el buscador cuando se encuentra en el catálogo de plataformas
   const mostrarBuscador = (!seccionActiva || seccionActiva === 'catalogo') && !esSolicitudes;

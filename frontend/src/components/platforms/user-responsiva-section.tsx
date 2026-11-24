@@ -8,7 +8,6 @@ import { Spinner } from '../ui';
 
 export function UserResponsivaSection({
   session,
-  onVolver: _onVolver,
 }: {
   session: Session | null;
   onVolver?: () => void;

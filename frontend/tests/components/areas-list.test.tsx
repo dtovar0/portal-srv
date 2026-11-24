@@ -93,10 +93,6 @@ function dialogo() {
   return within(screen.queryByRole('alertdialog') ?? screen.getByRole('dialog'));
 }
 
-function tarjeta(nombre: string) {
-  return within((screen.getByText(nombre).closest('tr') ?? screen.getByText(nombre).closest('div.rounded-xl')) as HTMLElement);
-}
-
 describe('AreasList por rol', () => {
   it('usuario: estado sin permiso y no llama a la API', () => {
     rolActual = 'usuario';
@@ -314,7 +310,7 @@ describe('Errores del formulario y de la baja', () => {
 
   it('permite eliminar múltiples áreas seleccionadas si tiene permisos', async () => {
     rolActual = 'administrador';
-    vi.mocked(api.deleteArea).mockResolvedValue({ ok: true } as any);
+    vi.mocked(api.deleteArea).mockResolvedValue({ ok: true } as never);
     render(<AreasList />);
     await screen.findByText('Finanzas');
     await screen.findByText('Sistemas');

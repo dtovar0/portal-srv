@@ -28,7 +28,7 @@ import {
 import { useSession } from '../session-provider';
 import { useToast } from '../toast';
 import { Button } from '../form';
-import { EmptyNote, Skeleton, Spinner } from '../ui';
+import { EmptyNote, Spinner } from '../ui';
 import { PlatformMockupCard } from './platform-mockup-card';
 import { PlatformGhostCard } from './platform-ghost-card';
 import {

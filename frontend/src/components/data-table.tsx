@@ -17,7 +17,7 @@
 
 import React from 'react';
 import { CapsulePager } from './capsule-pager';
-import { Icono, type NombreIcono } from './icono';
+import { type NombreIcono } from './icono';
 import { Card, EmptyNote, ErrorNote, Skeleton, Spinner } from './ui';
 
 export type DataColumn<T> = {

@@ -12,7 +12,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { CatalogItem } from '@/lib/access/types';
-import type { Area, Platform } from '@/lib/types';
+import type { Platform } from '@/lib/types';
 import { Button } from '../button';
 import { Icono, type NombreIcono } from '../icono';
 import { EmptyNote } from '../note';
@@ -66,7 +66,6 @@ export function UserWidgetConfig({
   onToggleHabilitado,
   plataformasWidget,
   onTogglePlataforma,
-  onVolver,
 }: UserWidgetConfigProps) {
   const [termino, setTermino] = useState('');
   const [filtroWidget, setFiltroWidget] = useState<'todas' | 'en_widget' | 'fuera_widget'>('todas');

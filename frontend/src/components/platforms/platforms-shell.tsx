@@ -33,7 +33,6 @@ import {
   type CardDesignVariant,
   type AreaCardDesignVariant,
   CLAVE_DISENO_CARDS_AREA,
-  CLAVE_MOSTRAR_DOCUMENTOS,
   EVENTO_MOSTRAR_DOCUMENTOS,
   guardarMostrarDocumentos,
   leerMostrarDocumentos,
@@ -48,7 +47,6 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
   const [seccionActiva, setSeccionActiva] = useState<'catalogo' | 'personalizacion' | 'responsiva' | 'widget'>('catalogo');
   const mias = useAsync(() => api.platforms(), [], 'nexus.platforms.mine');
 
-  const esAdmin = session?.permissions.is_admin || session?.permissions.is_area_admin;
   const { items, areas, mias: abribles } = useCatalogoSolicitable(mias);
   const [areaIdLaunchpad, setAreaIdLaunchpad] = useState<number | null>(null);
   const [soloFavoritasLaunchpad, setSoloFavoritasLaunchpad] = useState(false);

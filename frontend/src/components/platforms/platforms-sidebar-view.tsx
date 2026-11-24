@@ -21,7 +21,6 @@
  * - 100% compatible con tokens de diseño (DIS-001, DIS-002, DIS-056, DIS-068, DIS-072).
  */
 
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AccessRequest, CatalogItem } from '@/lib/access/types';
 import type { Area, Platform } from '@/lib/types';
@@ -38,8 +37,8 @@ import { useSession } from '../session-provider';
 import { useTema } from '../use-tema';
 import { useToast } from '../toast';
 import { Button } from '../button';
-import { EmptyNote, Skeleton, Spinner } from '../ui';
-import { BotonIcono, CLASE_BOTON_ICONO } from '../marco/boton-icono';
+import { EmptyNote, Spinner } from '../ui';
+import { BotonIcono } from '../marco/boton-icono';
 import { useIndicadores } from '../marco/use-indicadores';
 import { MenuNotificaciones } from './menu-notificaciones';
 import { PlatformMockupCard } from './platform-mockup-card';
@@ -53,7 +52,6 @@ import {
   type CardDesignVariant,
   type AreaCardDesignVariant,
   CLAVE_DISENO_CARDS_AREA,
-  CLAVE_MOSTRAR_DOCUMENTOS,
   EVENTO_MOSTRAR_DOCUMENTOS,
   guardarMostrarDocumentos,
   leerMostrarDocumentos,
