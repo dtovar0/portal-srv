@@ -56,6 +56,7 @@ from app.modules.directory.writer import (MOTIVO_CONTRASENA_RECHAZADA,
 from app.modules.users.areas_administradas import (CAMPO_AREAS,
                                                    validar_area_ids)
 from app.modules.users.correos import correos_registrados
+from app.modules.users.grupos_de_rol import sincronizar_grupo_de_rol
 from app.modules.users.entrega_credenciales import (completar_alta,
                                                     nueva_entrega)
 from app.modules.users.politica_contrasena import (
@@ -328,23 +329,9 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
             f'{SISTEMA_DIRECTORIO}: {resultado.resultado.value} '
             f'({resultado.motivo or MOTIVO_SIN_CONEXION})')
 
-    # Vincular al grupo correspondiente en LDAP según el mapeo OIDC
-    try:
-        import os
-        from app.authz import ROLE_AREA_ADMIN
-        rol_usuario = getattr(alta, 'role', ROLE_USER)
-        if rol_usuario == ROLE_AREA_ADMIN:
-            grupo_portal = (os.getenv('OIDC_GROUP_AREA_ADMIN') or os.getenv('LDAP_APP_ADMINS') or 'app-aduana-admins').strip()
-        else:
-            grupo_portal = (os.getenv('OIDC_GROUP_USER') or os.getenv('LDAP_APP_USERS') or 'app-aduana-users').strip()
-
-        dn_grupo_portal = f'cn={grupo_portal},{escritor.configuracion.grupos_base_dn}'
-        if hasattr(escritor, 'create_group'):
-            escritor.create_group(dn_grupo_portal, descripcion=f'Grupo OIDC ADUANA para {rol_usuario}')
-        if hasattr(escritor, 'add_member'):
-            escritor.add_member(dn_grupo_portal, resultado.dn)
-    except Exception as exc:
-        logger.warning('No se pudo agregar el usuario al grupo de portal: %s', exc)
+    # Grupo de Authelia según el rol (FNC-170): sin él no podría entrar.
+    sincronizar_grupo_de_rol(escritor, resultado.dn,
+                             getattr(alta, 'role', ROLE_USER))
 
     try:
         nueva_entrega(cuenta, alta.uid)

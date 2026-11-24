@@ -44,7 +44,7 @@ describe('LoginForm', () => {
   it('sin campos de contraseña y con un botón que navega al inicio del flujo', async () => {
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
     render(<LoginForm />);
-    const boton = await screen.findByRole('button', { name: /Entrar con Authelia/ });
+    const boton = await screen.findByRole('button', { name: /Iniciar Sesión con Authelia/ });
     expect(document.querySelector('input')).toBeNull();
     fireEvent.click(boton);
     expect(window.location.href).toBe(URL_INICIO_OIDC);
@@ -54,7 +54,7 @@ describe('LoginForm', () => {
   it('no enlaza al acceso de emergencia', async () => {
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
     const { container } = render(<LoginForm />);
-    await screen.findByRole('button', { name: /Entrar con Authelia/ });
+    await screen.findByRole('button', { name: /Iniciar Sesión con Authelia/ });
     expect(container.querySelector('a[href*="emergencia"]')).toBeNull();
     expect(container.textContent).not.toMatch(/emergencia/i);
   });
@@ -72,15 +72,24 @@ describe('LoginForm', () => {
     delete process.env.NEXT_PUBLIC_PORTADA_ACTIVA;
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
     render(<LoginForm />);
-    await screen.findByRole('button', { name: /Entrar con Authelia/ });
+    await screen.findByRole('button', { name: /Iniciar Sesión con Authelia/ });
     expect(screen.queryByRole('link', { name: /Conoce Aduana: Guía y Presentación de la Plataforma/ })).toBeNull();
   });
 
-  it('OIDC sin configurar: sin botón y con aviso', async () => {
-    ctx.mockResolvedValue({ oidc_enabled: false, authenticated: false, emergency_available: true });
+  // Botón persistente (306161e): ya no se oculta con OIDC apagado; si hay URL directa de Authelia,
+  // el botón lleva a ella y se ofrece además el enlace «Abrir portal de Authelia directamente».
+  it('OIDC sin configurar: el botón persiste y lleva a la URL de Authelia', async () => {
+    ctx.mockResolvedValue({
+      oidc_enabled: false, authenticated: false, emergency_available: true,
+      authelia_url: 'https://auth.ejemplo.test',
+    });
     render(<LoginForm />);
-    expect(await screen.findByText(/no está disponible/)).toBeTruthy();
-    expect(screen.queryByRole('button')).toBeNull();
+    const boton = await screen.findByRole('button', { name: /Iniciar Sesión con Authelia/ });
+    expect(screen.queryByText(/no está disponible/)).toBeNull();
+    fireEvent.click(boton);
+    expect(window.location.href).toBe('https://auth.ejemplo.test');
+    const directo = screen.getByRole('link', { name: /Abrir portal de Authelia directamente/ });
+    expect(directo.getAttribute('rel')).toContain('noopener');
   });
 
   it('FNC-158: Authelia apagado muestra usuario y contraseña y entra por /auth/local', async () => {
@@ -108,7 +117,7 @@ describe('LoginForm', () => {
     simularUbicacion('?error=cuenta_no_disponible');
     ctx.mockResolvedValue({ oidc_enabled: true, authenticated: false, emergency_available: true });
     render(<LoginForm />);
-    await screen.findByRole('button', { name: /Entrar con Authelia/ });
+    await screen.findByRole('button', { name: /Iniciar Sesión con Authelia/ });
     expect(avisar).toHaveBeenCalledWith('error', mensajeErrorOidc('cuenta_no_disponible'));
     expect(window.history.replaceState).toHaveBeenCalledWith(null, '', '/login');
   });

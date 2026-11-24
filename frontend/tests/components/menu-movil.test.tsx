@@ -16,6 +16,7 @@ vi.mock('@/lib/api', () => ({
 
 import { api } from '@/lib/api';
 import { AppShell } from '@/components/app-shell';
+import { CLAVE_OMITIR_MODAL_PORTAL } from '@/components/marco/modal-transicion-portal';
 import { CLASE_SCROLL_BLOQUEADO } from '@/lib/use-scroll-lock';
 import { crearRaiz, simularCajas } from '../utils/dom-simulado';
 
@@ -68,6 +69,7 @@ function abrir(boton: HTMLElement) {
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
   sesionSimulada.mockReset();
   ruta.actual = '/';
 });
@@ -100,10 +102,13 @@ describe('Menú móvil', () => {
     expect(document.activeElement).toBe(boton);
   });
 
+  // El enlace a «Portal» abre un modal de transición salvo que se haya elegido omitirlo
+  // (`modal-transicion-portal.test.tsx` lo cubre); aquí se omite para probar el cierre del menú.
   it('elegir una opción cierra el menú', async () => {
+    window.localStorage.setItem(CLAVE_OMITIR_MODAL_PORTAL, 'true');
     const boton = await montar();
     const panel = abrir(boton);
-    fireEvent.click(within(panel).getByRole('link', { name: 'Plataformas' }));
+    fireEvent.click(within(panel).getByRole('link', { name: 'Portal' }));
     expect(boton.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(boton);
   });
@@ -111,7 +116,7 @@ describe('Menú móvil', () => {
   it('el clic fuera cierra; el clic dentro no', async () => {
     const boton = await montar();
     const panel = abrir(boton);
-    fireEvent.pointerDown(within(panel).getByRole('link', { name: 'Plataformas' }));
+    fireEvent.pointerDown(within(panel).getByRole('link', { name: 'Portal' }));
     expect(boton.getAttribute('aria-expanded')).toBe('true');
     fireEvent.pointerDown(screen.getByText('contenido'));
     expect(boton.getAttribute('aria-expanded')).toBe('false');
@@ -155,8 +160,8 @@ describe('Menú móvil', () => {
 
   it.each<[Rol, number]>([
     ['usuario', 1],
-    ['admin_area', 8],
-    ['administrador', 9],
+    ['admin_area', 9],
+    ['administrador', 10],
   ])('%s ve en el menú móvil las mismas entradas que en la barra lateral (%i)', async (rol, n) => {
     const boton = await montar(rol);
     const panel = abrir(boton);

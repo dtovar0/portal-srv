@@ -5,7 +5,9 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const ruta = vi.hoisted(() => ({ actual: '/' }));
+// El dashboard vive en `/dashboard` (la raíz `/` ya no lo es).
+const RUTA_DASHBOARD = '/dashboard';
+const ruta = vi.hoisted(() => ({ actual: '/dashboard' }));
 vi.mock('next/navigation', () => ({ usePathname: () => ruta.actual }));
 
 import { BarraSuperior } from '@/components/marco/barra-superior';
@@ -27,7 +29,7 @@ beforeEach(() => {
   simularCajas();
   crearRaiz();
   window.localStorage.clear();
-  ruta.actual = '/';
+  ruta.actual = RUTA_DASHBOARD;
 });
 afterEach(() => {
   cleanup();
@@ -43,7 +45,7 @@ describe('DIS-113: botón en la barra superior', () => {
     expect(boton.getAttribute('data-tooltip')).toBe('Diseño de tarjetas');
   });
 
-  it.each(['/platforms', '/users', '/notifications', '/admin/areas'])('no aparece en %s', (otra) => {
+  it.each(['/', '/platforms', '/users', '/notifications', '/admin/areas'])('no aparece en %s', (otra) => {
     ruta.actual = otra;
     render(barra());
     expect(screen.queryByRole('button', { name: 'Diseño de tarjetas' })).toBeNull();

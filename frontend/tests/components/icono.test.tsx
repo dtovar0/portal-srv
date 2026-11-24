@@ -7,8 +7,8 @@ import { TRAZOS, type NombreIcono } from '@/components/icono-trazos';
 const NOMBRES = Object.keys(TRAZOS) as NombreIcono[];
 
 describe('Icono', () => {
-  it('el catálogo tiene 45 iconos', () => {
-    expect(NOMBRES).toHaveLength(45);
+  it('el catálogo tiene 50 iconos', () => {
+    expect(NOMBRES).toHaveLength(50);
   });
 
   it('conserva los nombres previos y los nuevos del DIS-077', () => {
@@ -20,6 +20,8 @@ describe('Icono', () => {
       'chevron-abajo', 'flecha-izq', 'colapsar',
       'ver', 'aprobar', 'rechazar', 'editar', 'eliminar', 'exportar', 'abrir-externo', 'mas',
       'reloj', 'escudo', 'escudo-ok', 'actividad', 'documento', 'diseno',
+      // Agregados después (flecha-der, flecha-izquierda y candado en 412f0f9; correo y recargar en 951343c).
+      'flecha-der', 'flecha-izquierda', 'candado', 'correo', 'recargar',
     ];
     for (const n of esperados) expect(NOMBRES).toContain(n);
   });
