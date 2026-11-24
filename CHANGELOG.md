@@ -5,6 +5,9 @@
 
 ## [Sin publicar]
 
+### Agregado
+- `flask alta` (`scripts/alta/alta.sh`): altas por CLI de áreas, plataformas y usuarios desde CSV, y `migrar-ldap` para importar a Aduana las personas de cualquier grupo de LDAP (cuenta `sso`, rol por grupo o `--rol`, grupo de Authelia del rol, superadmin siempre omitido). Rotación de contraseña solo con `--rotar-contrasena` (entrega por Send y correo; sin ella no se toca LDAP). Todos con `--dry-run` y resumen por fila (FNC-182, 2026-11-24).
+
 ### Corregido
 - Web: las URL del favicon y los íconos llevan versión (`?v=`, constante `VERSION_ICONOS`) para que el navegador no conserve un ícono viejo o vacío de su caché (DIS-122, 2026-11-24).
 - Despliegue: la plantilla de nginx ya no describe el SSO por cabeceras (retirado en ADR-009); se aclara que el login es OIDC desde la app. Se conserva el borrado de `Remote-*` como defensa en profundidad (FNC-187, 2026-11-24).
