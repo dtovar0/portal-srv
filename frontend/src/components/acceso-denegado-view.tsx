@@ -72,132 +72,122 @@ export function AccesoDenegadoView({ supportEmail: emailProp }: AccesoDenegadoVi
     'Hola,\n\nSolicito la asignación de acceso a la plataforma ADUANA para mi cuenta corporativa.\n\nGracias.'
   )}`;
 
+  // DIS-123: misma tarjeta dividida que el login (DIS-121), sin cajas anidadas;
+  // los dos botones del reintento tienen el mismo ancho y estilo.
+  const estadoReintento = reintentando
+    ? 'Comprobando tu acceso…'
+    : pausado
+    ? 'Reintento automático en pausa.'
+    : `Volveremos a intentarlo en ${segundos} s.`;
+
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center bg-fondo text-body-text select-none p-4 sm:p-6 lg:p-8">
       <PageHeader
-        title="Sin acceso — ADUANA"
-        description="Tu cuenta no cuenta con permisos para ingresar a ADUANA."
+        title={`Sin acceso — ${APP_TITLE}`}
+        description={`Tu cuenta no cuenta con permisos para ingresar a ${APP_TITLE}.`}
         className="sr-only"
       />
 
-      <main className="relative z-10 w-full max-w-lg">
-        <div className="rounded-3xl border border-panel-border bg-superficie shadow-2xl p-6 sm:p-8 space-y-6 transition-all">
-          {/* Cabecera institucional */}
-          <div className="flex items-center justify-between pb-4 border-b border-panel-border/50">
+      <main className="relative z-10 w-full max-w-4xl">
+        <div className="flex flex-col md:flex-row rounded-3xl border border-panel-border bg-superficie shadow-2xl">
+          {/* PANEL IZQUIERDO */}
+          <div className="flex w-full md:w-1/2 flex-col justify-between p-8 sm:p-12">
             <div className="flex items-center gap-2.5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-superficie p-1 shadow-xs">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/brand/isotype-aduana.png" alt={APP_TITLE} className="size-6 object-contain" width={24} height={24} />
               </span>
-              <span className="font-display text-base sm:text-lg font-bold tracking-tight text-body-text">
-                {APP_TITLE} <span className="text-texto-secundario font-normal">· Control de Acceso</span>
-              </span>
+              <span className="font-display text-lg font-bold tracking-tight text-body-text">{APP_TITLE}</span>
             </div>
 
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-danger/30 bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger">
-              <span className="size-1.5 rounded-full bg-danger animate-pulse" />
-              403 · SIN ACCESO
-            </span>
-          </div>
-
-          {/* Mensaje principal */}
-          <div className="space-y-2">
-            <PageHeader titleClassName="font-display text-2xl font-extrabold tracking-tight text-body-text" title="Sin acceso a la plataforma" />
-            <p className="text-sm text-texto-secundario leading-relaxed">
-              No tienes acceso a la plataforma {APP_TITLE} con tu cuenta corporativa actual. Comunícate con tu superior inmediato para que gestione tu alta o envía un correo a soporte:
-            </p>
-          </div>
-
-          {/* Bloque de correo de soporte */}
-          <div className="rounded-2xl border border-panel-border bg-fondo/70 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-texto-secundario uppercase tracking-wider">
-                Soporte y Solicitudes
-              </span>
-              <span className="text-xs text-primary-text font-mono font-bold">{emailSoporte}</span>
-            </div>
-
-            <a
-              href={mailtoUrl}
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-aduana-cyan hover:bg-aduana-cyan-hover text-texto-sobre-aviso font-bold text-sm py-3 px-4 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-aduana-cyan/50 active:scale-[0.98]"
-            >
-              <Icono nombre="correo" tamano="sm" ariaHidden={true} />
-              <span>Enviar correo a {emailSoporte}</span>
-            </a>
-          </div>
-
-          {/* Temporizador y auto-refresh */}
-          <div className="rounded-2xl border border-panel-border/80 bg-superficie-elevada p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5 text-texto-secundario font-medium">
-                <Icono nombre="reloj" tamano="xs" ariaHidden={true} />
-                <span>
-                  {reintentando
-                    ? 'Comprobando acceso con Authelia…'
-                    : pausado
-                    ? 'Temporizador en pausa'
-                    : `Reintentando acceso automáticamente en ${segundos}s`}
+            <div className="my-auto py-10 space-y-6">
+              <div className="space-y-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-peligro-tenue px-2.5 py-1 text-xs font-semibold text-peligro-texto">
+                  <Icono nombre="candado" tamano="xs" ariaHidden={true} />
+                  Sin acceso
                 </span>
+                <PageHeader
+                  titleClassName="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-body-text"
+                  title={`Aún no tienes acceso a ${APP_TITLE}`}
+                />
+                <p className="text-sm text-texto-secundario leading-relaxed">
+                  Tu cuenta corporativa todavía no está autorizada. Pide el alta a tu
+                  superior o escribe a soporte.
+                </p>
               </div>
-              <span className="font-mono font-bold text-body-text">
-                {reintentando ? '…' : `${segundos}s`}
-              </span>
-            </div>
 
-            {/* Barra regresiva animada */}
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-panel-border/40">
-              <div
-                className={`h-full transition-all duration-1000 ease-linear w-progreso ${
-                  pausado ? 'bg-texto-tenue' : 'bg-aduana-cyan'
-                }`}
-                style={{
-                  '--ancho-progreso': `${reintentando ? 100 : porcentajeProgreso}%`,
-                } as React.CSSProperties}
-              />
-            </div>
-
-            {/* Botones de acción del temporizador */}
-            <div className="flex items-center gap-2 pt-1">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                className="flex-1"
-                onClick={reintentarAhora}
-                disabled={reintentando}
+              <a
+                href={mailtoUrl}
+                className="flex min-h-12.5 w-full items-center justify-center gap-2.5 rounded-xl bg-aduana-cyan hover:bg-aduana-cyan-hover px-4 py-3.5 font-display text-sm font-bold tracking-wide text-texto-sobre-aviso shadow-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
               >
-                <Icono nombre="recargar" tamano="xs" className={reintentando ? 'animate-spin' : ''} ariaHidden={true} />
-                <span>{reintentando ? 'Comprobando…' : 'Reintentar ahora'}</span>
-              </Button>
+                <Icono nombre="correo" tamano="sm" ariaHidden={true} />
+                <span>Escribir a soporte</span>
+              </a>
+              <p className="-mt-3 text-center text-xs text-texto-secundario">
+                {emailSoporte}
+              </p>
 
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={togglePausa}
-                disabled={reintentando}
-                title={pausado ? 'Reanudar temporizador automático' : 'Pausar temporizador automático'}
-              >
-                <span>{pausado ? 'Reanudar' : 'Pausar'}</span>
-              </Button>
+              {/* Reintento automático: una línea, la barra y dos botones iguales */}
+              <section aria-label="Reintento automático" className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs text-texto-secundario" aria-live="polite">
+                  <Icono nombre="reloj" tamano="xs" ariaHidden={true} />
+                  <span>{estadoReintento}</span>
+                </div>
+                <div className="h-1 w-full overflow-hidden rounded-full bg-panel-border/40" aria-hidden="true">
+                  <div
+                    className={`h-full transition-all duration-1000 ease-linear w-progreso ${
+                      pausado ? 'bg-texto-tenue' : 'bg-aduana-cyan'
+                    }`}
+                    style={{
+                      '--ancho-progreso': `${reintentando ? 100 : porcentajeProgreso}%`,
+                    } as React.CSSProperties}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={reintentarAhora}
+                    disabled={reintentando}
+                  >
+                    {reintentando ? 'Comprobando…' : 'Reintentar'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={togglePausa}
+                    disabled={reintentando}
+                    title={pausado ? 'Reanudar el reintento automático' : 'Pausar el reintento automático'}
+                  >
+                    {pausado ? 'Reanudar' : 'Pausar'}
+                  </Button>
+                </div>
+              </section>
             </div>
-          </div>
 
-          {/* Pie de navegación */}
-          <div className="pt-2 border-t border-panel-border/40 flex items-center justify-between text-xs text-texto-secundario">
             <Link
               href="/login"
-              className="min-w-12 min-h-12 inline-flex items-center text-primary-text hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+              className="min-h-12 min-w-12 inline-flex items-center self-start text-xs text-texto-secundario hover:text-primary-text hover:underline outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-control"
             >
               ← Volver al inicio de sesión
             </Link>
-            <span className="text-xs text-texto-tenue">
-              Vivaro • Control de Accesos
-            </span>
+          </div>
+
+          {/* PANEL DERECHO: la misma fotografía del login */}
+          <div className="relative hidden md:block md:w-1/2 min-h-115 lg:min-h-130">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/login-showcase.jpg"
+              alt=""
+              className="absolute inset-0 size-full object-cover rounded-r-3xl"
+            />
           </div>
         </div>
       </main>
     </div>
   );
 }
-

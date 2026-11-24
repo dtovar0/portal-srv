@@ -29,6 +29,7 @@ from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
 from app.modules.auth.models import User
 from app.modules.core.models import Platform
+from app.modules.platforms.tipos import NIVEL_USUARIO
 from app.modules.provisioning import ejecucion, queue
 from app.modules.provisioning.configuracion import cargar_configuracion
 from app.modules.provisioning.tipos import ESTADO_FALLIDO, OPERACION_OTORGAR
@@ -53,7 +54,8 @@ def _revalidar(trabajo, actor):
     plataforma = (db.session.get(Platform, trabajo.platform_id)
                   if trabajo.platform_id else None)
     otorgante = None if acceso.origin == ORIGEN_ADMIN_DE_AREA else actor
-    rules.validar_otorgamiento(otorgante, usuario, plataforma, acceso.origin)
+    rules.validar_otorgamiento(otorgante, usuario, plataforma, acceso.origin,
+                               acceso.level == NIVEL_USUARIO)
 
 
 def reintentar(trabajo, actor):

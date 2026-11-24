@@ -6,13 +6,14 @@
 - Un trabajo sin acceso (`access_id` nulo) o un acceso en un estado que no
   admite la transición se ignora con un aviso en el log: nunca se fuerza un
   estado (SEC-CON-09).
-- Otorgar confirmado de un acceso automático cuya cuenta ya no administra el
-  área: el sistema lo revoca en la misma transacción (FNC-055).
+- Otorgar confirmado cuyo nivel ya no corresponde a la cuenta (ya no
+  administra el área, o ahora la administra): el sistema lo ajusta en la
+  misma transacción (FNC-055, FNC-185).
 """
 import logging
 
 from app import db
-from app.modules.access.area_admin_sync import revocar_si_ya_no_administra
+from app.modules.access.area_admin_sync import ajustar_al_confirmar
 from app.modules.access.models import PlatformAccessGrant
 from app.modules.access.rules import puede_pasar
 from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_FALLIDO,
@@ -57,7 +58,7 @@ def aplicar_resultado(trabajo, exito):
 def al_exito(trabajo):
     acceso = aplicar_resultado(trabajo, True)
     if trabajo.operation == OPERACION_OTORGAR:
-        revocar_si_ya_no_administra(acceso)
+        ajustar_al_confirmar(acceso)
 
 
 def al_fallo(trabajo):

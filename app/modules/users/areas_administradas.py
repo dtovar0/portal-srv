@@ -51,8 +51,9 @@ def asignar_areas_administradas(cuenta, area_ids):
         _auditar(Evento.ADMIN_ASIGNADO, cuenta, despues[area_id])
     for area_id in sorted(set(antes) - set(despues)):
         _auditar(Evento.ADMIN_RETIRADO, cuenta, antes[area_id])
-    sincronizar_cuenta(cuenta, [despues[i] for i in sorted(set(despues)
-                                                           - set(antes))])
+    sincronizar_cuenta(
+        cuenta, [despues[i] for i in sorted(set(despues) - set(antes))],
+        [antes[i] for i in sorted(set(antes) - set(despues))])
 
 
 def _auditar(evento, cuenta, area):

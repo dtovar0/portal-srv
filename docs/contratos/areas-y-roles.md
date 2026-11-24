@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 3.2 (2026-11-24) |
-| Proveedor | backend (FNC-044, FNC-045, FNC-055, FNC-161) |
+| Versión | 3.3 (2026-11-24) |
+| Proveedor | backend (FNC-044, FNC-045, FNC-055, FNC-161, FNC-185) |
 | Consumidores | web (FNC-069; pantallas DIS-016, DIS-019) |
 | Solicitudes | — |
 
@@ -51,7 +51,7 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 | `area_ids` | int[] | 0–50 ids existentes, sin repetidos |
 
 - El usuario destino debe tener rol `admin_area`; si no → 409 `rol_no_admin`.
-- Efecto en accesos automáticos (FNC-055, en la misma transacción): cada área agregada otorga al admin un acceso `admin_de_area` nivel `usuario` (`en_proceso`) en cada plataforma `ldap` con grupo o `conector` de esa área, si no tiene ya uno vigente; cada área quitada pasa sus automáticos `activo` a `revocando` (motivo `ya_no_administra_el_area`, actor `sistema`); uno `en_proceso` se revoca al confirmarse. Repetir la misma lista no cambia nada.
+- Efecto en accesos automáticos (FNC-055, en la misma transacción): cada área agregada otorga al admin un acceso `admin_de_area` nivel `admin` (`en_proceso`) en cada plataforma `ldap` con grupo o `conector` de esa área (FNC-185; si ya tenía uno de `usuario`, sube: el de `usuario` pasa a `revocando`; `ldap` sin grupo admin queda en `usuario`); cada área quitada baja sus automáticos `admin` `activo` a `usuario` (el `admin` pasa a `revocando`, motivo `ya_no_administra_el_area`, actor `sistema`, y se otorga el de `usuario`; si no tenía acceso, queda con `usuario`; solo si es miembro del área, si no se revoca: P1); uno `en_proceso` se ajusta al confirmarse. Repetir la misma lista no cambia nada.
 - Respuesta: `{"status": "success", "user": ManagedUser}`; auditoría `admin_asignado` / `admin_retirado` por área.
 
 ### Rol en `POST /users` y `PUT /users/<id>`
@@ -62,7 +62,7 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 - `managed_area_ids` en `POST /users` o `PUT /users/<id>` → `400 campo_no_permitido`. La única vía para asignar áreas administradas es `PUT /users/<id>/managed-areas` (superadmin).
 - `POST /users` con `admin_area` ya **no** copia `area_ids` a las áreas administradas (cambio respecto a hoy); nace sin áreas administradas.
 - `auth_source` → `400 campo_no_permitido`; lo fija el servidor.
-- Degradar `admin_area` → `usuario` borra sus áreas administradas en la misma transacción; auditoría `rol_cambiado` con antes y después; sus accesos automáticos se revocan como al quitarle las áreas (FNC-055).
+- Degradar `admin_area` → `usuario` borra sus áreas administradas en la misma transacción; auditoría `rol_cambiado` con antes y después; sus accesos automáticos bajan a nivel `usuario` y se conservan, como al quitarle las áreas (FNC-055, FNC-185).
 - Un admin de área solo gestiona cuentas `usuario` de sus áreas (SEC-AUTHZ-06); sobre otro admin o el superadmin → 404.
 - Nadie cambia su propio rol (SEC-AUTHZ-08) → 403 `operacion_propia`.
 - `password` en `POST /users` (v2, FNC-077): el portal no fija contraseñas locales → `400 campo_no_permitido` (vacía = ausente; la cuenta nace sin clave); solo se acepta en desarrollo con la bandera. En `PUT /users/<id>` rige la regla de v3 (abajo); sin rol de admin → `403 sin_permiso`.
@@ -113,6 +113,7 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 ## Salida de un área (FNC-152)
 - Quien deja de pertenecer a un área (`PUT /areas/<id>/users` o `PUT /users/<id>/areas`) pierde sus accesos por solicitud en las plataformas de esa área, en la misma petición.
 - Se revocan como el sistema con motivo `ya_no_pertenece_al_area`: `activo` → `revocando` (trabajo `revocar`); sin conector, `en_proceso`/`activo`/`fallido` → `revocado`.
-- Un acceso `en_proceso` con LDAP o conector no se toca (su trabajo `otorgar` sigue); los automáticos de admin de área los resincroniza `area_admin_sync`.
+- Un acceso `en_proceso` con LDAP o conector no se toca (su trabajo `otorgar` sigue); los automáticos de admin de área los resincroniza `area_admin_sync` (los que conservó como `usuario` al dejar de administrar sí se revocan al salir del área, FNC-185).
 | 3.1 | 2026-11-24 | FNC-165 (pedido del dueño): `password` en `PUT /users/<id>` para cuentas `sso` sigue la regla de `ldap` (antes `400 campo_no_permitido`: **más permisivo**, solo superadmin). La búsqueda por correo usa el DN real. Cliente: `user-form.tsx` (FNC-166) |
 | 3.2 | 2026-11-24 | FNC-168 (decisión del dueño: las cuentas viven en LDAP y entran por Authelia): las altas son `auth_source=sso`; `ldap` queda como origen heredado y la migración 0019 convierte las existentes. **Incompatible** para quien filtre por `ldap`: el cliente usa `lib/origen-cuenta.ts` (FNC-169) |
+| 3.3 | 2026-11-24 | FNC-185 (dueño): efecto en accesos de asignar/quitar áreas y de degradar el rol: nivel `admin` al ser admin, regreso a `usuario` (conservado) al dejar de serlo. Sin cambios de forma |

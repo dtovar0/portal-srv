@@ -385,7 +385,6 @@ def test_acceso_automatico_del_admin_lo_otorga_el_sistema(escena, cola_falsa):
 @pytest.mark.parametrize('usuario, nivel, codigo', [
     ('usuario', NIVEL_USUARIO, 'no_encontrado'),    # no administra el área
     ('admin_otra', NIVEL_USUARIO, 'no_encontrado'),
-    ('admin', NIVEL_ADMIN, 'validacion'),           # P6: nivel usuario
 ])
 def test_acceso_automatico_denegado(escena, cola_falsa, usuario, nivel,
                                     codigo):
@@ -394,6 +393,16 @@ def test_acceso_automatico_denegado(escena, cola_falsa, usuario, nivel,
                          ORIGEN_ADMIN_DE_AREA)
 
     assert _codigo(info) == codigo
+
+
+def test_acceso_automatico_de_nivel_admin_al_admin_del_area(escena,
+                                                            cola_falsa):
+    # P6 (2026-11-24): el automático del admin del área ya es de nivel admin.
+    acceso = services.otorgar(escena['admin'], escena['plataforma'],
+                              NIVEL_ADMIN, ORIGEN_ADMIN_DE_AREA)
+
+    assert (acceso.level, acceso.origin) == (NIVEL_ADMIN,
+                                             ORIGEN_ADMIN_DE_AREA)
 
 
 def test_acceso_automatico_con_actor_humano_se_rechaza(escena, cola_falsa):
@@ -421,7 +430,7 @@ def test_revocar_denegado(escena, cola_falsa, proveedor_simulado, actor,
 def test_admin_no_revoca_acceso_automatico_de_otro_admin(
         escena, cola_falsa, proveedor_simulado):
     acceso = services.otorgar(escena['admin2'], escena['plataforma'],
-                              NIVEL_USUARIO, ORIGEN_ADMIN_DE_AREA)
+                              NIVEL_ADMIN, ORIGEN_ADMIN_DE_AREA)
     db.session.commit()
     cola_falsa.procesar()
 
@@ -436,7 +445,7 @@ def test_admin_no_revoca_acceso_automatico_de_otro_admin(
 
 def test_el_sistema_revoca_sin_actor(escena, cola_falsa, proveedor_simulado):
     acceso = services.otorgar(escena['admin'], escena['plataforma'],
-                              NIVEL_USUARIO, ORIGEN_ADMIN_DE_AREA)
+                              NIVEL_ADMIN, ORIGEN_ADMIN_DE_AREA)
     db.session.commit()
     cola_falsa.procesar()
 
