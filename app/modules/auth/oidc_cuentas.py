@@ -74,15 +74,30 @@ def rol_desde_grupos(grupos: tuple[str, ...] | list[str]) -> str | None:
     return None
 
 
+SIN_GRUPOS_RECIBIDOS = 'ninguno (revisa el scope y el claim `groups` en Authelia)'
+SEPARADOR_GRUPOS = ', '
+
+
+def motivo_sin_grupo(grupos):
+    """Motivo auditable del rechazo: grupos recibidos primero (el detalle de
+    auditoría se recorta) y luego los que se esperan."""
+    recibidos = SEPARADOR_GRUPOS.join(grupos) if grupos else SIN_GRUPOS_RECIBIDOS
+    esperados = SEPARADOR_GRUPOS.join((
+        (os.getenv(VAR_GRUPO_SUPERADMIN) or GRUPO_SUPERADMIN_POR_DEFECTO).strip(),
+        (os.getenv(VAR_GRUPO_AREA_ADMIN) or GRUPO_AREA_ADMIN_POR_DEFECTO).strip(),
+        (os.getenv(VAR_GRUPO_USER) or GRUPO_USER_POR_DEFECTO).strip()))
+    return (f'OIDC: sin grupo autorizado. Recibidos: {recibidos}. '
+            f'Se espera uno de: {esperados}')
+
+
 def cuenta_de_la_identidad(identidad: Identidad) -> CuentaOidc:
     """Vincula o crea la cuenta de `identidad`; exige grupo autorizado y sincroniza rol."""
     rol_mapeado = rol_desde_grupos(identidad.grupos)
     if not rol_mapeado:
-        raise ErrorOidc(
-            ERROR_DENEGADO,
-            'OIDC: la cuenta no pertenece a ningún grupo autorizado en Authelia '
-            '(requiere app-aduana-users, app-aduana-admins o infraestructuraVoIP)'
-        )
+        # FNC-194: el motivo dice qué grupos llegaron de Authelia (solo
+        # nombres) para distinguir «no llegó ninguno» (falta el scope o el
+        # claim `groups`) de «llegaron, pero ninguno coincide».
+        raise ErrorOidc(ERROR_DENEGADO, motivo_sin_grupo(identidad.grupos))
 
     cuenta = User.query.filter_by(oidc_sub=identidad.sub).first()
     if cuenta is not None:
