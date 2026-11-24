@@ -22,6 +22,7 @@ import { PurgePanel } from './users/purge-panel';
 import { useToast } from './toast';
 import { UserAccessPanel } from './users/user-access-panel';
 import { UserForm } from './users/user-form';
+import { esCuentaDelDirectorio, etiquetaOrigen } from '@/lib/origen-cuenta';
 
 export function UsersList() {
   const { session } = useSession();
@@ -317,11 +318,8 @@ export function UsersList() {
         cellClassName: 'px-6 py-1.5',
         cell: (user) => {
           const activeLabel = user.is_active ? 'Activo' : 'Inactivo';
-          const authLabel = user.auth_source === 'ldap'
-            ? 'Directorio OpenLDAP'
-            : user.auth_source === 'local'
-            ? 'Cuenta local'
-            : user.auth_source;
+          const authLabel = etiquetaOrigen(user.auth_source);
+          const delDirectorio = esCuentaDelDirectorio(user.auth_source);
 
           return (
             <div className="flex items-center gap-1.5">
@@ -349,8 +347,8 @@ export function UsersList() {
 
               {/* Origen de cuenta */}
               <Badge
-                tone={user.auth_source === 'ldap' ? 'primary' : 'slate'}
-                icon={user.auth_source === 'ldap' ? 'plataformas' : 'documento'}
+                tone={delDirectorio ? 'primary' : 'slate'}
+                icon={delDirectorio ? 'plataformas' : 'documento'}
                 title={authLabel}
                 className="!size-8 !p-0 justify-center rounded-lg"
               >

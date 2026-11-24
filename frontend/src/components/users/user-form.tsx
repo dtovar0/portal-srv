@@ -14,6 +14,7 @@ import { useSession } from '../session-provider';
 import { useToast } from '../toast';
 import { GrupoChips } from './grupo-chips';
 import { TagPicker } from './tag-picker';
+import { esCuentaDelDirectorio } from '@/lib/origen-cuenta';
 
 /** El alta de cuentas que ya existen en el directorio llega con FNC-079. */
 const DIRECTORY_IMPORT_PENDING =
@@ -21,8 +22,6 @@ const DIRECTORY_IMPORT_PENDING =
 
 
 const ID_AYUDA_CONTRASENA = 'usuario-contrasena-ayuda';
-// Orígenes cuya contraseña se cambia en el directorio (FNC-161, FNC-166).
-const ORIGENES_EN_DIRECTORIO = ['ldap', 'sso'];
 const ID_ERROR_GUARDAR = 'usuario-guardar-error';
 
 export function UserForm({
@@ -48,7 +47,7 @@ export function UserForm({
   // FNC-166: las cuentas `sso` (Authelia) viven en el mismo LDAP.
   const { session } = useSession();
   const esLocal = user?.auth_source === 'local';
-  const esDirectorio = ORIGENES_EN_DIRECTORIO.includes(user?.auth_source ?? '')
+  const esDirectorio = esCuentaDelDirectorio(user?.auth_source)
     && Boolean(session?.permissions.is_admin);
   const conContrasena = esLocal || esDirectorio;
   // Política vigente del backend; solo se necesita para la cuenta del directorio.
