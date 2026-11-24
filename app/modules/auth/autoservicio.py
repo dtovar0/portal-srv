@@ -32,7 +32,8 @@ from app.modules.auth.autoservicio_config import (  # noqa: F401 (re-exportados)
 from app.modules.auth.autoservicio_correo import (  # noqa: F401 (re-exportados)
     enviar_correo_confirmacion_cambio, enviar_correo_mfa,
     enviar_correo_recuperacion, resolver_smtp_autoservicio)
-from app.modules.auth.autoservicio_cuentas import (cuenta_del_portal,
+from app.modules.auth.autoservicio_cuentas import (cuenta_dada_de_alta,
+                                                  cuenta_del_portal,
                                                   cuenta_local,
                                                   sincronizar_cuenta_local)
 from app.modules.auth.autoservicio_errores import ErrorAutoservicio
@@ -94,6 +95,7 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
                     add_audit_log('ACCESO FALLIDO', status='error', target=identificador,
                                   detail='Autoservicio Authelia: contraseña actual incorrecta en LDAP')
                     raise ErrorAutoservicio('La contraseña actual es incorrecta.', 401)
+                _exigir_alta_en_portal(persona.correo, identificador)
 
                 # Modificar en LDAP
                 escritor = EscritorDirectorio(cliente)
@@ -175,6 +177,13 @@ def solicitar_recuperacion(correo):
             existe = True
             nombre = user.nombre or user.email
 
+    # FNC-181: solo cuentas dadas de alta (y activas) en el portal; misma
+    # respuesta que si no existiera (sin enumeración).
+    if existe and cuenta_dada_de_alta(correo) is None:
+        logger.info('Autoservicio: recuperación pedida para una persona sin alta '
+                    'en el portal; no se envía enlace.')
+        existe = False
+
     if existe:
         origen = url_del_portal()
         if not origen:
@@ -200,6 +209,20 @@ MENSAJE_DIRECTORIO_INACTIVO = ('El directorio corporativo (LDAP) no está config
 MENSAJE_NO_EN_DIRECTORIO = ('Tu cuenta no está en el directorio corporativo (LDAP). '
                             'Avisa al administrador.')
 MENSAJE_CUENTA_INEXISTENTE = 'No se encontró la cuenta de usuario especificada.'
+
+
+MENSAJE_SIN_ALTA = ('Tu cuenta no está dada de alta en el portal, así que no puedes '
+                    'cambiar tu contraseña aquí. Avisa al administrador.')
+
+
+def _exigir_alta_en_portal(*identificadores):
+    """FNC-181: la persona está en LDAP, pero solo cambia su contraseña aquí
+    si tiene cuenta activa en el portal. Se llama tras verificar la identidad
+    (contraseña actual, enlace o MFA)."""
+    if cuenta_dada_de_alta(*identificadores) is None:
+        logger.warning('Autoservicio: cambio rechazado, la persona no está dada '
+                       'de alta en el portal.')
+        raise ErrorAutoservicio(MENSAJE_SIN_ALTA, 403)
 
 
 def _sin_cuenta(identificador):
@@ -245,6 +268,7 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
             if not persona and '@' in correo_objetivo:
                 persona = cliente.buscar_usuario(correo_objetivo.split('@')[0])
             if persona and persona.dn:
+                _exigir_alta_en_portal(persona.correo, correo_objetivo)
                 escritor = EscritorDirectorio(cliente)
                 resultado = escritor.change_password(persona.dn, nueva_contrasena)
                 logger.info("Autoservicio: Restablecimiento con token LDAP para %s (DN: %s) -> exito=%s, motivo=%s",
@@ -324,6 +348,7 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
             if not persona and '@' in identificador:
                 persona = cliente.buscar_usuario(identificador.split('@')[0])
             if persona and persona.dn:
+                _exigir_alta_en_portal(persona.correo, identificador)
                 escritor = EscritorDirectorio(cliente)
                 resultado = escritor.change_password(persona.dn, nueva_contrasena)
                 logger.info("Autoservicio MFA: Restablecimiento en LDAP para %s (DN: %s) -> exito=%s, motivo=%s",
