@@ -364,10 +364,8 @@ def test_un_admin_desactivado_que_deja_de_serlo_no_conserva_el_grupo_admin(
     assert niveles[NIVEL_ADMIN].status == ESTADO_REVOCANDO
 
 
-def test_quien_no_es_del_area_regresa_a_usuario_al_dejar_de_administrar(
+def test_quien_no_es_del_area_pierde_el_acceso_al_dejar_de_administrar(
         escena, cliente_como, cola_falsa, proveedor_simulado):
-    """FNC-189 (decisión del dueño): aunque no sea miembro del área, quien
-    deja de ser admin pasa de -admins a -users; no pierde el acceso."""
     cuenta = fabricas.crear_usuario(ROLE_AREA_ADMIN, areas=[escena['otra']])
     _asignar(cliente_como, escena, cuenta, [escena['area']])
     _procesar(cola_falsa)
@@ -375,8 +373,8 @@ def test_quien_no_es_del_area_regresa_a_usuario_al_dejar_de_administrar(
     _asignar(cliente_como, escena, cuenta, [])
 
     niveles = _por_nivel(cuenta, escena['plataforma'])
+    assert set(niveles) == {NIVEL_ADMIN}  # P1: sin `usuario` fuera del área
     assert niveles[NIVEL_ADMIN].status == ESTADO_REVOCANDO
-    assert niveles[NIVEL_USUARIO].status == ESTADO_EN_PROCESO
 
 
 def test_plataforma_movida_con_admin_en_proceso_no_deja_acceso_en_la_nueva_area(
@@ -417,22 +415,3 @@ def test_ldap_heredada_con_solo_grupo_admin_no_recibe_acceso(
     _asignar(cliente_como, escena, cuenta, [escena['area']])
 
     assert not _accesos(cuenta, heredada)
-
-
-def test_quitar_el_rol_a_quien_no_es_del_area_lo_deja_en_usuario_regresion_fnc_189(
-        escena, cliente_como, cola_falsa, proveedor_simulado):
-    """FNC-189: al quitarle el rol, pasa de -admins a -users aunque no sea
-    miembro del área, y al confirmarse no se le revoca ese `usuario`."""
-    cuenta = fabricas.crear_usuario(ROLE_AREA_ADMIN, areas=[escena['otra']])
-    _asignar(cliente_como, escena, cuenta, [escena['area']])
-    _procesar(cola_falsa)
-
-    respuesta = cliente_como(escena['super']).put(
-        f'{A}/users/{cuenta.id}', json={'role': ROLE_USER})
-    assert respuesta.status_code == 200, respuesta.get_json()
-    _procesar(cola_falsa)
-    _procesar(cola_falsa)
-
-    activos = {a.level for a in _accesos(cuenta, escena['plataforma'])
-               if a.status == ESTADO_ACTIVO}
-    assert activos == {NIVEL_USUARIO}
