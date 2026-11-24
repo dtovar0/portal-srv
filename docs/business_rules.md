@@ -6272,3 +6272,17 @@ Un servidor Linux Rocky 9 despliega el backend bajo `/opt/portal` con `ProtectSy
 
 ### Impacto
 Afecta a [app/modules/directory/depuracion.py](file:///home/dtovar/bayblade/pokemon/app/modules/directory/depuracion.py), [tests/test_depuracion_ldap.py](file:///home/dtovar/bayblade/pokemon/tests/test_depuracion_ldap.py) y [docs/business_rules.md](file:///home/dtovar/bayblade/pokemon/docs/business_rules.md).
+
+## Autoservicio de Contraseña Solo para Cuentas Dadas de Alta en el Portal
+
+### Regla
+
+Solo una persona con cuenta **activa** en el portal (tabla `users`) puede cambiar o recuperar su contraseña de LDAP desde el autoservicio (código MFA, enlace por correo o cambio con contraseña actual). Quien existe solo en LDAP no recibe código ni enlace (misma respuesta genérica, sin revelar si existe) y, si llegara a pasar la verificación, se rechaza con `403` sin tocar LDAP. Decisión del dueño, 2026-11-24 (FNC-181).
+
+### Ejemplo
+
+`uid=lacid,ou=users,dc=vivaro,dc=local` existe en LDAP pero no en el portal: al pedir el código en `/autoservicio` ve «Si la cuenta existe…» y no le llega nada. Cuando un administrador lo da de alta (activo), ya puede restablecer y el cambio se aplica en LDAP.
+
+### Impacto
+
+Afecta a [autoservicio.py](../app/modules/auth/autoservicio.py), [autoservicio_mfa.py](../app/modules/auth/autoservicio_mfa.py) y [autoservicio_cuentas.py](../app/modules/auth/autoservicio_cuentas.py); pruebas en [test_autoservicio_solo_ldap.py](../tests/test_autoservicio_solo_ldap.py).
