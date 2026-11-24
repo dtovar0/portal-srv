@@ -1,12 +1,14 @@
-# @APP_TITLE@ tras Authelia.
+# @APP_TITLE@: proxy inverso del portal.
+#
+# El inicio de sesión es OIDC con Authelia desde la propia app (ADR-009):
+# nginx no autentica (sin `auth_request`) ni pasa identidad en cabeceras.
 #
 # Reparto: Next.js sirve toda la interfaz; Flask es solo API. Ambos van bajo el
 # mismo dominio para que la cookie de sesión que emite Flask llegue al frontend
 # sin CORS.
 #
-# Los puertos de ambos upstream deben escuchar solo en loopback: el backend
-# deduce la identidad SSO de cabeceras que únicamente este proxy debe poder
-# inyectar.
+# Los puertos de ambos upstream escuchan solo en loopback: todo el tráfico entra
+# por aquí (TLS, cabeceras de seguridad y páginas de error).
 
 upstream @APP_NAME@_api {
     server 127.0.0.1:@API_PORT@;
@@ -50,6 +52,15 @@ server {
 
     location ^~ /errors/ {
         alias @PREFIX@/deploy/errors/;
+    }
+
+    # Favicon directo desde el código (FNC-186): no depende de que el frontend
+    # esté arriba (con Next caído, las páginas de error también lo muestran).
+    location = /favicon.ico {
+        alias @PREFIX@/frontend/public/favicon.ico;
+        expires 7d;
+        access_log off;
+        log_not_found off;
     }
 
     # --- Backend Flask -----------------------------------------------------

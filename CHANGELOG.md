@@ -7,8 +7,13 @@
 
 ### Cambiado
 - Accesos: el admin de área recibe nivel `admin` (grupo `-admins`) en las plataformas de sus áreas, no `usuario`; si ya tenía `usuario` sube a `admin` y el de `usuario` se revoca; al dejar de ser admin o perder el área baja a `usuario` y conserva el acceso (antes se revocaba). `ldap` sin grupo admin queda en `usuario`; el superadmin sigue sin automáticos. Quien ya no administra y no es del área, o la cuenta desactivada, pierde el automático (FNC-185, 2026-11-24).
+### Agregado
+- `flask alta` (`scripts/alta/alta.sh`): altas por CLI de áreas, plataformas y usuarios desde CSV, y `migrar-ldap` para importar a Aduana las personas de cualquier grupo de LDAP (cuenta `sso`, rol por grupo o `--rol`, grupo de Authelia del rol, superadmin siempre omitido). Rotación de contraseña solo con `--rotar-contrasena` (entrega por Send y correo; sin ella no se toca LDAP). Todos con `--dry-run` y resumen por fila (FNC-182, 2026-11-24).
 
 ### Corregido
+- Web: las URL del favicon y los íconos llevan versión (`?v=`, constante `VERSION_ICONOS`) para que el navegador no conserve un ícono viejo o vacío de su caché (DIS-122, 2026-11-24).
+- Despliegue: la plantilla de nginx ya no describe el SSO por cabeceras (retirado en ADR-009); se aclara que el login es OIDC desde la app. Se conserva el borrado de `Remote-*` como defensa en profundidad (FNC-187, 2026-11-24).
+- Despliegue: nginx sirve `/favicon.ico` directo desde `frontend/public` (antes dependía de que Next.js estuviera arriba); el resumen de `install.sh` ya no pide migrar a mano (FNC-178) ni menciona las cabeceras SSO retiradas (FNC-186, 2026-11-24).
 - Usuarios: «Hacer admin»/«Quitar admin» en cuentas del directorio mueven primero el grupo de Authelia en LDAP (`app-aduana-users` ↔ `app-aduana-admins`); si no se puede, el rol no cambia y se responde `503 grupo_no_actualizado` / `503 directorio_no_disponible` / `409 cuenta_no_encontrada_en_directorio` (antes cambiaba el rol y el siguiente login lo revertía). `sincronizar_grupo_de_rol` ya revisa cada resultado de LDAP (antes solo excepciones) y no deja a nadie en ambos grupos (FNC-184, 2026-11-24).
 - Web: login simplificado: logo, título, botón de Authelia y una sola línea de ayuda («¿Olvidaste o caducó tu contraseña?» · «Portal de Authelia»); se quitan la nota SSO, la caja del autoservicio, el separador y el lema del pie; «Conoce Aduana» queda solo con la portada activa (DIS-121, 2026-11-24).
 - Autoservicio (regla de negocio): solo quien tiene cuenta activa en el portal puede cambiar o recuperar su contraseña de LDAP; quien existe solo en LDAP no recibe código ni enlace (respuesta genérica) y el cambio se rechaza con `403` sin tocar LDAP (FNC-181, 2026-11-24).

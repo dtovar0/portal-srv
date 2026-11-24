@@ -1,0 +1,4 @@
+nombre,correo,rol,areas,uid,apellido
+Ana Ruiz,ana.ruiz@ejemplo.test,usuario,Finanzas;TI,ana.ruiz,Ruiz
+Carlos Gomez,carlos.gomez@ejemplo.test,admin_area,Finanzas,carlos.gomez,Gomez
+Maria Lopez,maria.lopez@ejemplo.test,usuario,Operaciones,,
