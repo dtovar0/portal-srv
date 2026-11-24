@@ -92,7 +92,7 @@ def _automaticos_vigentes(**filtros):
             .order_by(PlatformAccessGrant.id).all())
 
 
-def _nivel_objetivo(cuenta, plataforma, con_base=False):
+def _nivel_objetivo(cuenta, plataforma):
     """Nivel que le toca a la cuenta en la plataforma, o `None` si no puede
     recibir acceso (inactiva, superadmin o plataforma sin grupo/conector)."""
     if not cuenta.is_active or is_admin(cuenta):
@@ -107,16 +107,8 @@ def _nivel_objetivo(cuenta, plataforma, con_base=False):
             'nivel admin; la cuenta %s queda con nivel usuario.',
             plataforma.id, cuenta.id)
         return NIVEL_BASE
-    # Quien ya no administra queda con `usuario` (grupo -users) si es del
-    # área (P1) o, aunque no sea miembro, si se le quitó el área o el rol
-    # (`con_base`, decisión del dueño 2026-11-24, FNC-189) y luego mientras
-    # conserve ese automático de `usuario`. Si la plataforma se movió de área,
-    # su automático `admin` no deja `usuario` en la nueva.
-    if pertenece(cuenta, plataforma) or con_base or any(
-            a.level == NIVEL_BASE for a in _automaticos_vigentes(
-                user_id=cuenta.id, platform_id=plataforma.id)):
-        return NIVEL_BASE
-    return None
+    # Quien ya no administra conserva `usuario` solo si es del área (P1).
+    return NIVEL_BASE if pertenece(cuenta, plataforma) else None
 
 
 # --------------------------------------------------------------------------- #
@@ -134,7 +126,7 @@ def ajustar_nivel(cuenta, plataforma, con_base=False):
       área, se revoca. Cuenta inactiva o superadmin: se revocan.
     Devuelve el acceso otorgado o `None` si no hizo nada.
     """
-    objetivo = _nivel_objetivo(cuenta, plataforma, con_base)
+    objetivo = _nivel_objetivo(cuenta, plataforma)
     if objetivo is None:
         # Superadmin, cuenta inactiva o sin vínculo con el área: no conserva
         # automáticos (un `admin` desactivado no se queda en el grupo admin).
