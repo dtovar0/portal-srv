@@ -349,7 +349,7 @@ def update_platform(platform_id):
                              if antes[k] != v},
                       commit=False)
     if cambia_area or cambio_grupos:
-        sincronizar_plataforma(plataforma)
+        sincronizar_plataforma(plataforma, area_cambio=cambia_area)
     # Estado o área distintos: los grupos van a la OU de inactivos o regresan;
     # un traslado fallido se rearma al guardar de nuevo (FNC-163).
     traslados = traslado_grupos.conciliar([plataforma])

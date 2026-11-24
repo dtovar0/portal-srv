@@ -6,10 +6,10 @@ Acuerdos de API `/api/v1` del gestor de accesos (fase 3). Se integran a `develop
 
 | Contrato | Versión | Proveedor | Consumidor | Tareas que lo implementan |
 |---|---|---|---|---|
-| [areas-y-roles.md](areas-y-roles.md) | 2.1 (2026-10-20) | backend | web | FNC-044, FNC-045, FNC-055 |
-| [plataformas-integracion.md](plataformas-integracion.md) | 1.1 (2026-10-20) | backend | web | FNC-046, FNC-055 |
+| [areas-y-roles.md](areas-y-roles.md) | 3.3 (2026-11-24) | backend | web | FNC-044, FNC-045, FNC-055, FNC-185 |
+| [plataformas-integracion.md](plataformas-integracion.md) | 1.4 (2026-11-24) | backend | web | FNC-046, FNC-055, FNC-185 |
 | [solicitudes.md](solicitudes.md) | 1.1 (2026-10-20) | backend | web | FNC-056, FNC-057 |
-| [accesos.md](accesos.md) | 1.1 (2026-10-20) | backend | web | FNC-054, FNC-058, FNC-059 |
+| [accesos.md](accesos.md) | 1.2 (2026-11-24) | backend | web | FNC-054, FNC-058, FNC-059, FNC-185 |
 | [auditoria.md](auditoria.md) | 1 (2026-10-14) | backend | web | FNC-047, FNC-060 |
 | [conectores-y-ejecuciones.md](conectores-y-ejecuciones.md) | 1.4 (2026-10-26) | backend | web | FNC-061, FNC-062, FNC-051, FNC-052, FNC-053 |
 | [usuarios-directorio.md](usuarios-directorio.md) | 2 (2026-11-18) | backend | web | FNC-064, FNC-135 |
@@ -117,7 +117,7 @@ Consumidor web: tipos y cliente en FNC-069; refresco en FNC-071.
 | Pregunta | Valor aplicado | Dónde |
 |---|---|---|
 | P13 regla de absorción | Afecta la implementación, no la forma del contrato; el contrato ya exige CSRF (SEC-SES-04) | README.md |
-| P6 (resto) | Resuelto por el dueño (2026-10-14) e implementado en FNC-055: acceso automático nivel `usuario` para todos los admins del área (incluido el creador), auditado "admin X dio de alta la plataforma Y" y "sistema dio permisos de acceso a admin X"; se revoca al quitarle el área o el rol | plataformas-integracion.md, accesos.md, areas-y-roles.md |
+| P6 (resto) | Resuelto por el dueño (2026-10-14) e implementado en FNC-055: acceso automático para todos los admins del área (incluido el creador), de nivel `usuario` hasta FNC-185 (2026-11-24: nivel `admin`; al dejar de administrar baja a `usuario` y se conserva), auditado "admin X dio de alta la plataforma Y" y "sistema dio permisos de acceso a admin X"; al quitarle el área o el rol baja a `usuario` y se conserva (FNC-185) | plataformas-integracion.md, accesos.md, areas-y-roles.md |
 | §12.11 de seguridad | Lista blanca de hosts de conectores fijada por el despliegue (no editable en la interfaz) | conectores-y-ejecuciones.md |
 | Superadmin en grupos LDAP | Resuelto (dueño, 2026-10-14; FNC-055): el superadmin tiene acceso por defecto en el portal, no recibe accesos automáticos ni entra a los grupos LDAP | accesos.md |
 
@@ -129,6 +129,7 @@ Consumidor web: tipos y cliente en FNC-069; refresco en FNC-071.
 | accesos 1.1 | 2026-10-20 | Acceso automático del admin creador: nivel `usuario`, no `admin` (P6; FNC-054) |
 | plataformas-integracion 1.1, areas-y-roles 2.1 | 2026-10-20 | Accesos automáticos de los admins: cambio de área con resincronización y efecto de asignar o quitar áreas (FNC-055) |
 | solicitudes 1.1 | 2026-10-20 | Justificación opcional (decisión del dueño); detalles del catálogo y `409 estado_invalido` (FNC-056) |
+| accesos 1.2, plataformas-integracion 1.4, areas-y-roles 3.3 | 2026-11-24 | FNC-185 (dueño; reemplaza P6 de 2026-10-14): el acceso automático del admin de área es de nivel `admin` y, al dejar de administrar, baja a `usuario` y se conserva (antes: `usuario` y se revocaba) |
 | endpoints retirados | 2026-10-21 | `PUT /platforms/<id>/users` y `PUT /users/<id>/platforms` responden `410 endpoint_retirado` (aditivo; sin cambio de versión de los contratos; FNC-065) |
 | usuarios-directorio 2 | 2026-11-18 | **Incompatible**: `password` obligatorio (P8 modificada, ADR-008), política publicada, `credentials_status` y reenvío de credenciales (FNC-135) |
 | autenticacion 1 | 2026-11-18 | Contrato de OIDC con Authelia y ruta de emergencia (FNC-140); retira `/auth/sso` y `/auth/login` |

@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.1 (2026-10-20) |
-| Proveedor | backend (FNC-046, FNC-055) |
+| Versión | 1.4 (2026-11-24) |
+| Proveedor | backend (FNC-046, FNC-055, FNC-185) |
 | Consumidores | web (FNC-069; pantalla DIS-017) |
 | Solicitudes | — |
 
@@ -52,17 +52,17 @@ Convenciones comunes: [README.md](README.md). Cambia `POST /platforms`, `PUT /pl
 - Todo DN se valida bajo la OU de grupos de plataforma, comparando RDN normalizados (SEC-LDAP-04) → si no, 422.
 - Si el grupo no existe en el directorio, la plataforma se guarda y la respuesta trae un aviso (los grupos los crea el administrador del directorio en v1).
 - Cambiar `integration_type` o los DN con `active_grants > 0` → 409.
-- Cambiar `area_id` → 409 solo con accesos vigentes que no sean `admin_de_area`. Los automáticos se resincronizan en la misma transacción: los de los admins del área anterior pasan a `revocando` (motivo `ya_no_administra_el_area`) y los admins de la nueva reciben el suyo `en_proceso` (FNC-055; decisión del orquestador, pendiente de validar en la prueba de concepto).
+- Cambiar `area_id` → 409 solo con accesos vigentes que no sean `admin_de_area`. Los automáticos se resincronizan en la misma transacción: los de quien no administra la nueva área pasan a `revocando` (motivo `ya_no_administra_el_area`) y los admins de la nueva reciben el suyo de nivel `admin` `en_proceso` (FNC-055, FNC-185; decisión del orquestador, pendiente de validar en la prueba de concepto).
 
 ### Alta por un admin (decisión del dueño, P6)
 En la misma transacción:
 1. Crea la plataforma → auditoría `plataforma_creada` (actor: admin X; "admin X dio de alta la plataforma Y").
-2. Otorga acceso a todos los admins del área (incluido el creador) (origen `admin_de_area`, nivel `usuario`) → auditoría `acceso_otorgado` con actor `sistema` ("sistema dio permisos de acceso a admin X").
+2. Otorga acceso a todos los admins del área (incluido el creador) (origen `admin_de_area`, nivel `admin`) → auditoría `acceso_otorgado` con actor `sistema` ("sistema dio permisos de acceso a admin X").
 3. Encola el aprovisionamiento (accesos.md, estado `en_proceso`).
 
 - El superadmin tiene acceso por defecto: su alta no genera acceso automático.
-- Todos los admins del área reciben el acceso automático (nivel `usuario`); al quitarle el área a un admin se revocan sus accesos `admin_de_area` de esa área (FNC-055).
-- No lo reciben un admin inactivo ni una plataforma `ldap` sin grupo de nivel `usuario` (heredada); al completar sus grupos o cambiar el tipo, sí (FNC-055).
+- Todos los admins del área reciben el acceso automático de nivel `admin` (FNC-185; antes `usuario`); al quitarle el área a un admin su acceso baja a `usuario` y lo conserva (FNC-185; antes se revocaba).
+- No lo reciben un admin inactivo ni una plataforma `ldap` sin grupo de nivel `usuario` (heredada); al completar sus grupos o cambiar el tipo, sí (FNC-055). Una plataforma `ldap` sin `ldap_group_admin_dn` deja al admin en nivel `usuario` y lo sube a `admin` al completar ese grupo (FNC-185).
 
 ## Salida
 ```json
@@ -112,3 +112,4 @@ En la misma transacción:
 | 1.1 | 2026-10-20 | FNC-055: cambiar `area_id` ya no da 409 por accesos `admin_de_area` (se resincronizan); sin acceso automático para admins inactivos ni plataformas `ldap` sin grupo (decisión del orquestador, pendiente de validar en la PoC). Sin cambios de forma |
 | 1.2 | 2026-11-17 | FNC-144: `DELETE /platforms/<id>` con `409 plataforma_con_accesos` y limpieza del historial cerrado |
 | 1.3 | 2026-11-19 | FNC-163: aditivo `groups_location` y `groups_move_status`; `409 grupos_en_inactivos` en `PUT`; el cambio de `status` de plataforma o área (`PUT /areas/<id>`) mueve los grupos por el worker |
+| 1.4 | 2026-11-24 | FNC-185 (dueño): el acceso automático del admin es de nivel `admin`; al dejar de administrar baja a `usuario` y se conserva. Sin cambios de forma |

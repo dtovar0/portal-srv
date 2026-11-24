@@ -67,6 +67,7 @@ def cambiar_rol(cuenta, rol):
     administradas en la misma transacción.
     """
     antes = _estado_de_rol(cuenta)
+    areas_previas = list(cuenta.managed_areas or [])
     cuenta.role = rol
     if rol != ROLE_AREA_ADMIN:
         cuenta.managed_areas = []
@@ -75,4 +76,5 @@ def cambiar_rol(cuenta, rol):
                   target_user_id=cuenta.id, before=antes,
                   after=_estado_de_rol(cuenta), commit=False)
     if rol != ROLE_AREA_ADMIN:
-        sincronizar_cuenta(cuenta)  # revoca sus automáticos (FNC-055)
+        # Sus automáticos bajan a `usuario` en las áreas que administraba.
+        sincronizar_cuenta(cuenta, areas_quitadas=areas_previas)  # FNC-185

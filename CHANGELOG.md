@@ -5,6 +5,8 @@
 
 ## [Sin publicar]
 
+### Cambiado
+- Accesos: el admin de área recibe nivel `admin` (grupo `-admins`) en las plataformas de sus áreas, no `usuario`; si ya tenía `usuario` sube a `admin` y el de `usuario` se revoca; al dejar de ser admin o perder el área baja a `usuario` y conserva el acceso (antes se revocaba). `ldap` sin grupo admin queda en `usuario`; el superadmin sigue sin automáticos. Quien ya no administra y no es del área, o la cuenta desactivada, pierde el automático (FNC-185, 2026-11-24).
 ### Agregado
 - `flask alta` (`scripts/alta/alta.sh`): altas por CLI de áreas, plataformas y usuarios desde CSV, y `migrar-ldap` para importar a Aduana las personas de cualquier grupo de LDAP (cuenta `sso`, rol por grupo o `--rol`, grupo de Authelia del rol, superadmin siempre omitido). Rotación de contraseña solo con `--rotar-contrasena` (entrega por Send y correo; sin ella no se toca LDAP). Todos con `--dry-run` y resumen por fila (FNC-182, 2026-11-24).
 

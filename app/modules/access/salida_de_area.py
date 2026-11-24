@@ -5,12 +5,14 @@ plataformas de esa área (FNC-152).
   transacción del cambio de áreas (sin `commit`).
 - Revoca como el sistema (`actor=None`, motivo `ya_no_pertenece_al_area`):
   la auditoría lo registra igual que cualquier revocación (FNC-055).
-- Solo accesos por solicitud: los automáticos de admin de área los resincroniza
-  `area_admin_sync`. Con conector o LDAP se revocan los `activo` (trabajo
+- Los automáticos de quien aún administra el área los resincroniza
+  `area_admin_sync` y no se tocan; los de quien ya no la administra (los que
+  conservó al volver a `usuario`, FNC-185) sí se revocan. Con conector o LDAP se revocan los `activo` (trabajo
   `revocar`); en plataformas sin conector (`registro_manual`), también
   `en_proceso` y `fallido`, que pasan directo a `revocado`.
 """
 from app.modules.access import services
+from app.modules.access.area_admin_sync import administra
 from app.modules.access.models import PlatformAccessGrant
 from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADOS_OCUPANTES,
                                       ORIGEN_ADMIN_DE_AREA)
@@ -28,11 +30,13 @@ def revocar_por_salida(usuario_id, area_ids):
                .join(Platform, Platform.id == PlatformAccessGrant.platform_id)
                .filter(PlatformAccessGrant.user_id == usuario_id,
                        Platform.area_id.in_(area_ids),
-                       PlatformAccessGrant.origin != ORIGEN_ADMIN_DE_AREA,
                        PlatformAccessGrant.status.in_(ESTADOS_OCUPANTES))
                .all())
     revocados = 0
     for acceso in accesos:
+        if (acceso.origin == ORIGEN_ADMIN_DE_AREA
+                and administra(acceso.user, acceso.platform)):
+            continue
         manual = services.registro_manual(acceso.platform)
         if not manual and acceso.status != ESTADO_ACTIVO:
             continue  # en curso: su trabajo `otorgar` decide; no hay estado que revocar
