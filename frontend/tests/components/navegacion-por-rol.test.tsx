@@ -42,10 +42,11 @@ function sesion(rol: Rol): Session {
   };
 }
 
-const COMUNES_ADMIN = ['Dashboard', 'Ajustes', 'Auditoría'];
+// El portal de plataformas (`/platforms`) se llama «Portal»; «Plataformas» es la administración.
+const COMUNES_ADMIN = ['Dashboard', 'Portal', 'Ajustes', 'Auditoría'];
 
 const ESPERADO: Record<Rol, string[]> = {
-  usuario: ['Plataformas'],
+  usuario: ['Portal'],
   admin_area: [
     ...COMUNES_ADMIN, 'Plataformas', 'Áreas', 'Usuarios',
     'Auditoría usuarios', 'Ejecuciones',

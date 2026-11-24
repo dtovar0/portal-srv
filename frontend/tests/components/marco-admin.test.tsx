@@ -94,11 +94,11 @@ describe('Barra lateral', () => {
     }
   });
 
-  it('la marca dice «Aduana» y «Accesos Vivaro»', async () => {
+  it('la marca dice «Aduana» y «Control Centralizado»', async () => {
     await montar('usuario');
     const aside = within(document.querySelector('aside')!);
     expect(aside.getByText('Aduana')).toBeTruthy();
-    expect(aside.getByText('Accesos Vivaro')).toBeTruthy();
+    expect(aside.getByText('Control Centralizado')).toBeTruthy();
     expect(aside.queryByText('Nexus')).toBeNull();
   });
 
@@ -288,7 +288,11 @@ describe('Menú de usuario', () => {
     fireEvent.keyDown(boton, { key: 'ArrowDown' });
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
     expect(boton.getAttribute('aria-expanded')).toBe('true');
+    // ↓ enfoca el primer ítem («Cambiar contraseña»); «Cerrar sesión» es el último.
+    const primero = within(menu).getByRole('menuitem', { name: 'Cambiar contraseña' });
+    expect(document.activeElement).toBe(primero);
     const salir = within(menu).getByRole('menuitem', { name: 'Cerrar sesión' });
+    fireEvent.keyDown(primero, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(salir);
 
     fireEvent.keyDown(salir, { key: 'Escape' });
@@ -371,7 +375,11 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
     boton.focus();
     fireEvent.keyDown(boton, { key: 'ArrowDown' });
     const menu = screen.getByRole('menu');
+    // ↓ enfoca el primer ítem («Cambiar contraseña»); «Cerrar sesión» es el último.
+    const primero = within(menu).getByRole('menuitem', { name: 'Cambiar contraseña' });
+    expect(document.activeElement).toBe(primero);
     const salir = within(menu).getByRole('menuitem', { name: 'Cerrar sesión' });
+    fireEvent.keyDown(primero, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(salir);
     fireEvent.keyDown(salir, { key: 'Escape' });
     expect(screen.queryByRole('menu')).toBeNull();

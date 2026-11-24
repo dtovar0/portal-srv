@@ -80,7 +80,6 @@ export function FavoriteButton({
       <button
         type="button"
         aria-pressed={favorite}
-        disabled={busy}
         aria-disabled={busy}
         onClick={toggle}
         aria-label={`Favorito: ${name}`}
@@ -188,7 +187,6 @@ export function FavoriteButton({
     <button
       type="button"
       aria-pressed={favorite}
-      disabled={busy}
       aria-disabled={busy}
       onClick={toggle}
       aria-label={`Favorito: ${name}`}
