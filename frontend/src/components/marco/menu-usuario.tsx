@@ -15,8 +15,6 @@ import type { Session } from '@/lib/types';
 import { etiquetaRol, iniciales } from './nav-items';
 
 const ITEMS = '[role="menuitem"], [role="menuitemcheckbox"]';
-const CLASE_ITEM =
-  'flex min-h-11 w-full items-center gap-3 rounded-control px-3 text-left text-sm font-medium text-navegacion outline-none transition-colors hover:bg-surface-container hover:text-body-text focus-visible:ring-2 focus-visible:ring-primary';
 
 export function MenuUsuario({
   session,

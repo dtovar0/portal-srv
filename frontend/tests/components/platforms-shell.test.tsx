@@ -93,7 +93,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 function crearSesion(esAdmin: boolean): Session {
   return {
-    user_id: 1,
+    id: 1,
     name: 'Juan Pérez',
     email: 'juan@vivaro.com',
     role: esAdmin ? 'administrador' : 'usuario',
@@ -1523,13 +1523,7 @@ describe('MenuNotificaciones - menú desplegable de notificaciones en portal de 
 
   it('evita mostrar 4 rectángulos vacíos en la carga inicial y preserva la estructura del portal', () => {
     sesionActual = crearSesion(false);
-    render(
-      <PlatformsSidebarView
-        session={sesionActual}
-        layout="sidebar"
-        onLayoutChange={vi.fn()}
-      />
-    );
+    render(<PlatformsSidebarView />);
 
     // La barra lateral y el encabezado existen en el DOM
     expect(screen.getByRole('complementary', { name: /barra lateral del usuario/i })).toBeDefined();
@@ -1549,7 +1543,7 @@ describe('MenuNotificaciones - menú desplegable de notificaciones en portal de 
       pending_request_id: null,
       can_request: true,
       requestable_levels: ['admin'],
-    };
+    } satisfies import('@/lib/access/types').CatalogItem;
     const mineDemo = {
       id: 101,
       name: 'AWS Cloud Console',
@@ -1645,8 +1639,9 @@ describe('MenuNotificaciones - menú desplegable de notificaciones en portal de 
     const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
 
     // Simular que el navegador tenía una query sucia en la barra de direcciones
-    delete (window as any).location;
-    (window as any).location = {
+    const ventana = window as unknown as { location?: Partial<Location> };
+    delete ventana.location;
+    ventana.location = {
       pathname: '/platforms',
       search: '?seccion=widget',
       href: 'http://localhost:3000/platforms?seccion=widget',

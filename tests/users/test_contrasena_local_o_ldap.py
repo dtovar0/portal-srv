@@ -1,9 +1,10 @@
 """Cambio de contraseña en «Editar usuario» según el origen (FNC-161).
 
 - `local`: hash en la BD, para cualquier cuenta local gestionable.
-- `ldap`: Password Modify en el directorio (nunca hash en la BD), con la
+- `ldap` y `sso` (FNC-165, cuenta creada al entrar por Authelia, que usa el
+  mismo LDAP): Password Modify en el directorio (nunca hash en la BD), con la
   política `PASSWORD_POLICY_*`; solo el superadmin.
-- `sso` / `oidc`: rechazado.
+- otro origen (p. ej. `oidc`): rechazado.
 Sin LDAP real: `directorio_falso` (MOCK_SYNC).
 """
 import logging
@@ -236,10 +237,35 @@ def test_admin_de_area_fuera_de_alcance_sigue_dando_404(
 # SSO y entradas inválidas
 # --------------------------------------------------------------------------- #
 
-@pytest.mark.parametrize('origen', ('sso', 'oidc'))
-def test_sso_se_rechaza(escena, como, directorio, origen):
+def test_sso_cambia_en_el_directorio_regresion_fnc_165(
+        escena, como, directorio):
+    """La cuenta creada al primer login por Authelia (`sso`) vive en
+    `LDAP_USERS_BASE_DN`: el superadmin le cambia la contraseña en LDAP."""
     cuenta = _cuenta(escena['ldap'])
-    cuenta.auth_source = origen
+    cuenta.auth_source = 'sso'
+    db.session.commit()
+
+    respuesta = _put(como(escena['super']), escena['ldap'], password=NUEVA)
+
+    assert respuesta.status_code == 200, respuesta.get_data(as_text=True)
+    assert _clave_ldap() == [directorio_falso.cifrado_simulado(NUEVA)]
+    assert _cuenta(escena['ldap']).password_hash is None
+
+
+def test_sso_solo_lo_cambia_el_superadmin(escena, como, directorio):
+    cuenta = _cuenta(escena['ldap'])
+    cuenta.auth_source = 'sso'
+    db.session.commit()
+
+    respuesta = _put(como(escena['admin']), escena['ldap'], password=NUEVA)
+
+    _error(respuesta, 403, 'solo_superadmin')
+    assert _clave_ldap() == ['Inicial-1']
+
+
+def test_origen_desconocido_se_rechaza(escena, como, directorio):
+    cuenta = _cuenta(escena['ldap'])
+    cuenta.auth_source = 'oidc'
     db.session.commit()
 
     respuesta = _put(como(escena['super']), escena['ldap'], password=NUEVA)

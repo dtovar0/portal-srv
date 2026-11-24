@@ -14,7 +14,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { PlatformsLayout } from '@/lib/platforms-layout';
 import type { CatalogItem } from '@/lib/access/types';
 import type { Area, Platform } from '@/lib/types';
-import { Button, Toggle } from '../form';
+import { Button } from '../form';
 import { Icono } from '../icono';
 import { useToast } from '../toast';
 import {
@@ -220,7 +220,6 @@ export function UserViewSettings({
   forzarDisenoArea: forzarDisenoAreaProp,
   forzarDisenoPlataforma: forzarDisenoPlataformaProp,
   tabInicial = 'general',
-  onVolver: _onVolver,
 }: UserViewSettingsProps) {
   const { avisar } = useToast();
   const [tabActiva, setTabActiva] = useState<SettingsTab>(() => {
@@ -302,18 +301,6 @@ export function UserViewSettings({
     } else {
       avisar('info', 'Mensaje de bienvenida omitido para las próximas visitas.', 'Omitido');
     }
-  };
-
-  const handleRestaurar = () => {
-    guardarOmitirBienvenida(false);
-    setOmitidoBienvenida(false);
-    avisar('success', 'Mensaje de bienvenida restaurado.', 'Restaurado');
-  };
-
-  const handleOmitir = () => {
-    guardarOmitirBienvenida(true);
-    setOmitidoBienvenida(true);
-    avisar('info', 'Mensaje de bienvenida omitido.', 'Omitido');
   };
 
   // Regla de disponibilidad condicional según el layout del portal:

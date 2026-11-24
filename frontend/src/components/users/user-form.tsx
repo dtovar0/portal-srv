@@ -21,6 +21,8 @@ const DIRECTORY_IMPORT_PENDING =
 
 
 const ID_AYUDA_CONTRASENA = 'usuario-contrasena-ayuda';
+// Orígenes cuya contraseña se cambia en el directorio (FNC-161, FNC-166).
+const ORIGENES_EN_DIRECTORIO = ['ldap', 'sso'];
 const ID_ERROR_GUARDAR = 'usuario-guardar-error';
 
 export function UserForm({
@@ -43,9 +45,11 @@ export function UserForm({
   // "Hacer admin" / "Quitar admin" del superadmin). FNC-161: la contraseña se
   // ofrece en cuentas locales (se guarda en el portal) y del directorio (se
   // cambia en LDAP, solo el superadmin); el backend decide y vuelve a validar.
+  // FNC-166: las cuentas `sso` (Authelia) viven en el mismo LDAP.
   const { session } = useSession();
   const esLocal = user?.auth_source === 'local';
-  const esDirectorio = user?.auth_source === 'ldap' && Boolean(session?.permissions.is_admin);
+  const esDirectorio = ORIGENES_EN_DIRECTORIO.includes(user?.auth_source ?? '')
+    && Boolean(session?.permissions.is_admin);
   const conContrasena = esLocal || esDirectorio;
   // Política vigente del backend; solo se necesita para la cuenta del directorio.
   const [politica, setPolitica] = useState<PasswordPolicy | null>(null);

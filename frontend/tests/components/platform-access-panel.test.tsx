@@ -106,8 +106,8 @@ describe('PlatformAccessPanel (Dual Picklist)', () => {
     vi.clearAllMocks();
     vi.mocked(api.users).mockResolvedValue(USUARIOS);
     vi.mocked(api.platformAccess).mockResolvedValue({ items: ACCESOS_EXISTENTES, total: 1 });
-    vi.mocked(api.grantPlatformAccess).mockResolvedValue({ status: 'success', access: {} as any });
-    vi.mocked(api.revokeAccess).mockResolvedValue({ status: 'success', access: {} as any });
+    vi.mocked(api.grantPlatformAccess).mockResolvedValue({ status: 'success', access: {} as never });
+    vi.mocked(api.revokeAccess).mockResolvedValue({ status: 'success', access: {} as never });
   });
 
   afterEach(() => cleanup());

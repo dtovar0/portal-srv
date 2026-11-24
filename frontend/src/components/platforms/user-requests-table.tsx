@@ -16,7 +16,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { requestsApi } from '@/lib/access/requests';
-import type { AccessLevel, AccessRequest, RequestStatus } from '@/lib/access/types';
+import type { AccessRequest, RequestStatus } from '@/lib/access/types';
 import { usePolling } from '@/lib/use-polling';
 import { DataTable, type DataColumn } from '../data-table';
 import { formatearFecha } from '../access/fecha';
@@ -58,7 +58,6 @@ function inicialesPlataforma(nombre: string): string {
 
 export function UserRequestsTable({
   filtroEstadoInicial = 'pendiente',
-  onVolverPlataformas,
 }: {
   filtroEstadoInicial?: RequestStatus | '';
   onVolverPlataformas?: () => void;
@@ -96,7 +95,7 @@ export function UserRequestsTable({
     { deps: [estadoFiltro, pagina, limite] },
   );
 
-  const solicitudes = data?.items ?? [];
+  const solicitudes = useMemo(() => data?.items ?? [], [data]);
   const totalRegistros = data?.total ?? 0;
   const porPagina = data?.per_page ?? limite;
   const totalPaginas = Math.ceil(totalRegistros / porPagina) || 1;
