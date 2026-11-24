@@ -32,7 +32,7 @@
 
 ## Decisiones
 - Cambio de nivel: se reutiliza P5 (revocar el anterior y otorgar el nuevo en la misma transacción, dos trabajos en cola); no espera la confirmación del nuevo para encolar la revocación.
-- Pendiente de validar con el dueño: el regreso a `usuario` exige ser miembro del área (P1); un admin que no lo es pierde el acceso automático al dejar de administrar (su decisión decía «conserva como usuario»). Plataformas `conector` sin conector disponible siguen con trabajo, como antes.
+- Validado con el dueño (2026-11-24): el regreso a `usuario` NO exige ser miembro del área; lo corrige FNC-189. Plataformas `conector` sin conector disponible siguen con trabajo, como antes.
 - Limitación: un automático `admin` `fallido` de quien deja de administrar no baja ni se reintenta hasta resolverlo el superadmin (raro).
 - Frontend (fuera de alcance): `my-access.tsx` dice «Automático: administras el área» también a un ex admin; solo el superadmin revoca ese `usuario`.
 
