@@ -159,7 +159,7 @@ export function AuditHistory({
                   variant="fila"
                   onClick={recargar}
                   aria-disabled={lista.loading || undefined}
-                  className="nx-btn-toolbar !px-2.5 aria-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary shadow-xs"
+                  className="nx-btn-toolbar !px-2.5 aria-disabled:opacity-deshabilitada focus-visible:ring-2 focus-visible:ring-primary shadow-xs"
                 >
                   <Icono nombre="actividad" tamano="sm" ariaHidden={true} />
                   <span>Recargar</span>

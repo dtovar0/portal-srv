@@ -212,6 +212,45 @@
   --color-indicador-usuarios: 219 39 119;
   --color-indicador-usuarios-fin: 244 63 94;
 
+  /* Colores fijos de ilustraciones y tarjetas de diseño (DIS-119): no cambian con el tema. */
+  --color-arte-ambar-300: 252 211 77;
+  --color-arte-ambar-400: 251 191 36;
+  --color-arte-ambar-500: 245 158 11;
+  --color-arte-ambar-600: 217 119 6;
+  --color-arte-azul-500: 59 130 246;
+  --color-arte-azul-900: 30 58 138;
+  --color-arte-esmeralda-200: 167 243 208;
+  --color-arte-esmeralda-300: 110 231 183;
+  --color-arte-esmeralda-400: 52 211 153;
+  --color-arte-esmeralda-500: 16 185 129;
+  --color-arte-esmeralda-600: 5 150 105;
+  --color-arte-esmeralda-700: 4 120 87;
+  --color-arte-indigo-300: 165 180 252;
+  --color-arte-indigo-400: 129 140 248;
+  --color-arte-indigo-700: 67 56 202;
+  --color-arte-indigo-900: 49 46 129;
+  --color-arte-indigo-950: 30 27 75;
+  --color-arte-luz: 255 255 255;
+  --color-arte-naranja-500: 249 115 22;
+  --color-arte-pizarra-100: 241 245 249;
+  --color-arte-pizarra-300: 203 213 225;
+  --color-arte-pizarra-400: 148 163 184;
+  --color-arte-pizarra-700: 51 65 85;
+  --color-arte-pizarra-800: 30 41 59;
+  --color-arte-pizarra-900: 15 23 42;
+  --color-arte-pizarra-950: 2 6 23;
+  --color-arte-purpura-200: 233 213 255;
+  --color-arte-purpura-300: 216 180 254;
+  --color-arte-purpura-400: 192 132 252;
+  --color-arte-purpura-500: 168 85 247;
+  --color-arte-purpura-600: 147 51 234;
+  --color-arte-purpura-800: 107 33 168;
+  --color-arte-purpura-950: 59 7 100;
+  --color-arte-sombra: 0 0 0;
+  --color-arte-turquesa-500: 20 184 166;
+  --color-arte-turquesa-800: 17 94 89;
+  --color-arte-zinc-400: 161 161 170;
+
 
   /* ─────────────────────────────────────────────
      CAPA 3: ALIAS HEREDADOS (MODO CLARO)
@@ -389,6 +428,7 @@
   --text-xl:   20px;
   --text-2xl:  24px;
   --text-3xl:  30px;
+  --text-hero-compacto: 56px;
 
   /* ─────────────────────────────────────────────
      SIMETRÍA Y REJILLA — 8pt (DIS-072)
@@ -402,6 +442,9 @@
   --espacio-12: 48px;
 
   --control-alto: 48px;
+  --opacidad-atenuada: 0.6;
+  --opacidad-deshabilitada: 0.4;
+  --opacidad-decoracion: 0.4;
   --marco-lateral-ancho: 264px;
   --marco-lateral-colapsada: 76px;
   --marco-superior-alto: 64px;
@@ -504,6 +547,45 @@
     --color-indicador-visitas-fin: 34 197 94;
     --color-indicador-usuarios: 219 39 119;
     --color-indicador-usuarios-fin: 244 63 94;
+
+    /* Colores fijos de ilustraciones y tarjetas de diseño (DIS-119): no cambian con el tema. */
+    --color-arte-ambar-300: 252 211 77;
+    --color-arte-ambar-400: 251 191 36;
+    --color-arte-ambar-500: 245 158 11;
+    --color-arte-ambar-600: 217 119 6;
+    --color-arte-azul-500: 59 130 246;
+    --color-arte-azul-900: 30 58 138;
+    --color-arte-esmeralda-200: 167 243 208;
+    --color-arte-esmeralda-300: 110 231 183;
+    --color-arte-esmeralda-400: 52 211 153;
+    --color-arte-esmeralda-500: 16 185 129;
+    --color-arte-esmeralda-600: 5 150 105;
+    --color-arte-esmeralda-700: 4 120 87;
+    --color-arte-indigo-300: 165 180 252;
+    --color-arte-indigo-400: 129 140 248;
+    --color-arte-indigo-700: 67 56 202;
+    --color-arte-indigo-900: 49 46 129;
+    --color-arte-indigo-950: 30 27 75;
+    --color-arte-luz: 255 255 255;
+    --color-arte-naranja-500: 249 115 22;
+    --color-arte-pizarra-100: 241 245 249;
+    --color-arte-pizarra-300: 203 213 225;
+    --color-arte-pizarra-400: 148 163 184;
+    --color-arte-pizarra-700: 51 65 85;
+    --color-arte-pizarra-800: 30 41 59;
+    --color-arte-pizarra-900: 15 23 42;
+    --color-arte-pizarra-950: 2 6 23;
+    --color-arte-purpura-200: 233 213 255;
+    --color-arte-purpura-300: 216 180 254;
+    --color-arte-purpura-400: 192 132 252;
+    --color-arte-purpura-500: 168 85 247;
+    --color-arte-purpura-600: 147 51 234;
+    --color-arte-purpura-800: 107 33 168;
+    --color-arte-purpura-950: 59 7 100;
+    --color-arte-sombra: 0 0 0;
+    --color-arte-turquesa-500: 20 184 166;
+    --color-arte-turquesa-800: 17 94 89;
+    --color-arte-zinc-400: 161 161 170;
 
     /* Alias heredados (Modo Oscuro) */
     --color-body-bg: #0c111d;
@@ -649,6 +731,9 @@
     --espacio-12: 48px;
 
     --control-alto: 48px;
+    --opacidad-atenuada: 0.6;
+    --opacidad-deshabilitada: 0.4;
+    --opacidad-decoracion: 0.2;
     --marco-lateral-ancho: 264px;
     --marco-lateral-colapsada: 76px;
     --marco-superior-alto: 64px;
@@ -747,6 +832,45 @@ html.dark {
   --color-indicador-visitas-fin: 34 197 94;
   --color-indicador-usuarios: 219 39 119;
   --color-indicador-usuarios-fin: 244 63 94;
+
+  /* Colores fijos de ilustraciones y tarjetas de diseño (DIS-119): no cambian con el tema. */
+  --color-arte-ambar-300: 252 211 77;
+  --color-arte-ambar-400: 251 191 36;
+  --color-arte-ambar-500: 245 158 11;
+  --color-arte-ambar-600: 217 119 6;
+  --color-arte-azul-500: 59 130 246;
+  --color-arte-azul-900: 30 58 138;
+  --color-arte-esmeralda-200: 167 243 208;
+  --color-arte-esmeralda-300: 110 231 183;
+  --color-arte-esmeralda-400: 52 211 153;
+  --color-arte-esmeralda-500: 16 185 129;
+  --color-arte-esmeralda-600: 5 150 105;
+  --color-arte-esmeralda-700: 4 120 87;
+  --color-arte-indigo-300: 165 180 252;
+  --color-arte-indigo-400: 129 140 248;
+  --color-arte-indigo-700: 67 56 202;
+  --color-arte-indigo-900: 49 46 129;
+  --color-arte-indigo-950: 30 27 75;
+  --color-arte-luz: 255 255 255;
+  --color-arte-naranja-500: 249 115 22;
+  --color-arte-pizarra-100: 241 245 249;
+  --color-arte-pizarra-300: 203 213 225;
+  --color-arte-pizarra-400: 148 163 184;
+  --color-arte-pizarra-700: 51 65 85;
+  --color-arte-pizarra-800: 30 41 59;
+  --color-arte-pizarra-900: 15 23 42;
+  --color-arte-pizarra-950: 2 6 23;
+  --color-arte-purpura-200: 233 213 255;
+  --color-arte-purpura-300: 216 180 254;
+  --color-arte-purpura-400: 192 132 252;
+  --color-arte-purpura-500: 168 85 247;
+  --color-arte-purpura-600: 147 51 234;
+  --color-arte-purpura-800: 107 33 168;
+  --color-arte-purpura-950: 59 7 100;
+  --color-arte-sombra: 0 0 0;
+  --color-arte-turquesa-500: 20 184 166;
+  --color-arte-turquesa-800: 17 94 89;
+  --color-arte-zinc-400: 161 161 170;
 
   /* Alias heredados (Modo Oscuro) */
   --color-body-bg: #0c111d;
@@ -892,6 +1016,9 @@ html.dark {
   --espacio-12: 48px;
 
   --control-alto: 48px;
+  --opacidad-atenuada: 0.6;
+  --opacidad-deshabilitada: 0.4;
+  --opacidad-decoracion: 0.2;
   --marco-lateral-ancho: 264px;
   --marco-lateral-colapsada: 76px;
   --marco-superior-alto: 64px;

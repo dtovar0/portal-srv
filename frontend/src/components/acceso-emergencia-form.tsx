@@ -33,7 +33,7 @@ export function AccesoEmergenciaForm() {
               </span>
               <div className="flex items-center gap-2">
                 <span className="font-display text-lg font-bold tracking-tight text-body-text">{APP_TITLE}</span>
-                <span className="inline-flex items-center rounded-md border border-aduana-orange/30 bg-aduana-orange/10 px-1.5 py-0.5 text-[10px] font-bold text-aduana-orange">
+                <span className="inline-flex items-center rounded-md border border-aduana-orange/30 bg-aduana-orange/10 px-1.5 py-0.5 text-xs font-bold text-aduana-orange">
                   Recuperación
                 </span>
               </div>
@@ -42,9 +42,7 @@ export function AccesoEmergenciaForm() {
             {/* Núcleo del formulario */}
             <div className="my-auto py-8 space-y-6">
               <div>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-body-text">
-                  Acceso de emergencia
-                </h1>
+                <PageHeader titleClassName="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-body-text" title="Acceso de emergencia" />
                 <p className="mt-1.5 text-xs sm:text-sm text-texto-secundario leading-relaxed">
                   Solo para la cuenta de emergencia del portal en contingencias de red.
                 </p>
@@ -60,19 +58,19 @@ export function AccesoEmergenciaForm() {
               <div>
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1 text-aduana-cyan hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+                  className="min-w-12 min-h-12 inline-flex items-center gap-1 text-aduana-cyan hover:underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
                 >
                   <span>← Volver al inicio de sesión corporativo</span>
                 </Link>
               </div>
-              <p className="text-[11px] text-texto-tenue">
+              <p className="text-xs text-texto-tenue">
                 Vivaro • Superadmin Local • Modo Recuperación
               </p>
             </div>
           </div>
 
           {/* PANEL DERECHO: Fotografía estética a sangre limpia */}
-          <div className="relative hidden md:block md:w-1/2 min-h-[460px] lg:min-h-[520px]">
+          <div className="relative hidden md:block md:w-1/2 min-h-115 lg:min-h-130">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/login-showcase.jpg"

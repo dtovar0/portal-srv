@@ -35,12 +35,12 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
     titulo: 'Duotono a Sangre',
     ariaLabel: 'Diseño Duotono Oscuro a sangre estilo ciudades',
     renderPreview: () => (
-      <div className="h-10 w-full rounded-lg overflow-hidden border border-purple-500/30 bg-[#0f172a] flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
+      <div className="h-10 w-full rounded-lg overflow-hidden border border-arte-purpura-500/30 bg-arte-pizarra-900 flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
         <div className="flex items-center justify-between">
-          <div className="size-3 rounded bg-purple-500" />
-          <div className="h-1.5 w-12 rounded bg-purple-300/40" />
+          <div className="size-3 rounded bg-arte-purpura-500" />
+          <div className="h-1.5 w-12 rounded bg-arte-purpura-300/40" />
         </div>
-        <div className="h-2 w-full rounded-full bg-slate-800 border border-slate-700/50" />
+        <div className="h-2 w-full rounded-full bg-arte-pizarra-800 border border-arte-pizarra-700/50" />
       </div>
     ),
   },
@@ -49,12 +49,12 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
     titulo: 'Foto Enmarcada',
     ariaLabel: 'Diseño Enmarcada Pastel estilo Heading Here',
     renderPreview: () => (
-      <div className="h-10 w-full rounded-lg border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-between px-2 mt-auto shrink-0 shadow-2xs">
-        <div className="size-5 rounded-md bg-emerald-700/60 flex items-center justify-center">
-          <div className="size-2 rounded bg-white/80" />
+      <div className="h-10 w-full rounded-lg border border-success/30 bg-success/10 flex items-center justify-between px-2 mt-auto shrink-0 shadow-2xs">
+        <div className="size-5 rounded-md bg-arte-esmeralda-700/60 flex items-center justify-center">
+          <div className="size-2 rounded bg-arte-luz/80" />
         </div>
-        <div className="h-1.5 w-12 rounded bg-emerald-400/40" />
-        <div className="h-3 w-10 rounded-full bg-slate-900 dark:bg-slate-800" />
+        <div className="h-1.5 w-12 rounded bg-arte-esmeralda-400/40" />
+        <div className="h-3 w-10 rounded-full bg-arte-pizarra-900" />
       </div>
     ),
   },
@@ -64,8 +64,8 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
     ariaLabel: 'Diseño Split 50/50 Horizontal',
     renderPreview: () => (
       <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border flex mt-auto shrink-0 shadow-2xs">
-        <div className="w-1/2 bg-indigo-950 p-1 flex items-center justify-center">
-          <div className="size-4 rounded bg-primary text-[8px] text-white font-bold flex items-center justify-center">AP</div>
+        <div className="w-1/2 bg-arte-indigo-950 p-1 flex items-center justify-center">
+          <div className="size-4 rounded bg-primary text-xs text-arte-luz font-bold flex items-center justify-center">AP</div>
         </div>
         <div className="w-1/2 p-1.5 bg-fondo flex flex-col justify-center space-y-1">
           <div className="h-1.5 w-8 rounded bg-label/40" />
@@ -82,7 +82,7 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
       <div className="h-10 w-full rounded-lg border border-primary/40 bg-primary/10 backdrop-blur-xs flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
         <div className="flex items-center justify-between">
           <div className="size-3 rounded bg-primary/40" />
-          <div className="size-1.5 rounded-full bg-emerald-400" />
+          <div className="size-1.5 rounded-full bg-arte-esmeralda-400" />
         </div>
         <div className="h-2 w-full rounded-md bg-gradient-to-r from-primary to-accent" />
       </div>
@@ -94,11 +94,11 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
     ariaLabel: 'Diseño Minimalista Editorial',
     renderPreview: () => (
       <div className="h-10 w-full rounded-lg border border-panel-border bg-fondo flex flex-col justify-between p-1.5 mt-auto shrink-0 relative shadow-2xs">
-        <span className="absolute top-1 right-2 text-[9px] font-black text-label/25">#01</span>
+        <span className="absolute top-1 right-2 text-xs font-black text-label/25">#01</span>
         <div className="h-1.5 w-10 rounded bg-body-text" />
         <div className="flex justify-between items-center pt-0.5 border-t border-panel-border/60">
           <div className="h-1 w-6 rounded bg-label/40" />
-          <span className="text-[8px] font-bold text-primary-text">→</span>
+          <span className="text-xs font-bold text-primary-text">→</span>
         </div>
       </div>
     ),
@@ -138,7 +138,7 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
     renderPreview: () => (
       <div className="h-10 w-full rounded-lg border border-panel-border bg-superficie flex items-center justify-between px-2.5 mt-auto shrink-0 shadow-2xs">
         <div className="flex gap-1.5 items-center">
-          <div className="size-4 rounded bg-primary text-[7px] text-white flex items-center justify-center font-bold">AW</div>
+          <div className="size-4 rounded bg-primary text-xs text-arte-luz flex items-center justify-center font-bold">AW</div>
           <div className="h-1.5 w-10 rounded bg-label/40" />
         </div>
         <div className="h-2.5 w-8 rounded-full bg-primary/50" />
@@ -151,9 +151,9 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
     ariaLabel: 'Diseño Hero Banner Fotográfico con cabecera panorámica',
     renderPreview: () => (
       <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-        <div className="relative h-5 w-full bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 px-1.5 flex items-center justify-between shrink-0">
-          <div className="size-3 rounded bg-primary text-[6px] text-white font-bold flex items-center justify-center">AW</div>
-          <div className="size-1.5 rounded-full bg-amber-400" />
+        <div className="relative h-5 w-full bg-gradient-to-r from-arte-azul-900 via-arte-indigo-950 to-arte-pizarra-900 px-1.5 flex items-center justify-between shrink-0">
+          <div className="size-3 rounded bg-primary text-arte-luz font-bold flex items-center justify-center"></div>
+          <div className="size-1.5 rounded-full bg-arte-ambar-400" />
         </div>
         <div className="px-1.5 py-0.5 flex items-center justify-between flex-1">
           <div className="h-1.5 w-10 rounded bg-label/40" />
@@ -167,15 +167,15 @@ const VARIANTES_PLATAFORMA: VariantePlataforma[] = [
     titulo: 'Flotante Inmersiva',
     ariaLabel: 'Diseño Flotante Inmersiva con cristal translúcido sobre fotografía de fondo completa',
     renderPreview: () => (
-      <div className="relative h-10 w-full rounded-lg overflow-hidden bg-slate-900 border border-white/20 flex flex-col justify-between p-1.5 text-white mt-auto shrink-0 shadow-2xs">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+      <div className="relative h-10 w-full rounded-lg overflow-hidden bg-arte-pizarra-900 border border-arte-luz/20 flex flex-col justify-between p-1.5 text-arte-luz mt-auto shrink-0 shadow-2xs">
+        <div className="absolute inset-0 bg-gradient-to-b from-arte-sombra/60 via-arte-sombra/40 to-arte-sombra/80" />
         <div className="relative z-10 flex items-center justify-between">
-          <span className="h-1 w-6 rounded-full bg-white/40" />
-          <span className="size-1.5 rounded-full bg-amber-400" />
+          <span className="h-1 w-6 rounded-full bg-arte-luz/40" />
+          <span className="size-1.5 rounded-full bg-arte-ambar-400" />
         </div>
-        <div className="relative z-10 p-0.5 rounded bg-black/70 backdrop-blur-xs border border-white/20 flex items-center justify-between">
-          <span className="size-2 rounded bg-primary text-[5px] text-white font-bold flex items-center justify-center">AW</span>
-          <div className="h-1 w-8 rounded bg-white/70" />
+        <div className="relative z-10 p-0.5 rounded bg-arte-sombra/70 backdrop-blur-xs border border-arte-luz/20 flex items-center justify-between">
+          <span className="size-2 rounded bg-primary text-arte-luz font-bold flex items-center justify-center"></span>
+          <div className="h-1 w-8 rounded bg-arte-luz/70" />
         </div>
       </div>
     ),
@@ -254,7 +254,7 @@ export function PlatformCardDesignDrawer({
         onClick={onClose}
         aria-label="Cerrar"
         title="Cerrar panel de diseño"
-        className="inline-flex size-10 min-h-10 min-w-10 items-center justify-center rounded-xl border border-panel-border bg-superficie text-label hover:border-primary/50 hover:bg-surface-container hover:text-body-text transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
+        className="min-w-12 inline-flex size-10 min-h-12 min-w-10 items-center justify-center rounded-xl border border-panel-border bg-superficie text-label hover:border-primary/50 hover:bg-surface-container hover:text-body-text transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
       >
         <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
       </button>
@@ -268,7 +268,7 @@ export function PlatformCardDesignDrawer({
         type="button"
         variant="secondary"
         onClick={onClose}
-        className="h-12 min-h-12 w-[calc(50%-0.5rem)] sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
+        className="h-12 min-h-12 w-mitad-canal sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
       >
         Cerrar
       </Button>
@@ -277,7 +277,7 @@ export function PlatformCardDesignDrawer({
         type="button"
         variant="secondary"
         onClick={handleReestablecer}
-        className="h-12 min-h-12 w-[calc(50%-0.5rem)] sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
+        className="h-12 min-h-12 w-mitad-canal sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
       >
         Reestablecer
       </Button>
@@ -296,7 +296,7 @@ export function PlatformCardDesignDrawer({
       open={open}
       onClose={onClose}
       position="right"
-      width="w-full sm:w-[560px] md:w-[640px] max-w-full"
+      width="w-full sm:w-140 md:w-160 max-w-full"
       ariaLabel="Diseño de Tarjetas de Plataforma"
       header={headerContent}
       footer={footerContent}
@@ -315,11 +315,11 @@ export function PlatformCardDesignDrawer({
               Forzar diseño en todo el portal
             </label>
             {esForzado ? (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary-text uppercase tracking-wide shrink-0">
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary-text uppercase tracking-wide shrink-0">
                 Activo
               </span>
             ) : (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-label uppercase tracking-wide shrink-0">
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-label uppercase tracking-wide shrink-0">
                 Inactivo
               </span>
             )}
@@ -332,7 +332,7 @@ export function PlatformCardDesignDrawer({
             aria-checked={esForzado}
             aria-label="Forzar diseño de tarjetas de plataforma en todo el portal"
             onClick={() => handleToggleForzar(!esForzado)}
-            className="min-h-10 min-w-10 inline-flex items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0"
+            className="min-w-12 min-h-12 min-w-10 inline-flex items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0"
           >
             <span
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${
@@ -353,8 +353,8 @@ export function PlatformCardDesignDrawer({
         <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 sm:p-4 shadow-1 relative flex flex-col shrink-0">
           <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-panel-border/60 shrink-0">
             <h4 className="text-xs font-bold text-body-text">Tarjeta de Plataforma</h4>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30 shrink-0">
+              <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
               Vista Previa en Vivo
             </span>
           </div>
@@ -397,7 +397,7 @@ export function PlatformCardDesignDrawer({
         <div
           role="radiogroup"
           aria-label="Seleccionar diseño de tarjetas de plataforma"
-          className="grid grid-cols-2 grid-rows-2 gap-2.5 sm:gap-3 flex-1 min-h-[220px]"
+          className="grid grid-cols-2 grid-rows-2 gap-2.5 sm:gap-3 flex-1 min-h-55"
         >
           {variantesPaginaActual.map((variante) => {
             const estaSeleccionada = disenoCards === variante.id;
@@ -409,7 +409,7 @@ export function PlatformCardDesignDrawer({
                 role="radio"
                 aria-checked={estaSeleccionada}
                 aria-label={variante.ariaLabel}
-                className={`flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-[96px] outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-24 outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   estaSeleccionada
                     ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
                     : 'border-panel-border bg-superficie hover:border-panel-border/90 hover:bg-surface-container'
@@ -442,7 +442,7 @@ export function PlatformCardDesignDrawer({
               key={`ghost-card-${index}`}
               data-testid="platform-design-ghost-card"
               aria-hidden="true"
-              className="flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-xl border border-dashed border-panel-border/70 bg-panel-fill/20 text-center h-full min-h-[96px] select-none pointer-events-none opacity-60"
+              className="flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-xl border border-dashed border-panel-border/70 bg-panel-fill/20 text-center h-full min-h-24 select-none pointer-events-none opacity-atenuada"
             >
               <div className="size-6 rounded-lg bg-superficie-hundida flex items-center justify-center text-label/40 mb-1.5 shrink-0">
                 <Icono nombre="panel" tamano="xs" ariaHidden={true} />

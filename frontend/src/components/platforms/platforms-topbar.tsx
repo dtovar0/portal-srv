@@ -160,7 +160,7 @@ export function PlatformsTopbar({
                     onToggleWidget?.();
                   }
                 }}
-                className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="inline-flex min-h-11 min-w-12 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Catálogo
               </button>
@@ -180,7 +180,7 @@ export function PlatformsTopbar({
               <Link
                 href="/platforms"
                 onClick={limpiarUrlParams}
-                className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Catálogo
               </Link>
@@ -197,7 +197,7 @@ export function PlatformsTopbar({
                   limpiarUrlParams();
                   onNavigateCatalogo?.();
                 }}
-                className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Catálogo
               </button>
@@ -214,7 +214,7 @@ export function PlatformsTopbar({
                   limpiarUrlParams();
                   onNavigateCatalogo?.();
                 }}
-                className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Catálogo
               </button>
@@ -231,7 +231,7 @@ export function PlatformsTopbar({
                   limpiarUrlParams();
                   onNavigateCatalogo?.();
                 }}
-                className="inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="min-w-12 inline-flex min-h-11 items-center px-1 font-medium text-texto-secundario hover:text-primary-text transition-colors cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Catálogo
               </button>

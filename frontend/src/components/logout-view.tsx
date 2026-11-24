@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Icono } from './icono';
+import { PageHeader } from './page-header';
 import { Card } from './ui';
 
 export function LogoutView() {
@@ -51,9 +52,9 @@ export function LogoutView() {
                 </div>
 
                 <div>
-                  <h1 className="font-display text-2xl font-extrabold tracking-tight text-body-text" role="status">
-                    Sesión cerrada
-                  </h1>
+                  <div role="status">
+                    <PageHeader titleClassName="font-display text-2xl font-extrabold tracking-tight text-body-text" title="Sesión cerrada" />
+                  </div>
                   <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-aduana-border bg-panel-fill/80 px-3 py-1 text-xs font-semibold text-aduana-cyan">
                     <span className="size-1.5 rounded-full bg-aduana-cyan" />
                     Desconexión segura completada
@@ -66,7 +67,7 @@ export function LogoutView() {
                 <div className="pt-2">
                   <Link
                     href="/login"
-                    className="group relative inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-aduana-cyan to-aduana-cyan-hover px-5 py-3 font-display text-sm font-bold tracking-wide text-white shadow-lg shadow-aduana-cyan/25 transition-all hover:brightness-110 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
+                    className="group relative inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-aduana-cyan to-aduana-cyan-hover px-5 py-3 font-display text-sm font-bold tracking-wide text-arte-luz shadow-lg shadow-aduana-cyan/25 transition-all hover:brightness-110 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-aduana-cyan"
                   >
                     <Icono nombre="flecha-izq" tamano="sm" ariaHidden={true} className="transition-transform group-hover:-translate-x-1" />
                     <span>Volver a iniciar sesión</span>
@@ -91,7 +92,7 @@ export function LogoutView() {
               </div>
             )}
 
-            <div className="pt-4 border-t border-panel-border/50 flex items-center justify-center gap-1.5 text-[11px] text-label/70">
+            <div className="pt-4 border-t border-panel-border/50 flex items-center justify-center gap-1.5 text-xs text-label/70">
               <Icono nombre="candado" tamano="xs" ariaHidden={true} />
               <span>Vivaro • Seguridad e Identidad Corporativa</span>
             </div>

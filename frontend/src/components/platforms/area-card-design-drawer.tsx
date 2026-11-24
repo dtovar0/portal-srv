@@ -43,13 +43,13 @@ const VARIANTES_AREA: VarianteArea[] = [
     titulo: 'Split 50/50',
     ariaLabel: 'Diseño de Área Split 50/50 estilo Harvest Vase',
     renderPreview: () => (
-      <div className="h-10 w-full rounded-lg overflow-hidden border border-emerald-500/30 flex mt-auto shrink-0 shadow-2xs">
-        <div className="w-1/2 bg-emerald-500/20 p-1 flex items-center justify-center">
-          <div className="size-4 rounded bg-emerald-600 text-[8px] text-white font-bold flex items-center justify-center">TI</div>
+      <div className="h-10 w-full rounded-lg overflow-hidden border border-success/30 flex mt-auto shrink-0 shadow-2xs">
+        <div className="w-1/2 bg-success/20 p-1 flex items-center justify-center">
+          <div className="size-4 rounded bg-arte-esmeralda-600 text-xs text-arte-luz font-bold flex items-center justify-center">TI</div>
         </div>
         <div className="w-1/2 p-1.5 bg-fondo flex flex-col justify-center space-y-1">
           <div className="h-1.5 w-8 rounded bg-label/40" />
-          <div className="h-2 w-10 rounded-full bg-emerald-400" />
+          <div className="h-2 w-10 rounded-full bg-arte-esmeralda-400" />
         </div>
       </div>
     ),
@@ -59,12 +59,12 @@ const VARIANTES_AREA: VarianteArea[] = [
     titulo: 'Onda Curva SVG',
     ariaLabel: 'Diseño de Área Onda Curva Asimétrica',
     renderPreview: () => (
-      <div className="h-10 w-full rounded-lg overflow-hidden border border-amber-500/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-        <div className="h-5 w-full bg-gradient-to-r from-amber-600 to-orange-500 flex items-center justify-center text-[8px] text-white font-bold shrink-0">
-          <Icono nombre="panel" tamano="xs" className="text-white" />
+      <div className="h-10 w-full rounded-lg overflow-hidden border border-warning/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
+        <div className="h-5 w-full bg-gradient-to-r from-arte-ambar-600 to-arte-naranja-500 flex items-center justify-center text-xs text-arte-luz font-bold shrink-0">
+          <Icono nombre="panel" tamano="xs" className="text-arte-luz" />
         </div>
         <div className="p-0.5 text-center flex items-center justify-center flex-1">
-          <div className="h-1.5 w-12 rounded-full bg-amber-500" />
+          <div className="h-1.5 w-12 rounded-full bg-arte-ambar-500" />
         </div>
       </div>
     ),
@@ -74,17 +74,17 @@ const VARIANTES_AREA: VarianteArea[] = [
     titulo: 'Directorio de Equipo',
     ariaLabel: 'Diseño de Área Directorio Corporativo con avatares',
     renderPreview: () => (
-      <div className="h-10 w-full rounded-lg overflow-hidden border border-purple-500/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-        <div className="h-5 w-full bg-gradient-to-r from-purple-950 to-indigo-950 px-1.5 flex items-center justify-between shrink-0">
+      <div className="h-10 w-full rounded-lg overflow-hidden border border-arte-purpura-500/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
+        <div className="h-5 w-full bg-gradient-to-r from-arte-purpura-950 to-arte-indigo-950 px-1.5 flex items-center justify-between shrink-0">
           <div className="flex -space-x-1">
-            <div className="size-2 rounded-full bg-blue-500" />
-            <div className="size-2 rounded-full bg-teal-500" />
+            <div className="size-2 rounded-full bg-arte-azul-500" />
+            <div className="size-2 rounded-full bg-arte-turquesa-500" />
           </div>
-          <div className="size-2 rounded-full bg-purple-400" />
+          <div className="size-2 rounded-full bg-arte-purpura-400" />
         </div>
         <div className="px-1.5 py-0.5 flex items-center justify-between flex-1">
           <div className="h-1.5 w-10 rounded bg-label/40" />
-          <div className="h-2 w-8 rounded bg-purple-600" />
+          <div className="h-2 w-8 rounded bg-arte-purpura-600" />
         </div>
       </div>
     ),
@@ -96,8 +96,8 @@ const VARIANTES_AREA: VarianteArea[] = [
     renderPreview: () => (
       <div className="h-10 w-full p-1 rounded-lg border border-panel-border bg-fondo flex flex-col justify-between mt-auto shrink-0 shadow-2xs">
         <div className="grid grid-cols-2 gap-1">
-          <div className="h-3 rounded bg-primary/10 border border-primary/20 text-[7px] text-center font-bold text-primary-text flex items-center justify-center">28</div>
-          <div className="h-3 rounded bg-superficie border border-panel-border text-[7px] text-center font-bold flex items-center justify-center">4 apps</div>
+          <div className="h-3 rounded bg-primary/10 border border-primary/20 text-xs text-center font-bold text-primary-text flex items-center justify-center">28</div>
+          <div className="h-3 rounded bg-superficie border border-panel-border text-xs text-center font-bold flex items-center justify-center">4 apps</div>
         </div>
         <div className="h-2 w-full rounded bg-superficie-hundida" />
       </div>
@@ -110,8 +110,8 @@ const VARIANTES_AREA: VarianteArea[] = [
     renderPreview: () => (
       <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border flex flex-col items-center justify-between pb-1 mt-auto shrink-0 bg-fondo shadow-2xs">
         <div className="h-3.5 w-full bg-primary" />
-        <div className="-mt-2.5 size-4 rounded-full bg-primary border border-white flex items-center justify-center text-[7px] text-white shadow-xs">
-          <Icono nombre="favorito" tamano="xs" relleno={true} className="text-white" />
+        <div className="-mt-2.5 size-4 rounded-full bg-primary border border-arte-luz flex items-center justify-center text-xs text-arte-luz shadow-xs">
+          <Icono nombre="favorito" tamano="xs" relleno={true} className="text-arte-luz" />
         </div>
         <div className="h-1.5 w-12 rounded bg-label/40" />
       </div>
@@ -124,13 +124,13 @@ const VARIANTES_AREA: VarianteArea[] = [
     renderPreview: () => (
       <div className="h-10 w-full p-1 rounded-lg border border-panel-border/70 bg-fondo flex flex-col justify-between mt-auto shrink-0 shadow-2xs">
         <div className="grid grid-cols-2 gap-1">
-          <div className="h-3 rounded bg-superficie border border-panel-border/50 text-[7px] text-center font-bold flex items-center justify-center">12</div>
-          <div className="h-3 rounded bg-superficie border border-panel-border/50 text-[7px] text-center font-bold flex items-center justify-center">4</div>
+          <div className="h-3 rounded bg-superficie border border-panel-border/50 text-xs text-center font-bold flex items-center justify-center">12</div>
+          <div className="h-3 rounded bg-superficie border border-panel-border/50 text-xs text-center font-bold flex items-center justify-center">4</div>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex -space-x-1">
-            <div className="size-2 rounded-full bg-blue-500" />
-            <div className="size-2 rounded-full bg-purple-500" />
+            <div className="size-2 rounded-full bg-arte-azul-500" />
+            <div className="size-2 rounded-full bg-arte-purpura-500" />
           </div>
           <div className="h-1.5 w-8 rounded bg-primary/30" />
         </div>
@@ -142,15 +142,15 @@ const VARIANTES_AREA: VarianteArea[] = [
     titulo: 'Portada Fotográfica',
     ariaLabel: 'Diseño de Área con Portada Fotográfica',
     renderPreview: () => (
-      <div className="relative h-10 w-full rounded-lg overflow-hidden bg-slate-900 border border-white/20 flex flex-col justify-between p-1.5 text-white mt-auto shrink-0 shadow-2xs">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+      <div className="relative h-10 w-full rounded-lg overflow-hidden bg-arte-pizarra-900 border border-arte-luz/20 flex flex-col justify-between p-1.5 text-arte-luz mt-auto shrink-0 shadow-2xs">
+        <div className="absolute inset-0 bg-gradient-to-t from-arte-sombra/90 via-arte-sombra/50 to-arte-sombra/20" />
         <div className="relative z-10 flex items-center justify-between">
-          <span className="size-3 rounded bg-white/20 text-[6px] font-bold flex items-center justify-center">TI</span>
-          <span className="h-2 w-7 rounded-full bg-emerald-400/30 text-[5px] text-emerald-300 font-bold flex items-center justify-center">ACTIVA</span>
+          <span className="size-3 rounded bg-arte-luz/20 font-bold flex items-center justify-center"></span>
+          <span className="h-2 w-7 rounded-full bg-arte-esmeralda-400/30 text-arte-esmeralda-300 font-bold flex items-center justify-center"></span>
         </div>
         <div className="relative z-10 flex gap-1">
-          <div className="h-1.5 flex-1 rounded bg-white/20" />
-          <div className="h-1.5 flex-1 rounded bg-white/20" />
+          <div className="h-1.5 flex-1 rounded bg-arte-luz/20" />
+          <div className="h-1.5 flex-1 rounded bg-arte-luz/20" />
         </div>
       </div>
     ),
@@ -161,9 +161,9 @@ const VARIANTES_AREA: VarianteArea[] = [
     ariaLabel: 'Diseño de Área con Hero Banner Fotográfico',
     renderPreview: () => (
       <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-        <div className="h-5 w-full bg-slate-800 relative flex items-center justify-between px-1.5 shrink-0">
-          <div className="size-3 rounded bg-primary text-[6px] text-white flex items-center justify-center font-bold">TI</div>
-          <div className="h-1.5 w-6 rounded-full bg-white/40" />
+        <div className="h-5 w-full bg-arte-pizarra-800 relative flex items-center justify-between px-1.5 shrink-0">
+          <div className="size-3 rounded bg-primary text-arte-luz flex items-center justify-center font-bold"></div>
+          <div className="h-1.5 w-6 rounded-full bg-arte-luz/40" />
         </div>
         <div className="px-1.5 py-0.5 flex items-center justify-between flex-1">
           <div className="h-1.5 w-10 rounded bg-label/40" />
@@ -180,7 +180,7 @@ const VARIANTES_AREA: VarianteArea[] = [
       <div className="h-10 w-full rounded-lg border border-primary/40 bg-primary/10 backdrop-blur-xs flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
         <div className="flex items-center justify-between">
           <div className="size-3 rounded bg-primary/40" />
-          <div className="size-1.5 rounded-full bg-emerald-400" />
+          <div className="size-1.5 rounded-full bg-arte-esmeralda-400" />
         </div>
         <div className="h-2 w-full rounded-md bg-gradient-to-r from-primary to-accent" />
       </div>
@@ -191,15 +191,15 @@ const VARIANTES_AREA: VarianteArea[] = [
     titulo: 'Flotante Inmersiva',
     ariaLabel: 'Diseño de Área Flotante Inmersiva',
     renderPreview: () => (
-      <div className="relative h-10 w-full rounded-lg overflow-hidden bg-slate-900 border border-white/20 flex flex-col justify-between p-1.5 text-white mt-auto shrink-0 shadow-2xs">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+      <div className="relative h-10 w-full rounded-lg overflow-hidden bg-arte-pizarra-900 border border-arte-luz/20 flex flex-col justify-between p-1.5 text-arte-luz mt-auto shrink-0 shadow-2xs">
+        <div className="absolute inset-0 bg-gradient-to-b from-arte-sombra/60 via-arte-sombra/40 to-arte-sombra/80" />
         <div className="relative z-10 flex items-center justify-between">
-          <span className="h-1 w-6 rounded-full bg-white/40" />
-          <span className="size-1.5 rounded-full bg-emerald-400" />
+          <span className="h-1 w-6 rounded-full bg-arte-luz/40" />
+          <span className="size-1.5 rounded-full bg-arte-esmeralda-400" />
         </div>
-        <div className="relative z-10 p-0.5 rounded bg-black/70 backdrop-blur-xs border border-white/20 flex items-center justify-between">
-          <span className="size-2 rounded bg-primary text-[5px] text-white font-bold flex items-center justify-center">TI</span>
-          <div className="h-1 w-8 rounded bg-white/70" />
+        <div className="relative z-10 p-0.5 rounded bg-arte-sombra/70 backdrop-blur-xs border border-arte-luz/20 flex items-center justify-between">
+          <span className="size-2 rounded bg-primary text-arte-luz font-bold flex items-center justify-center"></span>
+          <div className="h-1 w-8 rounded bg-arte-luz/70" />
         </div>
       </div>
     ),
@@ -277,7 +277,7 @@ export function AreaCardDesignDrawer({
         onClick={onClose}
         aria-label="Cerrar"
         title="Cerrar panel de diseño"
-        className="inline-flex size-10 min-h-10 min-w-10 items-center justify-center rounded-xl border border-panel-border bg-superficie text-label hover:border-primary/50 hover:bg-surface-container hover:text-body-text transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
+        className="min-w-12 inline-flex size-10 min-h-12 min-w-10 items-center justify-center rounded-xl border border-panel-border bg-superficie text-label hover:border-primary/50 hover:bg-surface-container hover:text-body-text transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
       >
         <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
       </button>
@@ -291,7 +291,7 @@ export function AreaCardDesignDrawer({
         type="button"
         variant="secondary"
         onClick={onClose}
-        className="h-12 min-h-12 w-[calc(50%-0.5rem)] sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
+        className="h-12 min-h-12 w-mitad-canal sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
       >
         Cerrar
       </Button>
@@ -300,7 +300,7 @@ export function AreaCardDesignDrawer({
         type="button"
         variant="secondary"
         onClick={handleReestablecer}
-        className="h-12 min-h-12 w-[calc(50%-0.5rem)] sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
+        className="h-12 min-h-12 w-mitad-canal sm:w-48 sm:min-w-48 !px-3 font-semibold text-body-text hover:bg-superficie focus-visible:ring-2 focus-visible:ring-primary justify-center text-center"
       >
         Reestablecer
       </Button>
@@ -319,7 +319,7 @@ export function AreaCardDesignDrawer({
       open={open}
       onClose={onClose}
       position="right"
-      width="w-full sm:w-[560px] md:w-[640px] max-w-full"
+      width="w-full sm:w-140 md:w-160 max-w-full"
       ariaLabel="Diseño de Tarjetas de Área"
       header={headerContent}
       footer={footerContent}
@@ -338,11 +338,11 @@ export function AreaCardDesignDrawer({
               Forzar diseño en todo el portal
             </label>
             {esForzado ? (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary-text uppercase tracking-wide shrink-0">
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary-text uppercase tracking-wide shrink-0">
                 Activo
               </span>
             ) : (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-label uppercase tracking-wide shrink-0">
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-label uppercase tracking-wide shrink-0">
                 Inactivo
               </span>
             )}
@@ -355,7 +355,7 @@ export function AreaCardDesignDrawer({
             aria-checked={esForzado}
             aria-label="Forzar diseño de tarjetas de área en todo el portal"
             onClick={() => handleToggleForzar(!esForzado)}
-            className="min-h-10 min-w-10 inline-flex items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0"
+            className="min-w-12 min-h-12 min-w-10 inline-flex items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0"
           >
             <span
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${
@@ -376,8 +376,8 @@ export function AreaCardDesignDrawer({
         <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 sm:p-4 shadow-1 relative flex flex-col shrink-0 overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-panel-border/60 shrink-0">
             <h4 className="text-xs font-bold text-body-text">Tarjeta de Área</h4>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30 shrink-0">
+              <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
               Vista Previa en Vivo
             </span>
           </div>
@@ -418,7 +418,7 @@ export function AreaCardDesignDrawer({
         <div
           role="radiogroup"
           aria-label="Seleccionar diseño de tarjetas de área"
-          className="grid grid-cols-2 grid-rows-2 gap-2 sm:gap-2.5 flex-1 min-h-[190px]"
+          className="grid grid-cols-2 grid-rows-2 gap-2 sm:gap-2.5 flex-1 min-h-47.5"
         >
           {variantesPaginaActual.map((variante) => {
             const estaSeleccionada = disenoCardsArea === variante.id;
@@ -430,7 +430,7 @@ export function AreaCardDesignDrawer({
                 role="radio"
                 aria-checked={estaSeleccionada}
                 aria-label={variante.ariaLabel}
-                className={`flex flex-col justify-between p-2.5 sm:p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-[88px] outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`min-w-12 flex flex-col justify-between p-2.5 sm:p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-22 outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   estaSeleccionada
                     ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
                     : 'border-panel-border bg-superficie hover:border-panel-border/90 hover:bg-surface-container'
@@ -463,7 +463,7 @@ export function AreaCardDesignDrawer({
               key={`ghost-card-${index}`}
               data-testid="area-design-ghost-card"
               aria-hidden="true"
-              className="flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl border border-dashed border-panel-border/70 bg-panel-fill/20 text-center h-full min-h-[88px] select-none pointer-events-none opacity-60"
+              className="flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl border border-dashed border-panel-border/70 bg-panel-fill/20 text-center h-full min-h-22 select-none pointer-events-none opacity-atenuada"
             >
               <div className="size-6 rounded-lg bg-superficie-hundida flex items-center justify-center text-label/40 mb-1.5 shrink-0">
                 <Icono nombre="panel" tamano="xs" ariaHidden={true} />

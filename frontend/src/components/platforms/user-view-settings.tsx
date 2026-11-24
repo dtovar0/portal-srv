@@ -13,7 +13,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { PlatformsLayout } from '@/lib/platforms-layout';
 import type { CatalogItem } from '@/lib/access/types';
-import type { Area, Platform } from '@/lib/types';
 import { Button } from '../form';
 import { Icono } from '../icono';
 import { useToast } from '../toast';
@@ -22,6 +21,7 @@ import {
   leerOmitirBienvenida,
   PlatformsWelcomeModal,
 } from './platforms-welcome-modal';
+import { Tabs } from '../tabs';
 import { PlatformMockupCard } from './platform-mockup-card';
 import { TarjetaArea } from '../areas/tarjeta-area';
 import { PremiumEmptyState } from '../premium-message';
@@ -64,40 +64,9 @@ export const ITEM_PREVIEW_DEMO: CatalogItem = {
   requestable_levels: ['admin'],
 };
 
-export const PLATAFORMA_MINE_DEMO: Platform = {
-  id: 999,
-  name: 'AWS Cloud Console',
-  description: 'Gestión centralizada de infraestructura de nube, servidores EC2, almacenamiento S3 y bases de datos.',
-  area_id: 1,
-  area_name: 'Tecnología & TI',
-  icon: 'plataformas',
-  direct_link: 'https://aws.amazon.com',
-  status: 'Activo',
-  bg_color: '#1e1b4b',
-  text_color: '#ffffff',
-  my_access_status: 'activo',
-  my_level: 'admin',
-  is_favorite: true,
-  integration_type: 'conector',
-} as unknown as Platform;
+import { AREA_PREVIEW_DEMO, PLATAFORMA_MINE_DEMO, PLATAFORMAS_AREA_DEMO } from '@/lib/demo-tarjetas';
 
-export const AREA_PREVIEW_DEMO: Area = {
-  id: 1,
-  name: 'Tecnología & TI',
-  description: 'Dirección General de Sistemas, Redes e Infraestructura de Servidores Corporativos.',
-  icon: 'plataformas',
-  color: '#2563eb',
-  status: 'Activo',
-  platforms_count: 6,
-  users_count: 28,
-} as unknown as Area;
-
-export const PLATAFORMAS_AREA_DEMO: Platform[] = [
-  { id: 1, name: 'AWS Cloud', area_id: 1, bg_color: '#1e1b4b' } as unknown as Platform,
-  { id: 2, name: 'Slack Enterprise', area_id: 1, bg_color: '#047857' } as unknown as Platform,
-  { id: 3, name: 'GitHub Enterprise', area_id: 1, bg_color: '#312e81' } as unknown as Platform,
-  { id: 4, name: 'Datadog', area_id: 1, bg_color: '#701a75' } as unknown as Platform,
-];
+export { AREA_PREVIEW_DEMO, PLATAFORMA_MINE_DEMO, PLATAFORMAS_AREA_DEMO };
 
 export function leerBotonUsuarioCompacto(): boolean {
   if (typeof window === 'undefined') return false;
@@ -312,82 +281,19 @@ export function UserViewSettings({
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full w-full gap-4 overflow-y-auto pr-1">
       {/* 1. BARRA DE NAVEGACIÓN POR PESTAÑAS (TABS: GENERAL, ÁREAS, PLATAFORMAS) */}
-      <div className="w-full flex items-center gap-4 pb-2 border-b border-borde shrink-0">
-        <div
-          role="tablist"
-          aria-label="Pestañas de configuración visual"
-          className="flex items-center gap-2.5 flex-wrap"
-        >
-          {/* Pestaña: General */}
-          <button
-            type="button"
-            role="tab"
-            id="tab-general"
-            aria-controls="panel-general"
-            aria-selected={tabActiva === 'general'}
-            onClick={() => setTabActiva('general')}
-            className={`inline-flex h-12 min-h-12 w-36 sm:w-40 shrink-0 items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border shadow-xs transition-all duration-rapida cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              tabActiva === 'general'
-                ? 'border-primary bg-primary text-texto-sobre-accion shadow-1 ring-2 ring-primary/20'
-                : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:text-body-text hover:shadow-1'
-            }`}
-          >
-            <Icono
-              nombre="panel"
-              tamano="sm"
-              ariaHidden={true}
-              className={`shrink-0 ${tabActiva === 'general' ? 'text-texto-sobre-accion' : 'text-label'}`}
-            />
-            <span className="truncate">General</span>
-          </button>
-
-          {/* Pestaña: Áreas */}
-          <button
-            type="button"
-            role="tab"
-            id="tab-areas"
-            aria-controls="panel-areas"
-            aria-selected={tabActiva === 'areas'}
-            onClick={() => setTabActiva('areas')}
-            className={`inline-flex h-12 min-h-12 w-36 sm:w-40 shrink-0 items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border shadow-xs transition-all duration-rapida cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              tabActiva === 'areas'
-                ? 'border-primary bg-primary text-texto-sobre-accion shadow-1 ring-2 ring-primary/20'
-                : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:text-body-text hover:shadow-1'
-            }`}
-          >
-            <Icono
-              nombre="areas"
-              tamano="sm"
-              ariaHidden={true}
-              className={`shrink-0 ${tabActiva === 'areas' ? 'text-texto-sobre-accion' : 'text-label'}`}
-            />
-            <span className="truncate">Áreas</span>
-          </button>
-
-          {/* Pestaña: Plataformas */}
-          <button
-            type="button"
-            role="tab"
-            id="tab-plataformas"
-            aria-controls="panel-plataformas"
-            aria-selected={tabActiva === 'plataformas'}
-            onClick={() => setTabActiva('plataformas')}
-            className={`inline-flex h-12 min-h-12 w-36 sm:w-40 shrink-0 items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border shadow-xs transition-all duration-rapida cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              tabActiva === 'plataformas'
-                ? 'border-primary bg-primary text-texto-sobre-accion shadow-1 ring-2 ring-primary/20'
-                : 'border-panel-border bg-fondo text-body-text hover:border-primary/50 hover:bg-superficie hover:text-body-text hover:shadow-1'
-            }`}
-          >
-            <Icono
-              nombre="plataformas"
-              tamano="sm"
-              ariaHidden={true}
-              className={`shrink-0 ${tabActiva === 'plataformas' ? 'text-texto-sobre-accion' : 'text-label'}`}
-            />
-            <span className="truncate">Plataformas</span>
-          </button>
-        </div>
-      </div>
+      <Tabs
+        variant="pills"
+        ariaLabel="Pestañas de configuración visual"
+        tabs={[
+          { id: 'general', label: 'General', icon: 'panel' },
+          { id: 'areas', label: 'Áreas', icon: 'areas' },
+          { id: 'plataformas', label: 'Plataformas', icon: 'plataformas' },
+        ]}
+        value={tabActiva}
+        onChange={setTabActiva}
+        getTabId={(id) => `tab-${id}`}
+        getPanelId={(id) => `panel-${id}`}
+      />
 
       {tabActiva === 'general' ? (
         <div id="panel-general" role="tabpanel" aria-labelledby="tab-general" className="flex-1 min-h-0 h-full w-full flex flex-col gap-4">
@@ -395,7 +301,7 @@ export function UserViewSettings({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch shrink-0">
             {/* 1. SECCIÓN: SELECTOR DE DISPOSICIÓN PRINCIPAL (LAYOUT) */}
             <div className="rounded-2xl border border-panel-border bg-panel-fill shadow-1 flex flex-col justify-between h-full overflow-hidden">
-              <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-surface-container border-b border-panel-border flex items-start justify-between gap-3 shrink-0 min-h-[64px]">
+              <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-surface-container border-b border-panel-border flex items-start justify-between gap-3 shrink-0 min-h-16">
                 <div className="min-w-0">
                   <h4 className="text-sm font-bold text-body-text flex items-center gap-2">
                     <Icono nombre="panel" tamano="sm" className="text-primary-text" />
@@ -416,7 +322,7 @@ export function UserViewSettings({
                     role="radio"
                     aria-checked={layout === 'sidebar'}
                     aria-label="Seleccionar vista Barra Lateral (Sidebar)"
-                    className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-[96px] outline-none focus-visible:ring-2 focus-visible:ring-primary ${layout === 'sidebar'
+                    className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-24 outline-none focus-visible:ring-2 focus-visible:ring-primary ${layout === 'sidebar'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
                         : 'border-panel-border bg-superficie hover:border-panel-border/90 hover:bg-surface-container'
                       }`}
@@ -448,7 +354,7 @@ export function UserViewSettings({
                     role="radio"
                     aria-checked={layout === 'topbar'}
                     aria-label="Seleccionar vista Barra Superior (Topbar)"
-                    className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-[96px] outline-none focus-visible:ring-2 focus-visible:ring-primary ${layout === 'topbar'
+                    className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer h-full min-h-24 outline-none focus-visible:ring-2 focus-visible:ring-primary ${layout === 'topbar'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
                         : 'border-panel-border bg-superficie hover:border-panel-border/90 hover:bg-surface-container'
                       }`}
@@ -478,7 +384,7 @@ export function UserViewSettings({
 
             {/* 2. SECCIÓN: MENSAJE DE BIENVENIDA */}
             <div className="rounded-2xl border border-panel-border bg-panel-fill shadow-1 flex flex-col justify-between h-full overflow-hidden">
-              <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-surface-container border-b border-panel-border flex items-start justify-between gap-3 shrink-0 min-h-[64px]">
+              <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-surface-container border-b border-panel-border flex items-start justify-between gap-3 shrink-0 min-h-16">
                 <div className="min-w-0">
                   <h4 className="text-sm font-bold text-body-text flex items-center gap-2">
                     <Icono nombre="info" tamano="sm" className="text-primary-text" />
@@ -523,7 +429,7 @@ export function UserViewSettings({
                       aria-checked={!omitidoBienvenida}
                       aria-label="Mostrar mensaje de bienvenida al entrar"
                       onClick={() => handleToggleBienvenida(omitidoBienvenida)}
-                      className="inline-flex items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0"
+                      className="inline-flex min-h-12 min-w-12 items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0"
                     >
                       <span
                         className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${
@@ -550,7 +456,7 @@ export function UserViewSettings({
 
           {/* Fila 2: Elementos de la Barra Lateral con opciones en filas separadas */}
           <div className="rounded-2xl border border-panel-border bg-panel-fill shadow-1 flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
-            <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-surface-container border-b border-panel-border flex items-start justify-between gap-3 shrink-0 min-h-[60px]">
+            <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-surface-container border-b border-panel-border flex items-start justify-between gap-3 shrink-0 min-h-15">
               <div className="min-w-0">
                 <h4 className="text-sm font-bold text-body-text flex items-center gap-2">
                   <Icono nombre="inventario" tamano="sm" className="text-primary-text" />
@@ -565,7 +471,7 @@ export function UserViewSettings({
             <div className="p-4 sm:p-5 flex-1 min-h-0 flex flex-col justify-between">
               <div className="flex flex-col gap-3 flex-1 justify-between my-auto">
                 {/* Opción 1: Mostrar Documentos (Carta Responsiva) */}
-                <div className="flex-1 min-h-[56px] flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border bg-superficie hover:border-panel-border/90 transition-colors">
+                <div className="flex-1 min-h-14 flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border bg-superficie hover:border-panel-border/90 transition-colors">
                   <div className="min-w-0 flex-1">
                     <label
                       htmlFor="toggle-documentos"
@@ -601,9 +507,9 @@ export function UserViewSettings({
 
                 {/* Opción 2: Mostrar Badges Circulares con Contadores en el Sidebar */}
                 <div
-                  className={`flex-1 min-h-[56px] flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border transition-colors ${
+                  className={`flex-1 min-h-14 flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border transition-colors ${
                     deshabilitarBadges
-                      ? 'bg-surface-container/40 opacity-60 cursor-not-allowed'
+                      ? 'bg-surface-container/40 opacity-atenuada cursor-not-allowed'
                       : 'bg-superficie hover:border-panel-border/90'
                   }`}
                   aria-disabled={deshabilitarBadges}
@@ -618,7 +524,7 @@ export function UserViewSettings({
                       >
                         Mostrar Badges Circulares con Contadores en el Sidebar
                       </label>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-texto-secundario uppercase tracking-wide shrink-0">
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-texto-secundario uppercase tracking-wide shrink-0">
                         Solo en Sidebar
                       </span>
                     </div>
@@ -642,7 +548,7 @@ export function UserViewSettings({
                       }
                     }}
                     className={`min-h-12 min-w-12 inline-flex items-center justify-end p-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0 ${
-                      deshabilitarBadges ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                      deshabilitarBadges ? 'cursor-not-allowed opacity-atenuada' : 'cursor-pointer'
                     }`}
                   >
                     <span
@@ -666,9 +572,9 @@ export function UserViewSettings({
 
                 {/* Opción 3: Colapsar Botón de Usuario (Solo Icono) */}
                 <div
-                  className={`flex-1 min-h-[56px] flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border transition-colors ${
+                  className={`flex-1 min-h-14 flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border transition-colors ${
                     deshabilitarBotonCompacto
-                      ? 'bg-surface-container/40 opacity-60 cursor-not-allowed'
+                      ? 'bg-surface-container/40 opacity-atenuada cursor-not-allowed'
                       : 'bg-superficie hover:border-panel-border/90'
                   }`}
                   aria-disabled={deshabilitarBotonCompacto}
@@ -683,7 +589,7 @@ export function UserViewSettings({
                       >
                         Colapsar botón de usuario (solo mostrar icono)
                       </label>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-texto-secundario uppercase tracking-wide shrink-0">
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-panel-border bg-surface-container text-texto-secundario uppercase tracking-wide shrink-0">
                         Solo en Topbar
                       </span>
                     </div>
@@ -707,7 +613,7 @@ export function UserViewSettings({
                       }
                     }}
                     className={`min-h-12 min-w-12 inline-flex items-center justify-end p-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0 ${
-                      deshabilitarBotonCompacto ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                      deshabilitarBotonCompacto ? 'cursor-not-allowed opacity-atenuada' : 'cursor-pointer'
                     }`}
                   >
                     <span
@@ -744,7 +650,7 @@ export function UserViewSettings({
           }`}
         >
           {esForzadoArea ? (
-            <div className="flex-1 min-h-[460px] h-full w-full flex flex-col">
+            <div className="flex-1 min-h-115 h-full w-full flex flex-col">
               <PremiumEmptyState
                 role="alert"
                 icono="areas"
@@ -752,7 +658,7 @@ export function UserViewSettings({
                 badgeTestId="badge-diseno-bloqueado-area"
                 title="Diseño de Tarjetas de Área Bloqueado"
                 message="El administrador ha forzado el diseño corporativo para las tarjetas de área en todo el portal. Las opciones de personalización individual están deshabilitadas."
-                className="w-full h-full flex-1 min-h-[460px] rounded-2xl"
+                className="w-full h-full flex-1 min-h-115 rounded-2xl"
               />
             </div>
           ) : (
@@ -773,7 +679,7 @@ export function UserViewSettings({
                 {esForzadoArea ? (
                   <span
                     data-testid="badge-diseno-bloqueado-area"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-warning/40 bg-warning/10 text-warning-text shrink-0"
                   >
                     <Icono nombre="escudo" tamano="xs" ariaHidden={true} />
                     <span>Bloqueado por Admin</span>
@@ -784,9 +690,9 @@ export function UserViewSettings({
               {esForzadoArea ? (
                 <div
                   role="alert"
-                  className="mt-2.5 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5"
+                  className="mt-2.5 p-3 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-xs flex items-center gap-2.5"
                 >
-                  <Icono nombre="info" tamano="xs" className="text-amber-600 dark:text-amber-400 shrink-0" ariaHidden={true} />
+                  <Icono nombre="info" tamano="xs" className="text-warning-text shrink-0" ariaHidden={true} />
                   <p className="leading-relaxed">
                     El administrador ha forzado el diseño corporativo para las tarjetas de área. Las opciones de personalización individual están deshabilitadas.
                   </p>
@@ -806,9 +712,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'split'}
                 aria-label="Diseño de Área Split 50/50 estilo Harvest Vase"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'split'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -830,13 +736,13 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="h-10 w-full rounded-lg overflow-hidden border border-emerald-500/30 flex mt-auto shrink-0 shadow-2xs">
-                  <div className="w-1/2 bg-emerald-500/20 p-1 flex items-center justify-center">
-                    <div className="size-4 rounded bg-emerald-600 text-[8px] text-white font-bold flex items-center justify-center">TI</div>
+                <div className="h-10 w-full rounded-lg overflow-hidden border border-success/30 flex mt-auto shrink-0 shadow-2xs">
+                  <div className="w-1/2 bg-success/20 p-1 flex items-center justify-center">
+                    <div className="size-4 rounded bg-arte-esmeralda-600 text-xs text-arte-luz font-bold flex items-center justify-center">TI</div>
                   </div>
                   <div className="w-1/2 p-1.5 bg-fondo flex flex-col justify-center space-y-1">
                     <div className="h-1.5 w-8 rounded bg-label/40" />
-                    <div className="h-2 w-10 rounded-full bg-emerald-400" />
+                    <div className="h-2 w-10 rounded-full bg-arte-esmeralda-400" />
                   </div>
                 </div>
               </button>
@@ -852,9 +758,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'onda'}
                 aria-label="Diseño de Área Onda Curva Asimétrica"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'onda'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -876,12 +782,12 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="h-10 w-full rounded-lg overflow-hidden border border-amber-500/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-                  <div className="h-5 w-full bg-gradient-to-r from-amber-600 to-orange-500 flex items-center justify-center text-[8px] text-white font-bold shrink-0">
-                    <Icono nombre="panel" tamano="xs" className="text-white" />
+                <div className="h-10 w-full rounded-lg overflow-hidden border border-warning/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
+                  <div className="h-5 w-full bg-gradient-to-r from-arte-ambar-600 to-arte-naranja-500 flex items-center justify-center text-xs text-arte-luz font-bold shrink-0">
+                    <Icono nombre="panel" tamano="xs" className="text-arte-luz" />
                   </div>
                   <div className="p-0.5 text-center flex items-center justify-center flex-1">
-                    <div className="h-1.5 w-12 rounded-full bg-amber-500" />
+                    <div className="h-1.5 w-12 rounded-full bg-arte-ambar-500" />
                   </div>
                 </div>
               </button>
@@ -897,9 +803,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'directorio'}
                 aria-label="Diseño de Área Directorio Corporativo con avatares"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'directorio'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -921,17 +827,17 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="h-10 w-full rounded-lg overflow-hidden border border-purple-500/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-                  <div className="h-5 w-full bg-gradient-to-r from-purple-950 to-indigo-950 px-1.5 flex items-center justify-between shrink-0">
+                <div className="h-10 w-full rounded-lg overflow-hidden border border-arte-purpura-500/30 bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
+                  <div className="h-5 w-full bg-gradient-to-r from-arte-purpura-950 to-arte-indigo-950 px-1.5 flex items-center justify-between shrink-0">
                     <div className="flex -space-x-1">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <div className="size-2 rounded-full bg-teal-500" />
+                      <div className="size-2 rounded-full bg-arte-azul-500" />
+                      <div className="size-2 rounded-full bg-arte-turquesa-500" />
                     </div>
-                    <div className="size-2 rounded-full bg-purple-400" />
+                    <div className="size-2 rounded-full bg-arte-purpura-400" />
                   </div>
                   <div className="px-1.5 py-0.5 flex items-center justify-between flex-1">
                     <div className="h-1.5 w-10 rounded bg-label/40" />
-                    <div className="h-2 w-8 rounded bg-purple-600" />
+                    <div className="h-2 w-8 rounded bg-arte-purpura-600" />
                   </div>
                 </div>
               </button>
@@ -947,9 +853,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'bento'}
                 aria-label="Diseño de Área Mosaico Bento Grid"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'bento'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -973,8 +879,8 @@ export function UserViewSettings({
                 </div>
                 <div className="h-10 w-full p-1 rounded-lg border border-panel-border bg-fondo flex flex-col justify-between mt-auto shrink-0 shadow-2xs">
                   <div className="grid grid-cols-2 gap-1">
-                    <div className="h-3 rounded bg-primary/10 border border-primary/20 text-[7px] text-center font-bold text-primary-text flex items-center justify-center">28</div>
-                    <div className="h-3 rounded bg-superficie border border-panel-border text-[7px] text-center font-bold flex items-center justify-center">4 apps</div>
+                    <div className="h-3 rounded bg-primary/10 border border-primary/20 text-xs text-center font-bold text-primary-text flex items-center justify-center">28</div>
+                    <div className="h-3 rounded bg-superficie border border-panel-border text-xs text-center font-bold flex items-center justify-center">4 apps</div>
                   </div>
                   <div className="h-2 w-full rounded bg-superficie-hundida" />
                 </div>
@@ -991,9 +897,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'medallon'}
                 aria-label="Diseño de Área Tarjeta Medallón Insignia"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'medallon'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1017,8 +923,8 @@ export function UserViewSettings({
                 </div>
                 <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border flex flex-col items-center justify-between pb-1 mt-auto shrink-0 bg-fondo shadow-2xs">
                   <div className="h-3.5 w-full bg-primary" />
-                  <div className="-mt-2.5 size-4 rounded-full bg-primary border border-white flex items-center justify-center text-[7px] text-white shadow-xs">
-                    <Icono nombre="favorito" tamano="xs" relleno={true} className="text-white" />
+                  <div className="-mt-2.5 size-4 rounded-full bg-primary border border-arte-luz flex items-center justify-center text-xs text-arte-luz shadow-xs">
+                    <Icono nombre="favorito" tamano="xs" relleno={true} className="text-arte-luz" />
                   </div>
                   <div className="h-1.5 w-12 rounded bg-label/40" />
                 </div>
@@ -1035,9 +941,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'estandar'}
                 aria-label="Diseño de Área Panel Métrico Ejecutivo DIS-102"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'estandar'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1061,13 +967,13 @@ export function UserViewSettings({
                 </div>
                 <div className="h-10 w-full p-1 rounded-lg border border-panel-border/70 bg-fondo flex flex-col justify-between mt-auto shrink-0 shadow-2xs">
                   <div className="grid grid-cols-2 gap-1">
-                    <div className="h-3 rounded bg-superficie border border-panel-border/50 text-[7px] text-center font-bold flex items-center justify-center">12</div>
-                    <div className="h-3 rounded bg-superficie border border-panel-border/50 text-[7px] text-center font-bold flex items-center justify-center">4</div>
+                    <div className="h-3 rounded bg-superficie border border-panel-border/50 text-xs text-center font-bold flex items-center justify-center">12</div>
+                    <div className="h-3 rounded bg-superficie border border-panel-border/50 text-xs text-center font-bold flex items-center justify-center">4</div>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex -space-x-1">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <div className="size-2 rounded-full bg-purple-500" />
+                      <div className="size-2 rounded-full bg-arte-azul-500" />
+                      <div className="size-2 rounded-full bg-arte-purpura-500" />
                     </div>
                     <div className="h-1.5 w-8 rounded bg-primary/30" />
                   </div>
@@ -1085,9 +991,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'portada'}
                 aria-label="Diseño de Área con Portada Fotográfica e imagen de fondo"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'portada'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1109,15 +1015,15 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="relative h-10 w-full rounded-lg overflow-hidden bg-slate-900 border border-white/20 flex flex-col justify-between p-1.5 text-white mt-auto shrink-0 shadow-2xs">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+                <div className="relative h-10 w-full rounded-lg overflow-hidden bg-arte-pizarra-900 border border-arte-luz/20 flex flex-col justify-between p-1.5 text-arte-luz mt-auto shrink-0 shadow-2xs">
+                  <div className="absolute inset-0 bg-gradient-to-t from-arte-sombra/90 via-arte-sombra/50 to-arte-sombra/20" />
                   <div className="relative z-10 flex items-center justify-between">
-                    <span className="size-3 rounded bg-white/20 text-[6px] font-bold flex items-center justify-center">TI</span>
-                    <span className="h-2 w-7 rounded-full bg-emerald-400/30 text-[5px] text-emerald-300 font-bold flex items-center justify-center">ACTIVA</span>
+                    <span className="size-3 rounded bg-arte-luz/20 font-bold flex items-center justify-center"></span>
+                    <span className="h-2 w-7 rounded-full bg-arte-esmeralda-400/30 text-arte-esmeralda-300 font-bold flex items-center justify-center"></span>
                   </div>
                   <div className="relative z-10 flex gap-1">
-                    <div className="h-1.5 flex-1 rounded bg-white/20" />
-                    <div className="h-1.5 flex-1 rounded bg-white/20" />
+                    <div className="h-1.5 flex-1 rounded bg-arte-luz/20" />
+                    <div className="h-1.5 flex-1 rounded bg-arte-luz/20" />
                   </div>
                 </div>
               </button>
@@ -1133,9 +1039,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'banner'}
                 aria-label="Diseño de Área con Hero Banner Fotográfico e imagen de fondo"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'banner'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1158,9 +1064,9 @@ export function UserViewSettings({
                   </span>
                 </div>
                 <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-                  <div className="h-5 w-full bg-slate-800 relative flex items-center justify-between px-1.5 shrink-0">
-                    <div className="size-3 rounded bg-primary text-[6px] text-white flex items-center justify-center font-bold">TI</div>
-                    <div className="h-1.5 w-6 rounded-full bg-white/40" />
+                  <div className="h-5 w-full bg-arte-pizarra-800 relative flex items-center justify-between px-1.5 shrink-0">
+                    <div className="size-3 rounded bg-primary text-arte-luz flex items-center justify-center font-bold"></div>
+                    <div className="h-1.5 w-6 rounded-full bg-arte-luz/40" />
                   </div>
                   <div className="px-1.5 py-0.5 flex items-center justify-between flex-1">
                     <div className="h-1.5 w-10 rounded bg-label/40" />
@@ -1180,9 +1086,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'glass'}
                 aria-label="Diseño de Área Glassmorphism Neón con halo brillante"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'glass'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1207,7 +1113,7 @@ export function UserViewSettings({
                 <div className="h-10 w-full rounded-lg border border-primary/40 bg-primary/10 backdrop-blur-xs flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div className="size-3 rounded bg-primary/40" />
-                    <div className="size-1.5 rounded-full bg-emerald-400" />
+                    <div className="size-1.5 rounded-full bg-arte-esmeralda-400" />
                   </div>
                   <div className="h-2 w-full rounded-md bg-gradient-to-r from-primary to-accent" />
                 </div>
@@ -1224,9 +1130,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCardsArea === 'flotante'}
                 aria-label="Diseño de Área Flotante Inmersiva con cristal translúcido"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoArea
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCardsArea === 'flotante'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1248,15 +1154,15 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="relative h-10 w-full rounded-lg overflow-hidden bg-slate-900 border border-white/20 flex flex-col justify-between p-1.5 text-white mt-auto shrink-0 shadow-2xs">
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+                <div className="relative h-10 w-full rounded-lg overflow-hidden bg-arte-pizarra-900 border border-arte-luz/20 flex flex-col justify-between p-1.5 text-arte-luz mt-auto shrink-0 shadow-2xs">
+                  <div className="absolute inset-0 bg-gradient-to-b from-arte-sombra/60 via-arte-sombra/40 to-arte-sombra/80" />
                   <div className="relative z-10 flex items-center justify-between">
-                    <span className="h-1 w-6 rounded-full bg-white/40" />
-                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                    <span className="h-1 w-6 rounded-full bg-arte-luz/40" />
+                    <span className="size-1.5 rounded-full bg-arte-esmeralda-400" />
                   </div>
-                  <div className="relative z-10 p-0.5 rounded bg-black/70 backdrop-blur-xs border border-white/20 flex items-center justify-between">
-                    <span className="size-2 rounded bg-primary text-[5px] text-white font-bold flex items-center justify-center">TI</span>
-                    <div className="h-1 w-8 rounded bg-white/70" />
+                  <div className="relative z-10 p-0.5 rounded bg-arte-sombra/70 backdrop-blur-xs border border-arte-luz/20 flex items-center justify-between">
+                    <span className="size-2 rounded bg-primary text-arte-luz font-bold flex items-center justify-center"></span>
+                    <div className="h-1 w-8 rounded bg-arte-luz/70" />
                   </div>
                 </div>
               </button>
@@ -1269,20 +1175,20 @@ export function UserViewSettings({
               <div className="shrink-0">
                 <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-panel-border/80">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30">
+                      <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
                       Vista Previa en Vivo
                     </span>
                     <h4 className="text-xs sm:text-sm font-bold text-body-text">Tarjeta de Área Organizativa</h4>
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-superficie border border-panel-border text-[11px] font-bold text-primary-text uppercase">
+                  <span className="px-2.5 py-1 rounded-lg bg-superficie border border-panel-border text-xs font-bold text-primary-text uppercase">
                     {disenoCardsArea}
                   </span>
                 </div>
               </div>
 
-              <div className="rounded-xl p-4 bg-fondo border border-panel-border shadow-xs flex-1 flex items-center justify-center my-3 min-h-[300px]">
-                <div className="w-full max-w-sm h-full max-h-[340px] flex flex-col justify-center">
+              <div className="rounded-xl p-4 bg-fondo border border-panel-border shadow-xs flex-1 flex items-center justify-center my-3 min-h-75">
+                <div className="w-full max-w-sm h-full max-h-85 flex flex-col justify-center">
                   <TarjetaArea
                     area={AREA_PREVIEW_DEMO}
                     conteo={4}
@@ -1294,7 +1200,7 @@ export function UserViewSettings({
                 </div>
               </div>
 
-              <p className="text-[11px] text-label text-center shrink-0">
+              <p className="text-xs text-label text-center shrink-0">
                 Selecciona cualquier estilo en la columna de opciones para ver la transformación al instante.
               </p>
             </div>
@@ -1314,7 +1220,7 @@ export function UserViewSettings({
           }`}
         >
           {esForzadoPlat ? (
-            <div className="flex-1 min-h-[460px] h-full w-full flex flex-col">
+            <div className="flex-1 min-h-115 h-full w-full flex flex-col">
               <PremiumEmptyState
                 role="alert"
                 icono="plataformas"
@@ -1322,7 +1228,7 @@ export function UserViewSettings({
                 badgeTestId="badge-diseno-bloqueado-plataforma"
                 title="Diseño de Tarjetas de Plataforma Bloqueado"
                 message="El administrador ha forzado el diseño corporativo para las tarjetas de plataforma en todo el portal. Las opciones de personalización individual están deshabilitadas."
-                className="w-full h-full flex-1 min-h-[460px] rounded-2xl"
+                className="w-full h-full flex-1 min-h-115 rounded-2xl"
               />
             </div>
           ) : (
@@ -1343,7 +1249,7 @@ export function UserViewSettings({
                 {esForzadoPlat ? (
                   <span
                     data-testid="badge-diseno-bloqueado-plataforma"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-warning/40 bg-warning/10 text-warning-text shrink-0"
                   >
                     <Icono nombre="escudo" tamano="xs" ariaHidden={true} />
                     <span>Bloqueado por Admin</span>
@@ -1354,9 +1260,9 @@ export function UserViewSettings({
               {esForzadoPlat ? (
                 <div
                   role="alert"
-                  className="mt-2.5 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5"
+                  className="mt-2.5 p-3 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-xs flex items-center gap-2.5"
                 >
-                  <Icono nombre="info" tamano="xs" className="text-amber-600 dark:text-amber-400 shrink-0" ariaHidden={true} />
+                  <Icono nombre="info" tamano="xs" className="text-warning-text shrink-0" ariaHidden={true} />
                   <p className="leading-relaxed">
                     El administrador ha forzado el diseño corporativo para las tarjetas de plataforma. Las opciones de personalización individual están deshabilitadas.
                   </p>
@@ -1377,9 +1283,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'duotono'}
                 aria-label="Diseño Duotono Oscuro a sangre estilo ciudades"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'duotono'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1401,12 +1307,12 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="h-10 w-full rounded-lg overflow-hidden border border-purple-500/30 bg-[#0f172a] flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
+                <div className="h-10 w-full rounded-lg overflow-hidden border border-arte-purpura-500/30 bg-arte-pizarra-900 flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
                   <div className="flex items-center justify-between">
-                    <div className="size-3 rounded bg-purple-500" />
-                    <div className="h-1.5 w-12 rounded bg-purple-300/40" />
+                    <div className="size-3 rounded bg-arte-purpura-500" />
+                    <div className="h-1.5 w-12 rounded bg-arte-purpura-300/40" />
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-800 border border-slate-700/50" />
+                  <div className="h-2 w-full rounded-full bg-arte-pizarra-800 border border-arte-pizarra-700/50" />
                 </div>
               </button>
 
@@ -1421,9 +1327,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'enmarcada'}
                 aria-label="Diseño Enmarcada Pastel estilo Heading Here"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'enmarcada'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1445,12 +1351,12 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="h-10 w-full rounded-lg border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-between px-2 mt-auto shrink-0 shadow-2xs">
-                  <div className="size-5 rounded-md bg-emerald-700/60 flex items-center justify-center">
-                    <div className="size-2 rounded bg-white/80" />
+                <div className="h-10 w-full rounded-lg border border-success/30 bg-success/10 flex items-center justify-between px-2 mt-auto shrink-0 shadow-2xs">
+                  <div className="size-5 rounded-md bg-arte-esmeralda-700/60 flex items-center justify-center">
+                    <div className="size-2 rounded bg-arte-luz/80" />
                   </div>
-                  <div className="h-1.5 w-12 rounded bg-emerald-400/40" />
-                  <div className="h-3 w-10 rounded-full bg-slate-900 dark:bg-slate-800" />
+                  <div className="h-1.5 w-12 rounded bg-arte-esmeralda-400/40" />
+                  <div className="h-3 w-10 rounded-full bg-arte-pizarra-900" />
                 </div>
               </button>
 
@@ -1465,9 +1371,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'split'}
                 aria-label="Diseño Split 50/50 Horizontal"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'split'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1490,8 +1396,8 @@ export function UserViewSettings({
                   </span>
                 </div>
                 <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border flex mt-auto shrink-0 shadow-2xs">
-                  <div className="w-1/2 bg-indigo-950 p-1 flex items-center justify-center">
-                    <div className="size-4 rounded bg-primary text-[8px] text-white font-bold flex items-center justify-center">AP</div>
+                  <div className="w-1/2 bg-arte-indigo-950 p-1 flex items-center justify-center">
+                    <div className="size-4 rounded bg-primary text-xs text-arte-luz font-bold flex items-center justify-center">AP</div>
                   </div>
                   <div className="w-1/2 p-1.5 bg-fondo flex flex-col justify-center space-y-1">
                     <div className="h-1.5 w-8 rounded bg-label/40" />
@@ -1511,9 +1417,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'glass'}
                 aria-label="Diseño Glassmorphism Neón"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'glass'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1538,7 +1444,7 @@ export function UserViewSettings({
                 <div className="h-10 w-full rounded-lg border border-primary/40 bg-primary/10 backdrop-blur-xs flex flex-col justify-between p-1.5 mt-auto shrink-0 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div className="size-3 rounded bg-primary/40" />
-                    <div className="size-1.5 rounded-full bg-emerald-400" />
+                    <div className="size-1.5 rounded-full bg-arte-esmeralda-400" />
                   </div>
                   <div className="h-2 w-full rounded-md bg-gradient-to-r from-primary to-accent" />
                 </div>
@@ -1555,9 +1461,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'editorial'}
                 aria-label="Diseño Minimalista Editorial"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'editorial'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1580,11 +1486,11 @@ export function UserViewSettings({
                   </span>
                 </div>
                 <div className="h-10 w-full rounded-lg border border-panel-border bg-fondo flex flex-col justify-between p-1.5 mt-auto shrink-0 relative shadow-2xs">
-                  <span className="absolute top-1 right-2 text-[9px] font-black text-label/25">#01</span>
+                  <span className="absolute top-1 right-2 text-xs font-black text-label/25">#01</span>
                   <div className="h-1.5 w-10 rounded bg-body-text" />
                   <div className="flex justify-between items-center pt-0.5 border-t border-panel-border/60">
                     <div className="h-1 w-6 rounded bg-label/40" />
-                    <span className="text-[8px] font-bold text-primary-text">→</span>
+                    <span className="text-xs font-bold text-primary-text">→</span>
                   </div>
                 </div>
               </button>
@@ -1600,9 +1506,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'estandar'}
                 aria-label="Diseño Estándar con métricas y datos completos"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'estandar'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1644,9 +1550,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'compacta'}
                 aria-label="Diseño Compacto minimalista"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'compacta'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1688,9 +1594,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'horizontal'}
                 aria-label="Diseño Horizontal en fila"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'horizontal'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1714,7 +1620,7 @@ export function UserViewSettings({
                 </div>
                 <div className="h-10 w-full rounded-lg border border-panel-border bg-superficie flex items-center justify-between px-2.5 mt-auto shrink-0 shadow-2xs">
                   <div className="flex gap-1.5 items-center">
-                    <div className="size-4 rounded bg-primary text-[7px] text-white flex items-center justify-center font-bold">AW</div>
+                    <div className="size-4 rounded bg-primary text-xs text-arte-luz flex items-center justify-center font-bold">AW</div>
                     <div className="h-1.5 w-10 rounded bg-label/40" />
                   </div>
                   <div className="h-2.5 w-8 rounded-full bg-primary/50" />
@@ -1732,9 +1638,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'banner'}
                 aria-label="Diseño Hero Banner Fotográfico con cabecera panorámica"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'banner'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1757,9 +1663,9 @@ export function UserViewSettings({
                   </span>
                 </div>
                 <div className="h-10 w-full rounded-lg overflow-hidden border border-panel-border bg-fondo flex flex-col mt-auto shrink-0 shadow-2xs">
-                  <div className="relative h-5 w-full bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 px-1.5 flex items-center justify-between shrink-0">
-                    <div className="size-3 rounded bg-primary text-[6px] text-white font-bold flex items-center justify-center">AW</div>
-                    <div className="size-1.5 rounded-full bg-amber-400" />
+                  <div className="relative h-5 w-full bg-gradient-to-r from-arte-azul-900 via-arte-indigo-950 to-arte-pizarra-900 px-1.5 flex items-center justify-between shrink-0">
+                    <div className="size-3 rounded bg-primary text-arte-luz font-bold flex items-center justify-center"></div>
+                    <div className="size-1.5 rounded-full bg-arte-ambar-400" />
                   </div>
                   <div className="px-1.5 py-0.5 flex items-center justify-between flex-1">
                     <div className="h-1.5 w-10 rounded bg-label/40" />
@@ -1779,9 +1685,9 @@ export function UserViewSettings({
                 role="radio"
                 aria-checked={disenoCards === 'flotante'}
                 aria-label="Diseño Flotante Inmersiva con cristal translúcido sobre fotografía de fondo completa"
-                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-[96px] outline-none ${
+                className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all duration-200 h-full min-h-24 outline-none ${
                   esForzadoPlat
-                    ? 'opacity-60 cursor-not-allowed border-panel-border bg-surface-container/50'
+                    ? 'opacity-atenuada cursor-not-allowed border-panel-border bg-surface-container/50'
                     : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ' +
                       (disenoCards === 'flotante'
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-2'
@@ -1803,15 +1709,15 @@ export function UserViewSettings({
                     ✓
                   </span>
                 </div>
-                <div className="relative h-10 w-full rounded-lg overflow-hidden bg-slate-900 border border-white/20 flex flex-col justify-between p-1.5 text-white mt-auto shrink-0 shadow-2xs">
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+                <div className="relative h-10 w-full rounded-lg overflow-hidden bg-arte-pizarra-900 border border-arte-luz/20 flex flex-col justify-between p-1.5 text-arte-luz mt-auto shrink-0 shadow-2xs">
+                  <div className="absolute inset-0 bg-gradient-to-b from-arte-sombra/60 via-arte-sombra/40 to-arte-sombra/80" />
                   <div className="relative z-10 flex items-center justify-between">
-                    <span className="h-1 w-6 rounded-full bg-white/40" />
-                    <span className="size-1.5 rounded-full bg-amber-400" />
+                    <span className="h-1 w-6 rounded-full bg-arte-luz/40" />
+                    <span className="size-1.5 rounded-full bg-arte-ambar-400" />
                   </div>
-                  <div className="relative z-10 p-0.5 rounded bg-black/70 backdrop-blur-xs border border-white/20 flex items-center justify-between">
-                    <span className="size-2 rounded bg-primary text-[5px] text-white font-bold flex items-center justify-center">AW</span>
-                    <div className="h-1 w-8 rounded bg-white/70" />
+                  <div className="relative z-10 p-0.5 rounded bg-arte-sombra/70 backdrop-blur-xs border border-arte-luz/20 flex items-center justify-between">
+                    <span className="size-2 rounded bg-primary text-arte-luz font-bold flex items-center justify-center"></span>
+                    <div className="h-1 w-8 rounded bg-arte-luz/70" />
                   </div>
                 </div>
               </button>
@@ -1824,20 +1730,20 @@ export function UserViewSettings({
               <div className="shrink-0">
                 <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-panel-border/80">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-black tracking-widest uppercase bg-success/20 text-success-text border border-success/30">
+                      <span className="size-1.5 rounded-full bg-arte-esmeralda-500 animate-pulse" />
                       Vista Previa en Vivo
                     </span>
                     <h4 className="text-xs sm:text-sm font-bold text-body-text">Tarjeta de Plataforma</h4>
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-superficie border border-panel-border text-[11px] font-bold text-primary-text uppercase">
+                  <span className="px-2.5 py-1 rounded-lg bg-superficie border border-panel-border text-xs font-bold text-primary-text uppercase">
                     {disenoCards}
                   </span>
                 </div>
               </div>
 
-              <div className="rounded-xl p-4 bg-fondo border border-panel-border shadow-xs flex-1 flex items-center justify-center my-3 min-h-[300px]">
-                <div className="w-full max-w-sm h-full max-h-[340px] flex flex-col justify-center">
+              <div className="rounded-xl p-4 bg-fondo border border-panel-border shadow-xs flex-1 flex items-center justify-center my-3 min-h-75">
+                <div className="w-full max-w-sm h-full max-h-85 flex flex-col justify-center">
                   <PlatformMockupCard
                     item={itemPreviewDemo}
                     mine={minePreviewDemo}
@@ -1856,7 +1762,7 @@ export function UserViewSettings({
                 </div>
               </div>
 
-              <p className="text-[11px] text-label text-center shrink-0">
+              <p className="text-xs text-label text-center shrink-0">
                 Interactúa con el botón de favorito y de acción en tiempo real sobre la maqueta.
               </p>
             </div>

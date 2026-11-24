@@ -31,7 +31,7 @@ export function PantallaCarga({
     >
       {/* 1. Iluminación ambiental difusa en degradado sutil */}
       <div
-        className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-40 dark:opacity-20 motion-reduce:hidden"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-decoracion motion-reduce:hidden"
         aria-hidden="true"
       >
         <div className="size-96 rounded-full bg-gradient-to-tr from-primary/30 via-brand/20 to-accent/30 blur-3xl" />
