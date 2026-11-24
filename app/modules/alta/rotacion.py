@@ -2,7 +2,8 @@
 
 Reutiliza el flujo de credenciales de FNC-138 (`entrega_credenciales`):
 contraseña generada con la política → Password Modify → Send de Vaultwarden →
-correo con el enlace. La contraseña vive solo en variables locales: no se
+correo con el enlace y el código de acceso del Send (FNC-190; la plantilla
+se elige con `--plantilla`, por omisión `onboarding_aduana`). La contraseña vive solo en variables locales: no se
 imprime, no se registra ni se guarda.
 
 - `motivo_sin_entrega()` se consulta ANTES de tocar LDAP: sin Vaultwarden o
@@ -25,8 +26,8 @@ from app.modules.provisioning.reloj import ahora
 from app.modules.secretos.sends import servicio_de_sends
 from app.modules.secretos.vaultwarden import ErrorDeGestor
 from app.modules.users.entrega_credenciales import (
-    enviar_credenciales, fijar_contrasena_en_directorio, marcar_enviada,
-    marcar_pendiente, url_del_portal)
+    SLUG_ONBOARDING, enviar_credenciales, fijar_contrasena_en_directorio,
+    marcar_enviada, marcar_pendiente, url_del_portal)
 from app.modules.users.models import EntregaCredenciales, ESTADO_PENDIENTES
 from app.modules.users.politica_contrasena import generar
 from app.modules.users.roles import MODULO_AUDITORIA
@@ -37,11 +38,20 @@ MOTIVO_SIN_DIRECTORIO = 'LDAP no está configurado'
 MOTIVO_SIN_NOTIFICACIONES = 'las notificaciones están desactivadas (ENABLE_NOTIFICATIONS)'
 MOTIVO_SIN_BASE_URL = 'BASE_URL no está configurada'
 MOTIVO_SIN_VAULTWARDEN = 'Vaultwarden está deshabilitado o mal configurado'
+DETALLE_DRY_RUN = 'se rotaría la contraseña de LDAP'
+DETALLE_DRY_RUN_A = ('se rotaría la contraseña de LDAP y se enviaría a {correo} '
+                     '(no al correo de la persona)')
 DETALLE_ROTADO = 'contraseña nueva entregada por Send y correo'
 DETALLE_SIN_CAMBIO = 'directorio: {codigo}; la contraseña no cambió'
 DETALLE_PENDIENTE = ('la contraseña cambió en LDAP pero no se entregó ({codigo}); '
                      'queda pendiente para el worker')
 DETALLE_SIN_REGISTRO = 'no se pudo registrar la entrega en la BD'
+
+
+def detalle_dry_run(destinatario=None):
+    """Texto de `--dry-run` para una rotación."""
+    return (DETALLE_DRY_RUN_A.format(correo=destinatario) if destinatario
+            else DETALLE_DRY_RUN)
 
 
 def motivo_sin_entrega():
@@ -59,7 +69,7 @@ def motivo_sin_entrega():
     return None
 
 
-def _entrega_de(cuenta, uid, cfg):
+def _entrega_de(cuenta, uid, cfg, plantilla, destinatario):
     entrega = cuenta.credential_delivery
     if entrega is None:
         entrega = EntregaCredenciales(
@@ -67,14 +77,19 @@ def _entrega_de(cuenta, uid, cfg):
             attempts_count=0, max_attempts=cfg.max_intentos)
         db.session.add(entrega)
     entrega.uid = uid
+    entrega.plantilla = plantilla  # los reintentos del worker la repiten
+    entrega.destinatario = destinatario
     return entrega
 
 
-def rotar(cuenta, uid):
-    """Rota la contraseña de `uid` y la entrega a `cuenta`; devuelve `Linea`."""
+def rotar(cuenta, uid, plantilla=SLUG_ONBOARDING, destinatario=None):
+    """Rota la contraseña de `uid` y la entrega a `cuenta` con el correo
+    `plantilla`; devuelve `Linea`. Con `destinatario` (solo CLI, `--enviar-a`)
+    el correo va a ese buzón y no al de la cuenta; la entrega lo guarda para
+    los reintentos del worker."""
     sujeto = cuenta.email
     cfg = cargar_configuracion()
-    correo, nombre = cuenta.email, cuenta.nombre
+    correo, nombre = destinatario or cuenta.email, cuenta.nombre
     entrega = cuenta.credential_delivery
     send_anterior = entrega.send_id if entrega is not None else None
 
@@ -84,11 +99,11 @@ def rotar(cuenta, uid):
         del contrasena
         return Linea(sujeto, ERROR, DETALLE_SIN_CAMBIO.format(codigo=codigo))
     codigo, send_id = enviar_credenciales(correo, nombre, uid, contrasena,
-                                          send_anterior)
+                                          send_anterior, plantilla)
     del contrasena
 
     try:
-        entrega = _entrega_de(cuenta, uid, cfg)
+        entrega = _entrega_de(cuenta, uid, cfg, plantilla, destinatario)
         momento = ahora()
         if codigo is None:
             marcar_enviada(entrega, send_id, momento,

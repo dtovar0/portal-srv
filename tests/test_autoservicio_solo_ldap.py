@@ -59,7 +59,7 @@ def solo_en_ldap(app, monkeypatch):
                         codigos.__setitem__(correo, codigo) or True)
     monkeypatch.setattr(autoservicio, 'enviar_correo_confirmacion_cambio',
                         lambda *a, **k: True)
-    monkeypatch.setattr(autoservicio, 'sincronizar_jumpserver_o_externos',
+    monkeypatch.setattr(autoservicio, 'sincronizar_contrasena',
                         lambda *a, **k: None)
     monkeypatch.setenv('AUTOSERVICIO_MFA_ENABLED', 'true')
     monkeypatch.setenv('AUTOSERVICIO_MFA_TIPO', 'email')
