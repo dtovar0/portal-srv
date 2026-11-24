@@ -120,6 +120,29 @@ RECHAZOS_DE_POLITICA = (LDAPConstraintViolationResult,
                         LDAPUnwillingToPerformResult)
 
 
+# Oyentes del cambio de contraseña (FNC-190): funciones `(uid, contrasena)` que
+# se llaman tras un Password Modify en `HECHO`. Así `directory/` no conoce las
+# integraciones (JumpServer) que reaccionan al cambio.
+_oyentes_cambio_contrasena = []
+
+
+def registrar_oyente_cambio_contrasena(oyente):
+    """Registra `oyente(uid, contrasena)`; un mismo oyente no se repite."""
+    if oyente not in _oyentes_cambio_contrasena:
+        _oyentes_cambio_contrasena.append(oyente)
+
+
+def _avisar_cambio_contrasena(usuario, contrasena):
+    """Llama a los oyentes con el identificador de la cuenta; ninguno rompe el
+    flujo ni deja la contraseña en el log (solo el tipo del error)."""
+    for oyente in tuple(_oyentes_cambio_contrasena):
+        try:
+            oyente(usuario.identificador, contrasena)
+        except Exception as exc:
+            logger.error('Directorio: falló un oyente del cambio de '
+                         'contraseña (%s).', type(exc).__name__)
+
+
 def _fijar_contrasena(conexion, dn, contrasena):
     """Password Modify (RFC 3062): el servidor cifra la contraseña con su
     esquema (`olcPasswordHash`) y aplica su `ppolicy`.
@@ -440,7 +463,12 @@ class EscritorDirectorio:
                                               motivo)
             return ResultadoEscritura(Resultado.HECHO, dn)
 
-        return self._ejecutar('alta de cuenta', dn, alta_cuenta)
+        resultado = self._ejecutar('alta de cuenta', dn, alta_cuenta)
+        if datos.password and resultado.resultado is Resultado.HECHO:
+            _avisar_cambio_contrasena(
+                UsuarioDirectorio(dn=dn, identificador=datos.identificador),
+                datos.password)
+        return resultado
 
     @staticmethod
     def _retirar_entrada(conexion, dn):
@@ -523,6 +551,9 @@ class EscritorDirectorio:
                                           motivo)
             return ResultadoEscritura(Resultado.HECHO, dn)
 
-        return self._ejecutar('cambio de contraseña', dn, modificar_clave)
+        resultado = self._ejecutar('cambio de contraseña', dn, modificar_clave)
+        if resultado.resultado is Resultado.HECHO:
+            _avisar_cambio_contrasena(usuario, new_password)
+        return resultado
 
     set_password = change_password

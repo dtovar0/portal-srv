@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 3.1 (2026-11-24) |
+| Versión | 3.2 (2026-11-24) |
 | Proveedor | backend (FNC-064; cliente FNC-040, FNC-041; v2: FNC-138) |
 | Consumidores | web (FNC-069; pantalla DIS-019; v2: FNC-139) |
 | Solicitudes | — |
@@ -55,6 +55,13 @@ Lo lee el generador y la validación del formulario web (sin valores fijos en el
 ## `POST /users/<id>/credentials` (retirado, v3)
 - `410 endpoint_retirado` (`use: "PUT /users/<id>"`): la contraseña de una cuenta del directorio la cambia el superadmin en «Editar usuario» ([areas-y-roles.md](areas-y-roles.md) v3).
 - Quedan el alta con Send y el worker de entregas automáticas; `credentials_status` sigue en `ManagedUser`.
+
+## `POST /users/<id>/rotar-contrasena` (v3.2, FNC-190)
+- Solo superadmin (`403` para el resto). Cuentas `sso`/`ldap`; sin cuerpo (cualquier campo → `400 campo_no_permitido`).
+- Genera la contraseña con la política, la fija en LDAP y la entrega por Send con código de 6 dígitos y correo (`credenciales_iniciales`); el reintento es el del worker.
+- Antes de tocar LDAP exige directorio, notificaciones, `BASE_URL` y Vaultwarden: si no, `503` (`directorio_no_disponible`, `notificaciones_desactivadas`, `base_url_no_configurada`, `gestor_no_disponible`) sin cambios.
+- Otros errores: `400 cuenta_no_es_del_directorio` (cuenta local), `404` (no existe), `409 cuenta_no_encontrada_en_directorio`.
+- Respuesta `200 {"status": "success", "entrega": {"estado": "enviadas" | "pendientes"}}`; nunca lleva contraseña, enlace ni código. Auditoría «ADMIN: ROTAR CONTRASEÑA» sin secretos.
 
 ## Errores
 | HTTP | `code` | Mensaje |
@@ -111,3 +118,4 @@ Solo superadmin (resto: 401/403). Fuente única: variables `LDAP_*` (ADR-004); s
 | 2 | 2026-11-18 | **Incompatible**: `password` pasa de prohibido (`400 campo_no_permitido`, P8) a obligatorio; nuevos `GET /users/password-policy`, `POST /users/<id>/credentials`, `credentials_status` y `credentials_sent_at` en `ManagedUser`. Motivo: ADR-008 (onboarding con Send de Vaultwarden), aprobado por el dueño el 2026-11-18. El cliente v1 deja de funcionar sin `password`: FNC-138 (backend) y FNC-139 (web) se integran juntas (FNC-135) |
 | 3 | 2026-11-19 | FNC-161 (pedido del dueño): `POST /users/<id>/credentials` (reenviar) se retira (`410`); su función la cumple el cambio de contraseña de `PUT /users/<id>`. **Incompatible** para quien llamaba la ruta (solo la web, ya ajustada). Decisión del orquestador (pendiente de validar) |
 | 3.1 | 2026-11-24 | FNC-168: la cuenta del portal nace `auth_source="sso"` (vive en LDAP y entra por Authelia); migración 0019 |
+| 3.2 | 2026-11-24 | FNC-190 (**aditivo**): `POST /users/<id>/rotar-contrasena`; el Send de toda entrega exige un código de 6 dígitos que llega en el mismo correo |

@@ -22,6 +22,10 @@ LARGO_UID = 64
 LARGO_SEND_ID = 64
 LARGO_ERROR = 100
 LARGO_RESERVADO_POR = 100
+LARGO_PLANTILLA = 60
+LARGO_DESTINATARIO = 120  # igual que `users.email`
+# Plantilla de correo de la entrega por omisión (FNC-190, migración 0020).
+PLANTILLA_POR_OMISION = 'credenciales_iniciales'
 
 
 class EntregaCredenciales(db.Model):
@@ -50,6 +54,13 @@ class EntregaCredenciales(db.Model):
     send_id = db.Column(db.String(LARGO_SEND_ID), nullable=True)
     last_sent_at = db.Column(db.DateTime, nullable=True)
     last_error = db.Column(db.String(LARGO_ERROR), nullable=True)
+    # Correo sustituto de la entrega (solo `flask alta --enviar-a`); `NULL` = el
+    # de la cuenta. Los reintentos del worker van al mismo lugar (FNC-190).
+    destinatario = db.Column(db.String(LARGO_DESTINATARIO), nullable=True)
+    # Slug de la plantilla del correo: los reintentos usan la misma (FNC-190).
+    plantilla = db.Column(db.String(LARGO_PLANTILLA), nullable=False,
+                          default=PLANTILLA_POR_OMISION,
+                          server_default=PLANTILLA_POR_OMISION)
     created_at = db.Column(db.DateTime, nullable=False, default=ahora)
     updated_at = db.Column(db.DateTime, nullable=False, default=ahora,
                            onupdate=ahora)

@@ -19,21 +19,21 @@ class EntregaFalsa:
     """Registra los Sends creados y borrados y los correos enviados."""
 
     def __init__(self):
-        self.sends = []      # {'id', 'nombre', 'texto', 'enlace'}
+        self.sends = []      # {'id', 'nombre', 'texto', 'enlace', 'codigo'}
         self.borrados = []
         self.correos = []    # {'slug', 'destino', 'contexto'}
         self.error_send = None      # excepción al crear el Send
         self.correo_responde = {'status': 'success'}
         self._n = itertools.count(1)
 
-    def crear(self, nombre, texto, entorno=None):
+    def crear(self, nombre, texto, entorno=None, codigo=None):
         if self.error_send:
             raise self.error_send
         n = next(self._n)
         send = SendCreado(id=f'00000000-0000-4000-8000-{n:012d}',
                           enlace=ENLACE.format(n=n))
         self.sends.append({'id': send.id, 'nombre': nombre, 'texto': texto,
-                           'enlace': send.enlace})
+                           'enlace': send.enlace, 'codigo': codigo})
         return send
 
     def borrar(self, send_id, entorno=None):

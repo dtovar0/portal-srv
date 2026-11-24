@@ -5887,7 +5887,7 @@ Autoservicio de Contraseñas y Sincronización con JumpServer
    - **Cambio Directo con Contraseña Previa**: Si el usuario conoce su contraseña actual (o está expirada/marcada con `pwdReset: TRUE` en LDAP), se valida contra OpenLDAP y se actualiza atómicamente mediante Password Modify (RFC 3062).
    - **Recuperación con Token Temporal**: Si el usuario olvidó su contraseña, se genera un token criptográfico firmado (HMAC-SHA256 con TTL de 15 minutos) enviado por correo corporativo vía SMTP. Al confirmarlo, se actualiza la cuenta en el directorio sin requerir la contraseña anterior.
 3. **Sincronización Inmediata con JumpServer**:
-   En el mismo instante en que el backend de Aduana recibe la nueva contraseña en memoria, invoca el hook de sincronización hacia JumpServer/Vaultwarden (`sincronizar_jumpserver_o_externos`), garantizando que las credenciales para el autologeo a activos y bastiones nunca queden obsoletas ni desfasadas.
+   En el mismo instante en que el backend de Aduana recibe la nueva contraseña en memoria, avisa a JumpServer (`integraciones/jumpserver.py`, oyente de `EscritorDirectorio`, FNC-190: lo mismo en cualquier cambio de contraseña en LDAP), garantizando que las credenciales para el autologeo a activos y bastiones nunca queden obsoletas ni desfasadas.
 4. **Protección Anti-Enumeración y Fuerza Bruta**:
    - La solicitud de recuperación por correo responde siempre de forma genérica para no revelar qué identidades existen en el directorio.
    - Las solicitudes fallidas acumulan eventos en la bitácora de auditoría e interactúan con el mecanismo de bloqueo por IP y cuenta (`bloqueado`).

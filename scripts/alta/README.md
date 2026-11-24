@@ -39,6 +39,8 @@ Columnas: `nombre,correo,rol,areas` y, solo para LDAP, `uid` y `apellido` opcion
 | `--dry-run` | No escribe nada |
 | `--crear-en-ldap` | Crea también la entrada en LDAP con contraseña generada (política vigente) y la entrega por Send de Vaultwarden + correo; la persona queda en el grupo de Authelia de su rol |
 | `--omitir-si-existe-en-ldap` | Si el correo ya está en LDAP no lo crea: solo vincula la cuenta del portal (`sso`) y la deja en el grupo de su rol. Sin el flag es un **conflicto** |
+| `--plantilla` | Plantilla del correo de la rotación: `onboarding_aduana` (por omisión) o `credenciales_iniciales` |
+| `--enviar-a CORREO`, `--si` | Ver «Probar el envío con otro destinatario» (exige `--rotar-contrasena`) |
 | `--rotar-contrasena` | Rota la contraseña de LDAP de las personas que **ya existían** en LDAP (las creadas en la corrida ya recibieron una nueva) |
 
 `--omitir-si-existe-en-ldap` y `--rotar-contrasena` exigen `--crear-en-ldap`. Sin `--crear-en-ldap` no se toca LDAP (cuenta del portal con el origen que fija la instalación).
@@ -53,6 +55,9 @@ Importa a Aduana las personas de uno o más grupos de LDAP. Crea cuentas `sso`, 
 | `--omitir-existentes` (por omisión) / `--actualizar-rol` | Cuenta ya existente en el portal: se omite, o se le ajusta el rol (y sale del grupo del otro rol) |
 | `--sin-grupo-del-portal` | No agrega a las personas al grupo de Authelia de su rol (`OIDC_GROUP_USER` u `OIDC_GROUP_AREA_ADMIN`). Por omisión **sí** se agregan; sin eso Authelia las rechaza al entrar |
 | `--rotar-contrasena` | Rota la contraseña de LDAP de **todas** las personas procesadas en la corrida (nuevas y ya existentes en el portal) |
+| `--solo UID` (repetible) | Limita la corrida a esas personas del grupo; las demás salen «omitido: fuera de --solo». Sirve para probar con una persona sin crear grupos |
+| `--plantilla` | Plantilla del correo de la rotación: `onboarding_aduana` (por omisión) o `credenciales_iniciales` |
+| `--enviar-a CORREO`, `--si` | Ver «Probar el envío con otro destinatario» (exige `--rotar-contrasena`) |
 | `--dry-run` | No escribe nada («se agregaría a …», «se rotaría») |
 
 Reglas:
@@ -72,3 +77,14 @@ Una línea por persona o fila (`CREADO`, `ACTUALIZADO`, `ROTADO`, `OMITIDO`, `CO
 ## Límites
 - Máximo 500 filas por CSV (el límite de la importación masiva); CSV en UTF-8 con encabezados.
 - Sin variables nuevas: se usan las de LDAP (`LDAP_*`), grupos (`OIDC_GROUP_*`), política de contraseña (`PASSWORD_POLICY_*`), correo (`ENABLE_NOTIFICATIONS`), `BASE_URL` y Vaultwarden.
+
+## Probar el envío con otro destinatario (`--enviar-a`)
+Solo CLI (la API y el portal no lo exponen). Con `--rotar-contrasena`, el correo con el enlace del Send y su código de 6 dígitos va a `CORREO` en lugar del `mail` de la persona; el nombre y el usuario del cuerpo siguen siendo los de la persona.
+
+```bash
+./scripts/alta/alta.sh migrar-ldap --grupo <cn> --solo <uid> --rotar-contrasena --enviar-a yo@empresa --dry-run
+./scripts/alta/alta.sh migrar-ldap --grupo <cn> --solo <uid> --rotar-contrasena --enviar-a yo@empresa
+```
+- **La contraseña REAL de la persona en LDAP cambia** (y se sincroniza JumpServer); la persona no recibe el correo. El comando lo advierte y pide `¿Continuar? [s/N]`; `--si` omite la pregunta y `--dry-run` no escribe («se enviaría a …»).
+- El destinatario queda en la entrega: los reintentos del worker van al mismo buzón. Una rotación posterior desde el portal vuelve al correo de la cuenta.
+- Auditoría por entrega: «CREDENCIALES REDIRIGIDAS: <uid> → <correo>» (sin secretos).

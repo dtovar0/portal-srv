@@ -12,7 +12,9 @@ módulos de una responsabilidad (se re-exportan aquí los nombres públicos):
 - `autoservicio_config`: variables de entorno, política y configuración.
 - `autoservicio_correo`: SMTP y los tres correos.
 - `autoservicio_mfa`: tokens firmados, código MFA y TOTP.
-- `autoservicio_externos`: sincronización con JumpServer.
+- JumpServer (FNC-190): la sincronización de contraseñas de LDAP la dispara
+  el escritor del directorio; aquí solo se llama para cuentas locales
+  (`integraciones/jumpserver.py`).
 - `autoservicio_cuentas`: cuenta del portal (FNC-168).
 
 Reglas:
@@ -37,7 +39,7 @@ from app.modules.auth.autoservicio_cuentas import (cuenta_dada_de_alta,
                                                   cuenta_local,
                                                   sincronizar_cuenta_local)
 from app.modules.auth.autoservicio_errores import ErrorAutoservicio
-from app.modules.auth.autoservicio_externos import sincronizar_jumpserver_o_externos
+from app.modules.integraciones.jumpserver import sincronizar_contrasena
 from app.modules.auth.autoservicio_mfa import (  # noqa: F401 (re-exportados)
     SALT_MFA, SALT_RECUPERACION, TOKEN_MAX_AGE_SEGUNDOS,
     generar_token_recuperacion, solicitar_codigo_mfa, validar_desafio_mfa,
@@ -105,8 +107,6 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
                 if not resultado.exito:
                     raise ErrorAutoservicio(f'El directorio no pudo aplicar la nueva contraseña ({resultado.motivo or "error"}).', 500)
 
-                # Hook de sincronización JumpServer
-                sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
 
                 # Solo una cuenta local guarda la contraseña en la BD (FNC-168).
                 sincronizar_cuenta_local(identificador, nueva_contrasena)
@@ -132,7 +132,7 @@ def cambiar_contrasena(identificador, contrasena_actual, nueva_contrasena, mfa_c
     if user and user.password_hash and user.check_password(contrasena_actual):
         user.set_password(nueva_contrasena)
         db.session.commit()
-        sincronizar_jumpserver_o_externos(user.email, nueva_contrasena)
+        sincronizar_contrasena(user.email, nueva_contrasena)
 
         # Notificación por correo confirmando la actualización
         enviar_correo_confirmacion_cambio(user.email, nombre=user.nombre)
@@ -275,7 +275,6 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
                             correo_objetivo, persona.dn, resultado.exito, resultado.motivo)
                 if not resultado.exito:
                     raise ErrorAutoservicio(f'El directorio no pudo actualizar la contraseña ({resultado.motivo or "error"}).', 500)
-                sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
 
                 # Solo una cuenta local guarda la contraseña en la BD (FNC-168).
                 sincronizar_cuenta_local(correo_objetivo, nueva_contrasena)
@@ -298,7 +297,7 @@ def restablecer_con_token(correo, token, nueva_contrasena, mfa_code=None, challe
     if user:
         user.set_password(nueva_contrasena)
         db.session.commit()
-        sincronizar_jumpserver_o_externos(user.email, nueva_contrasena)
+        sincronizar_contrasena(user.email, nueva_contrasena)
 
         # Notificación por correo confirmando el restablecimiento
         enviar_correo_confirmacion_cambio(correo_objetivo, nombre=user.nombre)
@@ -356,7 +355,6 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
                 if not resultado.exito:
                     raise ErrorAutoservicio(f'El directorio no pudo aplicar la nueva contraseña ({resultado.motivo or "error"}).', 500)
 
-                sincronizar_jumpserver_o_externos(persona.identificador, nueva_contrasena)
 
                 # Solo una cuenta local guarda la contraseña en la BD (FNC-168).
                 sincronizar_cuenta_local(identificador, nueva_contrasena)
@@ -382,7 +380,7 @@ def restablecer_directo_mfa(identificador, nueva_contrasena, mfa_code, challenge
     if user:
         user.set_password(nueva_contrasena)
         db.session.commit()
-        sincronizar_jumpserver_o_externos(user.email, nueva_contrasena)
+        sincronizar_contrasena(user.email, nueva_contrasena)
         enviar_correo_confirmacion_cambio(user.email, nombre=user.nombre)
         add_audit_log('AUTOSERVICIO: PASSWORD RESTABLECIDO POR USUARIO (MFA)', module='Autoservicio', status='success',
                       target=user.email, user_override=identificador,

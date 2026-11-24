@@ -70,7 +70,7 @@ def ldap_falso(monkeypatch):
     monkeypatch.setattr(autoservicio, 'EscritorDirectorio', EscritorFalso)
     monkeypatch.setattr(autoservicio, 'enviar_correo_confirmacion_cambio',
                         lambda *a, **k: True)
-    monkeypatch.setattr(autoservicio, 'sincronizar_jumpserver_o_externos',
+    monkeypatch.setattr(autoservicio, 'sincronizar_contrasena',
                         lambda *a, **k: None)
     return cambios
 
