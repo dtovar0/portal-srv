@@ -102,9 +102,9 @@ def validar_otorgamiento(actor, usuario, plataforma, origen, regreso=False):
         if actor is not None or (not regreso and not
                                  _administra_area(usuario, plataforma.area_id)):
             raise errores.fuera_de_alcance()
-        # FNC-189: el regreso no exige ser miembro del área (decisión del
-        # dueño: quien deja de ser admin pasa a usuario). Solo lo hace el
-        # sistema (`actor is None`), nunca una persona.
+        if regreso and plataforma.area_id not in {
+                a.id for a in (usuario.areas or [])}:
+            raise errores.fuera_de_alcance()  # P1: debe ser del área
     else:
         _validar_alcance_del_actor(actor, usuario, plataforma)
     if is_admin(usuario):
