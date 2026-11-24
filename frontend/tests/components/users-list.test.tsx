@@ -31,7 +31,7 @@ vi.mock('@/components/session-provider', () => ({
   }),
 }));
 
-import { ApiError, api } from '@/lib/api';
+import { api } from '@/lib/api';
 import { usersApi } from '@/lib/access/users';
 import { UsersList } from '@/components/users-list';
 

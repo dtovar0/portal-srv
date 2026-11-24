@@ -8,7 +8,6 @@
  * el cajón móvil la sustituye.
  */
 
-import { Icono } from '../icono';
 import type { Session } from '@/lib/types';
 import { MenuUsuario } from './menu-usuario';
 import { NavPrincipal } from './nav-principal';

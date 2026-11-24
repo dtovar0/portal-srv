@@ -36,6 +36,9 @@ export default function RootLayout({
         {/* Tipografía Corporativa Oficial de Aduana (Montserrat, Inter, JetBrains Mono - §04) */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* El layout raíz del App Router aplica a todas las páginas: la regla
+            no-page-custom-font es para `pages/` y aquí es un falso positivo. */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap"
           rel="stylesheet"
