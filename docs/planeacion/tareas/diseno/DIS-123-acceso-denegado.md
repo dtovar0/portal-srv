@@ -22,3 +22,11 @@
 
 ## Pruebas
 - `tests/components/acceso-denegado-view.test.tsx` (4, nuevas). Vitest 3433/3433; tsc, lint y build en 0.
+
+## Accesibilidad (medido con la fórmula WCAG; auditor-accesibilidad cortado por límite de uso)
+| Elemento | Claro | Oscuro |
+|---|---|---|
+| Etiqueta `peligro-texto` / `peligro-tenue` | 5.61:1 | 7.68:1 |
+| `texto-secundario` / `superficie` | 7.69:1 | 5.83:1 |
+| Botón `texto-sobre-aviso` / `aduana-cyan` | 7.53:1 | 7.53:1 |
+- Foto decorativa `alt=""`; estado con `aria-live`; área táctil cubierta por `tests/accesibilidad` (en verde).
