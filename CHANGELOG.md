@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Usuarios: «Hacer admin»/«Quitar admin» en cuentas del directorio mueven primero el grupo de Authelia en LDAP (`app-aduana-users` ↔ `app-aduana-admins`); si no se puede, el rol no cambia y se responde `503 grupo_no_actualizado` / `503 directorio_no_disponible` / `409 cuenta_no_encontrada_en_directorio` (antes cambiaba el rol y el siguiente login lo revertía). `sincronizar_grupo_de_rol` ya revisa cada resultado de LDAP (antes solo excepciones) y no deja a nadie en ambos grupos (FNC-184, 2026-11-24).
 - Web: login simplificado: logo, título, botón de Authelia y una sola línea de ayuda («¿Olvidaste o caducó tu contraseña?» · «Portal de Authelia»); se quitan la nota SSO, la caja del autoservicio, el separador y el lema del pie; «Conoce Aduana» queda solo con la portada activa (DIS-121, 2026-11-24).
 - Autoservicio (regla de negocio): solo quien tiene cuenta activa en el portal puede cambiar o recuperar su contraseña de LDAP; quien existe solo en LDAP no recibe código ni enlace (respuesta genérica) y el cambio se rechaza con `403` sin tocar LDAP (FNC-181, 2026-11-24).
 - Autoservicio: si no se puede restablecer porque la cuenta del portal no está en LDAP, el mensaje lo dice (`404`, «Tu cuenta no está en el directorio corporativo») o avisa que LDAP no está configurado (`503`), en lugar del genérico «No se encontró la cuenta» (FNC-179, 2026-11-24).
