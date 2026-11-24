@@ -20,7 +20,8 @@ from app.modules.auth.autoservicio_config import (LOGGER_AUTOSERVICIO,
                                                   clave_secreta, mfa_habilitado,
                                                   tiempo_expiracion_mfa, tipo_mfa)
 from app.modules.auth.autoservicio_correo import enviar_correo_mfa
-from app.modules.auth.autoservicio_cuentas import cuenta_del_portal
+from app.modules.auth.autoservicio_cuentas import (cuenta_dada_de_alta,
+                                                  cuenta_del_portal)
 from app.modules.auth.autoservicio_errores import ErrorAutoservicio
 from app.modules.auth.limite_intentos import bloqueado
 from app.modules.directory.configuracion import directorio_activo
@@ -98,6 +99,11 @@ def solicitar_codigo_mfa(identificador):
         raise ErrorAutoservicio('Has superado el límite de intentos. Espera unos minutos.', 429)
 
     correo, nombre = correo_de_la_cuenta(identificador)
+
+    # FNC-181: solo cuentas dadas de alta (y activas) en el portal.
+    if correo and cuenta_dada_de_alta(correo, identificador) is None:
+        logger.info("Autoservicio MFA: la persona no está dada de alta en el portal; no se envía código")
+        correo = None
 
     # Si no se encontró, responder como si se enviara (anti-enumeración)
     if not correo:
