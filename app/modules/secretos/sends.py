@@ -12,6 +12,13 @@ Dos modos, elegibles con `VAULTWARDEN_SEND_MODO` (decisión 10 del ADR-008):
   (nunca por argumentos: se verían en la lista de procesos) y la sesión solo
   se pasa en el entorno del proceso hijo, junto con un entorno mínimo.
 
+Código de acceso (FNC-190): con `codigo`, el Send exige ese código de
+`LARGO_CODIGO_SEND` dígitos para abrirse (quien da por casualidad con el enlace
+no puede leerlo). En `api` va como `password` (`cifrado.clave_de_acceso_send`);
+en `bw` va en claro en el JSON de la entrada estándar y la CLI lo procesa
+(`bw send create` acepta `password`, como el campo de `bw send template`).
+`codigo_de_acceso()` lo genera con `secrets`; nunca se registra ni se guarda.
+
 Reglas comunes: ningún valor (texto, llave, sesión, enlace) aparece en `repr`,
 errores ni logs; un fallo transitorio es `GestorCaido` y uno permanente
 `GestorMalConfigurado` (o `SendRechazado`, con su `motivo`). Borrar es
@@ -23,6 +30,8 @@ from urllib.parse import urlsplit
 import logging
 import os
 import re
+import secrets
+import string
 import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -54,6 +63,9 @@ MARCAS_POLITICA_SEND = ('policy', 'política')
 FORMATO_FECHA = '%Y-%m-%dT%H:%M:%S.000Z'
 MARCA_ENLACE_SEND = '#/send/'
 ESQUEMA_ENLACE = 'https://'
+
+# Código de acceso de un Send: dígitos con `secrets`, uno nuevo por cada Send.
+LARGO_CODIGO_SEND = 6
 
 TIEMPO_ESPERA_BW_SEGUNDOS = 30
 # Entorno mínimo del proceso `bw`: nada más del entorno del portal (que tiene
@@ -91,6 +103,12 @@ class SendCreado:
         return repr(self)
 
 
+def codigo_de_acceso():
+    """Código numérico de `LARGO_CODIGO_SEND` dígitos (con ceros a la izquierda)."""
+    return ''.join(secrets.choice(string.digits)
+                   for _ in range(LARGO_CODIGO_SEND))
+
+
 def _fecha(momento):
     return momento.strftime(FORMATO_FECHA)
 
@@ -106,10 +124,12 @@ def _b64_url(datos):
     return base64.urlsafe_b64encode(datos).rstrip(b'=').decode()
 
 
-def construir_send(nombre, texto, clave_usuario, cfg, ahora=None):
+def construir_send(nombre, texto, clave_usuario, cfg, ahora=None,
+                   codigo=None):
     """`(cuerpo, material)`: el JSON de `POST /api/sends` con `name` y
     `text.text` cifrados con la llave derivada del Send, y la llave del Send
-    (`key`) cifrada con la clave de usuario. `material` va al enlace."""
+    (`key`) cifrada con la clave de usuario. `material` va al enlace. Con
+    `codigo`, agrega `password` (`cifrado.clave_de_acceso_send`)."""
     material = cifrado.material_de_send()
     clave_send = cifrado.derivar_clave_send(material)
     expiracion, borrado = fechas_del_send(cfg, ahora)
@@ -126,6 +146,8 @@ def construir_send(nombre, texto, clave_usuario, cfg, ahora=None):
         'disabled': False,
         'hideEmail': True,
     }
+    if codigo:
+        cuerpo['password'] = cifrado.clave_de_acceso_send(codigo, material)
     return cuerpo, material
 
 
@@ -195,7 +217,7 @@ class SendsPorCli:
         raise SendRechazado(f'bw: {operacion} falló (código '
                             f'{proceso.returncode}).')
 
-    def crear_texto(self, nombre, texto, ahora=None):
+    def crear_texto(self, nombre, texto, ahora=None, codigo=None):
         cfg = self._cfg
         expiracion, borrado = fechas_del_send(cfg, ahora)
         envio = {'type': TIPO_SEND_TEXTO, 'name': nombre, 'notes': None,
@@ -203,6 +225,8 @@ class SendsPorCli:
                  'maxAccessCount': cfg.max_aperturas,
                  'expirationDate': expiracion, 'deletionDate': borrado,
                  'disabled': False, 'hideEmail': True}
+        if codigo:
+            envio['password'] = codigo
         codificado = base64.b64encode(json.dumps(envio).encode()).decode()
         proceso = self._correr(['send', 'create'], entrada=codificado)
         if proceso.returncode != 0:
@@ -252,10 +276,10 @@ class SendsPorApi:
     def __repr__(self):
         return '<SendsPorApi>'
 
-    def crear_texto(self, nombre, texto, ahora=None):
+    def crear_texto(self, nombre, texto, ahora=None, codigo=None):
         sesion = self._cliente.sesion_de_usuario()
         cuerpo, material = construir_send(nombre, texto, sesion.clave_usuario,
-                                          self._cfg, ahora)
+                                          self._cfg, ahora, codigo)
         respuesta = self._cliente.pedir_autenticado(
             'POST', RUTA_SENDS, json.dumps(cuerpo).encode())
         self._validar_creacion(respuesta)
@@ -310,13 +334,15 @@ def servicio_de_sends(entorno=None):
     return SendsPorApi(cfg, cliente_del_entorno(entorno), base)
 
 
-def crear_send_texto(nombre, texto, entorno=None):
+def crear_send_texto(nombre, texto, entorno=None, codigo=None):
     """Crea un Send de texto oculto y devuelve su `SendCreado`.
+
+    Con `codigo`, el Send exige ese código para abrirse (nunca se registra).
 
     Lanza `GestorCaido` (transitorio) o `GestorMalConfigurado` (permanente;
     `SendRechazado` lleva `motivo`).
     """
-    return servicio_de_sends(entorno).crear_texto(nombre, texto)
+    return servicio_de_sends(entorno).crear_texto(nombre, texto, codigo=codigo)
 
 
 def borrar_send(send_id, entorno=None):
@@ -325,5 +351,6 @@ def borrar_send(send_id, entorno=None):
 
 
 __all__ = ('ErrorDeGestor', 'SendCreado', 'SendRechazado', 'SendsPorApi',
-           'SendsPorCli', 'borrar_send', 'crear_send_texto',
+           'SendsPorCli', 'borrar_send', 'codigo_de_acceso',
+           'crear_send_texto',
            'servicio_de_sends')

@@ -22,6 +22,14 @@ Cifrado (FNC-136, Sends): `cifrar_simetrico` produce el mismo tipo 2 y
 `derivar_clave_send` la llave de un Send (16 bytes aleatorios → HKDF-SHA256 con
 sal `bitwarden-send` e info `send` → 64 bytes).
 
+Código de acceso de un Send (FNC-190): `clave_de_acceso_send` calcula el campo
+`password` como el cliente oficial de Bitwarden (`SendService.encrypt` en
+`bitwarden/clients`, `libs/common/src/tools/send/services/send.service.ts`):
+`base64(PBKDF2-HMAC-SHA256(código, sal = material de la llave del Send,
+SEND_KDF_ITERATIONS = 100000, 32 bytes))`. El servidor lo vuelve a derivar
+(Vaultwarden, `Send::set_password`); quien abre el enlace calcula el mismo
+valor con el material que lleva el fragmento `#` del enlace.
+
 Ninguna clave aparece en `repr` ni en el texto de los errores.
 """
 import base64
@@ -65,9 +73,14 @@ KIB_POR_MIB = 1024
 LARGO_MATERIAL_SEND = 16
 SAL_SEND = b'bitwarden-send'
 INFO_SEND = b'send'
+# Código de acceso de un Send: iteraciones de PBKDF2 y largo del hash (bytes);
+# son los del cliente oficial, no se ajustan.
+ITERACIONES_CODIGO_SEND = 100_000
+LARGO_HASH_CODIGO_SEND = 32
 INFO_ENC = b'enc'
 INFO_MAC = b'mac'
 CODIFICACION = 'utf-8'
+CODIGO_TEXTO = CODIFICACION
 
 
 class ErrorDeCifrado(Exception):
@@ -237,3 +250,16 @@ def derivar_clave_send(material):
     return ClaveSimetrica.desde_bytes(HKDF(
         algorithm=hashes.SHA256(), length=LARGO_CLAVE_SIMETRICA,
         salt=SAL_SEND, info=INFO_SEND).derive(material))
+
+
+def clave_de_acceso_send(codigo, material):
+    """Campo `password` de un Send con código de acceso (FNC-190).
+
+    `base64(PBKDF2-HMAC-SHA256(código, material, 100000, 32))`; `material` son
+    los 16 bytes de la llave del Send (`material_de_send()`).
+    """
+    if len(material) != LARGO_MATERIAL_SEND:
+        raise ErrorDeCifrado('Largo de llave de Send inválido.')
+    return base64.b64encode(hashlib.pbkdf2_hmac(
+        'sha256', codigo.encode(CODIGO_TEXTO), material,
+        ITERACIONES_CODIGO_SEND, LARGO_HASH_CODIGO_SEND)).decode()

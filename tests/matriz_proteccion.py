@@ -457,6 +457,10 @@ CASOS = (
     Caso('POST', f'{A}/users/<int:user_id>/credentials',
          _objetivo('/credentials'), solo_superadmin(410), _json({}),
          nota='FNC-161: retirado, responde 410 (la protección por rol se conserva)'),
+    Caso('POST', f'{A}/users/<int:user_id>/rotar-contrasena',
+         _objetivo('/rotar-contrasena'), solo_superadmin(400), _sin_cuerpo,
+         nota='FNC-190: solo superadmin; el objetivo de la matriz es una '
+              'cuenta local, así que el superadmin recibe 400 sin tocar nada'),
     Caso('PUT', f'{A}/me/preferences', _fija(f'{A}/me/preferences'),
          con_sesion(), _json({'tour_enabled': False})),
     Caso('GET', f'{A}/users/inactive', _fija(f'{A}/users/inactive'),
