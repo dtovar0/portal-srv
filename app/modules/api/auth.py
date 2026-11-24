@@ -58,6 +58,12 @@ def _abrir_sesion(cuenta):
     return login_user(cuenta, remember=False)
 
 
+# Marca por omisión de `GET /auth/context` (las variables la reemplazan).
+NOMBRE_APP_POR_DEFECTO = 'aduana'
+TITULO_APP_POR_DEFECTO = 'Aduana'
+CORREO_SOPORTE_POR_DEFECTO = 'aduana-app@vivaro.com'
+
+
 def _volver_a_entrada(codigo):
     """Redirige a la pantalla de acceso con un código sin detalle."""
     return redirect(f'{RUTA_ENTRADA}?error={codigo}')
@@ -66,7 +72,6 @@ def _volver_a_entrada(codigo):
 @auth_api_bp.route('/context')
 def context():
     """Qué ofrecer en la pantalla de acceso. El frontend lo consulta antes de pintarla."""
-    import os
     cfg_oidc = oidc.configuracion()
     authelia_url = (os.getenv('AUTHELIA_URL') or os.getenv('AUTHELIA_SSO_URL') or
                     (cfg_oidc.issuer if cfg_oidc else None) or
@@ -79,10 +84,14 @@ def context():
         # Authelia apagado (FNC-158): `/login` muestra usuario y contraseña (solo cuentas locales).
         'local_login': login_local_por_oidc_apagado(),
         'authelia_url': authelia_url,
-        'app_name': os.getenv('APP_NAME') or 'aduana',
-        'app_title': os.getenv('APP_TITLE') or os.getenv('NEXT_PUBLIC_APP_TITLE') or 'Aduana',
+        # Marca del portal (FNC-168: valores por omisión con nombre).
+        'app_name': os.getenv('APP_NAME') or NOMBRE_APP_POR_DEFECTO,
+        'app_title': (os.getenv('APP_TITLE') or os.getenv('NEXT_PUBLIC_APP_TITLE')
+                      or TITULO_APP_POR_DEFECTO),
         'domain': os.getenv('DOMAIN') or os.getenv('NEXT_PUBLIC_DOMAIN') or '',
-        'support_email': os.getenv('SUPPORT_EMAIL') or os.getenv('NEXT_PUBLIC_SUPPORT_EMAIL') or 'aduana-app@vivaro.com',
+        'support_email': (os.getenv('SUPPORT_EMAIL')
+                          or os.getenv('NEXT_PUBLIC_SUPPORT_EMAIL')
+                          or CORREO_SOPORTE_POR_DEFECTO),
     })
 
 
@@ -315,9 +324,10 @@ def autoservicio_solicitar_recuperacion():
     from app.modules.auth.autoservicio import solicitar_recuperacion, ErrorAutoservicio
     data = request.get_json(silent=True) or {}
     correo = (data.get('email') or '').strip()
-    base_url = (request.host_url or os.getenv('BASE_URL') or '').rstrip('/')
+    # El enlace sale solo de `BASE_URL`, nunca del `Host` de la petición
+    # (FNC-168: evita envenenar el enlace de recuperación; como FNC-141).
     try:
-        res = solicitar_recuperacion(correo, base_url=base_url)
+        res = solicitar_recuperacion(correo)
         return jsonify(res), 200
     except ErrorAutoservicio as err:
         return jsonify({'status': 'error', 'message': err.mensaje}), err.codigo_http

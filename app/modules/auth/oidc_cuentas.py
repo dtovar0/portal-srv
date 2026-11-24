@@ -20,10 +20,11 @@ from app import db
 from app.authz import ROLE_ADMIN, ROLE_AREA_ADMIN, ROLE_USER
 from app.modules.auth.models import User
 from app.modules.auth.oidc import ERROR_CUENTA, ERROR_DENEGADO, ErrorOidc, Identidad
-from app.modules.auth.services import avisar_bloqueo, motivo_de_bloqueo
+from app.modules.auth.services import (ORIGEN_SSO, avisar_bloqueo,
+                                       motivo_de_bloqueo)
 from app.modules.users.roles import cambiar_rol
 
-ORIGEN_OIDC = 'sso'
+ORIGEN_OIDC = ORIGEN_SSO
 MOTIVO_OTRO_SUB = 'correo_vinculado_a_otra_identidad'
 
 VAR_GRUPO_SUPERADMIN = 'OIDC_GROUP_SUPERADMIN'

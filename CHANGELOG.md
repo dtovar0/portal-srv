@@ -6,6 +6,10 @@
 ## [Sin publicar]
 
 ### Corregido
+- Autoservicio: cambiar o restablecer la contraseña (con enlace o con MFA) ya no copia la contraseña como hash local a cuentas del directorio (`sso`/`ldap`); ese hash las bloqueaba al entrar por Authelia (`cuenta_local_en_conflicto`). La contraseña cambia solo en LDAP; la cuenta `local` se sigue sincronizando. La búsqueda local es exacta (un `%` ya no funciona como comodín). El enlace de recuperación sale solo de `BASE_URL`, nunca de la cabecera `Host` (evita envenenar el enlace), con la consulta codificada. Las 8 rutas de autoservicio entran en la matriz de protección (FNC-168, 2026-11-24).
+
+### Cambiado
+- Usuarios: las cuentas creadas desde el portal nacen `auth_source='sso'` (viven en LDAP y entran por Authelia); la migración 0019 convierte las `ldap` existentes y quita el hash local de las cuentas `sso` (FNC-168, 2026-11-24).
 - Web: «Editar usuario» muestra el campo Contraseña (con la política) también para cuentas `sso` cuando edita el superadmin. `tsc` sin errores (prueba `platforms-shell` desalineada con `Session`, `PlatformsSidebarView` y `CatalogItem`) y lint en 0 errores y 0 advertencias (imports, variables y props sin uso; `any` en pruebas) (FNC-166, 2026-11-24).
 - Usuarios: el superadmin ya puede cambiar desde «Editar usuario» la contraseña de las cuentas creadas al entrar por Authelia (`auth_source='sso'`), que viven en `LDAP_USERS_BASE_DN`; antes respondía `400 campo_no_permitido`. Se cambia en OpenLDAP con la política y usando el DN real encontrado por correo (FNC-165, 2026-11-24).
 

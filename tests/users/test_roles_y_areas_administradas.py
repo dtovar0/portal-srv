@@ -101,7 +101,7 @@ def test_el_servidor_fija_el_origen(escena, como):
     respuesta = como(escena['admin_a']).post(f'{A}/users', json={
         'email': 'nuevo@pruebas.local', 'area_ids': [escena['A']]})
     assert respuesta.status_code == 201
-    assert _cuenta(respuesta.get_json()['id']).auth_source == 'ldap'
+    assert _cuenta(respuesta.get_json()['id']).auth_source == 'sso'
 
 
 @pytest.mark.parametrize('actor,rol', [
