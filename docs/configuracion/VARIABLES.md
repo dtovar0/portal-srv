@@ -204,6 +204,7 @@ La versión inicial de este registro (estructura genérica) listaba `APP_ENV`, `
 
 | Constante | Propósito | Valor | Unidad | Dónde se define | Alta (tarea, fecha) | Estado |
 |---|---|---|---|---|---|---|
+| `VERSION_ICONOS` | Versión en la URL del favicon y los íconos para invalidar la caché del navegador; cambiarla al cambiar los íconos | `2026-11-24` | texto | `frontend/src/app/layout.tsx` | DIS-122, 2026-11-24 | Vigente |
 | `PERMANENT_SESSION_LIFETIME` | Duración de la sesión | 7 | días | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
 | `SESSION_COOKIE_NAME` | Nombre de la cookie | `nexus_session` | — | `app/__init__.py` | FNC-001, 2026-10-13 | Vigente |
 | `NODE_MAJOR` | Node LTS que instala `install.sh` | `22` | versión mayor | `deploy/preflight.sh`, `deploy/install.sh` | FNC-001, 2026-10-13 | Vigente |
