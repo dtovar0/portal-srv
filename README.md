@@ -64,6 +64,11 @@ venv/bin/flask --app run:app provisioning worker   # terminal 3: worker (opciona
 - Entrar sin Authelia: [ENTORNOS.md](docs/operacion/ENTORNOS.md) § «Entrar en local sin Authelia».
 - Más detalle: [backend](docs/backend/README.md) §6 y [frontend](docs/frontend/README.md) §7.
 
+## Lineamientos en cada commit (pre-commit)
+- Una vez por clon: `git config core.hooksPath .githooks`.
+- `.githooks/pre-commit` ejecuta `scripts/lineamientos/precommit.py`: rechaza estilos inline, colores literales, IPs, llaves privadas, archivos de secretos y commits en `main`/`staging`/`develop` o en HEAD desacoplado. Revisa solo las líneas agregadas.
+- Archivos generados o de terceros: `.claude/lineamientos-ignorar`. Las reglas son copia de `~/.claude/hooks/lineamientos/` (actualizar copiando de nuevo).
+
 ## Pruebas
 
 | Qué | Comando |

@@ -6,6 +6,7 @@
 ## [Sin publicar]
 
 ### Corregido
+- Controles: pre-commit para personas con las mismas reglas del hook de Claude (`.githooks/pre-commit` → `scripts/lineamientos/precommit.py`); `validar_proyecto.py` deja de avisar por su falta (FNC-173, 2026-11-24).
 - Web: las 46 pruebas de `tests/accesibilidad` que fallaban pasan: texto de 12 px como mínimo (adiós `text-[5..11px]`), controles de 44 px, colores de las tarjetas de diseño y vistas previas por tokens `--color-arte-*`, medidas por la escala 8pt extendida, CSS sin uso fuera, `PageHeader` y `Tabs` en pantallas públicas y en Ajustes de vista, tokens de opacidad (DIS-119, 2026-11-24).
 - Usuarios: el alta, el cambio de rol y el alta en el directorio comparten `users/grupos_de_rol.py` para el grupo de Authelia del rol (sin nombres `app-aduana-*` repetidos ni el texto de la excepción en el log); `platforms/grupos.py` sin import dentro de la función ni literales. Variables que el código ya leía quedan documentadas (los alias, como heredados), `.gitignore` ignora `logs/` y `validar_proyecto.py` queda en 0 errores (FNC-170, 2026-11-24).
 - Web: la lista y la tarjeta de usuarios muestran «Directorio (Authelia)» para cuentas `sso` (antes, «sso» suelto y con el estilo de cuenta local); utilidad compartida `lib/origen-cuenta.ts` (FNC-169, 2026-11-24).
