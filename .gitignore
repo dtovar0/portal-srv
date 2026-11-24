@@ -90,3 +90,7 @@ docker-compose.override.yml
 
 # Scripts manuales y descartables (retirados en FNC-028; no volver a versionar)
 scratch/
+
+# Bitácoras de ejecución (logs/.gitkeep ya está versionado y se conserva)
+logs/
+!docs/logs/

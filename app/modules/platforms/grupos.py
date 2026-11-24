@@ -8,6 +8,7 @@
   exista o que el directorio no responda no es error: la plataforma se guarda
   con un aviso (los grupos los crea el administrador del directorio en v1).
 """
+import os
 import re
 import unicodedata
 
@@ -22,6 +23,16 @@ from app.modules.platforms.tipos import (GRUPOS_NO_EXISTE, GRUPOS_OK,
                                          GRUPOS_SIN_VERIFICAR)
 
 # Avisos de la respuesta (`warnings`).
+# Convención de Authelia (FNC-170): nivel en plural inglés (`-users`,
+# `-admins`) cuando la plantilla lleva el prefijo `app-` o con la variable.
+VAR_GRUPO_PLURAL = 'LDAP_GROUP_PLURAL'
+PREFIJO_GRUPO_APP = 'app-'
+VALORES_VERDADEROS = ('true', '1', 'yes')
+NIVELES_USUARIO = ('usuario', 'user', 'users')
+NIVELES_ADMIN = ('admin', 'admins', 'admin_area')
+NIVEL_PLURAL_USUARIO = 'users'
+NIVEL_PLURAL_ADMIN = 'admins'
+
 AVISO_GRUPO_NO_EXISTE = 'grupo_no_existe'
 AVISO_DIRECTORIO_NO_DISPONIBLE = 'directorio_no_disponible'
 MENSAJE_GRUPO_NO_EXISTE = 'El grupo de nivel {nivel} no existe en el directorio.'
@@ -52,6 +63,21 @@ def identificador(texto):
         SEPARADOR_IDENTIFICADOR)
 
 
+def _nivel_en_plantilla(plantilla, nivel):
+    """`users`/`admins` con la convención plural; si no, el nivel tal cual."""
+    plural = (PREFIJO_GRUPO_APP in plantilla
+              or (os.getenv(VAR_GRUPO_PLURAL) or '').strip().lower()
+              in VALORES_VERDADEROS)
+    if not plural:
+        return nivel
+    texto = str(nivel).lower()
+    if texto in NIVELES_USUARIO:
+        return NIVEL_PLURAL_USUARIO
+    if texto in NIVELES_ADMIN:
+        return NIVEL_PLURAL_ADMIN
+    return nivel
+
+
 def derivar_dn(configuracion, nivel, plataforma, area):
     """DN del grupo de `nivel` según la plantilla; `None` si no hay plantilla
     o si el nombre de la plataforma no deja un identificador."""
@@ -60,14 +86,7 @@ def derivar_dn(configuracion, nivel, plataforma, area):
     if not plantilla or not nombre:
         return None
 
-    # Convención estándar ADUANA / Authelia: plurales en inglés (-users y -admins)
-    # cuando la plantilla incluye el prefijo 'app-' o se solicita plural
-    import os
-    if 'app-' in plantilla or os.getenv('LDAP_GROUP_PLURAL', '').lower() in ('true', '1', 'yes'):
-        nivel_texto = 'users' if str(nivel).lower() in ('usuario', 'user', 'users') else (
-            'admins' if str(nivel).lower() in ('admin', 'admins', 'admin_area') else nivel)
-    else:
-        nivel_texto = nivel
+    nivel_texto = _nivel_en_plantilla(plantilla, nivel)
 
     relativo = plantilla.format(plataforma=escapar_valor_dn(nombre),
                                 area=escapar_valor_dn(identificador(area)),

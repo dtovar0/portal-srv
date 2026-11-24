@@ -183,5 +183,8 @@ def test_cuenta_de_emergencia_no_local_no_recibe_contrasena(escena, como):
     respuesta = como(escena['super']).put(
         f"{A}/users/{escena['super']}", json={'password': CONTRASENA_NUEVA})
 
-    _campo_no_permitido(respuesta)
+    # FNC-165: la de una cuenta `sso` se cambia en LDAP con la política; esta
+    # no la cumple. En ningún caso queda como hash local.
+    assert respuesta.status_code == 400, respuesta.get_data(as_text=True)
+    assert respuesta.get_json()['code'] == 'contrasena_invalida'
     assert _cuenta(escena['super']).check_password(CONTRASENA_FICTICIA)
