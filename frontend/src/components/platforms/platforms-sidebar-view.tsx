@@ -375,6 +375,9 @@ export function PlatformsSidebarView({
   }, []);
 
   const { catalogo, items, areas, mias: abribles, marcarSolicitada, marcarFavorito } = useCatalogoSolicitable(mias);
+  // DIS-124: sin ninguna plataforma aprobada no aplica la carta responsiva.
+  const responsivaDisponible = abribles.size > 0;
+  const documentosVisibles = mostrarDocumentos && responsivaDisponible;
   const areasAsync = useAsync(() => api.areas().catch(() => []), [], 'nexus.platforms.areas');
 
   // Lista unificada de áreas con datos completos
@@ -819,7 +822,7 @@ export function PlatformsSidebarView({
             </div>
 
             {/* SECCIÓN: DOCUMENTOS */}
-            {mostrarDocumentos ? (
+            {documentosVisibles ? (
               <div>
                 {colapsada ? (
                   <hr className="my-2 border-barra-lateral-borde" />
@@ -1067,7 +1070,8 @@ export function PlatformsSidebarView({
             <UserViewSettings
               layout="sidebar"
               onLayoutChange={(l) => setLayout(l)}
-              mostrarDocumentos={mostrarDocumentos}
+              mostrarDocumentos={documentosVisibles}
+              responsivaDisponible={responsivaDisponible}
               onToggleMostrarDocumentos={toggleMostrarDocumentos}
               mostrarBadgesSidebar={mostrarBadgesSidebar}
               onToggleMostrarBadgesSidebar={toggleMostrarBadgesSidebar}
