@@ -14,7 +14,8 @@
 
 import { useState } from 'react';
 import { grantsApi } from '@/lib/access/grants';
-import type { Access, AccessListParams, AccessOrigin, AccessStatus } from '@/lib/access/types';
+import { etiquetaOrigenAcceso } from '@/lib/access/origen';
+import type { Access, AccessListParams, AccessStatus } from '@/lib/access/types';
 import { useCambiosDeEstado } from '@/lib/use-cambios-de-estado';
 import { usePolling } from '@/lib/use-polling';
 import { Button, Option, Select } from '../form';
@@ -52,11 +53,6 @@ export const EXPLICACION_ESTADO: Record<AccessStatus, string> = {
   fallo_revocacion: 'No se pudo retirar de la plataforma. El administrador del área lo revisará.',
 };
 
-const ORIGENES: Record<AccessOrigin, string> = {
-  solicitud: 'Por solicitud',
-  admin_de_area: 'Automático: administras el área',
-};
-
 /** Columnas en escritorio: plataforma, nivel, desde, estado. */
 const COLUMNAS = 'md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)]';
 
@@ -71,7 +67,7 @@ function Fila({ access }: { access: Access }) {
       <div>
         <dt className={ETIQUETA_CELDA}>Nivel</dt>
         <dd className="text-sm text-body-text">{NIVELES[access.level]}</dd>
-        <dd className="text-sm text-label">{ORIGENES[access.origin]}</dd>
+        <dd className="text-sm text-label">{etiquetaOrigenAcceso(access.origin, 'propio')}</dd>
       </div>
       <div>
         <dt className={ETIQUETA_CELDA}>Desde</dt>

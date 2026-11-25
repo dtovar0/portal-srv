@@ -10,7 +10,7 @@
 import type { Access } from '@/lib/access/types';
 import { AccessStatusBadge, NIVELES } from './access-status-badge';
 import { formatearFecha } from './fecha';
-import { ORIGENES_INVENTARIO } from './inventory-filters';
+import { etiquetaOrigenAcceso } from '@/lib/access/origen';
 import { ETIQUETA_CELDA, ResponsiveList, ResponsiveRow } from './responsive-list';
 
 /** Columnas en escritorio: usuario, plataforma y área, nivel y origen, desde y aprobó, estado. */
@@ -19,7 +19,7 @@ const COLUMNAS =
 
 export const ENCABEZADOS = ['Usuario', 'Plataforma y área', 'Nivel y origen', 'Desde y aprobó', 'Estado'];
 
-/** `granted_by` null = sistema (origen `admin_de_area`, contrato `accesos.md`). */
+/** `granted_by` null = sistema (origen `admin_de_area` o `migracion`, contrato `accesos.md`). */
 export const APROBO_SISTEMA = 'Sistema';
 
 /** Quién aprobó u otorgó el acceso. */
@@ -48,7 +48,7 @@ function Fila({ access }: { access: Access }) {
         <dt className={ETIQUETA_CELDA}>Nivel</dt>
         <dd className="text-sm text-body-text">{NIVELES[access.level]}</dd>
         <dt className="sr-only">Origen</dt>
-        <dd className="text-sm text-label">{ORIGENES_INVENTARIO[access.origin]}</dd>
+        <dd className="text-sm text-label">{etiquetaOrigenAcceso(access.origin, 'admin')}</dd>
       </div>
       <div>
         <dt className={ETIQUETA_CELDA}>Desde</dt>
