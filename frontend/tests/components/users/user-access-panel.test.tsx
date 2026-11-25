@@ -168,6 +168,7 @@ describe('motivoSinRevocar (reglas del contrato)', () => {
   const adminDelArea: ManagedUser = { ...ANA, managed_areas: [{ id: 3, name: 'Finanzas' }] };
   const superadmin = { ...sesion, esSuperadmin: true };
   const automatico: Access = { ...ACTIVO, id: 78, origin: 'admin_de_area' };
+  const migrado: Access = { ...ACTIVO, id: 80, origin: 'migracion' };
   const enProceso: Access = { ...ACTIVO, id: 79, status: 'en_proceso' };
 
   it.each<[string, Access, ManagedUser, typeof sesion, string | null]>([
@@ -176,6 +177,7 @@ describe('motivoSinRevocar (reglas del contrato)', () => {
     ['propio (403)', propio, ANA, sesion, SIN_ACCION.propio],
     ['automático, admin de área (404)', automatico, ANA, sesion, SIN_ACCION.automatico],
     ['automático, superadmin', automatico, ANA, superadmin, null],
+    ['migración, admin de área (revocable, DIS-134)', migrado, ANA, sesion, null],
     ['de otro admin del área (404)', ACTIVO, adminDelArea, sesion, SIN_ACCION.adminDelArea],
     ['de otro admin del área, superadmin', ACTIVO, adminDelArea, superadmin, null],
     ['propio, también superadmin', propio, ANA, superadmin, SIN_ACCION.propio],

@@ -106,6 +106,28 @@ describe('Inventory: lista', () => {
     expect(within(luis).getByText('Acceso en proceso')).toBeTruthy();
   });
 
+  it('origen migración: etiqueta, sistema y opción en el filtro (DIS-134)', async () => {
+    vi.mocked(inventoryApi.list).mockResolvedValue(pagina([{
+      ...ANA, origin: 'migracion', granted_by: null,
+    }]));
+    render(<Inventory />);
+    const fila = await screen.findByRole('listitem', { name: 'Acceso de Ana Ruiz a Contabilidad' });
+    expect(within(fila).getByText('Migración')).toBeTruthy();
+    expect(within(fila).getByText(APROBO_SISTEMA)).toBeTruthy();
+    expect(opciones('Origen')).toContain('Migración');
+    fireEvent.change(screen.getByLabelText('Origen'), { target: { value: 'migracion' } });
+    await waitFor(() => expect(inventoryApi.list).toHaveBeenLastCalledWith({ ...BASE, origin: 'migracion' }));
+  });
+
+  it('origen desconocido: muestra el valor crudo, no vacío (DIS-134)', async () => {
+    vi.mocked(inventoryApi.list).mockResolvedValue(pagina([{
+      ...ANA, origin: 'importacion_futura' as Access['origin'],
+    }]));
+    render(<Inventory />);
+    const fila = await screen.findByRole('listitem', { name: 'Acceso de Ana Ruiz a Contabilidad' });
+    expect(within(fila).getByText('importacion_futura')).toBeTruthy();
+  });
+
   it('acceso retirado: fecha y quién lo retiró', async () => {
     vi.mocked(inventoryApi.list).mockResolvedValue(pagina([{
       ...ANA, status: 'revocado', revoked_at: '2026-10-18T10:00:00Z', revoked_by: { id: 1, name: 'Eva Sol' },

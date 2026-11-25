@@ -215,6 +215,16 @@ describe('Mis accesos', () => {
     expect(within(fallido).getByText('Automático: administras el área')).toBeTruthy();
   });
 
+  it('origen migración y origen desconocido (DIS-134)', async () => {
+    vi.mocked(grantsApi.mine).mockResolvedValue(pagina([
+      { ...ACTIVO, origin: 'migracion' },
+      { ...ACTIVO, id: 90, origin: 'importacion_futura' as Access['origin'] },
+    ]));
+    await abrirAccesos();
+    expect(await screen.findByText('Migración')).toBeTruthy();
+    expect(screen.getByText('importacion_futura')).toBeTruthy();
+  });
+
   it('revocado: muestra el motivo', async () => {
     vi.mocked(grantsApi.mine).mockResolvedValue(pagina([{
       ...ACTIVO, status: 'revocado', revoked_at: '2026-10-15T10:00:00Z', revoke_reason: 'Cambio de puesto',
