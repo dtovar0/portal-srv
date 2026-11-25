@@ -135,6 +135,12 @@ describe('DIS-131: resumen', () => {
     expect(requestsApi.inbox).not.toHaveBeenCalled();
     expect(screen.queryByRole('listitem', { name: /Solicitud de Ana Ruiz/ })).toBeNull();
   });
+
+  it('DIS-132: la vista principal no lleva texto descriptivo bajo el título', async () => {
+    render_();
+    await screen.findByRole('group', { name: 'Pendientes' });
+    expect(screen.queryByText(/Resumen de las solicitudes de acceso/)).toBeNull();
+  });
 });
 
 describe('DIS-131: «Abrir» y las tablas por estado', () => {

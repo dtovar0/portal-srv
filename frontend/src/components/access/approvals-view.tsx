@@ -28,10 +28,7 @@ export function ApprovalsView() {
   if (!estado) {
     return (
       <div className="space-y-6">
-        <PageHeader
-          title="Solicitudes"
-          description="Resumen de las solicitudes de acceso de tus áreas (todas, si eres superadmin)."
-        />
+        <PageHeader title="Solicitudes" />
         <ApprovalsResumen />
       </div>
     );
