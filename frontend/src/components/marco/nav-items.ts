@@ -31,7 +31,8 @@ export const NAV: readonly NavItem[] = [
   { href: '/platforms', label: 'Portal', icono: 'catalogo', seccion: 'General', requires: 'any_admin' },
   { href: '/requests', label: 'Mis solicitudes', icono: 'solicitudes', seccion: 'General', requires: 'any_admin', oculto: true },
   { href: '/admin/platforms', label: 'Plataformas', icono: 'plataformas', seccion: 'Gestión', requires: 'any_admin' },
-  { href: '/approvals', label: 'Aprobaciones', icono: 'aprobaciones', seccion: 'Gestión', requires: 'any_admin', oculto: true },
+  // DIS-126: bandeja de solicitudes de acceso (aprobar/rechazar), visible en Gestión.
+  { href: '/approvals', label: 'Solicitudes', icono: 'solicitudes', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/areas', label: 'Áreas', icono: 'areas', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/users', label: 'Usuarios', icono: 'usuarios', seccion: 'Gestión', requires: 'any_admin' },
   { href: '/admin/connectors', label: 'Conectores', icono: 'marca', seccion: 'Gestión', requires: 'admin' },

@@ -160,8 +160,8 @@ describe('Menú móvil', () => {
 
   it.each<[Rol, number]>([
     ['usuario', 1],
-    ['admin_area', 9],
-    ['administrador', 10],
+    ['admin_area', 10],  // DIS-126: + Solicitudes
+    ['administrador', 11],
   ])('%s ve en el menú móvil las mismas entradas que en la barra lateral (%i)', async (rol, n) => {
     const boton = await montar(rol);
     const panel = abrir(boton);
@@ -175,7 +175,7 @@ describe('Menú móvil', () => {
 
   it('el usuario no ve entradas de administración en el menú móvil', async () => {
     const panel = abrir(await montar('usuario'));
-    expect(within(panel).queryByRole('link', { name: 'Aprobaciones' })).toBeNull();
+    expect(within(panel).queryByRole('link', { name: 'Solicitudes' })).toBeNull();
     expect(within(panel).queryByRole('link', { name: 'Conectores' })).toBeNull();
   });
 

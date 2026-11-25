@@ -110,7 +110,7 @@ describe('Barra lateral', () => {
 
   it('el usuario no ve la sección Gestión con entradas de administración', async () => {
     await montar('usuario');
-    expect(lateral().queryByRole('link', { name: 'Aprobaciones' })).toBeNull();
+    expect(lateral().queryByRole('link', { name: 'Solicitudes' })).toBeNull();
     expect(lateral().queryByRole('link', { name: 'Usuarios' })).toBeNull();
     expect(lateral().getByRole('link', { name: 'Portal' })).toBeTruthy();
   });
@@ -175,10 +175,10 @@ describe('Barra lateral', () => {
     vi.restoreAllMocks();
   });
 
-  it('aprobaciones permanece oculta en la barra lateral aunque haya pendientes', async () => {
+  it('DIS-126: «Solicitudes» aparece en Gestión y lleva a la bandeja', async () => {
     resumen.mockResolvedValue({ scope: 'global', pending_approvals: 3 });
     await montar('administrador');
-    expect(lateral().queryByRole('link', { name: /Aprobaciones/ })).toBeNull();
+    expect(lateral().getByRole('link', { name: /Solicitudes/ }).getAttribute('href')).toBe('/approvals');
   });
 
   it('sin pendientes o sin ser admin no hay contador ni se pide el resumen', async () => {
@@ -405,13 +405,13 @@ describe('Menú de usuario en el pie de la barra lateral (DIS-080)', () => {
 });
 
 describe('Correcciones de la auditoría de accesibilidad (DIS-078)', () => {
-  it('las opciones visibles tienen título accesible al colapsar el menú y Aprobaciones permanece oculta', async () => {
+  it('las opciones visibles tienen título accesible al colapsar el menú (Solicitudes incluida, DIS-126)', async () => {
     resumen.mockResolvedValue({ scope: 'global', pending_approvals: 3 });
     await montar('administrador');
-    expect(lateral().queryByRole('link', { name: /Aprobaciones/ })).toBeNull();
+    expect(lateral().getByRole('link', { name: /Solicitudes/ })).toBeTruthy();
 
     fireEvent.click(barra().getByRole('button', { name: 'Colapsar menú' }));
-    expect(lateral().queryByRole('link', { name: /Aprobaciones/ })).toBeNull();
+    expect(lateral().getByRole('link', { name: /Solicitudes/ }).getAttribute('title')).toBe('Solicitudes, 3 pendientes');
     const dashboard = lateral().getByRole('link', { name: 'Dashboard' });
     expect(dashboard.getAttribute('title')).toBe('Dashboard');
   });
