@@ -9,6 +9,7 @@
  */
 
 import { ApiError } from '@/lib/api';
+import { MENSAJE_SIN_PERMISO_EN_DIRECTORIO } from '@/lib/access/sin-permiso-directorio';
 import type { DirectoryAccountInput, PasswordPolicy } from '@/lib/access/types';
 import { mensajeDeIncumplimiento } from '@/lib/contrasena';
 
@@ -59,6 +60,7 @@ export const MENSAJE_REVISA = 'Revisa los campos marcados.';
 
 const MENSAJES_POR_CODIGO: Record<string, string> = {
   directorio_no_disponible: 'No se pudo crear la cuenta en el directorio; intenta más tarde.',
+  sin_permiso_en_directorio: MENSAJE_SIN_PERMISO_EN_DIRECTORIO,
 };
 
 const MENSAJES_POR_ESTADO: Record<number, string> = {
