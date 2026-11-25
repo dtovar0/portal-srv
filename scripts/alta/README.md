@@ -91,6 +91,7 @@ Migra a **una** persona de LDAP y la deja lista en una corrida, en este orden: 1
 - Contraseña generada con la política (`PASSWORD_POLICY_*`) → Password Modify en LDAP → Send de Vaultwarden → correo con el **enlace** (flujo FNC-138).
 - La contraseña **nunca** se imprime, registra ni guarda.
 - Antes de tocar nada se comprueba que existan LDAP, `ENABLE_NOTIFICATIONS=true`, `BASE_URL` y Vaultwarden configurados; si falta algo el comando termina con error y **no escribe nada** (nadie queda con una contraseña que nadie conoce).
+- **Login real a Vaultwarden (FNC-205):** además de la configuración, antes de la primera escritura (en `usuarios --crear-en-ldap`, `migrar-ldap --rotar-contrasena` y `migrar-usuario --rotar-contrasena`) se hace una vez el mismo inicio de sesión que usa el Send (token y claves de la cuenta; no se crea ningún Send). Si Vaultwarden rechaza las credenciales (p. ej. `VAULTWARDEN_EMAIL` de otra cuenta) o no responde, el comando termina con «Vaultwarden no acepta las credenciales configuradas: …» (o «Vaultwarden no responde: …») y no escribe en la BD ni en LDAP. Con `--dry-run` también se verifica (solo lectura) y se informa «Vaultwarden acepta las credenciales configuradas».
 - Si LDAP cambió pero el Send o el correo fallan a mitad, la persona queda `pendientes` en `credential_deliveries` y el worker de aprovisionamiento la rota otra vez con una contraseña nueva; el comando lo reporta como `ERROR`.
 
 ## Salida y código de salida

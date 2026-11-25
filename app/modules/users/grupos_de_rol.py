@@ -17,7 +17,7 @@ from app.modules.auth.oidc_cuentas import (GRUPO_AREA_ADMIN_POR_DEFECTO,
                                            GRUPO_USER_POR_DEFECTO,
                                            VAR_GRUPO_AREA_ADMIN,
                                            VAR_GRUPO_USER)
-from app.modules.directory.errors import Resultado
+from app.modules.directory.errors import MOTIVO_SIN_PERMISO, Resultado
 from app.modules.directory.ldap_client import escapar_valor_dn
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,25 @@ def _dn(escritor, nombre):
     return f'cn={escapar_valor_dn(nombre)},{base}'
 
 
+class Sincronizacion:
+    """Resultado de `sincronizar_grupo_de_rol`: verdadero si quedó así;
+    `sin_permiso` distingue el rechazo de permisos del directorio (FNC-206)."""
+
+    __slots__ = ('ok', 'sin_permiso')
+
+    def __init__(self, ok, sin_permiso=False):
+        self.ok = ok
+        self.sin_permiso = sin_permiso
+
+    def __bool__(self):
+        return self.ok
+
+
+def sin_permiso_en(sincronizacion):
+    """`True` si el resultado (o un doble de prueba) fue por falta de permiso."""
+    return bool(getattr(sincronizacion, 'sin_permiso', False))
+
+
 def _ok(resultado):
     return bool(getattr(resultado, 'exito', False))
 
@@ -58,7 +77,8 @@ def _salida_ok(resultado):
 
 def sincronizar_grupo_de_rol(escritor, persona_dn, rol, quitar_del_otro=False):
     """Agrega `persona_dn` al grupo de su rol (creándolo si falta) y, con
-    `quitar_del_otro`, lo quita del grupo del otro rol. `True` si quedó así.
+    `quitar_del_otro`, lo quita del grupo del otro rol. Devuelve una
+    `Sincronizacion` (verdadera si quedó así).
 
     FNC-184: revisa cada resultado del directorio (no solo excepciones). Si
     entró al grupo nuevo pero no pudo salir del otro, deshace la entrada para
@@ -69,22 +89,27 @@ def sincronizar_grupo_de_rol(escritor, persona_dn, rol, quitar_del_otro=False):
     dn_usuarios = _dn(escritor, nombre_grupo_usuarios())
     destino, otro = (dn_admins, dn_usuarios) if es_admin else (dn_usuarios, dn_admins)
     try:
-        if not _ok(escritor.create_group(destino)):
-            return _fallo('crear el grupo')
+        creacion = escritor.create_group(destino)
+        if not _ok(creacion):
+            return _fallo('crear el grupo', creacion)
         alta = escritor.add_member(destino, persona_dn)
         if not _ok(alta):
-            return _fallo('agregar al grupo')
-        if quitar_del_otro and not _salida_ok(escritor.remove_member(otro, persona_dn)):
-            if alta.resultado is Resultado.HECHO:  # solo deshace lo que agregó
-                escritor.remove_member(destino, persona_dn)
-            return _fallo('quitar del otro grupo')
+            return _fallo('agregar al grupo', alta)
+        if quitar_del_otro:
+            baja = escritor.remove_member(otro, persona_dn)
+            if not _salida_ok(baja):
+                if alta.resultado is Resultado.HECHO:  # solo deshace lo que agregó
+                    escritor.remove_member(destino, persona_dn)
+                return _fallo('quitar del otro grupo', baja)
     except Exception as exc:  # el directorio no detiene al portal
         logger.warning('Grupo de rol en LDAP no sincronizado (%s).',
                        type(exc).__name__)
-        return False
-    return True
+        return Sincronizacion(False)
+    return Sincronizacion(True)
 
 
-def _fallo(paso):
-    logger.warning('Grupo de rol en LDAP no sincronizado: no se pudo %s.', paso)
-    return False
+def _fallo(paso, resultado=None):
+    sin_permiso = getattr(resultado, 'motivo', None) == MOTIVO_SIN_PERMISO
+    logger.warning('Grupo de rol en LDAP no sincronizado: no se pudo %s%s.',
+                   paso, ' (sin permiso)' if sin_permiso else '')
+    return Sincronizacion(False, sin_permiso)
