@@ -55,7 +55,7 @@ Importa a Aduana las personas de uno o más grupos de LDAP. Crea cuentas `sso`, 
 | `--omitir-existentes` (por omisión) / `--actualizar-rol` | Cuenta ya existente en el portal: se omite, o se le ajusta el rol (y sale del grupo del otro rol) |
 | `--sin-grupo-del-portal` | No agrega a las personas al grupo de Authelia de su rol (`OIDC_GROUP_USER` u `OIDC_GROUP_AREA_ADMIN`). Por omisión **sí** se agregan; sin eso Authelia las rechaza al entrar |
 | `--rotar-contrasena` | Rota la contraseña de LDAP de **todas** las personas procesadas en la corrida (nuevas y ya existentes en el portal) |
-| `--solo UID` (repetible) | Limita la corrida a esas personas del grupo; las demás salen «omitido: fuera de --solo». Sirve para probar con una persona sin crear grupos |
+| `--solo UID` (repetible) | Limita la corrida a esas personas; las del grupo que no se piden salen «omitido: fuera de --solo». Quien no es miembro de los grupos de la corrida (o sin `--grupo`) se busca directo en LDAP bajo `LDAP_USERS_BASE_DN`; si no existe, `ERROR` |
 | `--plantilla` | Plantilla del correo de la rotación: `onboarding_aduana` (por omisión) o `credenciales_iniciales` |
 | `--enviar-a CORREO`, `--si` | Ver «Probar el envío con otro destinatario» (exige `--rotar-contrasena`) |
 | `--dry-run` | No escribe nada («se agregaría a …», «se rotaría») |
