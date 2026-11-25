@@ -26,6 +26,7 @@ from app.modules.access.tipos import (ESTADOS_OCUPANTES, ESTADOS_VIGENTES,
                                       NIVELES)
 from app.modules.access_requests.models import PlatformAccessRequest
 from app.modules.access_requests.tipos import ESTADO_PENDIENTE
+from app.modules.platforms.tipos import NIVEL_USUARIO
 from app.modules.core.models import Area, Platform
 
 # `status` de un área o plataforma visible en el catálogo.
@@ -83,6 +84,11 @@ def activa(plataforma):
     area = plataforma.area
     return (plataforma.status == ESTADO_ACTIVO and area is not None
             and area.status == ESTADO_ACTIVO)
+
+
+# FNC-199 (decisión del dueño 2026-11-24): solo se solicita el nivel
+# `usuario`; el nivel `admin` lo otorga un administrador desde el panel.
+NIVELES_SOLICITABLES = (NIVEL_USUARIO,)
 
 
 def niveles_integrados(plataforma):
@@ -154,4 +160,5 @@ def niveles_solicitables(actor, plataforma, estado_actor):
             or estado_actor.pendiente is not None):
         return []
     return [n for n in niveles_integrados(plataforma)
-            if nivel_admitido(estado_actor.vigentes, n)]
+            if n in NIVELES_SOLICITABLES
+            and nivel_admitido(estado_actor.vigentes, n)]

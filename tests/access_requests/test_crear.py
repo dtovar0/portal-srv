@@ -104,8 +104,7 @@ def test_superadmin_no_solicita(escena, cliente_como):
 
 
 def test_admin_no_solicita_en_el_area_que_administra(escena, cliente_como):
-    respuesta = pedir(cliente_como(escena['admin']), escena['plataforma'],
-                      'admin')
+    respuesta = pedir(cliente_como(escena['admin']), escena['plataforma'])
 
     assert _codigo(respuesta) == (409, 'ya_administra_area')
     assert PlatformAccessRequest.query.count() == 0
@@ -114,7 +113,7 @@ def test_admin_no_solicita_en_el_area_que_administra(escena, cliente_como):
 def test_admin_solicita_como_usuario_en_area_ajena(escena, cliente_como):
     """RF-03: el admin de Ventas pertenece a Finanzas y pide ahí."""
     respuesta = pedir(cliente_como(escena['admin_otra']),
-                      escena['plataforma'], 'admin')
+                      escena['plataforma'])
 
     assert respuesta.status_code == 201
 
@@ -144,11 +143,11 @@ def test_plataforma_inactiva_es_409(escena, cliente_como):
 def test_nivel_sin_grupo_guardado_es_solicitable(escena, cliente_como):
     """FNC-196: el DN faltante se deriva; antes daba 409 por «nivel no
     integrado»."""
-    escena['plataforma'].ldap_group_admin_dn = None
+    escena['plataforma'].ldap_group_user_dn = None
     db.session.commit()
     cliente = cliente_como(escena['usuario'])
 
-    assert pedir(cliente, escena['plataforma'], 'admin').status_code == 201
+    assert pedir(cliente, escena['plataforma']).status_code == 201
 
 
 def test_plataforma_con_conector_sin_configurar_es_solicitable(escena,
@@ -166,7 +165,7 @@ def test_duplicado_pendiente_es_409(escena, cliente_como):
     cliente = cliente_como(escena['usuario'])
     assert pedir(cliente, escena['plataforma']).status_code == 201
 
-    respuesta = pedir(cliente, escena['plataforma'], 'admin')
+    respuesta = pedir(cliente, escena['plataforma'])
 
     assert _codigo(respuesta) == (409, 'solicitud_duplicada')
     assert PlatformAccessRequest.query.count() == 1
@@ -251,24 +250,24 @@ def test_nivel_inferior_al_vigente_es_409(escena, cliente_como):
     assert _codigo(respuesta) == (409, 'nivel_vigente')
 
 
-def test_subir_de_nivel_guarda_el_nivel_actual(escena, cliente_como):
+def test_nivel_admin_no_se_solicita_regresion_fnc_199(escena, cliente_como):
+    """FNC-199: solo se solicita `usuario`; el nivel admin lo otorga un
+    administrador (antes un usuario podía pedir subir a admin)."""
     dar_acceso(escena['usuario'], escena['plataforma'], 'usuario')
 
     respuesta = pedir(cliente_como(escena['usuario']), escena['plataforma'],
                       'admin')
 
+    assert _codigo(respuesta) == (422, 'validacion')
+    assert PlatformAccessRequest.query.count() == 0
+
+
+def test_sin_nivel_se_solicita_usuario(escena, cliente_como):
+    respuesta = cliente_como(escena['usuario']).post(
+        RUTA, json={'platform_id': escena['plataforma'].id})
+
     assert respuesta.status_code == 201
-    assert respuesta.get_json()['request']['current_level'] == 'usuario'
-
-
-def test_subir_con_acceso_aun_en_proceso_es_409(escena, cliente_como):
-    dar_acceso(escena['usuario'], escena['plataforma'], 'usuario',
-               'en_proceso')
-
-    respuesta = pedir(cliente_como(escena['usuario']), escena['plataforma'],
-                      'admin')
-
-    assert _codigo(respuesta) == (409, 'estado_invalido')
+    assert respuesta.get_json()['request']['level'] == 'usuario'
 
 
 def test_audita_en_la_misma_transaccion(escena, cliente_como):

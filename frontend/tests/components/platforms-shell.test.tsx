@@ -1757,3 +1757,27 @@ describe('Carta responsiva sin plataformas aprobadas (DIS-124)', () => {
     expect(screen.getByRole('button', { name: /carta responsiva/i })).toBeDefined();
   });
 });
+
+describe('Tarjeta con solicitud pendiente (DIS-125)', () => {
+  afterEach(() => cleanup());
+
+  it('muestra un solo badge «SOLICITUD ENVIADA» y ya no el texto «Esperando admin»', () => {
+    const item = {
+      platform: { id: 7, name: 'tacacs', description: 'Acceso a los servidores cisco', icon: 'plataformas' },
+      area: { id: 3, name: 'Packet' },
+      my_level: null,
+      my_access_status: null,
+      pending_request_id: 42,
+      can_request: false,
+      requestable_levels: [],
+    } satisfies import('@/lib/access/types').CatalogItem;
+
+    render(<PlatformMockupCard item={item} onRequest={vi.fn()} />);
+
+    const badge = screen.getByText('SOLICITUD ENVIADA');
+    expect(badge.closest('span')?.getAttribute('title')).toBe('Esperando la aprobación del administrador del área');
+    expect(screen.queryByText('Esperando admin')).toBeNull();
+    expect(screen.queryByText('EN REVISIÓN')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Solicitar acceso/ })).toBeNull();
+  });
+});
