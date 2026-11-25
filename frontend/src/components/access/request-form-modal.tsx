@@ -15,28 +15,17 @@
 import { useCallback, useState } from 'react';
 import { requestsApi } from '@/lib/access/requests';
 import type { AccessLevel, AccessRequest, CatalogItem } from '@/lib/access/types';
-import { Button, Field, Modal, Radio, TextArea } from '../form';
+import { Button, Modal } from '../form';
 import { Icono } from '../icono';
-import { FieldErrorNote, FieldHint, describedBy } from '../platforms/field-notes';
-import { Card } from '../ui';
+import { FieldErrorNote } from '../platforms/field-notes';
 import { useToast } from '../toast';
 import { NIVELES } from './access-status-badge';
-import {
-  JUSTIFICACION_MAX, MENSAJE_JUSTIFICACION_LARGA, MENSAJES_SOLICITUD, describeRequestError,
-} from './request-errors';
+import { MENSAJES_SOLICITUD, describeRequestError } from './request-errors';
 
 const FORM_ID = 'solicitud-acceso';
-const JUSTIFICACION_ID = 'solicitud-justificacion';
-const CONTADOR_ID = 'solicitud-justificacion-contador';
-const JUSTIFICACION_ERROR_ID = 'solicitud-justificacion-error';
-const NIVEL_ERROR_ID = 'solicitud-nivel-error';
+const NIVEL_SOLICITADO: AccessLevel = 'usuario';
 const CHECKBOX_ID = 'chk-solicitud-terminos';
 const CAPTCHA_INPUT_ID = 'input-captcha-solicitud';
-
-const DESCRIPCION_NIVEL: Record<AccessLevel, string> = {
-  usuario: 'Uso habitual de la plataforma.',
-  admin: 'Administración de la plataforma.',
-};
 
 const COLORES_CHIP_TOKENS = [
   'bg-primary text-texto-sobre-accion',
@@ -90,9 +79,9 @@ export function RequestFormModal({
   /** Recibe la solicitud que devolvió el servidor. */
   onCreated: (request: AccessRequest) => void;
 }) {
-  const niveles = item.requestable_levels;
-  const [level, setLevel] = useState<AccessLevel | null>(niveles[0] ?? null);
-  const [justification, setJustification] = useState('');
+  // DIS-125 (FNC-199): solo se solicita el nivel usuario y sin justificación;
+  // el nivel admin lo otorga un administrador desde el panel.
+  const puedeSolicitar = item.requestable_levels.includes(NIVEL_SOLICITADO);
   const [accepted, setAccepted] = useState(false);
   const [captchaCode, setCaptchaCode] = useState<string>(() => generarCodigoCaptcha());
   const [captchaInput, setCaptchaInput] = useState('');
@@ -110,17 +99,12 @@ export function RequestFormModal({
   const colorClase = obtenerColorIniciales(item.platform.id);
   const iniciales = obtenerIniciales(item.platform.name);
 
-  // El servidor recorta la justificación: se cuenta y valida igual.
-  const texto = justification.trim();
-  const excede = texto.length > JUSTIFICACION_MAX;
-  const errorJustificacion = fields.justification ?? (excede ? MENSAJE_JUSTIFICACION_LARGA : undefined);
-
-  const puedeEnviar = !sending && niveles.length > 0 && accepted && captchaValido;
+  const puedeEnviar = !sending && puedeSolicitar && accepted && captchaValido;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (sending) return;
-    if (!level || excede || !accepted || !captchaValido) {
+    if (!puedeSolicitar || !accepted || !captchaValido) {
       setError(MENSAJES_SOLICITUD.validacion);
       toast.avisar(
         'warning',
@@ -132,12 +116,10 @@ export function RequestFormModal({
         'Solicitud incompleta',
       );
       setFields({
-        ...(level ? {} : { level: 'Elige un nivel.' }),
         ...(!accepted ? { accepted: 'Debes confirmar la casilla de responsabilidad.' } : {}),
         ...(!captchaValido ? { captcha: 'Ingresa el código de confirmación mostrado.' } : {}),
       });
-      if (excede) document.getElementById(JUSTIFICACION_ID)?.focus();
-      else if (!accepted) document.getElementById(CHECKBOX_ID)?.focus();
+      if (!accepted) document.getElementById(CHECKBOX_ID)?.focus();
       else if (!captchaValido) document.getElementById(CAPTCHA_INPUT_ID)?.focus();
       return;
     }
@@ -147,8 +129,7 @@ export function RequestFormModal({
     try {
       const result = await requestsApi.create({
         platform_id: item.platform.id,
-        level,
-        ...(texto ? { justification: texto } : {}),
+        level: NIVEL_SOLICITADO,
       });
       onCreated(result.request);
     } catch (err) {
@@ -156,7 +137,6 @@ export function RequestFormModal({
       setError(view.message);
       toast.avisar('error', view.message, 'Error al solicitar');
       setFields(view.fields);
-      if (view.fields.justification) document.getElementById(JUSTIFICACION_ID)?.focus();
       setSending(false);
     }
   }
@@ -222,54 +202,6 @@ export function RequestFormModal({
               Esta solicitud será evaluada por el responsable del área <strong>{item.area.name}</strong>. Una vez aprobada, recibirás tus credenciales y acceso directo en el portal.
             </span>
           </div>
-        </div>
-
-        {/* Nivel de acceso solicitado */}
-        <fieldset {...describedBy([NIVEL_ERROR_ID, fields.level])}>
-          <legend className="mb-2 block text-xs font-black uppercase tracking-[0.1em] text-label">
-            Nivel solicitado
-          </legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {niveles.map((nivel) => (
-              <Card
-                as="label"
-                variant="selectable"
-                key={nivel}
-                className="flex items-start gap-3 p-3 cursor-pointer"
-              >
-                <Radio
-                  name="nivel"
-                  value={nivel}
-                  checked={level === nivel}
-                  onChange={() => setLevel(nivel)}
-                  className="mt-0.5"
-                />
-                <span className="min-w-0">
-                  <span className="block text-sm font-bold text-body-text">{NIVELES[nivel]}</span>
-                  <span className="block text-xs text-label">{DESCRIPCION_NIVEL[nivel]}</span>
-                </span>
-              </Card>
-            ))}
-          </div>
-          <FieldErrorNote id={NIVEL_ERROR_ID} message={fields.level} />
-        </fieldset>
-
-        {/* Justificación opcional */}
-        <div>
-          <Field label="Justificación (opcional)">
-            <TextArea
-              id={JUSTIFICACION_ID}
-              rows={3}
-              value={justification}
-              onChange={(event) => setJustification(event.target.value)}
-              placeholder="Explica para qué necesitas acceso a esta herramienta…"
-              {...describedBy([JUSTIFICACION_ERROR_ID, errorJustificacion], [CONTADOR_ID, true])}
-            />
-          </Field>
-          <FieldHint id={CONTADOR_ID}>
-            {`${texto.length}/${JUSTIFICACION_MAX} caracteres`}
-          </FieldHint>
-          <FieldErrorNote id={JUSTIFICACION_ERROR_ID} message={errorJustificacion} />
         </div>
 
         {/* Checkbox de confirmación y uso responsable */}
