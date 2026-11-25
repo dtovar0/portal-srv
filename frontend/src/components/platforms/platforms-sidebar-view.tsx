@@ -103,7 +103,9 @@ export function PlatformsSidebarView({
     [session],
   );
 
-  const { noLeidas } = useIndicadores({ esAdmin: Boolean(esAdmin), ruta: '/platforms' });
+  const { noLeidas } = useIndicadores({
+    esAdmin: Boolean(esAdmin), ruta: '/platforms', intervaloS: session?.preferences?.refresh_interval,
+  });
 
   // Estados de filtro
   const [seccionActiva, setSeccionActiva] = useState<'area' | 'favoritas' | 'solicitudes' | 'widget' | 'personalizacion' | 'responsiva'>(
