@@ -30,7 +30,14 @@ export function normalizarEnlaceDirecto(valor: string | null | undefined): strin
 }
 
 /** Validación previa al envío; el backend vuelve a validar todo. */
-export function validate(form: PlatformInput, integration: IntegrationValue) {
+/** DIS-133: sin «Omitir enlace» el enlace es obligatorio. */
+export const MENSAJE_ENLACE_OBLIGATORIO = 'Escribe el enlace o activa «Omitir enlace».';
+
+export function validate(
+  form: PlatformInput,
+  integration: IntegrationValue,
+  { enlaceObligatorio = false }: { enlaceObligatorio?: boolean } = {},
+) {
   const errors: Record<string, string> = {};
   const name = form.name?.trim() ?? '';
   if (name.length < NOMBRE_MIN || name.length > NOMBRE_MAX) {
@@ -40,6 +47,7 @@ export function validate(form: PlatformInput, integration: IntegrationValue) {
   if (!form.area_id) errors.area_id = 'Selecciona un área.';
   const link = normalizarEnlaceDirecto(form.direct_link);
   if (link && !enlaceSeguro(link)) errors.direct_link = 'Usa una dirección https://.';
+  else if (!link && enlaceObligatorio) errors.direct_link = MENSAJE_ENLACE_OBLIGATORIO;
   const dnUsuario = integration.ldap_group_user_dn.trim().toLowerCase();
   if (dnUsuario && dnUsuario === integration.ldap_group_admin_dn.trim().toLowerCase()) {
     errors.ldap_group_admin_dn = 'Los grupos de usuario y admin deben ser distintos.';
