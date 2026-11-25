@@ -55,7 +55,7 @@ Importa a Aduana las personas de uno o más grupos de LDAP. Crea cuentas `sso`, 
 | `--omitir-existentes` (por omisión) / `--actualizar-rol` | Cuenta ya existente en el portal: se omite, o se le ajusta el rol (y sale del grupo del otro rol) |
 | `--sin-grupo-del-portal` | No agrega a las personas al grupo de Authelia de su rol (`OIDC_GROUP_USER` u `OIDC_GROUP_AREA_ADMIN`). Por omisión **sí** se agregan; sin eso Authelia las rechaza al entrar |
 | `--rotar-contrasena` | Rota la contraseña de LDAP de **todas** las personas procesadas en la corrida (nuevas y ya existentes en el portal) |
-| `--solo UID` (repetible) | Limita la corrida a esas personas del grupo; las demás salen «omitido: fuera de --solo». Sirve para probar con una persona sin crear grupos |
+| `--solo UID` (repetible) | Limita la corrida a esas personas; las del grupo que no se piden salen «omitido: fuera de --solo». Quien no es miembro de los grupos de la corrida (o sin `--grupo`) se busca directo en LDAP bajo `LDAP_USERS_BASE_DN`; si no existe, `ERROR` |
 | `--plantilla` | Plantilla del correo de la rotación: `onboarding_aduana` (por omisión) o `credenciales_iniciales` |
 | `--enviar-a CORREO`, `--si` | Ver «Probar el envío con otro destinatario» (exige `--rotar-contrasena`) |
 | `--dry-run` | No escribe nada («se agregaría a …», «se rotaría») |
@@ -64,6 +64,28 @@ Reglas:
 - Solo personas bajo `LDAP_USERS_BASE_DN`; las de otra rama se reportan y omiten. Sin `mail`: se reportan y omiten.
 - Los miembros de `OIDC_GROUP_SUPERADMIN` se omiten **siempre** («omitido: superadmin»): ni alta, ni grupo, ni rotación. Una cuenta existente con rol `administrador` en el portal tampoco se modifica.
 - Un fallo al agregar al grupo del portal no deshace la cuenta; se reporta como `ERROR`.
+
+### `migrar-usuario UID [opciones]` (FNC-202)
+Migra a **una** persona de LDAP y la deja lista en una corrida, en este orden: 1) cuenta `sso` + grupo del portal (lo mismo que `migrar-ldap --solo`; si la cuenta ya existe continúa); 2) áreas; 3) responsiva; 4) accesos; 5) rotación de contraseña. Sirve aunque la persona no esté en ningún grupo.
+
+| Flag | Efecto |
+|---|---|
+| `--area NOMBRE` (repetible, **obligatorio**) | Agrega la cuenta a esas áreas si no está; inexistente o inactiva → `ERROR` antes de escribir nada |
+| `--responsiva-firmada` | Registra la carta responsiva como firmada (cuenta y accesos vigentes pendientes) y activa su aprovisionamiento. Auditoría `firma_responsiva` con actor «sistema/CLI», «registrada por migración» |
+| `--plataforma NOMBRE` (repetible) | Otorga el acceso (origen `migracion`, sin actor): la plataforma debe estar activa, tener el nivel y ser de una de las áreas de la persona (las de `--area` o las que ya tenía) |
+| `--nivel usuario\|admin` | Nivel de los accesos (por omisión `usuario`) |
+| `--notificar` (apagado por omisión) | Por cada plataforma **otorgada en la corrida** (no las omitidas por ya vigentes) envía a la persona el correo existente «solicitud aprobada» (`notificar_solicitud_aprobada`, plantilla `solicitud_aprobada`), tras confirmar la transacción. Respeta `ENABLE_NOTIFICATIONS`, `NOTIFY_ACCESS_EVENTS` y su preferencia de correo (si no se envía, línea `OMITIDO`). Un fallo de correo se reporta `ERROR` sin deshacer ni detener la rotación. **`--enviar-a` solo aplica a la rotación**: este aviso va siempre a la persona. `--dry-run`: «se notificaría a …» |
+| `--rotar-contrasena`, `--plantilla`, `--enviar-a`, `--si` | Como en `migrar-ldap`; rota **al final** y solo si ningún paso dio `ERROR` |
+| `--dry-run` | Valida todo y muestra qué haría; no escribe |
+
+- Con `--responsiva-firmada` el acceso encola el aprovisionamiento (grupo LDAP y conector, si existe); sin él queda `en_proceso` esperando la firma en el portal. Funciona con `RESPONSIVA_MODO=global` y `por_plataforma` (en este último los accesos de la corrida se marcan firmados).
+- Acceso ya vigente con ese nivel (o superior) → `OMITIDO`, no error. Superadmin (grupo `OIDC_GROUP_SUPERADMIN` o cuenta `administrador` del portal) → `OMITIDO`, no se toca. Sin `mail` o fuera de `LDAP_USERS_BASE_DN` → `ERROR`.
+- Mismas líneas, `Resumen` y códigos de salida que los demás comandos; una entrada de auditoría por corrida.
+
+```bash
+./scripts/alta/alta.sh migrar-usuario dmartinez --area Aduana --plataforma Zabbix --responsiva-firmada --rotar-contrasena --dry-run
+./scripts/alta/alta.sh migrar-usuario dmartinez --area Aduana --plataforma Zabbix --responsiva-firmada --rotar-contrasena
+```
 
 ## Rotación de contraseñas
 - Contraseña generada con la política (`PASSWORD_POLICY_*`) → Password Modify en LDAP → Send de Vaultwarden → correo con el **enlace** (flujo FNC-138).

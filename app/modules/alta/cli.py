@@ -10,7 +10,9 @@ import click
 from flask.cli import AppGroup
 
 from app.authz import ROLE_AREA_ADMIN, ROLE_USER
+from app.modules.access.tipos import NIVELES
 from app.modules.alta import importacion, migracion
+from app.modules.alta import migrar_usuario as usuario_unico
 from app.modules.alta.csv_carga import leer_csv
 from app.modules.directory.writer import PATRON_CORREO
 from app.modules.users.entrega_credenciales import (PLANTILLAS_DE_ENTREGA,
@@ -148,3 +150,41 @@ def migrar_ldap(dry_run, grupos, rol, actualizar_rol, sin_grupo_del_portal,
                                actualizar_rol, sin_grupo_del_portal, plantilla,
                                solo, enviar_a)
     _terminar(resumen, 'migrar-ldap', dry_run)
+
+
+@alta_cli.command('migrar-usuario')
+@click.argument('uid')
+@click.option('--area', 'areas', multiple=True,
+              help='Área de la persona (por nombre); obligatoria y repetible.')
+@click.option('--plataforma', 'plataformas', multiple=True,
+              help='Plataforma a la que se le otorga acceso (por nombre, de '
+                   'una de sus áreas); repetible.')
+@click.option('--nivel', type=click.Choice(NIVELES), default=NIVELES[0],
+              show_default=True, help='Nivel de los accesos de --plataforma.')
+@click.option('--responsiva-firmada', 'responsiva_firmada', is_flag=True,
+              help='Registra la carta responsiva como firmada y activa el '
+                   'aprovisionamiento de sus accesos.')
+@click.option('--notificar', is_flag=True,
+              help='Envía a la persona el correo de «solicitud aprobada» por '
+                   'cada plataforma otorgada en la corrida (respeta '
+                   'ENABLE_NOTIFICATIONS, NOTIFY_ACCESS_EVENTS y su '
+                   'preferencia). Con --enviar-a no se redirige.')
+@click.option('--rotar-contrasena', is_flag=True,
+              help='Rota la contraseña de LDAP al final (solo si no hubo '
+                   'errores) y la entrega por Send y correo.')
+@click.option('--plantilla', type=click.Choice(PLANTILLAS_DE_ENTREGA),
+              default=SLUG_ONBOARDING, show_default=True, help=AYUDA_PLANTILLA)
+@click.option('--enviar-a', 'enviar_a', callback=_correo_valido, default=None,
+              help='Solo CLI: el correo con el enlace y el código va a este '
+                   'buzón y no al de la persona (con --rotar-contrasena).')
+@click.option('--si', is_flag=True, help='No pide confirmación con --enviar-a.')
+@click.option('--dry-run', is_flag=True, help=AYUDA_DRY_RUN)
+def migrar_usuario(uid, areas, plataformas, nivel, responsiva_firmada,
+                   notificar, rotar_contrasena, plantilla, enviar_a, si, dry_run):
+    """Migra a UNA persona de LDAP: cuenta, áreas, responsiva, accesos y contraseña."""
+    _exigir_rotacion(enviar_a, rotar_contrasena)
+    _confirmar_redireccion(enviar_a, dry_run, si)
+    resumen = usuario_unico.migrar_usuario(
+        uid, areas, plataformas, nivel, responsiva_firmada, dry_run,
+        rotar_contrasena, plantilla, enviar_a, notificar)
+    _terminar(resumen, 'migrar-usuario', dry_run)

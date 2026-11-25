@@ -25,7 +25,8 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO,
                                       ESTADO_REVOCADO, ESTADO_REVOCANDO,
                                       ESTADOS_OCUPANTES, LARGO_MOTIVO,
                                       NIVELES,
-                                      ORIGEN_ADMIN_DE_AREA, ORIGEN_SOLICITUD,
+                                      ORIGEN_ADMIN_DE_AREA, ORIGEN_MIGRACION,
+                                      ORIGEN_SOLICITUD,
                                       ORIGENES, RANGO_NIVEL)
 
 # Máquina de estados del contrato `accesos.md`.
@@ -105,6 +106,12 @@ def validar_otorgamiento(actor, usuario, plataforma, origen, regreso=False):
         if regreso and plataforma.area_id not in {
                 a.id for a in (usuario.areas or [])}:
             raise errores.fuera_de_alcance()  # P1: debe ser del área
+    elif origen == ORIGEN_MIGRACION:
+        # Lo otorga el sistema por la CLI (FNC-202): sin actor humano y a una
+        # cuenta que ya es del área de la plataforma (P1).
+        if actor is not None or plataforma.area_id not in {
+                a.id for a in (usuario.areas or [])}:
+            raise errores.fuera_de_alcance()
     else:
         _validar_alcance_del_actor(actor, usuario, plataforma)
     if is_admin(usuario):

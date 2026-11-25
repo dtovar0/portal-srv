@@ -24,7 +24,7 @@ from app.modules.access import rules
 from app.modules.access import services as servicios_accesos
 from app.modules.access.errores import ErrorDeAcceso
 from app.modules.access.models import PlatformAccessGrant
-from app.modules.access.tipos import ORIGEN_ADMIN_DE_AREA
+from app.modules.access.tipos import ORIGEN_ADMIN_DE_AREA, ORIGEN_MIGRACION
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
 from app.modules.auth.models import User
@@ -53,7 +53,8 @@ def _revalidar(trabajo, actor):
     usuario = db.session.get(User, trabajo.user_id) if trabajo.user_id else None
     plataforma = (db.session.get(Platform, trabajo.platform_id)
                   if trabajo.platform_id else None)
-    otorgante = None if acceso.origin == ORIGEN_ADMIN_DE_AREA else actor
+    otorgante = (None if acceso.origin in (ORIGEN_ADMIN_DE_AREA,
+                                           ORIGEN_MIGRACION) else actor)
     rules.validar_otorgamiento(otorgante, usuario, plataforma, acceso.origin,
                                acceso.level == NIVEL_USUARIO)
 
