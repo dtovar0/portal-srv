@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 3.2 (2026-11-24) |
+| Versión | 3.3 (2026-11-25) |
 | Proveedor | backend (FNC-064; cliente FNC-040, FNC-041; v2: FNC-138) |
 | Consumidores | web (FNC-069; pantalla DIS-019; v2: FNC-139) |
 | Solicitudes | — |
@@ -60,6 +60,7 @@ Lo lee el generador y la validación del formulario web (sin valores fijos en el
 - Solo superadmin (`403` para el resto). Cuentas `sso`/`ldap`; sin cuerpo (cualquier campo → `400 campo_no_permitido`).
 - Genera la contraseña con la política, la fija en LDAP y la entrega por Send con código de 6 dígitos y correo (`credenciales_iniciales`); el reintento es el del worker.
 - Antes de tocar LDAP exige directorio, notificaciones, `BASE_URL` y Vaultwarden: si no, `503` (`directorio_no_disponible`, `notificaciones_desactivadas`, `base_url_no_configurada`, `gestor_no_disponible`) sin cambios.
+- Si LDAP rechaza la escritura por permisos: `503 sin_permiso_en_directorio` (v3.3) y la contraseña no cambia.
 - Otros errores: `400 cuenta_no_es_del_directorio` (cuenta local), `404` (no existe), `409 cuenta_no_encontrada_en_directorio`.
 - Respuesta `200 {"status": "success", "entrega": {"estado": "enviadas" | "pendientes"}}`; nunca lleva contraseña, enlace ni código. Auditoría «ADMIN: ROTAR CONTRASEÑA» sin secretos.
 
@@ -72,6 +73,7 @@ Lo lee el generador y la validación del formulario web (sin valores fijos en el
 | 422 | `validacion` | `fields.password` (v2): "Es obligatoria.", "Entre {min} y {max} caracteres.", "Falta al menos una mayúscula / minúscula / un número / un símbolo.", "Usa solo letras, números y los símbolos permitidos." |
 | 422 | `validacion` | `fields.password` (v2): "El directorio rechazó la contraseña por su política de seguridad." (rechazo de `ppolicy`; sin el texto del servidor; no se crea nada) |
 | 503 | `directorio_no_disponible` | No se pudo crear la cuenta en el directorio; intenta más tarde. |
+| 503 | `sin_permiso_en_directorio` | La cuenta de servicio del portal no tiene permiso para esta operación en el directorio. (v3.3, FNC-206; sin DN ni datos de la persona) |
 
 `503 gestor_no_disponible` no existe: la caída de Vaultwarden o del correo no falla la petición, deja `credentials_status: "pendientes"`.
 
@@ -119,3 +121,4 @@ Solo superadmin (resto: 401/403). Fuente única: variables `LDAP_*` (ADR-004); s
 | 3 | 2026-11-19 | FNC-161 (pedido del dueño): `POST /users/<id>/credentials` (reenviar) se retira (`410`); su función la cumple el cambio de contraseña de `PUT /users/<id>`. **Incompatible** para quien llamaba la ruta (solo la web, ya ajustada). Decisión del orquestador (pendiente de validar) |
 | 3.1 | 2026-11-24 | FNC-168: la cuenta del portal nace `auth_source="sso"` (vive en LDAP y entra por Authelia); migración 0019 |
 | 3.2 | 2026-11-24 | FNC-190 (**aditivo**): `POST /users/<id>/rotar-contrasena`; el Send de toda entrega exige un código de 6 dígitos que llega en el mismo correo |
+| 3.3 | 2026-11-25 | FNC-206 (**aditivo**): `503 sin_permiso_en_directorio` cuando LDAP rechaza por permisos (alta de cuenta y rotación); antes `directorio_no_disponible`. `last_error` de la entrega puede ser `sin_permiso_en_directorio` (no se reintenta). Cliente sin cambios obligatorios: ya trata cualquier `503` como error |

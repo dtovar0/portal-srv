@@ -17,6 +17,8 @@ from app.modules.directory.errors import (MOTIVO_DATOS_INCOMPLETOS,
                                           MOTIVO_DIRECTORIO,
                                           MOTIVO_FUERA_DE_BASE,
                                           MOTIVO_GRUPO_INEXISTENTE,
+                                          MENSAJE_SIN_PERMISO,
+                                          MOTIVO_SIN_PERMISO,
                                           MOTIVO_ULTIMO_MIEMBRO,
                                           MOTIVO_USUARIO_INEXISTENTE)
 from app.modules.provisioning.tipos import (LARGO_ERROR,
@@ -115,6 +117,7 @@ MENSAJES = {
     MOTIVO_USUARIO_INEXISTENTE: 'La persona no existe en el directorio.',
     MOTIVO_ULTIMO_MIEMBRO: 'No se puede quitar al último miembro del grupo.',
     MOTIVO_DATOS_INVALIDOS: 'Los datos de la cuenta no son válidos.',
+    MOTIVO_SIN_PERMISO: MENSAJE_SIN_PERMISO,
 }
 MENSAJE_DIRECTORIO_TRANSITORIO = 'El directorio no respondió.'
 MENSAJE_DIRECTORIO_PERMANENTE = 'El directorio rechazó la operación.'

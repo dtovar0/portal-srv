@@ -23,6 +23,7 @@ from app import db
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
 from app.modules.directory.configuracion import directorio_activo
+from app.modules.directory.errors import MENSAJE_SIN_PERMISO
 from app.modules.directory.ldap_client import ClienteDirectorio
 from app.modules.notifications import services
 from app.modules.provisioning.configuracion import cargar_configuracion
@@ -30,7 +31,7 @@ from app.modules.provisioning.reloj import ahora
 from app.modules.secretos.sends import servicio_de_sends
 from app.modules.secretos.vaultwarden import ErrorDeGestor
 from app.modules.users.entrega_credenciales import (
-    CODIGO_DIRECTORIO, CODIGO_GESTOR_MAL_CONFIGURADO,
+    CODIGO_DIRECTORIO, CODIGO_GESTOR_MAL_CONFIGURADO, CODIGO_SIN_PERMISO,
     CODIGO_SIN_BASE_URL, CODIGO_SIN_NOTIFICACIONES, SLUG_INICIALES,
     enviar_credenciales, fijar_contrasena_en_directorio, marcar_enviada,
     marcar_pendiente, url_del_portal)
@@ -50,6 +51,7 @@ NO_SE_REGISTRO = ('No se pudo registrar la entrega.', 500, 'error_interno')
 _NO_LISTO = {
     CODIGO_DIRECTORIO: ('El directorio no está disponible.',
                         'directorio_no_disponible'),
+    CODIGO_SIN_PERMISO: (MENSAJE_SIN_PERMISO, 'sin_permiso_en_directorio'),
     CODIGO_SIN_NOTIFICACIONES: ('Las notificaciones están desactivadas.',
                                 'notificaciones_desactivadas'),
     CODIGO_SIN_BASE_URL: ('BASE_URL no está configurada.',
@@ -149,7 +151,9 @@ def rotar_y_enviar(cuenta):
     codigo = fijar_contrasena_en_directorio(uid, contrasena)
     if codigo is not None:
         del contrasena
-        return None, _error_no_listo(CODIGO_DIRECTORIO)
+        return None, _error_no_listo(
+            CODIGO_SIN_PERMISO if codigo == CODIGO_SIN_PERMISO
+            else CODIGO_DIRECTORIO)
     codigo, send_id = enviar_credenciales(correo, nombre, uid, contrasena,
                                           send_anterior, SLUG_INICIALES)
     del contrasena

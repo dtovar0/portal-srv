@@ -4,12 +4,17 @@ El ejecutor (FNC-049) decide con `reintentable` si vuelve a intentar:
 - éxito: `HECHO` (se escribió) o `YA_ESTABA` (sin cambios; idempotencia, SEC-LDAP-08);
 - `ERROR_TRANSITORIO`: red, tiempo de espera o servidor ocupado; se reintenta;
 - `NO_EXISTE` y `ERROR_PERMANENTE`: no se reintentan.
+- Un rechazo de permisos del directorio (`insufficientAccessRights`, código 50)
+  es `ERROR_PERMANENTE` con el motivo `sin_permiso_en_directorio` (FNC-206): no
+  es una caída; reintentar no lo arregla (falta una ACL para la cuenta de
+  servicio).
 """
 from dataclasses import dataclass
 from enum import Enum
 
 from ldap3.core.exceptions import (LDAPAdminLimitExceededResult,
                                    LDAPBusyResult, LDAPCommunicationError,
+                                   LDAPInsufficientAccessRightsResult,
                                    LDAPMaximumRetriesError,
                                    LDAPNoSuchObjectResult,
                                    LDAPResponseTimeoutError,
@@ -54,10 +59,17 @@ MOTIVO_ULTIMO_MIEMBRO = 'ultimo_miembro'
 MOTIVO_DATOS_INCOMPLETOS = 'datos_incompletos'
 MOTIVO_DATOS_INVALIDOS = 'datos_invalidos'
 MOTIVO_DIRECTORIO = 'directorio'
+# La cuenta de servicio no tiene permiso para la operación (FNC-206).
+MOTIVO_SIN_PERMISO = 'sin_permiso_en_directorio'
+MENSAJE_SIN_PERMISO = ('La cuenta de servicio del portal no tiene permiso '
+                       'para esta operación en el directorio.')
 # Mover un grupo entre OU (FNC-163).
 MOTIVO_DESTINO_INEXISTENTE = 'ou_destino_inexistente'
 MOTIVO_DESTINO_OCUPADO = 'destino_ocupado'
 MOTIVO_MOVER_NO_CONFIGURADO = 'inactivos_no_configurado'
+
+# Rechazos de permisos de `ldap3` (la cuenta de servicio no puede escribir).
+ERRORES_SIN_PERMISO = (LDAPInsufficientAccessRightsResult,)
 
 
 @dataclass(frozen=True)
@@ -88,3 +100,14 @@ def clasificar_error(excepcion):
     if isinstance(excepcion, ERRORES_TRANSITORIOS):
         return Resultado.ERROR_TRANSITORIO
     return Resultado.ERROR_PERMANENTE
+
+
+def es_sin_permiso(excepcion):
+    """`True` si la excepción de `ldap3` es un rechazo de permisos."""
+    return isinstance(excepcion, ERRORES_SIN_PERMISO)
+
+
+def motivo_de_error(excepcion):
+    """Motivo (`MOTIVO_*`) de un fallo de escritura de `ldap3`."""
+    return MOTIVO_SIN_PERMISO if es_sin_permiso(excepcion) \
+        else MOTIVO_DIRECTORIO

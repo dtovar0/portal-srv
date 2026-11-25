@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 3.3 (2026-11-24) |
+| Versión | 3.4 (2026-11-25) |
 | Proveedor | backend (FNC-044, FNC-045, FNC-055, FNC-161, FNC-185) |
 | Consumidores | web (FNC-069; pantallas DIS-016, DIS-019) |
 | Solicitudes | — |
@@ -89,6 +89,7 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 | 400 | `contrasena_rechazada` | El directorio rechazó la contraseña por su política de seguridad. (FNC-161) |
 | 409 | `cuenta_no_encontrada_en_directorio` | No se encontró la cuenta en el directorio. (FNC-161) |
 | 503 | `directorio_no_disponible` | No se pudo actualizar la contraseña en el directorio. (FNC-161) |
+| 503 | `sin_permiso_en_directorio` | La cuenta de servicio del portal no tiene permiso para esta operación en el directorio (contraseña o grupo del rol; con el rol, «El rol no se cambió.»). (FNC-206) |
 | 403 | `sin_permiso` | Rol insuficiente (común, README). |
 | 422 | `validacion` | Revisa los campos marcados. |
 
@@ -117,3 +118,4 @@ Asigna las áreas que administra un `admin_area` (`area_admins`). Reemplaza la l
 | 3.1 | 2026-11-24 | FNC-165 (pedido del dueño): `password` en `PUT /users/<id>` para cuentas `sso` sigue la regla de `ldap` (antes `400 campo_no_permitido`: **más permisivo**, solo superadmin). La búsqueda por correo usa el DN real. Cliente: `user-form.tsx` (FNC-166) |
 | 3.2 | 2026-11-24 | FNC-168 (decisión del dueño: las cuentas viven en LDAP y entran por Authelia): las altas son `auth_source=sso`; `ldap` queda como origen heredado y la migración 0019 convierte las existentes. **Incompatible** para quien filtre por `ldap`: el cliente usa `lib/origen-cuenta.ts` (FNC-169) |
 | 3.3 | 2026-11-24 | FNC-185 (dueño): efecto en accesos de asignar/quitar áreas y de degradar el rol: nivel `admin` al ser admin, regreso a `usuario` (conservado) al dejar de serlo. Sin cambios de forma |
+| 3.4 | 2026-11-25 | FNC-206 (**aditivo**): `503 sin_permiso_en_directorio` al cambiar contraseña o rol cuando LDAP rechaza por permisos (antes `directorio_no_disponible` o `grupo_no_actualizado`). Sin cambios de forma |

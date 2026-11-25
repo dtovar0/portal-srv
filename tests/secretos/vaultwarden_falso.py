@@ -84,6 +84,7 @@ class VaultwardenFalso:
         self.kdf = (kdf, iteraciones, memoria, paralelismo)
         self.kdf_en_token = kdf_en_token
         self.peticiones = []
+        self.cabeceras = []        # (método, ruta, cabeceras) (FNC-204)
         self.estado_forzado = {}   # ruta → estado HTTP
         self.excepcion = None      # se lanza en la siguiente petición
         self.token_vigente = TOKEN
@@ -141,6 +142,7 @@ class VaultwardenFalso:
         assert url.startswith(URL), url
         ruta = url[len(URL):]
         self.peticiones.append((metodo, ruta))
+        self.cabeceras.append((metodo, ruta, dict(cabeceras)))
         if self.excepcion is not None:
             excepcion, self.excepcion = self.excepcion, None
             raise excepcion
