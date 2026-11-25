@@ -50,6 +50,9 @@ MENSAJE_FLAGS = ('--omitir-si-existe-en-ldap y --rotar-contrasena requieren '
                  '--crear-en-ldap.')
 MENSAJE_SIN_ENTREGA = ('No se puede entregar contraseñas: {motivo}. No se '
                        'escribió nada.')
+MENSAJE_ENTREGA_VERIFICADA = ('Vaultwarden acepta las credenciales '
+                              'configuradas (verificado; no se creó ningún '
+                              'Send).')
 DETALLE_SUPERADMIN = 'omitido: superadmin'
 DETALLE_PORTAL = 'cuenta del portal'
 DETALLE_VINCULADO = 'ya estaba en LDAP: cuenta del portal vinculada (sso)'
@@ -125,10 +128,15 @@ def cliente_o_error():
         raise click.ClickException(MENSAJE_SIN_LDAP) from None
 
 
-def exigir_entrega():
+def exigir_entrega(dry_run=False):
+    """Termina el comando si no se puede entregar (incluye el login real a
+    Vaultwarden, FNC-205: una sola vez por corrida, antes de cualquier
+    escritura). En `--dry-run` también verifica (solo lectura) e informa."""
     motivo = rotacion.motivo_sin_entrega()
     if motivo:
         raise click.ClickException(MENSAJE_SIN_ENTREGA.format(motivo=motivo))
+    if dry_run:
+        click.echo(MENSAJE_ENTREGA_VERIFICADA)
 
 
 def _separar_nombre(reg):
@@ -180,7 +188,7 @@ def importar_usuarios(registros, dry_run, crear_en_ldap, omitir_si_existe,
     cliente = None
     if crear_en_ldap:
         cliente = cliente_o_error()
-        exigir_entrega()
+        exigir_entrega(dry_run)
 
     if len(registros) > MAX_REGISTROS_POR_LOTE:
         resumen.agregar(ENTIDAD_USUARIOS, ERROR, 'lote demasiado grande')

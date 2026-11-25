@@ -248,6 +248,9 @@ class SendsPorCli:
             raise GestorMalConfigurado('bw: el enlace del Send no es del servidor configurado.')
         return SendCreado(id=send_id, enlace=enlace)
 
+    def verificar_acceso(self):
+        """Sin cuenta propia que verificar: la sesión de `bw` se usa al crear."""
+
     def borrar(self, send_id):
         # Solo ids con forma de Send y tras `--`: un valor con `-` no se vuelve opción.
         if not isinstance(send_id, str) or not PATRON_ID_SEND.fullmatch(send_id):
@@ -290,6 +293,10 @@ class SendsPorApi:
             raise GestorMalConfigurado('Vaultwarden: Send sin identificador.')
         return SendCreado(id=send_id,
                           enlace=enlace_de_send(self._base, acceso, material))
+
+    def verificar_acceso(self):
+        """Login real y claves abiertas, sin crear ningún Send (FNC-205)."""
+        self._cliente.verificar_acceso()
 
     @staticmethod
     def _validar_creacion(respuesta):

@@ -181,7 +181,7 @@ def migrar_usuario(uid, nombres_areas, nombres_plataformas, nivel,
                    plantilla=SLUG_ONBOARDING, enviar_a=None, notificar=False):
     cliente = cliente_o_error()
     if rotar:
-        exigir_entrega()
+        exigir_entrega(dry_run)
     resumen = Resumen()
     uid = uid.strip()
 

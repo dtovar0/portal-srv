@@ -449,6 +449,12 @@ class ClienteVaultwarden:
                 self._abrir_claves(sesion, _campo(datos, 'profile') or {})
             return sesion
 
+    def verificar_acceso(self):
+        """Inicia sesión y abre las claves de usuario (lo que necesita cifrar
+        un Send) sin crear nada (FNC-205). Falla con `GestorMalConfigurado`
+        (credenciales rechazadas) o `GestorCaido` (sin respuesta)."""
+        self.sesion_de_usuario()
+
     def pedir_autenticado(self, metodo, ruta, cuerpo=None):
         """`Respuesta` de una petición con la sesión; un 401 renueva la sesión
         y reintenta una sola vez. El llamador interpreta el estado."""
