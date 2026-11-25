@@ -23,9 +23,13 @@ def test_sin_tipo_registrado_no_cuenta_como_conector(conector_noop):
     assert tiene_conector(plataforma) is False
 
 
-def test_plataforma_ldap_o_sin_configuracion(conector_noop):
+def test_plataforma_ldap_con_conector_o_sin_configuracion(conector_noop):
     plataforma, configuracion, _ = conector_noop
+    # FNC-196: el tipo de integración ya no decide; manda la configuración.
     plataforma.integration_type = TIPO_LDAP
+    db.session.commit()
+    assert tiene_conector(plataforma) is True
+    db.session.delete(configuracion)
     db.session.commit()
     assert tiene_conector(plataforma) is False
     assert tiene_conector(None) is False

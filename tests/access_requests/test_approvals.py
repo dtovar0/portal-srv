@@ -359,7 +359,10 @@ def test_choque_al_confirmar_responde_409_y_revierte(escena, cliente_como,
     _sigue_pendiente(solicitud.id)
 
 
-def test_aprobar_nivel_no_integrado_409(escena, cliente_como, cola_falsa):
+def test_aprobar_nivel_sin_dn_guardado_si_se_aprueba(escena, cliente_como,
+                                                     cola_falsa):
+    """FNC-196: antes 409 `plataforma_no_disponible` (nivel no integrado);
+    ahora el grupo se deriva y se encola el aprovisionamiento."""
     solo_usuario = fabricas.crear_plataforma(
         escena['area'], 'Nómina', integration_type=TIPO_LDAP,
         ldap_group_user_dn='cn=nomina-usuario,ou=grupos,dc=pruebas,dc=local')
@@ -367,9 +370,8 @@ def test_aprobar_nivel_no_integrado_409(escena, cliente_como, cola_falsa):
 
     respuesta = aprobar(cliente_como(escena['admin']), solicitud.id)
 
-    assert _codigo(respuesta) == (409, 'plataforma_no_disponible')
-    _sigue_pendiente(solicitud.id)
-    assert ProvisioningJob.query.count() == 0
+    assert respuesta.status_code == 200
+    assert ProvisioningJob.query.count() == 1
 
 
 def test_aprobar_con_el_acceso_ya_vigente_409(escena, cliente_como,

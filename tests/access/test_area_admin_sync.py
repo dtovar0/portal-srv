@@ -142,7 +142,8 @@ def test_si_el_otorgamiento_falla_no_se_crea_la_plataforma(
         action=Evento.PLATAFORMA_CREADA.value).count()
 
 
-def test_plataforma_ldap_sin_grupo_de_usuario_no_genera_acceso(escena):
+def test_plataforma_ldap_sin_grupo_de_usuario_tambien_genera_acceso(escena):
+    """FNC-196: antes no generaba acceso (heredada sin grupo `usuario`)."""
     from app.modules.access.area_admin_sync import sincronizar_plataforma
     heredada = fabricas.crear_plataforma(escena['area'], 'Heredada',
                                          integration_type=TIPO_LDAP)
@@ -150,7 +151,7 @@ def test_plataforma_ldap_sin_grupo_de_usuario_no_genera_acceso(escena):
     sincronizar_plataforma(heredada)
     db.session.commit()
 
-    assert not _automaticos(platform_id=heredada.id)
+    assert _automaticos(platform_id=heredada.id)
 
 
 # --------------------------------------------------------------------------- #

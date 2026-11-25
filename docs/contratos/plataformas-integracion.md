@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.4 (2026-11-24) |
-| Proveedor | backend (FNC-046, FNC-055, FNC-185) |
+| Versión | 1.5 (2026-11-24) |
+| Proveedor | backend (FNC-046, FNC-055, FNC-185, FNC-196) |
 | Consumidores | web (FNC-069; pantalla DIS-017) |
 | Solicitudes | — |
 
@@ -20,13 +20,13 @@ Convenciones comunes: [README.md](README.md). Cambia `POST /platforms`, `PUT /pl
 ## Campos nuevos de `Platform` (respuesta)
 | Campo | Tipo | Nota |
 |---|---|---|
-| `integration_type` | `"ldap"` \| `"conector"` | Obligatorio |
-| `ldap_group_user_dn` | string \| null | Grupo del nivel `usuario`; null solo si `conector` |
-| `ldap_group_admin_dn` | string \| null | Grupo del nivel `admin`; null solo si `conector` |
+| `integration_type` | `"ldap"` \| `"conector"` | Obligatorio. Desde 1.5 es **informativo** (compatibilidad): no decide el aprovisionamiento; el conector existe si `has_connector` |
+| `ldap_group_user_dn` | string \| null | Grupo del nivel `usuario`; toda plataforma lo tiene (derivado si no se indica); null solo si no hay directorio configurado (tipo `conector` heredado) |
+| `ldap_group_admin_dn` | string \| null | Grupo del nivel `admin`; igual que el anterior |
 | `groups_status` | `"ok"` \| `"no_existe"` \| `"sin_verificar"` | Resultado de la comprobación en el directorio |
 | `groups_location` | `"activos"` \| `"inactivos"` \| `"parcial"` | Dónde están hoy los grupos LDAP: `inactivos` = movidos a `LDAP_GROUPS_INACTIVE_BASE_DN` (plataforma o área inactiva); `parcial` = uno movido y otro no (FNC-163) |
 | `groups_move_status` | `null` \| `"pendiente"` \| `"hecho"` \| `"fallido"` | Estado del traslado de grupos (worker); `null` = nunca se pidió o la función está apagada (FNC-163) |
-| `has_connector` | boolean | Hay conector configurado (ver conectores-y-ejecuciones.md) |
+| `has_connector` | boolean | Hay conector configurado y activo; es un paso **adicional** a los grupos, cualquiera sea `integration_type` (ver conectores-y-ejecuciones.md) |
 | `active_grants` | int | Accesos vigentes (definición en accesos.md) |
 
 - `user_ids` deja de exponerse; `PUT /platforms/<id>/users` responde `410 endpoint_retirado` (FNC-065, ver README.md).
@@ -48,7 +48,9 @@ Convenciones comunes: [README.md](README.md). Cambia `POST /platforms`, `PUT /pl
 | `ldap_group_user_dn` | string | No | **Solo superadmin** (SEC-LDAP-05); admin → 403 `dn_solo_superadmin` |
 | `ldap_group_admin_dn` | string | No | **Solo superadmin**; distinto del de usuario |
 
-- Si no llegan los DN, el backend los **deriva** de la convención de las variables `LDAP_*` del `.env` (ADR-004, FNC-043).
+- Si no llegan los DN, el backend los **deriva** de la convención de las variables `LDAP_*` del `.env` (ADR-004, FNC-043). Desde 1.5, con `LDAP_PLATFORM_GROUP_TEMPLATE` vacía se usa `cn=app-{plataforma}-{nivel}` (plural `users`/`admins`) y ya no hay `422` por «sin convención».
+- 1.5 (FNC-196, dueño): toda plataforma da acceso por el grupo de su nivel (`app-{plataforma}-{nivel}`), con o sin conector. Una plataforma `conector` ya acepta y deriva DN (antes `422`). Sin directorio configurado, solo `integration_type: "conector"` sin DN se guarda sin grupos; con DN pedidos, `422`. El grupo que no existe se crea al otorgar (`LDAP_PROVISIONING_AUTO_CREATE_GROUPS`, por omisión activa).
+- Si a una plataforma le faltan los DN (p. ej. heredada), al otorgar un acceso se derivan y se guardan; la migración `0021` rellena los existentes si `LDAP_GROUPS_BASE_DN` está en el entorno.
 - Todo DN se valida bajo la OU de grupos de plataforma, comparando RDN normalizados (SEC-LDAP-04) → si no, 422.
 - Si el grupo no existe en el directorio, la plataforma se guarda y la respuesta trae un aviso (los grupos los crea el administrador del directorio en v1).
 - Cambiar `integration_type` o los DN con `active_grants > 0` → 409.
@@ -62,7 +64,7 @@ En la misma transacción:
 
 - El superadmin tiene acceso por defecto: su alta no genera acceso automático.
 - Todos los admins del área reciben el acceso automático de nivel `admin` (FNC-185; antes `usuario`); al quitarle el área a un admin su acceso baja a `usuario` y lo conserva (FNC-185; antes se revocaba).
-- No lo reciben un admin inactivo ni una plataforma `ldap` sin grupo de nivel `usuario` (heredada); al completar sus grupos o cambiar el tipo, sí (FNC-055). Una plataforma `ldap` sin `ldap_group_admin_dn` deja al admin en nivel `usuario` y lo sube a `admin` al completar ese grupo (FNC-185).
+- No lo recibe un admin inactivo. Desde 1.5 ya no hay plataformas «sin grupo»: los DN faltantes se derivan y el admin recibe `admin` de inmediato (FNC-196; antes una `ldap` sin grupo `usuario` no recibía acceso y sin `ldap_group_admin_dn` quedaba en `usuario`).
 
 ## Salida
 ```json
@@ -113,3 +115,4 @@ En la misma transacción:
 | 1.2 | 2026-11-17 | FNC-144: `DELETE /platforms/<id>` con `409 plataforma_con_accesos` y limpieza del historial cerrado |
 | 1.3 | 2026-11-19 | FNC-163: aditivo `groups_location` y `groups_move_status`; `409 grupos_en_inactivos` en `PUT`; el cambio de `status` de plataforma o área (`PUT /areas/<id>`) mueve los grupos por el worker |
 | 1.4 | 2026-11-24 | FNC-185 (dueño): el acceso automático del admin es de nivel `admin`; al dejar de administrar baja a `usuario` y se conserva. Sin cambios de forma |
+| 1.5 | 2026-11-24 | FNC-196 (dueño): grupos siempre y conector adicional. `integration_type` informativo; las plataformas `conector` aceptan y derivan DN; plantilla por omisión; `409 plataforma_sin_conector` retirado de `PUT /platforms/<id>/connector`. Sin cambios de forma |

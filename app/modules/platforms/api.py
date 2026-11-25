@@ -41,7 +41,7 @@ from app.modules.platforms.estado import (accesos_que_impiden_mover,
                                           accesos_vigentes)
 from app.modules.platforms.tipos import (CAMPOS_DN, GRUPOS_SIN_VERIFICAR,
                                          NIVEL_ADMIN, NIVEL_USUARIO,
-                                         TIPO_CONECTOR, TIPO_LDAP)
+                                         TIPO_CONECTOR)
 from app.modules.platforms.validacion import (CAMPOS_PERMITIDOS,
                                               MENSAJE_DN_BASE,
                                               validar_campos)
@@ -62,12 +62,13 @@ GRUPO_EN_USO = ('El grupo ya pertenece a otra plataforma.', 409,
                 'grupo_en_uso')
 GRUPOS_IGUALES = ('Los grupos de usuario y admin deben ser distintos.', 409,
                   'grupos_iguales')
-MENSAJE_SIN_DIRECTORIO = ('El directorio no está configurado; usa conector o '
-                          'configura las variables LDAP_*.')
+MENSAJE_SIN_DIRECTORIO = ('El directorio no está configurado; configura las '
+                          'variables LDAP_* (o usa el tipo conector sin grupos).')
+MENSAJE_GRUPO_RESERVADO = ('Es un grupo de rol del portal; elige otro nombre '
+                           'de plataforma o indica otro grupo.')
 MENSAJE_SIN_CONVENCION = ('No hay convención de grupos configurada '
                           '(LDAP_PLATFORM_GROUP_TEMPLATE): el superadmin debe '
                           'indicar el grupo.')
-MENSAJE_DN_CON_CONECTOR = 'Una plataforma con conector no usa grupos del directorio.'
 
 # Valores por defecto del alta (los mismos de antes de FNC-046).
 POR_DEFECTO_ALTA = {'icon': 'box', 'bg_color': '#6366f1',
@@ -143,16 +144,16 @@ def _grupo_de_otra_plataforma(dns, plataforma_id, rdn_unico=False):
 
 
 def _resolver_grupos(tipo, dns_pedidos, nombre, area, plataforma_id=None):
-    """DN finales por nivel: los pedidos o los derivados, validados."""
-    if tipo == TIPO_CONECTOR:
-        errores = {CAMPOS_DN[n]: MENSAJE_DN_CON_CONECTOR
-                   for n, dn in dns_pedidos.items() if dn}
-        if errores:
-            raise Rechazo(validation_error(errores))
-        return None, {NIVEL_USUARIO: None, NIVEL_ADMIN: None}
+    """DN finales por nivel: los pedidos o los derivados, validados.
 
+    Toda plataforma tiene grupos de acceso (FNC-196), con o sin conector. Sin
+    directorio configurado no se pueden derivar ni validar: solo el tipo
+    `conector` (heredado) se guarda sin grupos y sin DN pedidos.
+    """
     configuracion = grupos.configuracion_directorio()
     if configuracion is None:
+        if tipo == TIPO_CONECTOR and not any(dns_pedidos.values()):
+            return None, {NIVEL_USUARIO: None, NIVEL_ADMIN: None}
         raise Rechazo(validation_error(
             {'integration_type': MENSAJE_SIN_DIRECTORIO}))
     dns, errores = {}, {}
@@ -163,6 +164,8 @@ def _resolver_grupos(tipo, dns_pedidos, nombre, area, plataforma_id=None):
             errores[CAMPOS_DN[nivel]] = MENSAJE_SIN_CONVENCION
         elif not grupos.dn_en_base(configuracion, dn):
             errores[CAMPOS_DN[nivel]] = MENSAJE_DN_BASE
+        elif grupos.es_grupo_reservado(configuracion, dn):
+            errores[CAMPOS_DN[nivel]] = MENSAJE_GRUPO_RESERVADO
         dns[nivel] = dn
     if errores:
         raise Rechazo(validation_error(errores))
@@ -226,7 +229,7 @@ def create_platform():
         or limpios.get('crear_grupos')
         or os.getenv('LDAP_AUTO_CREATE_PLATFORM_GROUPS', '').lower() in ('true', '1', 'yes')
     )
-    if debe_crear and configuracion is not None and limpios.get('integration_type') == TIPO_LDAP:
+    if debe_crear and configuracion is not None:
         try:
             from app.modules.directory.writer import EscritorDirectorio
             escritor = EscritorDirectorio()
