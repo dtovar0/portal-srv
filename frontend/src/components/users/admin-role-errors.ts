@@ -6,6 +6,7 @@
  */
 
 import { ApiError } from '@/lib/api';
+import { MENSAJE_SIN_PERMISO_EN_DIRECTORIO } from '@/lib/access/sin-permiso-directorio';
 
 export const MENSAJE_SIN_AREAS = 'Elige al menos un área.';
 
@@ -15,6 +16,7 @@ const MENSAJES_POR_CODIGO: Record<string, string> = {
   rol_no_admin: 'La cuenta ya no es administradora de área. La lista se actualizó.',
   validacion: 'Alguna de las áreas ya no existe. La lista se actualizó.',
   campo_no_permitido: 'No se pudo guardar el cambio. Inténtalo de nuevo.',
+  sin_permiso_en_directorio: MENSAJE_SIN_PERMISO_EN_DIRECTORIO,
 };
 
 const MENSAJES_POR_ESTADO: Record<number, string> = {
