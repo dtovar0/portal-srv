@@ -56,6 +56,10 @@ def _es_id(valor):
             and 1 <= valor <= ID_MAXIMO)
 
 
+MENSAJE_SOLO_USUARIO = ('Solo se solicita el nivel usuario; el nivel admin lo '
+                        'otorga un administrador.')
+
+
 def limpiar_justificacion(valor):
     """Opcional (decisión del dueño, 2026-10-20); recortada y ≤ 500."""
     if valor is None:
@@ -73,8 +77,12 @@ def validar_datos(plataforma_id, nivel, justificacion):
     if not _es_id(plataforma_id):
         raise errores_acceso.validacion('platform_id',
                                         'Indica una plataforma.')
+    if nivel is None:
+        nivel = catalogo.NIVELES_SOLICITABLES[0]  # FNC-199: por omisión `usuario`
     if nivel not in NIVELES:
         raise errores_acceso.validacion('level', 'Nivel desconocido.')
+    if nivel not in catalogo.NIVELES_SOLICITABLES:
+        raise errores_acceso.validacion('level', MENSAJE_SOLO_USUARIO)
     return plataforma_id, nivel, limpiar_justificacion(justificacion)
 
 

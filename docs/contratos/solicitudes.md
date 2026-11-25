@@ -39,7 +39,7 @@ Propia solicitud en approve/reject → 403 `solicitud_propia` (SEC-AUTHZ-08).
 [ { "platform": { "id": 12, "name": "Contabilidad", "description": "ERP contable", "icon": "box" },
     "area": { "id": 3, "name": "Finanzas" },
     "my_level": "usuario", "my_access_status": "activo", "pending_request_id": null,
-    "can_request": true, "requestable_levels": ["admin"] } ]
+    "can_request": true, "requestable_levels": ["usuario"] } ]
 ```
 | Campo | Tipo |
 |---|---|
@@ -47,13 +47,13 @@ Propia solicitud en approve/reject → 403 `solicitud_propia` (SEC-AUTHZ-08).
 | `my_access_status` | estado del acceso (accesos.md) \| null |
 | `pending_request_id` | int \| null |
 | `can_request` | boolean (false si es su área administrada, superadmin, pendiente, o ya tiene `admin`; desde 1.2 no depende de grupos ni conector) |
-| `requestable_levels` | (`"usuario"` \| `"admin"`)[]; P5: solo niveles superiores al vigente |
+| `requestable_levels` | `["usuario"]` o `[]` (v1.3, FNC-199: el nivel admin no se solicita; lo otorga un administrador) |
 
 ## `POST /access-requests`
 | Campo | Tipo | Obligatorio | Regla |
 |---|---|---|---|
 | `platform_id` | int | Sí | En el catálogo del actor |
-| `level` | `"usuario"` \| `"admin"` | Sí | P5: un nivel por plataforma; pedir `admin` con `usuario` vigente es subir (reemplaza al aprobarse) |
+| `level` | `"usuario"` | No (por omisión `usuario`) | v1.3, FNC-199: `"admin"` → `422 validacion` |
 | `justification` | string \| null | No | ≤ 500 caracteres; recortada; vacía → null (decisión del dueño, 2026-10-20: no se pide) |
 
 Respuesta `201`: `{"status": "success", "request": AccessRequest}`. Auditoría `solicitud_creada`; correo `solicitud_nueva` a los admins del área (FNC-048).
@@ -130,3 +130,4 @@ Respuesta: `{"status": "success", "request": AccessRequest}`. Auditoría `solici
 | 1 | 2026-10-14 | Versión inicial (FNC-038) |
 | 1.1 | 2026-10-20 | `justification` opcional, sin mínimo (decisión del dueño); catálogo solo de áreas `Activo` y admin ve sus áreas sin solicitar; `409 estado_invalido` al subir con acceso no activo (FNC-056) |
 | 1.2 | 2026-11-24 | FNC-196 (dueño): toda plataforma activa de un área activa es solicitable en ambos niveles; el acceso se da por el grupo `app-{plataforma}-{nivel}` y, si hay conector, además por su alta. `plataforma_no_disponible` solo por plataforma o área inactivas. Sin cambios de forma |
+| 1.3 | 2026-11-24 | FNC-199 (dueño): solo se solicita el nivel `usuario`; `level` opcional (por omisión `usuario`), `admin` → `422`. `requestable_levels` ⊆ `["usuario"]` |

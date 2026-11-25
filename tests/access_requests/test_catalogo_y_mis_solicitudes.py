@@ -27,7 +27,7 @@ def test_usuario_ve_solo_las_plataformas_de_sus_areas(escena, cliente_como):
     entrada = catalogo['Contabilidad']
     assert entrada['area'] == {'id': escena['area'].id, 'name': 'Finanzas'}
     assert entrada['can_request'] is True
-    assert entrada['requestable_levels'] == ['usuario', 'admin']
+    assert entrada['requestable_levels'] == ['usuario']  # FNC-199
     assert entrada['my_level'] is None and entrada['my_access_status'] is None
     assert entrada['pending_request_id'] is None
 
@@ -75,7 +75,10 @@ def test_con_usuario_vigente_solo_puede_subir(escena, cliente_como):
 
     assert entrada['my_level'] == 'usuario'
     assert entrada['my_access_status'] == 'activo'
-    assert entrada['requestable_levels'] == ['admin']
+    # FNC-199: con `usuario` vigente ya no hay nada que solicitar (el nivel
+    # admin lo otorga un administrador).
+    assert entrada['requestable_levels'] == []
+    assert entrada['can_request'] is False
 
 
 def test_con_admin_vigente_no_puede_solicitar(escena, cliente_como):
