@@ -33,7 +33,7 @@ from app.modules.provisioning.tipos import (ESTADO_CANCELADO,
                                             LARGO_CLAVE_IDEMPOTENCIA,
                                             OPERACION_OTORGAR,
                                             OPERACION_REVOCAR, OPERACIONES,
-                                            PROVEEDORES)
+                                            PROVEEDOR_LDAP)
 
 logger = logging.getLogger(__name__)
 
@@ -197,8 +197,9 @@ def encolar(operacion, usuario_id, plataforma, nivel, clave_idempotencia,
             access_id=None):
     """Agrega un trabajo a la transacción actual y lo devuelve.
 
-    - `plataforma`: `Platform`; su `integration_type` elige el proveedor y su
-      área queda en el trabajo.
+    - `plataforma`: `Platform`; el proveedor es siempre el de grupos
+      (`ldap`), que ejecuta además el conector si la plataforma lo tiene
+      (FNC-196); su área queda en el trabajo.
     - No hace `commit`: lo hace el llamador junto con su cambio.
     """
     clave = _validar_clave(clave_idempotencia)
@@ -209,8 +210,8 @@ def encolar(operacion, usuario_id, plataforma, nivel, clave_idempotencia,
         raise DatosDeTrabajoInvalidos(f'Operación desconocida: {operacion}')
     if nivel not in CAMPOS_DN:
         raise DatosDeTrabajoInvalidos(f'Nivel desconocido: {nivel}')
-    if plataforma is None or plataforma.integration_type not in PROVEEDORES:
-        raise DatosDeTrabajoInvalidos('Plataforma sin tipo de integración.')
+    if plataforma is None:
+        raise DatosDeTrabajoInvalidos('Falta la plataforma.')
     if not usuario_id:
         raise DatosDeTrabajoInvalidos('Falta el usuario.')
 
@@ -218,7 +219,7 @@ def encolar(operacion, usuario_id, plataforma, nivel, clave_idempotencia,
     if operacion == OPERACION_REVOCAR:
         cancelar_otorgar_en_espera(usuario_id, plataforma, nivel, momento)
     trabajo = ProvisioningJob(
-        operation=operacion, provider=plataforma.integration_type,
+        operation=operacion, provider=PROVEEDOR_LDAP,
         level=nivel, status=ESTADO_PENDIENTE, user_id=usuario_id,
         platform_id=plataforma.id, area_id=plataforma.area_id,
         access_id=access_id, idempotency_key=clave, attempts_count=0,

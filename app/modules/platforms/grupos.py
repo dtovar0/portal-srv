@@ -12,15 +12,18 @@ import os
 import re
 import unicodedata
 
+from app.modules.audit.events import Evento
+from app.modules.audit.services import add_audit_log
 from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
                                                  cargar_configuracion,
                                                  directorio_activo)
-from app.modules.directory.dn import bajo_base
+from app.modules.directory.dn import bajo_base, mismo_dn
 from app.modules.directory.ldap_client import (ClienteDirectorio,
                                                ErrorDirectorio,
                                                escapar_valor_dn)
-from app.modules.platforms.tipos import (GRUPOS_NO_EXISTE, GRUPOS_OK,
-                                         GRUPOS_SIN_VERIFICAR)
+from app.modules.platforms.tipos import (CAMPOS_DN, GRUPOS_NO_EXISTE,
+                                         GRUPOS_OK, GRUPOS_SIN_VERIFICAR,
+                                         NIVEL_ADMIN, NIVEL_USUARIO)
 
 # Avisos de la respuesta (`warnings`).
 # Convención de Authelia (FNC-170): nivel en plural inglés (`-users`,
@@ -114,3 +117,82 @@ def comprobar_grupos(configuracion, dns_por_nivel):
             'code': AVISO_DIRECTORIO_NO_DISPONIBLE,
             'message': MENSAJE_DIRECTORIO_NO_DISPONIBLE}]
     return (GRUPOS_NO_EXISTE if avisos else GRUPOS_OK), avisos
+
+
+# --------------------------------------------------------------------------- #
+# Grupos siempre (FNC-196)
+# --------------------------------------------------------------------------- #
+
+def dn_del_nivel(plataforma, nivel):
+    """DN del grupo del `nivel`: el guardado o, si falta, el derivado de la
+    convención; `None` si no hay directorio activo ni forma de derivarlo."""
+    guardado = getattr(plataforma, CAMPOS_DN[nivel])
+    if guardado:
+        return guardado
+    configuracion = configuracion_directorio()
+    if configuracion is None:
+        return None
+    area = getattr(plataforma, 'area', None)
+    return derivar_dn(configuracion, nivel, plataforma.name,
+                      area.name if area is not None else '')
+
+
+def es_grupo_reservado(configuracion, dn):
+    """`True` si `dn` es un grupo de rol del portal (superadmin, admins de área
+    o usuarios de Authelia, `OIDC_GROUP_*`): ninguna plataforma puede usarlo,
+    o su nombre bastaría para dar o quitar roles (auditor-seguridad, FNC-196)."""
+    # Import diferido: estos módulos importan `platforms` al cargarse.
+    from app.modules.auth import oidc_cuentas as oc
+    from app.modules.users import grupos_de_rol as gr
+    nombres = (
+        (os.getenv(oc.VAR_GRUPO_SUPERADMIN) or '').strip()
+        or oc.GRUPO_SUPERADMIN_POR_DEFECTO,
+        gr.nombre_grupo_admins(), gr.nombre_grupo_usuarios())
+    return any(mismo_dn(dn, f'cn={escapar_valor_dn(n)},'
+                            f'{configuracion.grupos_base_dn}')
+               for n in nombres)
+
+
+def _en_uso_por_otra(plataforma, dn):
+    from app.modules.core.models import Platform
+    otras = Platform.query.filter(Platform.id != plataforma.id).all()
+    return any(mismo_dn(dn, usado) for otra in otras
+               for usado in (otra.ldap_group_user_dn, otra.ldap_group_admin_dn)
+               if usado)
+
+
+def completar_dns(plataforma):
+    """Guarda en la plataforma los DN de grupo que le faltan, derivados de la
+    convención (sin `commit`: va en la transacción del llamador).
+
+    Un DN derivado que ya usa otra plataforma, o que queda fuera de la base o
+    igual al del otro nivel, no se guarda (el grupo es de una sola plataforma).
+    Devuelve `True` si la plataforma tiene ambos DN al terminar.
+    """
+    configuracion = configuracion_directorio()
+    derivados = {}
+    for nivel in (NIVEL_USUARIO, NIVEL_ADMIN):
+        campo = CAMPOS_DN[nivel]
+        if getattr(plataforma, campo):
+            continue
+        dn = dn_del_nivel(plataforma, nivel)
+        otro = getattr(plataforma, CAMPOS_DN[
+            NIVEL_ADMIN if nivel == NIVEL_USUARIO else NIVEL_USUARIO])
+        if (not dn or configuracion is None
+                or not dn_en_base(configuracion, dn)
+                or es_grupo_reservado(configuracion, dn)
+                or (otro and mismo_dn(dn, otro))
+                or _en_uso_por_otra(plataforma, dn)):
+            continue
+        setattr(plataforma, campo, dn)
+        derivados[campo] = dn
+    if derivados:
+        add_audit_log(
+            Evento.PLATAFORMA_EDITADA, status='success',
+            module='Plataformas', target=plataforma.name,
+            platform_id=plataforma.id, area_id=plataforma.area_id,
+            before={campo: None for campo in derivados}, after=derivados,
+            detail='Grupos de acceso derivados de la convención (FNC-196).',
+            as_system=True, commit=False)
+    return bool(plataforma.ldap_group_user_dn
+                and plataforma.ldap_group_admin_dn)

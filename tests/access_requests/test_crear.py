@@ -141,23 +141,25 @@ def test_plataforma_inactiva_es_409(escena, cliente_como):
     assert _codigo(respuesta) == (409, 'plataforma_no_disponible')
 
 
-def test_nivel_sin_grupo_es_409(escena, cliente_como):
+def test_nivel_sin_grupo_guardado_es_solicitable(escena, cliente_como):
+    """FNC-196: el DN faltante se deriva; antes daba 409 por «nivel no
+    integrado»."""
     escena['plataforma'].ldap_group_admin_dn = None
     db.session.commit()
     cliente = cliente_como(escena['usuario'])
 
-    assert _codigo(pedir(cliente, escena['plataforma'], 'admin')) == \
-        (409, 'plataforma_no_disponible')
-    assert pedir(cliente, escena['plataforma'], 'usuario').status_code == 201
+    assert pedir(cliente, escena['plataforma'], 'admin').status_code == 201
 
 
-def test_plataforma_con_conector_sin_configurar_es_409(escena, cliente_como):
+def test_plataforma_con_conector_sin_configurar_es_solicitable(escena,
+                                                               cliente_como):
+    """FNC-196: se da acceso por su grupo; antes daba 409."""
     escena['plataforma'].integration_type = 'conector'
     db.session.commit()
 
     respuesta = pedir(cliente_como(escena['usuario']), escena['plataforma'])
 
-    assert _codigo(respuesta) == (409, 'plataforma_no_disponible')
+    assert respuesta.status_code == 201
 
 
 def test_duplicado_pendiente_es_409(escena, cliente_como):

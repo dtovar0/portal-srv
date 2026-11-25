@@ -89,13 +89,15 @@ def test_sin_redis_pass_no_avisa_y_no_falla(datos):
     assert ProvisioningJob.query.count() == 1
 
 
-def test_proveedor_sale_del_tipo_de_integracion(datos, cola_falsa):
+def test_el_proveedor_es_siempre_el_de_grupos(datos, cola_falsa):
+    # FNC-196: aunque la plataforma sea `conector`, el trabajo va por el
+    # proveedor de grupos, que ejecuta además el conector si lo hay.
     area, _, usuario = datos
     plataforma = fabricas.crear_plataforma(area, integration_type=TIPO_CONECTOR)
     trabajo = encolar('revocar', usuario.id, plataforma, NIVEL_USUARIO, 'k2')
     db.session.commit()
 
-    assert trabajo.provider == 'conector'
+    assert trabajo.provider == 'ldap'
 
 
 @pytest.mark.parametrize('operacion, nivel, clave', [

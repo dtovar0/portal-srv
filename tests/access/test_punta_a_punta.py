@@ -8,6 +8,7 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_REVOCADO,
                                       ORIGEN_SOLICITUD)
 from app.modules.platforms.tipos import NIVEL_ADMIN, NIVEL_USUARIO
 from app.modules.provisioning import providers
+from app.modules.provisioning.compuesto import ProveedorGrupoYConector
 from app.modules.provisioning.ldap_provider import ProveedorLdap
 from app.modules.provisioning.tipos import PROVEEDOR_LDAP
 from tests.access.conftest import GRUPO_ADMIN, GRUPO_USUARIO, recargar
@@ -26,7 +27,7 @@ def directorio(monkeypatch, escena):
     providers.registrar_proveedor(
         PROVEEDOR_LDAP, lambda: ProveedorLdap(cliente=directorio.cliente))
     yield directorio, dn_ana
-    providers.registrar_proveedor(PROVEEDOR_LDAP, ProveedorLdap)
+    providers.registrar_proveedor(PROVEEDOR_LDAP, ProveedorGrupoYConector)
 
 
 def _miembros(directorio, grupo):

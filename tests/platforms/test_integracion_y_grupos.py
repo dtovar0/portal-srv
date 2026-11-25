@@ -127,15 +127,17 @@ def test_ldap_con_directorio_inactivo_responde_422(superadmin, area):
     assert 'integration_type' in respuesta.get_json()['fields']
 
 
-def test_ldap_sin_grupos_ni_convencion_responde_422(superadmin, area,
-                                                    directorio):
-    """Criterio: alta `ldap` sin grupos → error de validación (422)."""
+def test_ldap_sin_grupos_ni_convencion_usa_la_de_omision(superadmin, area,
+                                                         directorio):
+    """FNC-196: sin DN ni plantilla se deriva `cn=app-{plataforma}-{nivel}`
+    (antes: error de validación 422)."""
     respuesta = superadmin.post(f'{A}/platforms', json=_alta(area.id))
 
-    assert respuesta.status_code == 422
-    assert set(respuesta.get_json()['fields']) == {'ldap_group_user_dn',
-                                                   'ldap_group_admin_dn'}
-    assert Platform.query.count() == 0
+    assert respuesta.status_code == 201
+    plataforma = respuesta.get_json()['platform']
+    assert plataforma['ldap_group_user_dn'].startswith('cn=app-')
+    assert plataforma['ldap_group_user_dn'].endswith('-users,' + GRUPOS_BASE_DN)
+    assert plataforma['ldap_group_admin_dn'].endswith('-admins,' + GRUPOS_BASE_DN)
 
 
 # --------------------------------------------------------------------------- #
@@ -211,12 +213,32 @@ def test_grupos_iguales_responde_409(superadmin, area, directorio, dn_admin):
     assert _codigo(respuesta) == 'grupos_iguales'
 
 
-def test_conector_no_acepta_grupos(superadmin, area):
+def test_conector_tambien_tiene_grupos(superadmin, area, directorio):
+    """FNC-196: antes una plataforma `conector` rechazaba los DN (422)."""
+    respuesta = superadmin.post(f'{A}/platforms', json=_alta(
+        area.id, integration_type='conector', ldap_group_user_dn=DN_USUARIO,
+        ldap_group_admin_dn=DN_ADMIN))
+
+    assert respuesta.status_code == 201
+    plataforma = respuesta.get_json()['platform']
+    assert plataforma['ldap_group_user_dn'] == DN_USUARIO
+    assert plataforma['ldap_group_admin_dn'] == DN_ADMIN
+
+
+def test_conector_sin_directorio_ni_dn_se_guarda_sin_grupos(superadmin, area):
+    """Heredado: sin directorio no hay forma de derivarlos."""
+    respuesta = superadmin.post(f'{A}/platforms', json=_alta(
+        area.id, integration_type='conector'))
+
+    assert respuesta.status_code == 201
+    assert respuesta.get_json()['platform']['ldap_group_user_dn'] is None
+
+
+def test_conector_sin_directorio_con_dn_responde_422(superadmin, area):
     respuesta = superadmin.post(f'{A}/platforms', json=_alta(
         area.id, integration_type='conector', ldap_group_user_dn=DN_USUARIO))
 
     assert respuesta.status_code == 422
-    assert 'ldap_group_user_dn' in respuesta.get_json()['fields']
 
 
 @pytest.mark.parametrize('campo', ['ldap_group_user_dn', 'ldap_group_admin_dn'])
@@ -295,12 +317,14 @@ def test_derivacion_no_inyecta_rdn(superadmin, monkeypatch):
         f'cn=conta-cn-x-uid-y-usuario,ou=area-ou-raiz,{GRUPOS_BASE_DN}'
 
 
-def test_admin_de_area_sin_convencion_no_crea_ldap(admin_de_area, area,
-                                                   directorio):
+def test_admin_de_area_sin_convencion_usa_la_de_omision(admin_de_area, area,
+                                                        directorio):
+    """FNC-196: antes 422 (el admin no puede indicar el grupo)."""
     respuesta = admin_de_area.post(f'{A}/platforms', json=_alta(area.id))
 
-    assert respuesta.status_code == 422
-    assert Platform.query.count() == 0
+    assert respuesta.status_code == 201
+    assert respuesta.get_json()['platform']['ldap_group_user_dn'].startswith(
+        'cn=app-')
 
 
 @pytest.mark.parametrize('plantilla', [
@@ -319,8 +343,10 @@ def test_plantilla_invalida_detiene_el_arranque(plantilla):
                               'LDAP_PLATFORM_GROUP_TEMPLATE': plantilla})
 
 
-def test_plantilla_vacia_no_deriva():
-    assert cargar_configuracion(dict(ENTORNO_VALIDO)).plantilla_grupo is None
+def test_plantilla_vacia_usa_la_de_omision():
+    # FNC-196: antes `None` (no se derivaba).
+    assert cargar_configuracion(dict(ENTORNO_VALIDO)).plantilla_grupo == (
+        'cn=app-{plataforma}-{nivel}')
 
 
 # --------------------------------------------------------------------------- #

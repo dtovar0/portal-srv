@@ -13,6 +13,8 @@
   `sin_cambios`, `error_transitorio` se reintenta, `no_existe` y
   `error_permanente` no.
 """
+import os
+
 from app import db
 from app.modules.auth.models import User
 from app.modules.core.models import Platform
@@ -30,19 +32,34 @@ from app.modules.directory.ldap_client import (ClienteDirectorio,
 from app.modules.directory.writer import EscritorDirectorio
 from app.modules.platforms import ubicacion_grupos
 from app.modules.platforms.grupos import dn_en_base
-from app.modules.platforms.tipos import CAMPOS_DN, TIPO_LDAP
+from app.modules.platforms.tipos import CAMPOS_DN
 from app.modules.provisioning.providers import (Provisioner,
                                                 ResultadoProveedor, permanente,
                                                 transitorio)
 from app.modules.provisioning.saneo import (MOTIVO_DATOS_INCOMPLETOS,
                                             MOTIVO_DIRECTORIO_NO_CONFIGURADO,
                                             MOTIVO_GRUPO_NO_CONFIGURADO,
-                                            MOTIVO_PERSONA_AMBIGUA,
-                                            MOTIVO_TIPO_INTEGRACION)
+                                            MOTIVO_PERSONA_AMBIGUA)
 from app.modules.provisioning.tipos import (RESULTADO_ERROR_PERMANENTE,
                                             RESULTADO_ERROR_TRANSITORIO,
                                             RESULTADO_EXITOSO,
                                             RESULTADO_SIN_CAMBIOS)
+
+# Creación del grupo faltante al otorgar (FNC-196: toda plataforma da acceso por
+# su grupo, así que por omisión se crea). Cualquiera de las dos variables, si
+# está definida, manda; con ambas vacías se crea.
+VARIABLES_AUTO_CREAR_GRUPOS = ('LDAP_PROVISIONING_AUTO_CREATE_GROUPS',
+                               'LDAP_AUTO_CREATE_PLATFORM_GROUPS')
+VALORES_VERDADEROS = ('true', '1', 'yes')
+
+
+def auto_crear_grupos():
+    """`True` si el aprovisionamiento crea el grupo que no existe."""
+    definidas = [(os.getenv(v) or '').strip().lower()
+                 for v in VARIABLES_AUTO_CREAR_GRUPOS]
+    definidas = [v for v in definidas if v]
+    return not definidas or any(v in VALORES_VERDADEROS for v in definidas)
+
 
 _RESULTADOS = {
     Resultado.HECHO: RESULTADO_EXITOSO,
@@ -99,8 +116,6 @@ class ProveedorLdap(Provisioner):
                       if operacion.plataforma_id else None)
         if plataforma is None or operacion.nivel not in CAMPOS_DN:
             raise _Fallo(permanente(MOTIVO_DATOS_INCOMPLETOS))
-        if plataforma.integration_type != TIPO_LDAP:
-            raise _Fallo(permanente(MOTIVO_TIPO_INTEGRACION))
         dn = getattr(plataforma, CAMPOS_DN[operacion.nivel])
         if not dn:
             raise _Fallo(permanente(MOTIVO_GRUPO_NO_CONFIGURADO))
@@ -143,10 +158,7 @@ class ProveedorLdap(Provisioner):
         except _Fallo as fallo:
             return fallo.resultado
         escritura = getattr(escritor, accion)(grupo, persona)
-        import os
-        auto_crear = (os.getenv('LDAP_PROVISIONING_AUTO_CREATE_GROUPS', '').lower() in ('true', '1', 'yes')
-                      or os.getenv('LDAP_AUTO_CREATE_PLATFORM_GROUPS', '').lower() in ('true', '1', 'yes'))
-        if (accion == 'add_member' and auto_crear
+        if (accion == 'add_member' and auto_crear_grupos()
                 and escritura.resultado == Resultado.NO_EXISTE
                 and escritura.motivo == MOTIVO_GRUPO_INEXISTENTE
                 and hasattr(escritor, 'create_group')):
