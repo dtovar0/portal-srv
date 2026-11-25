@@ -48,6 +48,15 @@ class Escena:
         return datos.get('member', []) if datos else None
 
 
+class ServicioDeSendsFalso:
+    """Servicio de Sends con login correcto (FNC-205)."""
+
+    verificaciones = 0
+
+    def verificar_acceso(self):
+        type(self).verificaciones += 1
+
+
 @pytest.fixture
 def ldap(monkeypatch, app):
     return Escena(instalar_directorio(monkeypatch))
@@ -56,7 +65,8 @@ def ldap(monkeypatch, app):
 @pytest.fixture
 def con_entrega(entrega, monkeypatch):  # noqa: F811
     """Vaultwarden, correo y `BASE_URL` simulados (preflight incluido)."""
-    monkeypatch.setattr(rotacion, 'servicio_de_sends', lambda: object())
+    monkeypatch.setattr(rotacion, 'servicio_de_sends',
+                        lambda: ServicioDeSendsFalso())
     return entrega
 
 

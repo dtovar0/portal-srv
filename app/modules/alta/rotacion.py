@@ -7,7 +7,9 @@ se elige con `--plantilla`, por omisión `onboarding_aduana`). La contraseña vi
 imprime, no se registra ni se guarda.
 
 - `motivo_sin_entrega()` se consulta ANTES de tocar LDAP: sin Vaultwarden o
-  correo nadie conocería la contraseña nueva.
+  correo nadie conocería la contraseña nueva. Desde FNC-205 incluye un login
+  real a Vaultwarden (sin crear Sends): credenciales incorrectas no dejan a
+  nadie con una contraseña desconocida.
 - Si el LDAP cambió y la entrega falla, la fila de `credential_deliveries`
   queda `pendientes`: el worker rota otra vez con una contraseña nueva.
 """
@@ -24,7 +26,7 @@ from app.modules.notifications import services
 from app.modules.provisioning.configuracion import cargar_configuracion
 from app.modules.provisioning.reloj import ahora
 from app.modules.secretos.sends import servicio_de_sends
-from app.modules.secretos.vaultwarden import ErrorDeGestor
+from app.modules.secretos.vaultwarden import ErrorDeGestor, GestorCaido
 from app.modules.users.entrega_credenciales import (
     SLUG_ONBOARDING, enviar_credenciales, fijar_contrasena_en_directorio,
     marcar_enviada, marcar_pendiente, url_del_portal)
@@ -38,6 +40,9 @@ MOTIVO_SIN_DIRECTORIO = 'LDAP no está configurado'
 MOTIVO_SIN_NOTIFICACIONES = 'las notificaciones están desactivadas (ENABLE_NOTIFICATIONS)'
 MOTIVO_SIN_BASE_URL = 'BASE_URL no está configurada'
 MOTIVO_SIN_VAULTWARDEN = 'Vaultwarden está deshabilitado o mal configurado'
+MOTIVO_VAULTWARDEN_RECHAZA = ('Vaultwarden no acepta las credenciales '
+                              'configuradas: {causa}')
+MOTIVO_VAULTWARDEN_CAIDO = 'Vaultwarden no responde: {causa}'
 DETALLE_DRY_RUN = 'se rotaría la contraseña de LDAP'
 DETALLE_DRY_RUN_A = ('se rotaría la contraseña de LDAP y se enviaría a {correo} '
                      '(no al correo de la persona)')
@@ -63,9 +68,15 @@ def motivo_sin_entrega():
     if not url_del_portal():
         return MOTIVO_SIN_BASE_URL
     try:
-        servicio_de_sends()
+        servicio = servicio_de_sends()
     except ErrorDeGestor:
         return MOTIVO_SIN_VAULTWARDEN
+    try:
+        servicio.verificar_acceso()
+    except GestorCaido as exc:
+        return MOTIVO_VAULTWARDEN_CAIDO.format(causa=exc)
+    except ErrorDeGestor as exc:
+        return MOTIVO_VAULTWARDEN_RECHAZA.format(causa=exc)
     return None
 
 

@@ -111,7 +111,7 @@ def migrar(dry_run, rotar, nombres_de_grupo, rol_forzado, actualizar_rol,
            enviar_a=None):
     cliente = cliente_o_error()
     if rotar:
-        exigir_entrega()
+        exigir_entrega(dry_run)
     cfg = cliente.configuracion
     resumen = Resumen()
 

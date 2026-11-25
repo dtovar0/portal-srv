@@ -51,6 +51,19 @@ RUTA_SYNC = '/api/sync?excludeDomains=true'
 ALCANCE = 'api'
 TIPO_DISPOSITIVO = '25'           # Linux CLI en el enum de Bitwarden
 NOMBRE_DISPOSITIVO = 'pokemon-portal'
+# Cabeceras de cliente de Bitwarden (FNC-204): Vaultwarden puede rechazar o
+# tratar distinto las peticiones sin ellas (login y Sends con contraseña). Se
+# anuncia la CLI oficial; subir la versión solo si el servidor la exige.
+CABECERA_CLIENTE_NOMBRE = 'Bitwarden-Client-Name'
+CABECERA_CLIENTE_VERSION = 'Bitwarden-Client-Version'
+CABECERA_TIPO_DISPOSITIVO = 'Device-Type'
+CLIENTE_NOMBRE = 'cli'
+CLIENTE_VERSION = '2024.12.0'
+CABECERAS_DE_CLIENTE = {
+    CABECERA_CLIENTE_NOMBRE: CLIENTE_NOMBRE,
+    CABECERA_CLIENTE_VERSION: CLIENTE_VERSION,
+    CABECERA_TIPO_DISPOSITIVO: TIPO_DISPOSITIVO,
+}
 # Id de dispositivo estable por cuenta: evita registrar uno nuevo por arranque.
 ESPACIO_DISPOSITIVO = uuid.UUID('6f1c2d3e-0a4b-4c5d-8e9f-a0b1c2d3e4f5')
 TIPO_ITEM_LOGIN = 1
@@ -210,8 +223,11 @@ class ClienteVaultwarden:
     # ---------------------------------------------------------------- HTTP
 
     def _pedir(self, metodo, ruta, cabeceras, cuerpo=None):
-        respuesta = self._transporte(metodo, self._cfg.url + ruta, cabeceras,
-                                     cuerpo)
+        # Toda petición (token, prelogin, sync, Sends) lleva las cabeceras de
+        # cliente; las propias de la llamada tienen prioridad.
+        respuesta = self._transporte(
+            metodo, self._cfg.url + ruta,
+            {**CABECERAS_DE_CLIENTE, **cabeceras}, cuerpo)
         return respuesta
 
     @staticmethod
@@ -432,6 +448,12 @@ class ClienteVaultwarden:
                 sesion, datos = self._sincronizar()
                 self._abrir_claves(sesion, _campo(datos, 'profile') or {})
             return sesion
+
+    def verificar_acceso(self):
+        """Inicia sesión y abre las claves de usuario (lo que necesita cifrar
+        un Send) sin crear nada (FNC-205). Falla con `GestorMalConfigurado`
+        (credenciales rechazadas) o `GestorCaido` (sin respuesta)."""
+        self.sesion_de_usuario()
 
     def pedir_autenticado(self, metodo, ruta, cuerpo=None):
         """`Respuesta` de una petición con la sesión; un 401 renueva la sesión

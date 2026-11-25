@@ -78,6 +78,7 @@ Consumidor web: tipos y cliente en FNC-069; refresco en FNC-071.
 | 429 | `demasiadas_peticiones` | Límite de peticiones |
 | 500 | `error_interno` | Error no controlado |
 | 503 | `directorio_no_disponible` | OpenLDAP no responde (solo escrituras síncronas al directorio) |
+| 503 | `sin_permiso_en_directorio` | OpenLDAP respondió pero la cuenta de servicio del portal no tiene permiso para la escritura (código 50; FNC-206). No es una caída: reintentar no sirve; lo arregla quien administra las ACL |
 
 ## Refresco (ADR-006)
 - Polling HTTP a la misma ruta de lectura; sin SSE ni WebSocket.

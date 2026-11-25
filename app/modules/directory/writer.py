@@ -44,14 +44,13 @@ from app.modules.directory.errors import (MOTIVO_DATOS_INCOMPLETOS,
                                           MOTIVO_DATOS_INVALIDOS,
                                           MOTIVO_DESTINO_INEXISTENTE,
                                           MOTIVO_DESTINO_OCUPADO,
-                                          MOTIVO_DIRECTORIO,
                                           MOTIVO_FUERA_DE_BASE,
                                           MOTIVO_GRUPO_INEXISTENTE,
                                           MOTIVO_MOVER_NO_CONFIGURADO,
                                           MOTIVO_ULTIMO_MIEMBRO,
                                           MOTIVO_USUARIO_INEXISTENTE,
                                           Resultado, ResultadoEscritura,
-                                          clasificar_error)
+                                          clasificar_error, motivo_de_error)
 from app.modules.directory.ldap_client import (
     ATRIBUTOS_MIEMBRO_POR_IDENTIFICADOR, ClienteDirectorio, ErrorDirectorio,
     UsuarioDirectorio, escapar_filtro, escapar_valor_dn, valor_de_membresia)
@@ -212,11 +211,11 @@ class EscritorDirectorio:
                 resultado = accion(conexion)
         except ErrorDirectorio as exc:  # conexión: el cliente ya lo registró
             resultado = ResultadoEscritura(clasificar_error(exc.causa), dn,
-                                           MOTIVO_DIRECTORIO)
+                                           motivo_de_error(exc.causa))
         except LDAPException as exc:
             self.cliente.registrar_error(operacion, exc, con_detalle=False)
             resultado = ResultadoEscritura(clasificar_error(exc), dn,
-                                           MOTIVO_DIRECTORIO)
+                                           motivo_de_error(exc))
         logger.info('Directorio: %s → %s', operacion,
                     resultado.resultado.value)
         return resultado
