@@ -1,24 +1,20 @@
 import { Suspense } from 'react';
 import { AppShell } from '@/components/app-shell';
-import { PageHeader } from '@/components/page-header';
-import { ApprovalsInbox } from '@/components/access/approvals-inbox';
+import { ApprovalsView } from '@/components/access/approvals-view';
 import { RequireRole } from '@/components/require-role';
 import { Skeleton } from '@/components/ui';
 
-/** Bandeja de aprobaciones (DIS-015): admin de área (sus áreas) y superadmin (todas). */
+/**
+ * Solicitudes (DIS-015, DIS-131): admin de área (sus áreas) y superadmin (todas).
+ * Resumen con tarjetas, gráficas y dona; cada estado abre su tabla (`?status=`).
+ */
 export default function Page() {
   return (
     <AppShell>
       <RequireRole requires="any_admin">
-        <div className="space-y-6">
-          <PageHeader
-            title="Solicitudes"
-            description="Solicitudes de acceso de tus áreas (todas, si eres superadmin). Aprueba o rechaza con un motivo."
-          />
-          <Suspense fallback={<Skeleton variant="fila" count={5} ariaLabel="Cargando solicitudes…" />}>
-            <ApprovalsInbox />
-          </Suspense>
-        </div>
+        <Suspense fallback={<Skeleton variant="fila" count={5} ariaLabel="Cargando solicitudes…" />}>
+          <ApprovalsView />
+        </Suspense>
       </RequireRole>
     </AppShell>
   );

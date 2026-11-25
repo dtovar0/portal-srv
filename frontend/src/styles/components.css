@@ -1118,6 +1118,23 @@ select::-ms-expand {
     --ind-c: var(--color-indicador-solicitudes);
     --ind-c2: var(--color-indicador-solicitudes-fin);
 }
+/* DIS-131: puntos de la leyenda de la dona de Solicitudes. */
+.nx-dona__punto--pendiente { background-color: rgb(var(--color-aviso-relleno)); }
+.nx-dona__punto--aprobada { background-color: rgb(var(--color-exito-relleno)); }
+.nx-dona__punto--rechazada { background-color: rgb(var(--color-peligro-relleno)); }
+/* DIS-131: estados de Solicitudes con los tokens semánticos de aviso, éxito y peligro. */
+.nx-ind--pendientes {
+    --ind-c: var(--color-aviso-relleno);
+    --ind-c2: var(--color-aviso-relleno);
+}
+.nx-ind--aprobadas {
+    --ind-c: var(--color-exito-relleno);
+    --ind-c2: var(--color-exito-relleno);
+}
+.nx-ind--rechazadas {
+    --ind-c: var(--color-peligro-relleno);
+    --ind-c2: var(--color-peligro-relleno);
+}
 .nx-ind--visitas {
     --ind-c: var(--color-indicador-visitas);
     --ind-c2: var(--color-indicador-visitas-fin);

@@ -1,5 +1,5 @@
 /**
- * Catálogo de los cinco indicadores del dashboard (DIS-112): icono, textos y clase de color.
+ * Catálogo de los indicadores del dashboard (DIS-112) y de las tarjetas de Solicitudes (DIS-131): icono, textos y clase de color.
  * Los colores salen de los tokens `--color-indicador-*` (tokens.css) por la clase `nx-ind--*`.
  */
 import type { ClaveIndicador, DesgloseIndicador } from '@/lib/types';
@@ -19,6 +19,9 @@ export const INDICADORES: Record<ClaveIndicador, DefinicionIndicador> = {
   platforms: { etiqueta: 'Plataformas', icono: 'plataformas', partes: ['activas', 'inactivas'], clase: 'nx-ind--plataformas' },
   requests: { etiqueta: 'Solicitudes', icono: 'solicitudes', partes: ['resueltas', 'pendientes'], clase: 'nx-ind--solicitudes' },
   visits: { etiqueta: 'Visitas', icono: 'ver', partes: ['de plataformas activas', 'de las demás'], clase: 'nx-ind--visitas' },
+  pendientes: { etiqueta: 'Pendientes', icono: 'reloj', partes: ['pendientes', 'decididas'], clase: 'nx-ind--pendientes' },
+  aprobadas: { etiqueta: 'Aprobadas', icono: 'aprobar', partes: ['aprobadas', 'otras'], clase: 'nx-ind--aprobadas' },
+  rechazadas: { etiqueta: 'Rechazadas', icono: 'rechazar', partes: ['rechazadas', 'otras'], clase: 'nx-ind--rechazadas' },
   users: { etiqueta: 'Usuarios', icono: 'usuarios', partes: ['activos', 'inactivos'], clase: 'nx-ind--usuarios' },
 };
 
