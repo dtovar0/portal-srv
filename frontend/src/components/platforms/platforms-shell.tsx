@@ -21,6 +21,7 @@ import { useAsync } from '@/lib/use-async';
 import { usePlatformsLayout } from '@/lib/platforms-layout';
 import { useCatalogoSolicitable } from '../access/use-catalogo-solicitable';
 import { ModalResponsiva } from '../responsiva/modal-responsiva';
+import { responsivaAplica } from '@/lib/access/responsiva';
 import { SessionProvider, useSession } from '../session-provider';
 import { ErrorNote, PantallaCarga } from '../ui';
 import { PlatformsTopbar } from './platforms-topbar';
@@ -276,10 +277,12 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
 
   // DIS-124: la carta responsiva aplica cuando hay al menos una plataforma
   // aprobada; sin accesos no se muestra (ni su ícono, ni la sección, ni el modal).
-  const responsivaDisponible = abribles.size > 0;
+  const responsivaDisponible = responsivaAplica(items, abribles);
   const documentosVisibles = mostrarDocumentos && responsivaDisponible;
 
-  const modalResponsiva = documentosVisibles && session.responsiva_firmada === false ? (
+  // DIS-127: firmar es obligatorio para que se activen los accesos; la ventana
+  // no depende de la preferencia de vista «Mostrar documentos».
+  const modalResponsiva = responsivaDisponible && session.responsiva_firmada === false ? (
     <ModalResponsiva
       session={session}
       onFirmado={() => {
