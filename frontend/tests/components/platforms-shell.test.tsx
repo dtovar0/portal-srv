@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CLAVE_PLATFORMS_LAYOUT,
@@ -17,6 +17,7 @@ import { PlatformMockupCard } from '@/components/platforms/platform-mockup-card'
 import { MenuNotificaciones } from '@/components/platforms/menu-notificaciones';
 import { PreferencesTab } from '@/components/settings/preferences-tab';
 import type { Session } from '@/lib/types';
+import { api } from '@/lib/api';
 
 vi.mock('@/components/use-tema', () => ({
   useTema: () => ({ oscuro: false, alternar: vi.fn() }),
@@ -1840,5 +1841,54 @@ describe('Tarjeta con acceso aprobado en proceso (DIS-128)', () => {
     expect(screen.getByText('CONFIGURANDO ACCESO')).toBeDefined();
     expect(screen.queryByText(/No disponible para soli/)).toBeNull();
     expect(screen.queryByText('SIN ACCESO')).toBeNull();
+  });
+});
+
+describe('Ajustes de vista: notificaciones y avisos por correo (DIS-130)', () => {
+  function renderAjustes() {
+    render(
+      <UserViewSettings
+        layout="topbar"
+        onLayoutChange={vi.fn()}
+        mostrarDocumentos={true}
+        onToggleMostrarDocumentos={vi.fn()}
+        mostrarBadgesSidebar={true}
+        onToggleMostrarBadgesSidebar={vi.fn()}
+        disenoCards="estandar"
+        onDisenoCardsChange={vi.fn()}
+      />,
+    );
+  }
+
+  afterEach(() => cleanup());
+
+  it('la sección se llama «Notificaciones» y conserva el mensaje de bienvenida', () => {
+    sesionActual = crearSesion(false);
+    renderAjustes();
+    expect(screen.getByText('Notificaciones')).toBeDefined();
+    expect(screen.queryByText('Mensaje de Bienvenida')).toBeNull();
+    expect(screen.getByRole('switch', { name: /mostrar mensaje de bienvenida al entrar/i })).toBeDefined();
+  });
+
+  it('el interruptor refleja la preferencia guardada en el perfil', () => {
+    sesionActual = crearSesion(false);
+    sesionActual = { ...sesionActual, preferences: { ...sesionActual.preferences, email_notifications: false } };
+    renderAjustes();
+    const interruptor = screen.getByRole('switch', { name: /recibir avisos por correo/i });
+    expect(interruptor.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('al apagarlo guarda email_notifications=false en el perfil', async () => {
+    sesionActual = crearSesion(false);
+    const guardar = vi.mocked(api.savePreferences);
+    guardar.mockResolvedValueOnce({
+      status: 'success',
+      preferences: { ...sesionActual.preferences, email_notifications: false },
+    });
+    renderAjustes();
+    const interruptor = screen.getByRole('switch', { name: /recibir avisos por correo/i });
+    expect(interruptor.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(interruptor);
+    await waitFor(() => expect(guardar).toHaveBeenCalledWith({ email_notifications: false }));
   });
 });
