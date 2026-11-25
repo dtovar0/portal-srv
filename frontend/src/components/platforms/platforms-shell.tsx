@@ -274,7 +274,12 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
 
   if (!session) return null;
 
-  const modalResponsiva = mostrarDocumentos && session.responsiva_firmada === false ? (
+  // DIS-124: la carta responsiva aplica cuando hay al menos una plataforma
+  // aprobada; sin accesos no se muestra (ni su ícono, ni la sección, ni el modal).
+  const responsivaDisponible = abribles.size > 0;
+  const documentosVisibles = mostrarDocumentos && responsivaDisponible;
+
+  const modalResponsiva = documentosVisibles && session.responsiva_firmada === false ? (
     <ModalResponsiva
       session={session}
       onFirmado={() => {
@@ -314,7 +319,7 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
               window.history.replaceState(null, '', window.location.pathname);
             }
           }}
-          mostrarDocumentos={mostrarDocumentos}
+          mostrarDocumentos={documentosVisibles}
           botonUsuarioCompacto={botonUsuarioCompacto}
           areaNombre={areaNombreLaunchpad}
           esFavoritos={soloFavoritasLaunchpad}
@@ -331,7 +336,8 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
               <UserViewSettings
                 layout="topbar"
                 onLayoutChange={(l) => setLayout(l)}
-                mostrarDocumentos={mostrarDocumentos}
+                mostrarDocumentos={documentosVisibles}
+                responsivaDisponible={responsivaDisponible}
                 onToggleMostrarDocumentos={toggleMostrarDocumentos}
                 mostrarBadgesSidebar={mostrarBadgesSidebar}
                 onToggleMostrarBadgesSidebar={toggleMostrarBadgesSidebar}

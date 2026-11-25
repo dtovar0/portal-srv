@@ -28,6 +28,9 @@ vi.mock('@/components/marco/use-indicadores', () => ({
 
 let mockPendingRequestId: number | null = null;
 const mockMarcarFavorito = vi.fn();
+// DIS-124: plataformas aprobadas del usuario (vacío = sin accesos).
+const MIAS_CON_ACCESO = new Map([[1, { id: 1, name: 'Slack', is_favorite: true }]]);
+let mockMias: Map<number, { id: number; name: string; is_favorite: boolean }> = MIAS_CON_ACCESO;
 
 vi.mock('@/components/access/use-catalogo-solicitable', () => ({
   useCatalogoSolicitable: () => ({
@@ -43,7 +46,7 @@ vi.mock('@/components/access/use-catalogo-solicitable', () => ({
       },
     ],
     areas: [{ id: 1, name: 'TI' }],
-    mias: new Map([[1, { id: 1, name: 'Slack', is_favorite: true }]]),
+    mias: mockMias,
     marcarSolicitada: vi.fn(),
     marcarFavorito: mockMarcarFavorito,
   }),
@@ -1719,5 +1722,38 @@ describe('MenuNotificaciones - menú desplegable de notificaciones en portal de 
     // Al tener mostrarDocumentos = false, el modal no debe aparecer
     expect(screen.queryByRole('dialog', { name: /carta responsiva/i })).toBeNull();
     expect(screen.queryByText(/firma de carta responsiva/i)).toBeNull();
+  });
+});
+
+
+describe('Carta responsiva sin plataformas aprobadas (DIS-124)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.localStorage.setItem(CLAVE_PLATFORMS_LAYOUT, 'topbar');
+  });
+  afterEach(() => { cleanup(); mockMias = MIAS_CON_ACCESO; });
+
+  it('sin accesos no muestra el ícono de la responsiva', () => {
+    mockMias = new Map();
+    sesionActual = crearSesion(false);
+    render(<PlatformsPageShell />);
+    expect(screen.queryByRole('button', { name: /carta responsiva/i })).toBeNull();
+  });
+
+  it('sin accesos, en Ajustes la opción está apagada y deshabilitada', () => {
+    mockMias = new Map();
+    sesionActual = crearSesion(false);
+    render(<PlatformsPageShell />);
+    fireEvent.click(screen.getByRole('button', { name: /configuración y diseño de vista/i }));
+    const opcion = screen.getByRole('switch', { name: /sección de documentos/i });
+    expect(opcion.getAttribute('aria-checked')).toBe('false');
+    expect((opcion as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/Se activa cuando se te apruebe el acceso/)).toBeDefined();
+  });
+
+  it('con una plataforma aprobada el ícono vuelve a aparecer', () => {
+    sesionActual = crearSesion(false);
+    render(<PlatformsPageShell />);
+    expect(screen.getByRole('button', { name: /carta responsiva/i })).toBeDefined();
   });
 });
