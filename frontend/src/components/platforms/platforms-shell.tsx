@@ -22,6 +22,7 @@ import { usePlatformsLayout } from '@/lib/platforms-layout';
 import { useCatalogoSolicitable } from '../access/use-catalogo-solicitable';
 import { ModalResponsiva } from '../responsiva/modal-responsiva';
 import { responsivaAplica } from '@/lib/access/responsiva';
+import { useRefrescoTrasFirma } from '../access/use-refresco-tras-firma';
 import { SessionProvider, useSession } from '../session-provider';
 import { ErrorNote, PantallaCarga } from '../ui';
 import { PlatformsTopbar } from './platforms-topbar';
@@ -49,6 +50,7 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
   const mias = useAsync(() => api.platforms(), [], 'nexus.platforms.mine');
 
   const { items, areas, mias: abribles } = useCatalogoSolicitable(mias);
+  const refrescarTrasFirma = useRefrescoTrasFirma(items);
   const [areaIdLaunchpad, setAreaIdLaunchpad] = useState<number | null>(null);
   const [soloFavoritasLaunchpad, setSoloFavoritasLaunchpad] = useState(false);
   const areaNombreLaunchpad = areaIdLaunchpad !== null ? (areas.find((a) => a.id === areaIdLaunchpad)?.name ?? null) : null;
@@ -291,6 +293,9 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
         } else if (recargarSesion) {
           void recargarSesion();
         }
+        // DIS-128: los accesos en proceso se aprovisionan ahora; el catálogo
+        // se refresca solo hasta que se activen (sin F5).
+        refrescarTrasFirma();
       }}
     />
   ) : null;
