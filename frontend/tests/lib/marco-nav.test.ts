@@ -15,14 +15,14 @@ describe('menú por rol', () => {
     expect(admin.map((s) => s.seccion)).toEqual(['General', 'Gestión', 'Sistema']);
     expect(admin[0].entradas.map((e) => e.label)).toEqual(['Dashboard', 'Portal']);
     expect(admin[1].entradas.map((e) => e.label)).toContain('Plataformas');
-    expect(admin[1].entradas.map((e) => e.label)).not.toContain('Aprobaciones');
+    expect(admin[1].entradas.map((e) => e.label)).toContain('Solicitudes');  // DIS-126
     expect(admin[2].entradas.map((e) => e.label)).toEqual(['Ajustes', 'Ejecuciones', 'Auditoría']);
   });
 
   it('el usuario solo ve Portal; el admin ve más', () => {
     const usuario = entradasVisibles(permisos(false, false)).map((e) => e.label);
     expect(usuario).toEqual(['Portal']);
-    expect(usuario).not.toContain('Aprobaciones');
+    expect(usuario).not.toContain('Solicitudes');
     expect(usuario).not.toContain('Notificaciones');
     expect(entradasVisibles(permisos(true, false)).map((e) => e.label)).toContain('Conectores');
     expect(entradasVisibles(permisos(false, true)).map((e) => e.label)).not.toContain('Conectores');
