@@ -22,6 +22,9 @@ const RAIZ_SRC = resolve(import.meta.dirname, '../../src');
 /** DIS-003: la gráfica del Panel pinta en SVG; sus colores salen de tokens vía `useTokenColors`. */
 const RECHARTS_CON_TOKENS: Record<string, string[]> = {
   'components/dashboard.tsx': ['contentStyle', 'itemStyle', 'labelStyle'],
+  // DIS-131: gráficas de Solicitudes (mismo patrón de Tooltip con tokens).
+  'components/dashboard/grafica-barras.tsx': ['contentStyle', 'itemStyle', 'labelStyle'],
+  'components/access/dona-estados.tsx': ['contentStyle', 'itemStyle'],
 };
 
 function archivos(carpeta: string): string[] {

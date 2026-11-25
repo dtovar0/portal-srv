@@ -1,10 +1,10 @@
 /** Solicitudes de acceso (`docs/contratos/solicitudes.md`). */
 
 import { accessRequest } from './client';
-import { MOCK_CATALOG, MOCK_REQUEST, page } from './mocks';
+import { MOCK_CATALOG, MOCK_INBOX_STATS, MOCK_REQUEST, page } from './mocks';
 import { jsonBody, withQuery } from './query';
 import type {
-  AccessRequest, AccessRequestInput, CatalogItem, CatalogParams, Paginated,
+  AccessRequest, AccessRequestInput, CatalogItem, CatalogParams, InboxStats, Paginated,
   RequestListParams,
 } from './types';
 
@@ -29,6 +29,10 @@ export const requestsApi = {
   inbox: (params: RequestListParams = {}) =>
     accessRequest<Paginated<AccessRequest>>(
       withQuery('/access-requests/inbox', { ...params }), undefined, () => page([MOCK_REQUEST])),
+
+  /** Resumen de la bandeja para la pantalla Solicitudes (todos los estados, mismo alcance que `inbox`). */
+  inboxStats: () =>
+    accessRequest<InboxStats>('/access-requests/inbox/stats', undefined, () => MOCK_INBOX_STATS),
 
   approve: (id: number) =>
     accessRequest<RequestResult>(

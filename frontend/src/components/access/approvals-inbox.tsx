@@ -37,6 +37,12 @@ import { ESTADOS_SOLICITUD, RequestStatusBadge } from './request-status-badge';
 
 const NOMBRE_LISTA = 'las solicitudes de tu bandeja';
 const FILTRO_ESTADO_ID = 'bandeja-filtro-estado';
+const FILTRO_AREA_ID = 'bandeja-filtro-area';
+
+/** Foco tras decidir: el filtro de estado, o el de área en la sección de un estado fijo (DIS-131). */
+function enfocarFiltro(): void {
+  (document.getElementById(FILTRO_ESTADO_ID) ?? document.getElementById(FILTRO_AREA_ID))?.focus();
+}
 
 /** Columnas en escritorio: solicitante, plataforma, nivel, estado, acciones. */
 const COLUMNAS =
@@ -156,14 +162,15 @@ function Fila({
   );
 }
 
-export function ApprovalsInbox() {
+/** `estadoFijo`: sección de un estado (DIS-131); sin él, el filtro de estado y la URL (DIS-036). */
+export function ApprovalsInbox({ estadoFijo }: { estadoFijo?: RequestStatus } = {}) {
   const { session } = useSession();
   const esSuperadmin = session?.permissions.is_admin ?? false;
 
   // Estado que llega por la URL (DIS-036); lo inválido se ignora.
   const params = useSearchParams();
   const [status, setStatus] = useState<RequestStatus>(
-    () => valorPermitido(params?.get('status'), ESTADOS) ?? 'pendiente',
+    () => estadoFijo ?? valorPermitido(params?.get('status'), ESTADOS) ?? 'pendiente',
   );
   const [areaId, setAreaId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
@@ -204,7 +211,7 @@ export function ApprovalsInbox() {
     // Si la fila cambió (refresco), el botón ya no existe: el foco va al filtro.
     const boton = disparador.current;
     if (boton?.isConnected) boton.focus();
-    else document.getElementById(FILTRO_ESTADO_ID)?.focus();
+    else enfocarFiltro();
   }, []);
 
   const refrescar = lista.refresh;
@@ -214,7 +221,7 @@ export function ApprovalsInbox() {
     avisar('success', avisoDecision(request), 'Solicitud decidida');
     setDecision(null);
     // Los botones de la fila desaparecen: el foco va al filtro (no cae en `body`).
-    requestAnimationFrame(() => document.getElementById(FILTRO_ESTADO_ID)?.focus());
+    requestAnimationFrame(enfocarFiltro);
   }
 
   const data = lista.data;
@@ -222,6 +229,7 @@ export function ApprovalsInbox() {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:w-2/3">
+        {estadoFijo ? null : (
         <Select
           id={FILTRO_ESTADO_ID}
           value={status}
@@ -237,7 +245,9 @@ export function ApprovalsInbox() {
             </Option>
           ))}
         </Select>
+        )}
         <Select
+          id={FILTRO_AREA_ID}
           value={areaId ?? ''}
           onChange={(event) => {
             setAreaId(event.target.value ? Number(event.target.value) : null);

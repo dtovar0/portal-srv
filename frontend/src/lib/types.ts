@@ -126,7 +126,10 @@ export interface ManagedUser {
 export type CredentialsStatus = 'enviadas' | 'pendientes';
 
 /** Indicadores del dashboard que traen desglose en `GET /stats` (contrato de FNC-164). */
-export type ClaveIndicador = 'areas' | 'platforms' | 'requests' | 'visits' | 'users';
+export type ClaveIndicador =
+  | 'areas' | 'platforms' | 'requests' | 'visits' | 'users'
+  /** Pantalla Solicitudes (DIS-131): un estado frente al total. */
+  | 'pendientes' | 'aprobadas' | 'rechazadas';
 
 /** Reparto de un contador en dos partes: `parte + resto` = el contador (DIS-112). */
 export interface DesgloseIndicador {

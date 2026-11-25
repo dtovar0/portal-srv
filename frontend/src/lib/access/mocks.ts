@@ -8,7 +8,7 @@
 import type { ManagedUser } from '../types';
 import type {
   Access, AccessRequest, AuditEntryV1, CatalogItem, Connector, DirectoryConfig,
-  HomeSummary, Job, JobDetail, Paginated, PasswordPolicy,
+  HomeSummary, InboxStats, Job, JobDetail, Paginated, PasswordPolicy,
 } from './types';
 
 export function page<T>(items: T[]): Paginated<T> {
@@ -99,3 +99,11 @@ export const MOCK_HOME: HomeSummary = {
   totals: { areas: 2, platforms: 7, active_access: 35 },
 };
 
+
+/** Resumen de la bandeja (contrato solicitudes 1.3). */
+export const MOCK_INBOX_STATS: InboxStats = {
+  total: 12,
+  by_status: { pendiente: 3, aprobada: 7, rechazada: 2 },
+  by_area: [{ area_id: 3, area: 'Finanzas', count: 8 }],
+  by_platform: [{ platform_id: 12, platform: 'Contabilidad', area: 'Finanzas', count: 5 }],
+};
