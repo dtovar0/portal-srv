@@ -1820,3 +1820,25 @@ describe('Responsiva con acceso aprobado en proceso (DIS-127)', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+describe('Tarjeta con acceso aprobado en proceso (DIS-128)', () => {
+  afterEach(() => cleanup());
+
+  it('muestra «CONFIGURANDO ACCESO» en lugar de «No disponible para solicitar»', () => {
+    const item = {
+      platform: { id: 7, name: 'tacacs', description: 'Acceso a los servidores cisco', icon: 'plataformas' },
+      area: { id: 3, name: 'Packet' },
+      my_level: 'usuario',
+      my_access_status: 'en_proceso',
+      pending_request_id: null,
+      can_request: false,
+      requestable_levels: [],
+    } satisfies import('@/lib/access/types').CatalogItem;
+
+    render(<PlatformMockupCard item={item} onRequest={vi.fn()} reason="Configurando tu acceso…" />);
+
+    expect(screen.getByText('CONFIGURANDO ACCESO')).toBeDefined();
+    expect(screen.queryByText(/No disponible para soli/)).toBeNull();
+    expect(screen.queryByText('SIN ACCESO')).toBeNull();
+  });
+});

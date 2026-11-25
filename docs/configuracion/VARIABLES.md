@@ -206,6 +206,7 @@ La versión inicial de este registro (estructura genérica) listaba `APP_ENV`, `
 
 | Constante | Propósito | Valor | Unidad | Dónde se define | Alta (tarea, fecha) | Estado |
 |---|---|---|---|---|---|---|
+| `INTERVALO_REFRESCO_MS` / `MAX_REFRESCOS` | Refresco del catálogo tras firmar la responsiva mientras haya accesos en proceso | 3000 / 10 | ms / veces | `frontend/src/components/access/use-refresco-tras-firma.ts` | DIS-128, 2026-11-25 | Vigente |
 | `VERSION_ICONOS` | Versión en la URL del favicon y los íconos para invalidar la caché del navegador; cambiarla al cambiar los íconos | `2026-11-24` | texto | `frontend/src/app/layout.tsx` | DIS-122, 2026-11-24 | Vigente |
 | `LARGO_CODIGO_SEND` | Dígitos del código de acceso de cada Send de credenciales (uno nuevo por Send; nunca se guarda ni se registra) | 6 | dígitos | `app/modules/secretos/sends.py` | FNC-190, 2026-11-24 | Vigente |
 | `ITERACIONES_CODIGO_SEND` / `LARGO_HASH_CODIGO_SEND` | PBKDF2-HMAC-SHA256 del código del Send (`password` del Send, como el cliente de Bitwarden; no se ajustan) | 100000 / 32 | iteraciones / bytes | `app/modules/secretos/cifrado.py` | FNC-190, 2026-11-24 | Vigente |
