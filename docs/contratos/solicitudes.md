@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.1 (2026-10-20) |
+| Versión | 1.2 (2026-11-24) |
 | Proveedor | backend (FNC-056, FNC-057) |
 | Consumidores | web (FNC-069; pantallas DIS-013, DIS-014, DIS-015) |
 | Solicitudes | — |
@@ -46,7 +46,7 @@ Propia solicitud en approve/reject → 403 `solicitud_propia` (SEC-AUTHZ-08).
 | `my_level` | `"usuario"` \| `"admin"` \| null |
 | `my_access_status` | estado del acceso (accesos.md) \| null |
 | `pending_request_id` | int \| null |
-| `can_request` | boolean (false si es su área administrada, superadmin, pendiente, plataforma sin grupos ni conector, o ya tiene `admin`) |
+| `can_request` | boolean (false si es su área administrada, superadmin, pendiente, o ya tiene `admin`; desde 1.2 no depende de grupos ni conector) |
 | `requestable_levels` | (`"usuario"` \| `"admin"`)[]; P5: solo niveles superiores al vigente |
 
 ## `POST /access-requests`
@@ -102,7 +102,7 @@ Respuesta: `{"status": "success", "request": AccessRequest}`. Auditoría `solici
 | 409 | `solicitud_duplicada` | Ya tienes una solicitud pendiente para esta plataforma. |
 | 409 | `nivel_vigente` | Ya tienes ese nivel o uno superior. |
 | 409 | `ya_administra_area` | Ya administras esta área; tienes acceso automático. |
-| 409 | `plataforma_no_disponible` | La plataforma está inactiva o sin integración configurada. |
+| 409 | `plataforma_no_disponible` | La plataforma o su área están inactivas. (Desde 1.2 ya no se responde por falta de grupos o conector: toda plataforma activa es solicitable en ambos niveles, FNC-196.) |
 | 409 | `solicitud_ya_decidida` | La solicitud ya fue decidida. |
 | 409 | `estado_invalido` | Subir de nivel con el acceso actual aún no `activo` (accesos.md) |
 | 422 | `validacion` | `fields.justification`: "Escribe como máximo 500 caracteres."; `fields.reason`: "Escribe entre 10 y 500 caracteres." |
@@ -129,3 +129,4 @@ Respuesta: `{"status": "success", "request": AccessRequest}`. Auditoría `solici
 |---|---|---|
 | 1 | 2026-10-14 | Versión inicial (FNC-038) |
 | 1.1 | 2026-10-20 | `justification` opcional, sin mínimo (decisión del dueño); catálogo solo de áreas `Activo` y admin ve sus áreas sin solicitar; `409 estado_invalido` al subir con acceso no activo (FNC-056) |
+| 1.2 | 2026-11-24 | FNC-196 (dueño): toda plataforma activa de un área activa es solicitable en ambos niveles; el acceso se da por el grupo `app-{plataforma}-{nivel}` y, si hay conector, además por su alta. `plataforma_no_disponible` solo por plataforma o área inactivas. Sin cambios de forma |

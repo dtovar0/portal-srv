@@ -1,7 +1,6 @@
 """Consultas de la configuración de conectores (FNC-050)."""
 from app.modules.connectors.models import PlatformConnector
 from app.modules.connectors.registry import obtener_tipo
-from app.modules.platforms.tipos import TIPO_CONECTOR
 
 
 def configuracion_de(plataforma_id):
@@ -20,9 +19,10 @@ def referencias_de_otras(plataforma_id):
 
 
 def conector_disponible(plataforma):
-    """`True` si la plataforma `conector` tiene una configuración activa de un
-    tipo registrado (lo que el ejecutor puede usar)."""
-    if plataforma is None or plataforma.integration_type != TIPO_CONECTOR:
+    """`True` si la plataforma tiene una configuración de conector activa de un
+    tipo registrado (lo que el ejecutor puede usar). Desde FNC-196 el conector
+    es un paso adicional a los grupos: no depende de `integration_type`."""
+    if plataforma is None:
         return False
     configuracion = configuracion_de(getattr(plataforma, 'id', None))
     return bool(configuracion and configuracion.active

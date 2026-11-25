@@ -16,7 +16,8 @@ campo_no_permitido`, como el reintento de FNC-062.
 Orden en `PUT`:
 1. Plataforma existente (`404`).
 2. Cuerpo JSON objeto y lista blanca (`400`).
-3. Plataforma `conector` (`409 plataforma_sin_conector`).
+3. (Desde FNC-196 cualquier plataforma puede tener conector: el conector es
+   un paso adicional a sus grupos.)
 4. `connectors.validacion.validar_configuracion` con las referencias de las
    demás plataformas (`422 validacion`; host fuera de
    `CONNECTOR_ALLOWED_HOSTS`, SEC-CON-07).
@@ -48,14 +49,11 @@ from app.modules.connectors.prueba import probar_conexion
 from app.modules.connectors.validacion import validar_configuracion
 from app.modules.core.models import Platform
 from app.modules.platforms.estado import accesos_vigentes
-from app.modules.platforms.tipos import TIPO_CONECTOR
 
 connectors_api_bp = Blueprint('api_connectors', __name__, url_prefix='/api/v1')
 
 MODULO_AUDITORIA = 'Conectores'
 
-PLATAFORMA_SIN_CONECTOR = ('La plataforma no usa conector.', 409,
-                           'plataforma_sin_conector')
 PLATAFORMA_CON_ACCESOS = ('Hay accesos vigentes con este conector.', 409,
                           'plataforma_con_accesos')
 
@@ -142,8 +140,6 @@ def put_connector(platform_id):
     datos, error = leer_cuerpo(CAMPOS_PERMITIDOS)
     if error is not None:
         return error
-    if plataforma.integration_type != TIPO_CONECTOR:
-        return error_response(*PLATAFORMA_SIN_CONECTOR)
     limpio, errores = validar_configuracion(
         datos, referencias_en_uso=referencias_de_otras(plataforma.id))
     if errores:

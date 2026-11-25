@@ -9,7 +9,7 @@ from app.modules.access.models import PlatformAccessGrant
 from app.modules.platforms.tipos import TIPO_LDAP
 from app.modules.provisioning import (ejecucion, manejadores, providers,
                                       queue)
-from app.modules.provisioning.ldap_provider import ProveedorLdap
+from app.modules.provisioning.compuesto import ProveedorGrupoYConector
 from app.modules.provisioning.tipos import PROVEEDOR_CONECTOR, PROVEEDOR_LDAP
 from tests import fabricas
 from tests.provisioning.conftest import ColaFalsa, ProveedorSimulado
@@ -41,7 +41,7 @@ def proveedor_simulado():
         providers.registrar_proveedor(tipo, lambda: simulado)
     yield simulado
     providers.quitar_proveedor(PROVEEDOR_CONECTOR)
-    providers.registrar_proveedor(PROVEEDOR_LDAP, ProveedorLdap)
+    providers.registrar_proveedor(PROVEEDOR_LDAP, ProveedorGrupoYConector)
 
 
 @pytest.fixture

@@ -6286,3 +6286,17 @@ Solo una persona con cuenta **activa** en el portal (tabla `users`) puede cambia
 ### Impacto
 
 Afecta a [autoservicio.py](../app/modules/auth/autoservicio.py), [autoservicio_mfa.py](../app/modules/auth/autoservicio_mfa.py) y [autoservicio_cuentas.py](../app/modules/auth/autoservicio_cuentas.py); pruebas en [test_autoservicio_solo_ldap.py](../tests/test_autoservicio_solo_ldap.py).
+
+## Toda Plataforma Da Acceso por Grupo LDAP; el Conector Es un Paso Adicional
+
+### Regla
+
+Cuando se acepta una solicitud (o el admin otorga, o el sistema da el acceso automático al admin de área) se agrega a la persona al grupo LDAP de su nivel, `app-{plataforma}-users` o `app-{plataforma}-admins`, sin importar si la plataforma tiene conector. Después, **solo si** la plataforma tiene un conector configurado y disponible, se ejecuta su alta (crear la cuenta local por API), para plataformas cuyo backend de autenticación es LDAP pero que no crean el usuario por sí solas. Al revocar (revocación, salida del área, regreso de admin) se quita del grupo y, si hay conector, se ejecuta su baja. Subir o bajar de nivel solo cambia el grupo. Toda plataforma activa de un área activa es solicitable en ambos niveles. Si no se indican los DN de grupo, se derivan de `LDAP_PLATFORM_GROUP_TEMPLATE` (por omisión `cn=app-{plataforma}-{nivel}`) y el grupo inexistente se crea al otorgar. Si el conector falla, el acceso queda `fallido` (o `fallo_revocacion`) con su error y la pertenencia al grupo no se revierte.
+
+### Ejemplo
+
+`tacacs` no tiene DN ni conector: al aprobar la solicitud de la persona se crea `cn=app-tacacs-users` si no existe y se la agrega; el acceso pasa a `activo`. `zabbix` además tiene un conector `api`: tras agregarla a `app-zabbix-users` se crea su usuario en Zabbix; si esa llamada falla, el acceso queda `fallido`, sigue en el grupo y el reintento repite ambos pasos.
+
+### Impacto
+
+Afecta a [compuesto.py](../app/modules/provisioning/compuesto.py), [ldap_provider.py](../app/modules/provisioning/ldap_provider.py), [grupos.py](../app/modules/platforms/grupos.py), [catalogo.py](../app/modules/access_requests/catalogo.py), [area_admin_sync.py](../app/modules/access/area_admin_sync.py) y [services.py](../app/modules/access/services.py); migración `0021`; pruebas en [test_grupos_y_conector.py](../tests/access/test_grupos_y_conector.py).

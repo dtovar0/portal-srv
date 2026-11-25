@@ -72,6 +72,10 @@ _NOMBRE_ATRIBUTO = re.compile(r'^(?:[A-Za-z][A-Za-z0-9-]*|\d+(?:\.\d+)+)$')
 MARCADORES_PLANTILLA_GRUPO = frozenset({'plataforma', 'area', 'nivel'})
 MARCADORES_OBLIGATORIOS_GRUPO = frozenset({'plataforma', 'nivel'})
 VALOR_MUESTRA_PLANTILLA = 'muestra'
+# Convención por omisión del DN de grupo (FNC-196): toda plataforma da acceso
+# por su grupo de nivel `app-{plataforma}-{nivel}` aunque la variable esté
+# vacía. Con el prefijo `app-` el nivel va en plural (`-users`/`-admins`).
+PLANTILLA_GRUPO_POR_OMISION = 'cn=app-{plataforma}-{nivel}'
 
 
 class ErrorConfiguracionDirectorio(RuntimeError):
@@ -219,10 +223,11 @@ def _miembro_relleno(entorno, usuarios_base_dn):
 
 
 def _plantilla_grupo(entorno):
-    """Plantilla de RDN como `cn={plataforma}-{nivel},ou={area}`; None si vacía."""
+    """Plantilla de RDN como `cn={plataforma}-{nivel},ou={area}`; si la
+    variable está vacía, `PLANTILLA_GRUPO_POR_OMISION` (FNC-196)."""
     plantilla = _leer(entorno, VAR_PLANTILLA_GRUPO)
     if not plantilla:
-        return None
+        return PLANTILLA_GRUPO_POR_OMISION
     error = ErrorConfiguracionDirectorio(
         f'{VAR_PLANTILLA_GRUPO} debe ser un DN relativo con {{plataforma}} y '
         '{nivel} (y opcionalmente {area}), sin otros marcadores.')

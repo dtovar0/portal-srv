@@ -7,7 +7,7 @@
   acceso pasa a `activo`/`revocado` solo tras confirmar el éxito (SEC-CON-09).
 - Subir de nivel (P5): el acceso anterior pasa a `revocando` con motivo
   `reemplazado_por_nivel_superior` y el nuevo a `en_proceso`, juntos.
-- Plataforma sin conector (`registro_manual`): no hay ejecutor; el acceso
+- Plataforma sin grupos ni conector (`registro_manual`): no hay ejecutor; el acceso
   pasa directo a `activo`/`revocado`, sin trabajo en la cola. Solo cuando el
   llamador lo pide (asignación y retiro directos del administrador).
 - `actor`: la cuenta de la sesión (los endpoints pasan `current_user`) o
@@ -27,7 +27,8 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO, ESTADO_F
                                       ORIGEN_ADMIN_DE_AREA)
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
-from app.modules.platforms.tipos import NIVEL_ADMIN
+from app.modules.platforms import grupos
+from app.modules.platforms.tipos import NIVEL_ADMIN, NIVEL_USUARIO
 from app.modules.provisioning import queue
 from app.modules.provisioning.reloj import ahora
 from app.modules.provisioning.tipos import (OPERACION_OTORGAR,
@@ -53,6 +54,10 @@ def estado_auditado(acceso):
 
 
 def _encolar(acceso, operacion, plataforma):
+    if operacion == OPERACION_OTORGAR:
+        # Toda plataforma da acceso por grupo: si aún no tiene los DN, se
+        # derivan de la convención (FNC-196) y quedan guardados.
+        grupos.completar_dns(plataforma)
     trabajo = queue.encolar(operacion, acceso.user_id, plataforma,
                             acceso.level, clave_idempotencia(acceso, operacion),
                             access_id=acceso.id)
@@ -70,12 +75,14 @@ def _auditar(evento, acceso, usuario, plataforma, antes, detalle, sistema):
 
 
 def registro_manual(plataforma):
-    """`True` si la plataforma usa conector pero no tiene uno disponible: el
-    ejecutor no puede aplicar el cambio y el administrador lo hace a mano."""
+    """`True` si el ejecutor no tiene nada que aplicar: la plataforma no tiene
+    grupos ni se pueden derivar (directorio sin configurar) y tampoco tiene un
+    conector disponible; el administrador lo hace a mano (FNC-196: con grupos
+    o conector, siempre hay trabajo)."""
     from app.modules.connectors.consultas import conector_disponible
-    from app.modules.platforms.tipos import TIPO_CONECTOR
     return (plataforma is not None
-            and plataforma.integration_type == TIPO_CONECTOR
+            and not any(grupos.dn_del_nivel(plataforma, n)
+                        for n in (NIVEL_USUARIO, NIVEL_ADMIN))
             and not conector_disponible(plataforma))
 
 

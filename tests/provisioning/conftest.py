@@ -12,7 +12,7 @@ from rq.utils import import_attribute
 from app import db
 from app.modules.platforms.tipos import NIVEL_USUARIO, TIPO_LDAP
 from app.modules.provisioning import ejecucion, manejadores, providers, queue
-from app.modules.provisioning.ldap_provider import ProveedorLdap
+from app.modules.provisioning.compuesto import ProveedorGrupoYConector
 from app.modules.provisioning.providers import Provisioner, ResultadoProveedor
 from app.modules.provisioning.tipos import (OPERACION_OTORGAR,
                                             PROVEEDOR_CONECTOR,
@@ -85,7 +85,7 @@ def proveedor_simulado():
         providers.registrar_proveedor(tipo, lambda: simulado)
     yield simulado
     providers.quitar_proveedor(PROVEEDOR_CONECTOR)
-    providers.registrar_proveedor(PROVEEDOR_LDAP, ProveedorLdap)
+    providers.registrar_proveedor(PROVEEDOR_LDAP, ProveedorGrupoYConector)
 
 
 @pytest.fixture(autouse=True)

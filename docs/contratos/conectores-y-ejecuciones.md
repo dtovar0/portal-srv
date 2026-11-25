@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.4 (2026-10-26) |
+| Versión | 1.5 (2026-11-24) |
 | Proveedor | backend (FNC-051, FNC-052, FNC-061, FNC-062; base FNC-049, FNC-050) |
 | Consumidores | web (FNC-069; pantallas DIS-022, DIS-018) |
 | Solicitudes | — |
@@ -141,7 +141,6 @@ Orden: `created_at` descendente. Respuesta paginada de `Job` (sin `attempts`).
 ## Errores
 | HTTP | `code` | Mensaje |
 |---|---|---|
-| 409 | `plataforma_sin_conector` | La plataforma no usa conector. |
 | 409 | `plataforma_con_accesos` | Hay accesos vigentes con este conector. |
 | 409 | `conector_concurrente` | Otra petición configuró este conector a la vez; vuelve a intentarlo. (`PUT` que crea; la restricción única de la plataforma) |
 | 409 | `estado_invalido` | Solo se reintenta una ejecución fallida. |
@@ -173,3 +172,4 @@ Orden: `created_at` descendente. Respuesta paginada de `Job` (sin `attempts`).
 | 1.2 | 2026-10-21 | Aditivo (FNC-051): esquema de `params` del tipo `api` (`422 fields.params.<campo>`) y 8 motivos nuevos en la bitácora de ejecuciones (incluye `valor_no_valido`, auditoría) |
 | 1.3 | 2026-10-21 | Aditivo (FNC-052): esquema de `params` del tipo `ssh` (`422 fields.params.<campo>`) y 5 motivos nuevos en la bitácora de ejecuciones |
 | 1.4 | 2026-10-26 | Aditivo (FNC-053): esquema de `params` del tipo `bd` (`422 fields.params.<campo>`) y 4 motivos nuevos en la bitácora de ejecuciones |
+| 1.5 | 2026-11-24 | FNC-196 (dueño): el conector es un paso **adicional** a los grupos. Todo trabajo usa el proveedor `ldap` (grupo del nivel) y, si la plataforma tiene conector activo, después su `otorgar`/`revocar` (un solo trabajo; reintentos y estados iguales). Un fallo del conector deja el trabajo `fallido` con su error sin revertir el grupo. `PUT /platforms/<id>/connector` funciona en cualquier plataforma (retirado `409 plataforma_sin_conector`). El cambio de nivel solo cambia el grupo (rol por conector: FNC-198) |

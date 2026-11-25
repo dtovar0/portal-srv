@@ -62,7 +62,10 @@ def test_otorgar_y_revocar_son_idempotentes(escenario, directorio):
     assert proveedor.consultar(op).presente is False
 
 
-def test_grupo_inexistente_es_permanente(escenario):
+def test_grupo_inexistente_es_permanente(escenario, monkeypatch):
+    # Con la creación automática apagada (FNC-196: por omisión está activa).
+    monkeypatch.setenv('LDAP_PROVISIONING_AUTO_CREATE_GROUPS', 'false')
+    monkeypatch.setenv('LDAP_AUTO_CREATE_PLATFORM_GROUPS', 'false')
     proveedor, plataforma, usuario, *_ = escenario
     resultado = proveedor.otorgar(operacion(plataforma, usuario, NIVEL_ADMIN))
 
@@ -98,13 +101,15 @@ def test_plataforma_sin_grupo_del_nivel(escenario):
         'grupo_no_configurado')
 
 
-def test_plataforma_que_ya_no_es_ldap(escenario):
+def test_plataforma_de_tipo_conector_tambien_usa_su_grupo(escenario):
+    # FNC-196: antes daba `tipo_integracion`; ahora toda plataforma con grupo
+    # se aprovisiona por él.
     proveedor, plataforma, usuario, *_ = escenario
     plataforma.integration_type = 'conector'
     db.session.commit()
 
-    assert proveedor.otorgar(operacion(plataforma, usuario)).motivo == (
-        'tipo_integracion')
+    assert proveedor.otorgar(operacion(plataforma, usuario)).resultado == (
+        RESULTADO_EXITOSO)
 
 
 def test_persona_por_correo_exacto(escenario, directorio):
