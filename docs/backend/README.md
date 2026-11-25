@@ -33,7 +33,7 @@ app/
     ├── auth/          # Modelos User/AuthConfig (obsoleto) y servicios de login
     ├── directory/     # OpenLDAP: configuración LDAP_*, cliente, escritura, api.py (/auth-config, /directory/search; FNC-043); único que importa ldap3
     ├── core/          # Modelos Area/Platform
-    ├── access_requests/ # Solicitudes: models, tipos, catalogo (P1 y estado del actor), services (crear), serializacion, api.py (catalog, POST, mine) (FNC-056); approvals (bandeja, aprobar, rechazar) y rutas inbox/approve/reject (FNC-057); consultas (`mias`, FNC-066)
+    ├── access_requests/ # Solicitudes: models, tipos, catalogo (P1 y estado del actor), services (crear), serializacion, api.py (catalog, POST, mine) (FNC-056); approvals (bandeja, aprobar, rechazar) y rutas inbox/approve/reject (FNC-057); resumen (`inbox/stats`, FNC-200); consultas (`mias`, FNC-066)
     ├── access/        # Accesos otorgados: models, tipos, rules, services (otorgar/revocar), manejadores (resultado del ejecutor), consultas (FNC-054); api.py y serializacion.py (FNC-058); inventario e inventario_api (FNC-059)
     ├── provisioning/  # Ejecutor de aprovisionamiento: models, queue (encolar), ejecucion, worker, providers, ldap_provider, cli (FNC-049); api, consultas, serializacion y reintento (FNC-062)
     ├── alta/          # `flask alta ...` (FNC-182): altas por CLI desde CSV y migración de grupos de LDAP; reutiliza `bulk_import`, `directory_accounts` y `entrega_credenciales`; uso en `scripts/alta/README.md`
