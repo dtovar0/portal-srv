@@ -6300,3 +6300,18 @@ Cuando se acepta una solicitud (o el admin otorga, o el sistema da el acceso aut
 ### Impacto
 
 Afecta a [compuesto.py](../app/modules/provisioning/compuesto.py), [ldap_provider.py](../app/modules/provisioning/ldap_provider.py), [grupos.py](../app/modules/platforms/grupos.py), [catalogo.py](../app/modules/access_requests/catalogo.py), [area_admin_sync.py](../app/modules/access/area_admin_sync.py) y [services.py](../app/modules/access/services.py); migración `0021`; pruebas en [test_grupos_y_conector.py](../tests/access/test_grupos_y_conector.py).
+
+## Solicitudes Solo de Nivel Usuario
+
+### Regla
+
+El usuario solo solicita acceso de nivel **usuario**. El nivel **admin** de una plataforma lo otorga un administrador desde el panel de administración; no se pide por solicitud. La justificación no se pide (son herramientas de trabajo). Decisión del dueño, 2026-11-24 (FNC-199, DIS-125).
+
+### Ejemplo
+
+Un miembro de Packet ve `tacacs` «Sin acceso», pulsa «Solicitar acceso» y la solicitud nace de nivel usuario; si alguien manda `level: admin` por la API, recibe `422`.
+
+### Impacto
+
+Afecta a [catalogo.py](../app/modules/access_requests/catalogo.py) (`NIVELES_SOLICITABLES`) y [services.py](../app/modules/access_requests/services.py).
+
