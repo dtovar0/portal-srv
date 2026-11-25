@@ -13,9 +13,9 @@ import { porcentaje } from '../dashboard/indicadores';
 import { Card, PanelHeader, PremiumEmptyState } from '../ui';
 
 const TOKENS_DONA = {
-  pendiente: '--color-aviso-relleno',
-  aprobada: '--color-exito-relleno',
-  rechazada: '--color-peligro-relleno',
+  pendiente: '--color-indicador-pendientes',
+  aprobada: '--color-indicador-aprobadas',
+  rechazada: '--color-indicador-rechazadas',
   rejilla: '--color-panel-border',
   fondo: '--color-panel-fill',
   texto: '--color-body-text',

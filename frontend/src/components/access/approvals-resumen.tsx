@@ -58,7 +58,7 @@ function Contenido({ stats }: { stats: InboxStats }) {
                   href={rutaConFiltro(RUTA_SOLICITUDES, { status: estado })}
                   variant="secondary"
                   aria-label={abrir}
-                  className="min-h-9 px-4 text-xs font-semibold"
+                  className="text-xs font-semibold"
                 >
                   Abrir
                 </ButtonLink>

@@ -1119,21 +1119,24 @@ select::-ms-expand {
     --ind-c2: var(--color-indicador-solicitudes-fin);
 }
 /* DIS-131: puntos de la leyenda de la dona de Solicitudes. */
-.nx-dona__punto--pendiente { background-color: rgb(var(--color-aviso-relleno)); }
-.nx-dona__punto--aprobada { background-color: rgb(var(--color-exito-relleno)); }
-.nx-dona__punto--rechazada { background-color: rgb(var(--color-peligro-relleno)); }
+.nx-dona__punto--pendiente { background-color: rgb(var(--color-indicador-pendientes)); }
+.nx-dona__punto--aprobada { background-color: rgb(var(--color-indicador-aprobadas)); }
+.nx-dona__punto--rechazada { background-color: rgb(var(--color-indicador-rechazadas)); }
 /* DIS-131: estados de Solicitudes con los tokens semánticos de aviso, éxito y peligro. */
 .nx-ind--pendientes {
-    --ind-c: var(--color-aviso-relleno);
-    --ind-c2: var(--color-aviso-relleno);
+    --ind-c: var(--color-indicador-pendientes);
+    --ind-c2: var(--color-indicador-pendientes-fin);
+    --ind-icono: var(--color-indicador-pendientes-icono);
 }
 .nx-ind--aprobadas {
-    --ind-c: var(--color-exito-relleno);
-    --ind-c2: var(--color-exito-relleno);
+    --ind-c: var(--color-indicador-aprobadas);
+    --ind-c2: var(--color-indicador-aprobadas-fin);
+    --ind-icono: var(--color-indicador-aprobadas-icono);
 }
 .nx-ind--rechazadas {
-    --ind-c: var(--color-peligro-relleno);
-    --ind-c2: var(--color-peligro-relleno);
+    --ind-c: var(--color-indicador-rechazadas);
+    --ind-c2: var(--color-indicador-rechazadas-fin);
+    --ind-icono: var(--color-indicador-rechazadas-icono);
 }
 .nx-ind--visitas {
     --ind-c: var(--color-indicador-visitas);
@@ -1166,7 +1169,7 @@ select::-ms-expand {
 .nx-ind__icono {
     --nx-ind-extremo: rgb(var(--color-texto-sobre-fondo-claro));
     background: linear-gradient(145deg, var(--nx-ind), color-mix(in srgb, var(--nx-ind) 72%, var(--nx-ind-extremo)));
-    color: rgb(var(--color-texto-sobre-accion));
+    color: rgb(var(--ind-icono, var(--color-texto-sobre-accion)));
     box-shadow: 0 6px 12px -6px var(--nx-ind);
 }
 /* Trazos: pista tenue, valor con degradado y extremos redondeados. */

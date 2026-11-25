@@ -211,6 +211,15 @@
   --color-indicador-visitas-fin: 22 163 74;
   --color-indicador-usuarios: 219 39 119;
   --color-indicador-usuarios-fin: 244 63 94;
+  --color-indicador-pendientes: 180 83 9;
+  --color-indicador-pendientes-fin: 180 83 9;
+  --color-indicador-pendientes-icono: 255 255 255;
+  --color-indicador-aprobadas: 5 150 105;
+  --color-indicador-aprobadas-fin: 5 150 105;
+  --color-indicador-aprobadas-icono: 255 255 255;
+  --color-indicador-rechazadas: 220 38 38;
+  --color-indicador-rechazadas-fin: 220 38 38;
+  --color-indicador-rechazadas-icono: 255 255 255;
 
   /* Colores fijos de ilustraciones y tarjetas de diseño (DIS-119): no cambian con el tema. */
   --color-arte-ambar-300: 252 211 77;
@@ -549,6 +558,15 @@
     --color-indicador-visitas-fin: 34 197 94;
     --color-indicador-usuarios: 219 39 119;
     --color-indicador-usuarios-fin: 244 63 94;
+    --color-indicador-pendientes: 245 158 11;
+    --color-indicador-pendientes-fin: 245 158 11;
+    --color-indicador-pendientes-icono: 0 0 0;
+    --color-indicador-aprobadas: 16 185 129;
+    --color-indicador-aprobadas-fin: 16 185 129;
+    --color-indicador-aprobadas-icono: 0 0 0;
+    --color-indicador-rechazadas: 220 38 38;
+    --color-indicador-rechazadas-fin: 220 38 38;
+    --color-indicador-rechazadas-icono: 255 255 255;
 
     /* Colores fijos de ilustraciones y tarjetas de diseño (DIS-119): no cambian con el tema. */
     --color-arte-ambar-300: 252 211 77;
@@ -836,6 +854,15 @@ html.dark {
   --color-indicador-visitas-fin: 34 197 94;
   --color-indicador-usuarios: 219 39 119;
   --color-indicador-usuarios-fin: 244 63 94;
+  --color-indicador-pendientes: 245 158 11;
+  --color-indicador-pendientes-fin: 245 158 11;
+  --color-indicador-pendientes-icono: 0 0 0;
+  --color-indicador-aprobadas: 16 185 129;
+  --color-indicador-aprobadas-fin: 16 185 129;
+  --color-indicador-aprobadas-icono: 0 0 0;
+  --color-indicador-rechazadas: 220 38 38;
+  --color-indicador-rechazadas-fin: 220 38 38;
+  --color-indicador-rechazadas-icono: 255 255 255;
 
   /* Colores fijos de ilustraciones y tarjetas de diseño (DIS-119): no cambian con el tema. */
   --color-arte-ambar-300: 252 211 77;

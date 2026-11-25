@@ -37,3 +37,9 @@
 
 ## Propuesta
 - Unificar las gráficas de barras de `dashboard.tsx` con `GraficaBarras`.
+
+## Corrección tras auditoría de accesibilidad
+- Ámbar de «Pendientes» en claro = 2,15:1: tokens nuevos `--color-indicador-{pendientes,aprobadas,rechazadas}[-fin|-icono]` por tema (claro pendientes `180 83 9`, 5,02:1; oscuro conserva `245 158 11`), usados por tarjeta, punto y segmento de la dona. Registrados en `docs/configuracion/VARIABLES.md`.
+- Icono: en oscuro, negro sobre ámbar y verde (`-icono`); `.nx-ind__icono` lo lee con `--ind-icono`.
+- `tests/accesibilidad/indicadores-contraste.test.ts` cubre las tres clases nuevas (con el valor anterior fallaban 2 pruebas en claro).
+- «Abrir»: `.nexus-btn` fija `height: 3rem !important` (48 px); se quitó el `min-h-9 px-4` inerte.
