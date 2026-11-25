@@ -86,6 +86,8 @@ export function PlatformMockupCard({
   const esActivo = mine && (!item.my_access_status || item.my_access_status === 'activo');
   const enlace = mine && esActivo ? enlaceSeguro(mine.direct_link) : null;
   const puedePedir = item.can_request && item.requestable_levels.length > 0;
+  // DIS-128: aprobado y aprovisionándose (el worker crea los permisos).
+  const configurando = item.my_access_status === 'en_proceso' && !pendiente;
 
   const colorClase = obtenerColorIniciales(platform.id);
   const iniciales = obtenerIniciales(platform.name);
@@ -1068,6 +1070,14 @@ export function PlatformMockupCard({
               <span className="size-1.5 rounded-full bg-success animate-pulse" />
               ACTIVA
             </span>
+          ) : configurando ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/30 px-3 py-1 text-xs font-bold text-primary-text shrink-0"
+              title="Tu acceso fue aprobado y se están creando tus permisos. Si te lo pide, firma la Carta Responsiva."
+            >
+              <span className="size-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
+              CONFIGURANDO ACCESO
+            </span>
           ) : pendiente ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 border border-warning/30 px-3 py-1 text-xs font-bold text-warning-text shrink-0"
@@ -1101,7 +1111,7 @@ export function PlatformMockupCard({
               <span>Abrir</span>
               <Icono nombre="abrir-externo" tamano="xs" ariaHidden={true} />
             </a>
-          ) : pendiente ? null : puedePedir ? (
+          ) : pendiente || configurando ? null : puedePedir ? (
             <button
               type="button"
               onClick={(e) => onRequest(item, e.currentTarget)}

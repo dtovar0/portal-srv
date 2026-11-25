@@ -187,6 +187,7 @@ export function PlatformsLaunchpadView({
     if (administradas.has(item.area.id)) return 'Administras esta área: tienes acceso automático.';
     if (item.my_level === 'admin') return 'Ya tienes el nivel más alto.';
     if (abribles.has(item.platform.id)) return '';
+    if (item.my_access_status === 'en_proceso') return 'Configurando tu acceso…';  // DIS-128
     return 'No disponible para solicitar.';
   }
 
