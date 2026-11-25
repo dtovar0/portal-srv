@@ -2,9 +2,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.2 (2026-11-24) |
+| Versión | 1.3 (2026-11-25) |
 | Proveedor | backend (FNC-056, FNC-057) |
-| Consumidores | web (FNC-069; pantallas DIS-013, DIS-014, DIS-015) |
+| Consumidores | web (FNC-069; pantallas DIS-013, DIS-014, DIS-015, DIS-131) |
 | Solicitudes | — |
 
 Convenciones comunes: [README.md](README.md). Tabla `platform_access_requests`.
@@ -26,6 +26,7 @@ Solo se decide una solicitud `pendiente`, con bloqueo de fila (SEC-AUTHZ-10).
 | `POST /access-requests` | 201 | 409 `ya_administra_area` | 201 | 403 |
 | `GET /access-requests/mine` | 200 | 200 | 200 | 200 (vacío) |
 | `GET /access-requests/inbox` | 403 | 200 (sus áreas) | — (no aparecen) | 200 (todas) |
+| `GET /access-requests/inbox/stats` | 403 | 200 (sus áreas) | — (no cuentan) | 200 (todas) |
 | `POST /access-requests/<id>/approve` | 403 | 200 | 404 | 200 |
 | `POST /access-requests/<id>/reject` | 403 | 200 | 404 | 200 |
 
@@ -83,6 +84,21 @@ Orden: `created_at` descendente (inbox `pendiente`: ascendente, la más antigua 
 | `decided_by` | `{ "id": int, "name": string }` \| null |
 | `access` | `{ "id": int, "status": string }` \| null (tras aprobar) |
 
+## `GET /access-requests/inbox/stats` (FNC-200, v1.3)
+Resumen para la pantalla Solicitudes (DIS-131). Mismo alcance que `inbox` (`approvals.bandeja`: sin las propias), **todos los estados**, sin parámetros ni paginación.
+
+```json
+{ "total": 12,
+  "by_status": { "pendiente": 3, "aprobada": 7, "rechazada": 2 },
+  "by_area": [ { "area_id": 3, "area": "Finanzas", "count": 8 } ],
+  "by_platform": [ { "platform_id": 12, "platform": "Contabilidad", "area": "Finanzas", "count": 5 } ] }
+```
+| Campo | Regla |
+|---|---|
+| `by_status` | Siempre las 3 claves (0 si no hay) |
+| `by_area`, `by_platform` | Solo con `count > 0`; orden `count` descendente y nombre ascendente; sin límite (la web recorta) |
+| `total` | Suma de `by_status` |
+
 ## `POST /access-requests/<id>/approve`
 - Sin cuerpo (`{}`).
 - Efecto: estado `aprobada` + acceso `en_proceso` + trabajo encolado, en una transacción (accesos.md). Si sube de nivel, el acceso anterior pasa a `revocando`.
@@ -112,6 +128,7 @@ Respuesta: `{"status": "success", "request": AccessRequest}`. Auditoría `solici
 |---|---|
 | Mis solicitudes (`mine`) | Sí, mientras haya `pendiente` o accesos `en_proceso` |
 | Aprobaciones (`inbox`) | Sí |
+| Resumen (`inbox/stats`) | Sí, con el mismo intervalo que la bandeja |
 | Catálogo | No; recarga tras solicitar |
 
 ## Datos simulados
