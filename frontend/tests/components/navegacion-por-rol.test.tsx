@@ -48,11 +48,11 @@ const COMUNES_ADMIN = ['Dashboard', 'Portal', 'Ajustes', 'Auditoría'];
 const ESPERADO: Record<Rol, string[]> = {
   usuario: ['Portal'],
   admin_area: [
-    ...COMUNES_ADMIN, 'Plataformas', 'Áreas', 'Usuarios',
+    ...COMUNES_ADMIN, 'Plataformas', 'Solicitudes', 'Áreas', 'Usuarios',
     'Auditoría usuarios', 'Ejecuciones',
   ],
   administrador: [
-    ...COMUNES_ADMIN, 'Plataformas', 'Conectores', 'Áreas', 'Usuarios',
+    ...COMUNES_ADMIN, 'Plataformas', 'Solicitudes', 'Conectores', 'Áreas', 'Usuarios',
     'Auditoría usuarios', 'Ejecuciones',
   ],
 };

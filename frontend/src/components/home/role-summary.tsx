@@ -78,7 +78,7 @@ export function gruposDelResumen(resumen: HomeSummary): GrupoResumen[] {
       id: 'pendientes',
       titulo: 'Pendientes',
       contadores: [
-        { etiqueta: 'Por aprobar', valor: resumen.pending_approvals ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.aprobaciones, { status: 'pendiente' }), destino: 'Aprobaciones', icono: 'reloj', tono: 'warning', ...(resumen.oldest_pending_at && (resumen.pending_approvals ?? 0) > 0 ? { nota: `La más antigua: ${formatearFecha(resumen.oldest_pending_at)}`, notaTono: 'warning' as const } : {}) },
+        { etiqueta: 'Por aprobar', valor: resumen.pending_approvals ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.aprobaciones, { status: 'pendiente' }), destino: 'Solicitudes', icono: 'reloj', tono: 'warning', ...(resumen.oldest_pending_at && (resumen.pending_approvals ?? 0) > 0 ? { nota: `La más antigua: ${formatearFecha(resumen.oldest_pending_at)}`, notaTono: 'warning' as const } : {}) },
         { etiqueta: 'Accesos con falla', valor: resumen.failed_access ?? 0, ruta: rutaConFiltro(RUTAS_INICIO.inventario, { status: 'fallido' }), destino: 'Inventario', icono: 'aviso', tono: (resumen.failed_access ?? 0) > 0 ? 'error' : 'neutro', ...((resumen.failed_access ?? 0) > 0 ? { nota: 'Requieren atención', notaTono: 'error' as const } : {}) },
       ],
     });

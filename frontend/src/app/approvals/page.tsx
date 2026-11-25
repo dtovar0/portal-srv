@@ -12,10 +12,10 @@ export default function Page() {
       <RequireRole requires="any_admin">
         <div className="space-y-6">
           <PageHeader
-            title="Aprobaciones"
+            title="Solicitudes"
             description="Solicitudes de acceso de tus áreas (todas, si eres superadmin). Aprueba o rechaza con un motivo."
           />
-          <Suspense fallback={<Skeleton variant="fila" count={5} ariaLabel="Cargando aprobaciones…" />}>
+          <Suspense fallback={<Skeleton variant="fila" count={5} ariaLabel="Cargando solicitudes…" />}>
             <ApprovalsInbox />
           </Suspense>
         </div>
