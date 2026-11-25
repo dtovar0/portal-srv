@@ -2,12 +2,19 @@
 
 En una corrida y en este orden:
 1. Cuenta `sso` y grupo del portal: reutiliza `migracion.migrar(solo=[uid])`.
-   Si la cuenta ya existe se continúa (no es error).
+   Si la cuenta ya existe se continúa (no es error). Con `--admin-area` se
+   fuerza el rol `admin_area` (cambio de rol y de grupo de Authelia, igual que
+   `migrar-ldap --rol admin_area --actualizar-rol`).
 2. Áreas (`--area`, al menos una, deben existir y estar activas).
-3. Carta responsiva registrada como firmada (`--responsiva-firmada`).
-4. Accesos (`--plataforma`, `--nivel`): origen `migracion`, otorgados por el
-   sistema; la plataforma debe ser de una de las áreas de la persona (P1).
-5. Rotación de contraseña (`--rotar-contrasena`), solo si no hubo `ERROR`.
+3. Administración de áreas (`--admin-area`, FNC-207): el servicio del portal
+   `areas_administradas.asignar_areas_administradas` con la unión de las que
+   ya administraba; genera los accesos automáticos `admin_de_area` (FNC-055).
+   Va antes de la responsiva para que la firma active esos accesos.
+4. Carta responsiva registrada como firmada (`--responsiva-firmada`).
+5. Accesos (`--plataforma` en `--nivel`, `--plataforma-admin` en `admin`):
+   origen `migracion`, otorgados por el sistema; la plataforma debe ser de una
+   de las áreas de la persona (P1).
+6. Rotación de contraseña (`--rotar-contrasena`), solo si no hubo `ERROR`.
 
 Todo lo que se puede validar sin escribir se valida antes: un área o una
 plataforma inválida detiene la corrida sin tocar nada. Los superadmins se
@@ -16,7 +23,7 @@ omiten siempre.
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.authz import ROLE_ADMIN, normalized_role
+from app.authz import ROLE_ADMIN, ROLE_AREA_ADMIN, normalized_role
 from app.modules.access import errores, rules, services
 from app.modules.access.consultas import vigentes_de
 from app.modules.access.errores import ErrorDeAcceso
@@ -34,6 +41,7 @@ from app.modules.auth.services import normalizar_correo
 from app.modules.core.models import Area, Platform
 from app.modules.directory.ldap_client import ErrorDirectorio
 from app.modules.notifications import access_notifications as avisos
+from app.modules.users.areas_administradas import asignar_areas_administradas
 from app.modules.users.entrega_credenciales import SLUG_ONBOARDING
 
 ESTADO_ACTIVO = 'Activo'
@@ -67,6 +75,13 @@ TEXTO_YA_ESTABA = 'ya estaba'
 TEXTO_OTORGADO_FIRMADO = 'otorgado; aprovisionamiento encolado'
 TEXTO_OTORGADO_ESPERA = 'otorgado; espera la firma de la responsiva'
 TEXTO_SE_OTORGARIA = 'se otorgaría'
+NIVEL_ADMIN = 'admin'
+DETALLE_ADMIN_AREA = 'administra el área «{nombre}»: {texto}'
+TEXTO_ADMIN_AREA_NUEVA = 'asignada'
+TEXTO_ADMIN_AREA_YA = 'ya la administraba'
+TEXTO_SE_HARIA_ADMIN = 'se haría administradora de «{nombre}»'
+DETALLE_ROL_SIN_CAMBIO = ('no quedó como admin de área; no se asignan áreas '
+                          'administradas')
 
 
 def _linea(resumen, sujeto, estado, detalle):
@@ -74,27 +89,21 @@ def _linea(resumen, sujeto, estado, detalle):
     return resumen
 
 
-def validar_catalogo(nombres_areas, nombres_plataformas, nivel, cuenta):
-    """`(areas, plataformas, errores)` sin escribir: lo que se pidió existe,
-    está activo y cuadra (la plataforma es de un área de la persona)."""
-    errores_ = []
-    if not nombres_areas:
-        errores_.append(DETALLE_SIN_AREAS)
-    areas = []
-    for nombre in nombres_areas:
-        area = Area.query.filter(db.func.lower(Area.name) == nombre.lower()
-                                 ).first()
-        if area is None:
-            errores_.append(DETALLE_AREA_INEXISTENTE.format(nombre=nombre))
-        elif area.status != ESTADO_ACTIVO:
-            errores_.append(DETALLE_AREA_INACTIVA.format(nombre=nombre))
-        elif area not in areas:
-            areas.append(area)
-    ids_de_la_persona = {a.id for a in areas}
-    if cuenta is not None:
-        ids_de_la_persona |= {a.id for a in cuenta.areas or []}
+def _resolver_area(nombre, errores_):
+    area = Area.query.filter(db.func.lower(Area.name) == nombre.lower()
+                             ).first()
+    if area is None:
+        errores_.append(DETALLE_AREA_INEXISTENTE.format(nombre=nombre))
+    elif area.status != ESTADO_ACTIVO:
+        errores_.append(DETALLE_AREA_INACTIVA.format(nombre=nombre))
+    else:
+        return area
+    return None
+
+
+def _resolver_plataformas(nombres, nivel, ids_de_la_persona, errores_):
     plataformas = []
-    for nombre in nombres_plataformas:
+    for nombre in nombres:
         candidatas = Platform.query.filter(
             db.func.lower(Platform.name) == nombre.lower()).all()
         plataforma = next((p for p in candidatas
@@ -107,9 +116,41 @@ def validar_catalogo(nombres_areas, nombres_plataformas, nivel, cuenta):
                 nombre=nombre, nivel=nivel))
         elif plataforma.area_id not in ids_de_la_persona:
             errores_.append(DETALLE_PLATAFORMA_OTRA_AREA.format(nombre=nombre))
-        elif plataforma not in plataformas:
-            plataformas.append(plataforma)
-    return areas, plataformas, errores_
+        elif (plataforma, nivel) not in plataformas:
+            plataformas.append((plataforma, nivel))
+    return plataformas
+
+
+def validar_catalogo(nombres_areas, nombres_plataformas, nivel, cuenta,
+                     nombres_plataformas_admin=(), nombres_areas_admin=()):
+    """`(areas, accesos, areas_admin, errores)` sin escribir: lo que se pidió
+    existe, está activo y cuadra (la plataforma es de un área de la persona).
+    `accesos` son pares `(plataforma, nivel)`: `--plataforma` en `nivel` y
+    `--plataforma-admin` en `admin`. Las áreas de `--admin-area` no cuentan
+    como áreas de la persona (el portal tampoco las agrega a `user.areas`)."""
+    errores_ = []
+    if not nombres_areas:
+        errores_.append(DETALLE_SIN_AREAS)
+    areas = []
+    for nombre in nombres_areas:
+        area = _resolver_area(nombre, errores_)
+        if area is not None and area not in areas:
+            areas.append(area)
+    areas_admin = []
+    for nombre in nombres_areas_admin:
+        area = _resolver_area(nombre, errores_)
+        if area is not None and area not in areas_admin:
+            areas_admin.append(area)
+    ids_de_la_persona = {a.id for a in areas}
+    if cuenta is not None:
+        ids_de_la_persona |= {a.id for a in cuenta.areas or []}
+    accesos = _resolver_plataformas(nombres_plataformas, nivel,
+                                    ids_de_la_persona, errores_)
+    for par in _resolver_plataformas(nombres_plataformas_admin, NIVEL_ADMIN,
+                                     ids_de_la_persona, errores_):
+        if par not in accesos:
+            accesos.append(par)
+    return areas, accesos, areas_admin, errores_
 
 
 def _agregar_areas(resumen, cuenta, areas):
@@ -178,7 +219,8 @@ def _simular_acceso(resumen, correo, cuenta, plataforma, nivel, firmada):
 
 def migrar_usuario(uid, nombres_areas, nombres_plataformas, nivel,
                    responsiva_firmada, dry_run, rotar,
-                   plantilla=SLUG_ONBOARDING, enviar_a=None, notificar=False):
+                   plantilla=SLUG_ONBOARDING, enviar_a=None, notificar=False,
+                   nombres_plataformas_admin=(), nombres_areas_admin=()):
     cliente = cliente_o_error()
     if rotar:
         exigir_entrega(dry_run)
@@ -201,15 +243,17 @@ def migrar_usuario(uid, nombres_areas, nombres_plataformas, nivel,
     cuenta = User.query.filter(db.func.lower(User.email) == correo).first()
     if cuenta is not None and normalized_role(cuenta) == ROLE_ADMIN:
         return _linea(resumen, correo, OMITIDO, migracion.DETALLE_ADMIN_PORTAL)
-    areas, plataformas, fallos = validar_catalogo(
-        nombres_areas, nombres_plataformas, nivel, cuenta)
+    areas, accesos, areas_admin, fallos = validar_catalogo(
+        nombres_areas, nombres_plataformas, nivel, cuenta,
+        nombres_plataformas_admin, nombres_areas_admin)
     for texto in fallos:
         resumen.agregar(correo, ERROR, texto)
     if fallos:
         return resumen
 
     # 1. Cuenta del portal y grupo del portal (sin duplicar `migrar-ldap`).
-    paso = migracion.migrar(dry_run, False, (), None, False, False,
+    rol = ROLE_AREA_ADMIN if areas_admin else None
+    paso = migracion.migrar(dry_run, False, (), rol, bool(areas_admin), False,
                             solo=[uid])
     resumen.extender(paso)
     if paso.hay_fallos:
@@ -220,37 +264,60 @@ def migrar_usuario(uid, nombres_areas, nombres_plataformas, nivel,
         return _linea(resumen, correo, ERROR, DETALLE_SIN_CUENTA)
 
     if dry_run:
-        _simular(resumen, correo, cuenta, areas, plataformas, nivel,
+        _simular(resumen, correo, cuenta, areas, areas_admin, accesos,
                  responsiva_firmada, rotar, enviar_a, notificar)
         return resumen
 
     # 2. Áreas.
     _agregar_areas(resumen, cuenta, areas)
-    # 3. Responsiva registrada como firmada.
+    # 3. Áreas que administra (servicio del portal, sin actor humano).
+    if areas_admin and not _asignar_areas_admin(resumen, cuenta, areas_admin):
+        return resumen
+    # 4. Responsiva registrada como firmada.
     if responsiva_firmada:
         total = registrar_firma(cuenta, por_migracion=True, actor=ACTOR_CLI)
         db.session.commit()
         resumen.agregar(correo, ACTUALIZADO,
                         DETALLE_RESPONSIVA.format(total=total))
-    # 4. Accesos.
+    # 5. Accesos.
     firmar_ya = responsiva_firmada and responsiva_por_plataforma()
-    otorgadas = [p for p in plataformas
-                 if _otorgar(resumen, cuenta, p, nivel, firmar_ya) is not None]
+    otorgadas = [(p, n) for p, n in accesos
+                 if _otorgar(resumen, cuenta, p, n, firmar_ya) is not None]
     db.session.commit()
     sin_fallos = not resumen.hay_fallos
     # Aviso de aprobado (opcional): ya confirmada la transacción; un fallo
     # del correo no deshace nada ni detiene la rotación.
     if notificar:
-        _avisar(resumen, cuenta, otorgadas, nivel)
-    # 5. Rotación: solo si nada falló.
+        _avisar(resumen, cuenta, otorgadas)
+    # 6. Rotación: solo si nada falló.
     if rotar and sin_fallos:
         resumen.lineas.append(rotacion.rotar(cuenta, persona.identificador,
                                              plantilla, enviar_a))
     return resumen
 
 
-def _avisar(resumen, cuenta, plataformas, nivel):
-    for plataforma in plataformas:
+def _asignar_areas_admin(resumen, cuenta, areas):
+    """`--admin-area`: suma `areas` a las que ya administra la cuenta con el
+    mismo servicio que `PUT /users/<id>/managed-areas`. Sin petición, la
+    auditoría la registra el actor «sistema». `False` si no es admin de área."""
+    if normalized_role(cuenta) != ROLE_AREA_ADMIN:
+        resumen.agregar(cuenta.email, ERROR, DETALLE_ROL_SIN_CAMBIO)
+        return False
+    ya = {a.id for a in cuenta.managed_areas or []}
+    ids = sorted(ya | {a.id for a in areas})
+    asignar_areas_administradas(cuenta, ids)
+    db.session.commit()
+    for area in areas:
+        resumen.agregar(cuenta.email, OMITIDO if area.id in ya else ACTUALIZADO,
+                        DETALLE_ADMIN_AREA.format(
+                            nombre=area.name,
+                            texto=TEXTO_ADMIN_AREA_YA if area.id in ya
+                            else TEXTO_ADMIN_AREA_NUEVA))
+    return True
+
+
+def _avisar(resumen, cuenta, accesos):
+    for plataforma, nivel in accesos:
         estado = avisos.notificar_solicitud_aprobada(
             cuenta, plataforma, nivel).get('status')
         if estado == avisos.ENVIADO:
@@ -263,7 +330,7 @@ def _avisar(resumen, cuenta, plataformas, nivel):
             plataforma=plataforma.name, texto=linea[1]))
 
 
-def _simular(resumen, correo, cuenta, areas, plataformas, nivel, firmada,
+def _simular(resumen, correo, cuenta, areas, areas_admin, accesos, firmada,
              rotar, enviar_a, notificar):
     for area in areas:
         ya = cuenta is not None and area in cuenta.areas
@@ -271,9 +338,18 @@ def _simular(resumen, correo, cuenta, areas, plataformas, nivel, firmada,
                         DETALLE_AREA.format(
                             nombre=area.name,
                             texto=TEXTO_YA_ESTABA if ya else TEXTO_SE_AGREGARIA))
+    ya_admin = ({a.id for a in cuenta.managed_areas or []}
+                if cuenta is not None else set())
+    for area in areas_admin:
+        ya = area.id in ya_admin
+        resumen.agregar(correo, OMITIDO if ya else ACTUALIZADO,
+                        DETALLE_ADMIN_AREA.format(
+                            nombre=area.name,
+                            texto=TEXTO_ADMIN_AREA_YA if ya else
+                            TEXTO_SE_HARIA_ADMIN.format(nombre=area.name)))
     if firmada:
         resumen.agregar(correo, ACTUALIZADO, DETALLE_RESPONSIVA_SIMULADA)
-    for plataforma in plataformas:
+    for plataforma, nivel in accesos:
         n = resumen.cuenta(ERROR)
         _simular_acceso(resumen, correo, cuenta, plataforma, nivel, firmada)
         if notificar and resumen.cuenta(ERROR) == n and \
