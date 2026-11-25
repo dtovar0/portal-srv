@@ -1069,9 +1069,12 @@ export function PlatformMockupCard({
               ACTIVA
             </span>
           ) : pendiente ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 border border-warning/30 px-3 py-1 text-xs font-bold text-warning-text shrink-0">
-              <span className="size-1.5 rounded-full bg-warning animate-pulse" />
-              EN REVISIÓN
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 border border-warning/30 px-3 py-1 text-xs font-bold text-warning-text shrink-0"
+              title="Esperando la aprobación del administrador del área"
+            >
+              <span className="size-1.5 rounded-full bg-warning animate-pulse" aria-hidden="true" />
+              SOLICITUD ENVIADA
             </span>
           ) : puedePedir ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-container border border-borde px-3 py-1 text-xs font-semibold text-texto-secundario shrink-0">
@@ -1098,11 +1101,7 @@ export function PlatformMockupCard({
               <span>Abrir</span>
               <Icono nombre="abrir-externo" tamano="xs" ariaHidden={true} />
             </a>
-          ) : pendiente ? (
-            <span className="inline-flex min-h-11 items-center text-xs font-semibold text-warning-text italic">
-              Esperando admin
-            </span>
-          ) : puedePedir ? (
+          ) : pendiente ? null : puedePedir ? (
             <button
               type="button"
               onClick={(e) => onRequest(item, e.currentTarget)}

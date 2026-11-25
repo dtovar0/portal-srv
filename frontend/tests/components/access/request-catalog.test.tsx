@@ -202,14 +202,14 @@ describe('tarjetas', () => {
 });
 
 describe('envío de la solicitud', () => {
-  it('sin justificación: envía solo nivel y plataforma, y la tarjeta pasa a pendiente', async () => {
+  it('DIS-125: sin nivel ni justificación, envía nivel usuario y la tarjeta pasa a pendiente', async () => {
     const { dialogo } = await abrirSolicitud('Nómina', renderConToast);
-    expect(within(dialogo).getByRole('radio', { name: /Usuario/ })).toHaveProperty('checked', true);
-    fireEvent.click(within(dialogo).getByRole('radio', { name: /Admin/ }));
+    expect(within(dialogo).queryByRole('radio')).toBeNull();
+    expect(within(dialogo).queryByRole('textbox', { name: /Justificación/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(requestsApi.create).toHaveBeenCalledWith({ platform_id: 13, level: 'admin' });
+    expect(requestsApi.create).toHaveBeenCalledWith({ platform_id: 13, level: 'usuario' });
 
     const nomina = tarjeta('Nómina');
     expect(within(nomina).getByText('Solicitud pendiente')).toBeTruthy();
@@ -224,35 +224,7 @@ describe('envío de la solicitud', () => {
       expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Buscar en el catálogo' })));
   });
 
-  it('con justificación: la envía recortada y muestra el contador', async () => {
-    const { dialogo } = await abrirSolicitud('Contabilidad');
-    expect(within(dialogo).getByText(/Nivel actual: Usuario/)).toBeTruthy();
-    const campo = within(dialogo).getByRole('textbox', { name: 'Justificación (opcional)' });
-    fireEvent.change(campo, { target: { value: '  Cierre mensual  ' } });
-    expect(within(dialogo).getByText('14/500 caracteres')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
-    await waitFor(() => expect(requestsApi.create).toHaveBeenCalledWith(
-      { platform_id: 12, level: 'admin', justification: 'Cierre mensual' }));
-  });
-
-  it('justificación de más de 500: la marca, la anuncia y no envía', async () => {
-    const { dialogo } = await abrirSolicitud('Nómina');
-    const campo = within(dialogo).getByRole('textbox', { name: 'Justificación (opcional)' });
-    fireEvent.change(campo, { target: { value: 'x'.repeat(501) } });
-
-    expect(campo.getAttribute('aria-invalid')).toBe('true');
-    const descrito = campo.getAttribute('aria-describedby') ?? '';
-    expect(descrito).toContain('solicitud-justificacion-error');
-    expect(document.getElementById('solicitud-justificacion-error')?.textContent)
-      .toBe('Escribe como máximo 500 caracteres.');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
-    expect(await alertas(dialogo)).toEqual(
-      ['Escribe como máximo 500 caracteres.', MENSAJES_SOLICITUD.validacion]);
-    expect(document.activeElement).toBe(campo);
-    expect(requestsApi.create).not.toHaveBeenCalled();
-  });
 
   it('Escape cierra el diálogo y devuelve el foco al botón', async () => {
     const { boton } = await abrirSolicitud('Nómina');
@@ -283,21 +255,15 @@ describe('errores del contrato', () => {
     expect(within(tarjeta('Nómina')).queryByText('Solicitud pendiente')).toBeNull();
   });
 
-  it('422 validacion: error del campo ligado al control y con el foco', async () => {
+  it('422 validacion: muestra el mensaje del contrato y no cierra el formulario', async () => {
     vi.mocked(requestsApi.create).mockRejectedValue(new ApiError(422, 'Datos inválidos', {
-      code: 'validacion', fields: { justification: 'Escribe como máximo 500 caracteres.' },
+      code: 'validacion', fields: { level: 'Solo se solicita el nivel usuario.' },
     }));
     const { dialogo } = await abrirSolicitud('Nómina');
-    const campo = within(dialogo).getByRole('textbox', { name: 'Justificación (opcional)' });
-    fireEvent.change(campo, { target: { value: 'Motivo' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
 
-    expect(await alertas(dialogo)).toEqual(
-      ['Escribe como máximo 500 caracteres.', MENSAJES_SOLICITUD.validacion]);
-    expect(campo.getAttribute('aria-invalid')).toBe('true');
-    expect(document.getElementById('solicitud-justificacion-error')?.textContent)
-      .toBe('Escribe como máximo 500 caracteres.');
-    expect(document.activeElement).toBe(campo);
+    expect(await alertas(dialogo)).toContain(MENSAJES_SOLICITUD.validacion);
+    expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
   it('error sin código (500): mensaje genérico, sin detalles internos', async () => {
