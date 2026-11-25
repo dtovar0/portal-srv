@@ -51,7 +51,7 @@ alembic.ini            # Configuración de Alembic (sin URL ni secretos)
 migrations/
 ├── env.py             # URL de construir_uri_bd(); importa app/modules/*/models.py
 ├── script.py.mako     # Plantilla de nuevas migraciones
-└── versions/          # 0001_linea_base_esquema_actual.py y las siguientes
+└── versions/          # 0001_linea_base_esquema_actual.py y las siguientes; 0022 (FNC-203) resiembra las plantillas de correo que falten, sin tocar las existentes
 ```
 
 ## 2. Autorización (`app/authz.py`)
