@@ -44,6 +44,17 @@ def _exigir_rotacion(enviar_a, rotar_contrasena):
         raise click.UsageError('--enviar-a requiere --rotar-contrasena.')
 
 
+def _exigir_sin_repetidas(plataformas, plataformas_admin):
+    """La misma plataforma en --plataforma y --plataforma-admin es un error
+    de uso (se detecta antes de tocar nada)."""
+    repetidas = ({p.strip().lower() for p in plataformas}
+                 & {p.strip().lower() for p in plataformas_admin})
+    if repetidas:
+        raise click.UsageError(
+            'La plataforma «{}» está en --plataforma y en --plataforma-admin: '
+            'elige un solo nivel.'.format('», «'.join(sorted(repetidas))))
+
+
 def _confirmar_redireccion(enviar_a, dry_run, si):
     """Advierte que la contraseña real cambia y pide confirmación (salvo
     `--si` o `--dry-run`, que no escribe)."""
@@ -159,8 +170,20 @@ def migrar_ldap(dry_run, grupos, rol, actualizar_rol, sin_grupo_del_portal,
 @click.option('--plataforma', 'plataformas', multiple=True,
               help='Plataforma a la que se le otorga acceso (por nombre, de '
                    'una de sus áreas); repetible.')
+@click.option('--plataforma-admin', '--platform-admin', 'plataformas_admin',
+              multiple=True,
+              help='Plataforma a la que se le otorga acceso de nivel admin '
+                   '(mismas reglas que --plataforma); repetible. Reemplaza '
+                   'el nivel usuario si ya lo tenía. No puede repetirse en '
+                   '--plataforma.')
+@click.option('--admin-area', 'areas_admin', multiple=True,
+              help='Hace a la persona administradora de esta área (rol '
+                   'admin_area, grupo de Authelia y accesos automáticos, como '
+                   'en el portal); suma a las que ya administraba; repetible.')
 @click.option('--nivel', type=click.Choice(NIVELES), default=NIVELES[0],
-              show_default=True, help='Nivel de los accesos de --plataforma.')
+              show_default=True,
+              help='Nivel de los accesos de --plataforma (no de '
+                   '--plataforma-admin, que siempre es admin).')
 @click.option('--responsiva-firmada', 'responsiva_firmada', is_flag=True,
               help='Registra la carta responsiva como firmada y activa el '
                    'aprovisionamiento de sus accesos.')
@@ -179,12 +202,15 @@ def migrar_ldap(dry_run, grupos, rol, actualizar_rol, sin_grupo_del_portal,
                    'buzón y no al de la persona (con --rotar-contrasena).')
 @click.option('--si', is_flag=True, help='No pide confirmación con --enviar-a.')
 @click.option('--dry-run', is_flag=True, help=AYUDA_DRY_RUN)
-def migrar_usuario(uid, areas, plataformas, nivel, responsiva_firmada,
-                   notificar, rotar_contrasena, plantilla, enviar_a, si, dry_run):
+def migrar_usuario(uid, areas, plataformas, plataformas_admin, areas_admin,
+                   nivel, responsiva_firmada, notificar, rotar_contrasena,
+                   plantilla, enviar_a, si, dry_run):
     """Migra a UNA persona de LDAP: cuenta, áreas, responsiva, accesos y contraseña."""
+    _exigir_sin_repetidas(plataformas, plataformas_admin)
     _exigir_rotacion(enviar_a, rotar_contrasena)
     _confirmar_redireccion(enviar_a, dry_run, si)
     resumen = usuario_unico.migrar_usuario(
         uid, areas, plataformas, nivel, responsiva_firmada, dry_run,
-        rotar_contrasena, plantilla, enviar_a, notificar)
+        rotar_contrasena, plantilla, enviar_a, notificar, plataformas_admin,
+        areas_admin)
     _terminar(resumen, 'migrar-usuario', dry_run)
