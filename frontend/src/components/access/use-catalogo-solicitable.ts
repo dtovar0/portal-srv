@@ -6,11 +6,12 @@
  * cambios locales tras solicitar. No pinta nada.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { requestsApi } from '@/lib/access/requests';
 import type { CatalogItem } from '@/lib/access/types';
 import type { Platform } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
+import { EVENTO_ACCESOS_CAMBIADOS } from '@/lib/access/eventos';
 import { unirCatalogo } from './catalog-union';
 import { describeCatalogError } from './request-errors';
 
@@ -73,6 +74,19 @@ export function useCatalogoSolicitable(mias?: MisPlataformas) {
     for (const item of items) vistas.set(item.area.id, item.area.name);
     return [...vistas].map(([id, name]) => ({ id, name }));
   }, [items]);
+
+  // DIS-128: otra vista (p. ej. la firma de la responsiva) avisa que los
+  // accesos cambiaron; se recargan el catálogo y las plataformas abribles.
+  const recargarCatalogo = catalogo.reload;
+  const recargarMias = mias?.reload;
+  useEffect(() => {
+    function alCambiar() {
+      recargarCatalogo();
+      recargarMias?.();
+    }
+    window.addEventListener(EVENTO_ACCESOS_CAMBIADOS, alCambiar);
+    return () => window.removeEventListener(EVENTO_ACCESOS_CAMBIADOS, alCambiar);
+  }, [recargarCatalogo, recargarMias]);
 
   const marcarSolicitada = useCallback((platformId: number, requestId: number) => {
     setSolicitadas((prev) => ({ ...prev, [platformId]: requestId }));

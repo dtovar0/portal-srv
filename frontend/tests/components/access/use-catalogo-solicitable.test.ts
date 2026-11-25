@@ -67,3 +67,19 @@ describe('useCatalogoSolicitable: reactividad de favoritos en caliente', () => {
   });
 });
 
+
+describe('useCatalogoSolicitable: recarga cuando cambian los accesos (DIS-128)', () => {
+  it('al avisar que los accesos cambiaron, recarga el catálogo y las plataformas abribles', async () => {
+    const { requestsApi } = await import('@/lib/access/requests');
+    const { avisarAccesosCambiados } = await import('@/lib/access/eventos');
+    const reloadMias = vi.fn();
+    const mias = { data: [], loading: false, error: null, reload: reloadMias } as unknown as MisPlataformas;
+    const llamadasAntes = vi.mocked(requestsApi.catalog).mock.calls.length;
+
+    renderHook(() => useCatalogoSolicitable(mias));
+    await act(async () => { avisarAccesosCambiados(); });
+
+    expect(reloadMias).toHaveBeenCalled();
+    expect(vi.mocked(requestsApi.catalog).mock.calls.length).toBeGreaterThan(llamadasAntes + 1);
+  });
+});
