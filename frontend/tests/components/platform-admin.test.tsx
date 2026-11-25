@@ -83,11 +83,15 @@ async function abrirAlta() {
   const modal = dialogo();
   fireEvent.change(modal.getByLabelText(/^Nombre/), { target: { value: 'Nueva' } });
   fireEvent.change(modal.getByLabelText(/^Descripción/), { target: { value: 'Descripción' } });
+  // DIS-133: sin «Omitir enlace» el enlace es obligatorio.
+  fireEvent.change(modal.getByLabelText(/^Enlace/), { target: { value: 'https://nueva.ejemplo.local' } });
   return modal;
 }
 
 function avanzarYGuardar(modal: ReturnType<typeof dialogo>) {
-  while (modal.queryByText('Guardar') === null && modal.queryByText('Siguiente') !== null) {
+  // Límite de pasos: si una validación bloquea el avance, la prueba falla en
+  // lugar de quedarse en un bucle infinito.
+  for (let i = 0; i < 5 && modal.queryByText('Guardar') === null && modal.queryByText('Siguiente') !== null; i++) {
     fireEvent.click(modal.getByText('Siguiente'));
   }
   fireEvent.click(modal.getByText('Guardar'));
@@ -671,6 +675,7 @@ describe('PlatformAdmin: accesibilidad (revisión de DIS-017)', () => {
     const modal = dialogo();
     fireEvent.change(modal.getByLabelText(/^Nombre/), { target: { value: 'Nueva' } });
     fireEvent.change(modal.getByLabelText(/^Descripción/), { target: { value: 'D' } });
+    fireEvent.change(modal.getByLabelText(/^Enlace/), { target: { value: 'https://nueva.ejemplo.local' } });
     avanzarYGuardar(modal);
     await waitFor(() => expect(region.textContent).toContain('Se guardó'));
   });
@@ -782,6 +787,7 @@ async function abrirAltaSinRender() {
   const modal = within(screen.queryByRole('alertdialog') ?? screen.getByRole('dialog'));
   fireEvent.change(modal.getByLabelText(/^Nombre/), { target: { value: 'Nueva' } });
   fireEvent.change(modal.getByLabelText(/^Descripción/), { target: { value: 'Descripción' } });
+  fireEvent.change(modal.getByLabelText(/^Enlace/), { target: { value: 'https://nueva.ejemplo.local' } });
   return modal;
 }
 
@@ -870,5 +876,38 @@ describe('PlatformAdmin: estado con badge (DIS-114)', () => {
     avanzarYGuardar(dialogo());
     await waitFor(() => expect(api.updatePlatform).toHaveBeenCalledTimes(1));
     expect(vi.mocked(api.updatePlatform).mock.calls[0][1]).not.toHaveProperty('status');
+  });
+});
+
+describe('PlatformAdmin: interruptor «Omitir enlace» (DIS-133)', () => {
+  it('sin el interruptor el enlace es obligatorio', async () => {
+    const modal = await abrirAlta();
+    fireEvent.change(modal.getByLabelText(/^Enlace/), { target: { value: '' } });
+    fireEvent.click(modal.getByText('Siguiente'));
+    expect(await modal.findByText('Escribe el enlace o activa «Omitir enlace».')).toBeTruthy();
+    expect(modal.queryByLabelText('Color de fondo')).toBeNull();
+  });
+
+  it('con el interruptor se oculta el campo y se guarda sin enlace', async () => {
+    const modal = await abrirAlta();
+    const interruptor = modal.getByRole('switch', { name: 'Omitir enlace' });
+    expect(interruptor.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(interruptor);
+    expect(interruptor.getAttribute('aria-checked')).toBe('true');
+    expect(modal.queryByLabelText(/^Enlace/)).toBeNull();
+    avanzarYGuardar(modal);
+    await waitFor(() => expect(api.createPlatform).toHaveBeenCalled());
+    const enviado = vi.mocked(api.createPlatform).mock.calls[0][0];
+    expect(enviado.direct_link ?? '').toBe('');
+  });
+
+  it('al editar una plataforma sin enlace el interruptor nace encendido', async () => {
+    vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, direct_link: '' }]);
+    render(<PlatformAdmin />);
+    fireEvent.click(await screen.findByText('Finanzas'));
+    fireEvent.click(await screen.findByLabelText('Seleccionar Contabilidad'));
+    fireEvent.click(screen.getByRole('button', { name: /Editar Contabilidad/i }));
+    const modal = dialogo();
+    expect(modal.getByRole('switch', { name: 'Omitir enlace' }).getAttribute('aria-checked')).toBe('true');
   });
 });

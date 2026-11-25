@@ -17,7 +17,7 @@ import { useAsync } from '@/lib/use-async';
 import { useFocoTrasMover } from '@/lib/use-foco-tras-mover';
 import { atributoTexto, variablesChipPlataforma } from '@/lib/color-legible';
 import { variablesCss } from '@/lib/variables-css';
-import { Button, ColorInput, Field, FileInput, Modal, TextArea, TextInput } from '../form';
+import { Button, ColorInput, Field, FileInput, Modal, TextArea, TextInput, Toggle } from '../form';
 import { Icono } from '../icono';
 import { TRAZOS, type NombreIcono } from '../icono-trazos';
 import { RegionDeAnuncios } from '../region-de-anuncios';
@@ -120,6 +120,9 @@ export function PlatformForm({
       : { ...EMPTY, icon: 'plataformas', area_id: defaultAreaId ?? areas[0]?.id },
   );
   const [integration] = useState<IntegrationValue>(initialIntegration);
+  // DIS-133: al editar una plataforma sin enlace, el interruptor nace encendido.
+  const [omitirEnlace, setOmitirEnlace] = useState<boolean>(isEdit && !platform?.direct_link);
+  const opcionesValidacion = { enlaceObligatorio: !omitirEnlace };
   // El estado ya no se edita aquí (DIS-114): se conmuta con el badge de la tabla.
   // Al crear, el servidor la deja Activa; al editar no se envía, para no pisarlo.
   const estadoVista = platform?.status ?? 'Activo';
@@ -244,7 +247,7 @@ export function PlatformForm({
     if (linkNormalizado !== (form.direct_link ?? '')) {
       set('direct_link', linkNormalizado);
     }
-    const errors = validate(formAvanzado, integration);
+    const errors = validate(formAvanzado, integration, opcionesValidacion);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError(MENSAJE_REVISA_CAMPOS);
@@ -259,7 +262,7 @@ export function PlatformForm({
   function avanzarAlPaso3() {
     const linkNormalizado = normalizarEnlaceDirecto(form.direct_link);
     const formAvanzado = { ...form, direct_link: linkNormalizado };
-    const errors = validate(formAvanzado, integration);
+    const errors = validate(formAvanzado, integration, opcionesValidacion);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError(MENSAJE_REVISA_CAMPOS);
@@ -289,7 +292,7 @@ export function PlatformForm({
     if (linkNormalizado !== (form.direct_link ?? '')) {
       set('direct_link', linkNormalizado);
     }
-    const errors = validate(formFinal, integration);
+    const errors = validate(formFinal, integration, opcionesValidacion);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError(MENSAJE_REVISA_CAMPOS);
@@ -517,38 +520,57 @@ export function PlatformForm({
               <FieldErrorNote id={`${IDS.description}-error`} message={fieldErrors.description} />
             </div>
 
-            <div>
-              <Field label="Enlace">
-                <TextInput
-                  id={IDS.direct_link}
-                  type="text"
-                  inputMode="url"
-                  value={form.direct_link ?? ''}
-                  onChange={(e) => set('direct_link', e.target.value)}
-                  onBlur={() => {
-                    const normalizado = normalizarEnlaceDirecto(form.direct_link);
-                    if (normalizado !== (form.direct_link ?? '')) {
-                      set('direct_link', normalizado);
-                    }
-                  }}
-                  placeholder="ejemplo.com o https://ejemplo.com"
-                  maxLength={URL_MAX}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      avanzarAlPaso2();
-                    }
-                  }}
-                  {...describedBy([`${IDS.direct_link}-error`, fieldErrors.direct_link],
-                    [`${IDS.direct_link}-hint`, true])}
-                />
-              </Field>
-              <FieldHint id={`${IDS.direct_link}-hint`}>
-                Dirección https:// a la que lleva la tarjeta (se añade automáticamente si se omite). Sin enlace, la plataforma se muestra pero
-                no se puede abrir.
-              </FieldHint>
-              <FieldErrorNote id={`${IDS.direct_link}-error`} message={fieldErrors.direct_link} />
-            </div>
+            <Toggle
+              id="platform-omitir-enlace"
+              label="Omitir enlace"
+              description="La plataforma se muestra en el portal, pero no se puede abrir."
+              checked={omitirEnlace}
+              onChange={(omitir) => {
+                setOmitirEnlace(omitir);
+                if (omitir) {
+                  set('direct_link', '');
+                  setFieldErrors((previos) => {
+                    const resto = { ...previos };
+                    delete resto.direct_link;
+                    return resto;
+                  });
+                }
+              }}
+            />
+
+            {omitirEnlace ? null : (
+              <div>
+                <Field label="Enlace">
+                  <TextInput
+                    id={IDS.direct_link}
+                    type="text"
+                    inputMode="url"
+                    value={form.direct_link ?? ''}
+                    onChange={(e) => set('direct_link', e.target.value)}
+                    onBlur={() => {
+                      const normalizado = normalizarEnlaceDirecto(form.direct_link);
+                      if (normalizado !== (form.direct_link ?? '')) {
+                        set('direct_link', normalizado);
+                      }
+                    }}
+                    placeholder="ejemplo.com o https://ejemplo.com"
+                    maxLength={URL_MAX}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        avanzarAlPaso2();
+                      }
+                    }}
+                    {...describedBy([`${IDS.direct_link}-error`, fieldErrors.direct_link],
+                      [`${IDS.direct_link}-hint`, true])}
+                  />
+                </Field>
+                <FieldHint id={`${IDS.direct_link}-hint`}>
+                  Dirección https:// a la que lleva la tarjeta (se añade automáticamente si se omite).
+                </FieldHint>
+                <FieldErrorNote id={`${IDS.direct_link}-error`} message={fieldErrors.direct_link} />
+              </div>
+            )}
           </div>
         ) : null}
 
