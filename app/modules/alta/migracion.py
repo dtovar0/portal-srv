@@ -15,6 +15,8 @@
   trae el enlace del Send con su código de acceso.
 - `--solo UID` (repetible) limita la corrida a esas personas; `--enviar-a
   CORREO` manda el correo de la rotación a ese buzón (FNC-190, solo CLI).
+  Quien no es miembro de los grupos de la corrida se busca directo en
+  LDAP bajo `LDAP_USERS_BASE_DN` (FNC-201); así se migra persona por persona.
 """
 from app import db
 from app.authz import ROLE_ADMIN, ROLE_AREA_ADMIN, ROLE_USER, normalized_role
@@ -50,7 +52,6 @@ DETALLE_CREADA = 'cuenta del portal (sso), rol {rol}'
 DETALLE_ROL = 'rol {antes} → {despues}'
 DETALLE_DIRECTORIO = 'no se pudo consultar a la persona en el directorio'
 DETALLE_FUERA_DE_SOLO = 'fuera de --solo'
-DETALLE_SOLO_AUSENTE = '--solo: no es miembro de los grupos de la corrida'
 DETALLE_SIN_CUENTA = 'sin cuenta en el portal; no se rota'
 
 
@@ -80,15 +81,29 @@ def _personas(cliente, grupos, resumen):
     return personas
 
 
-def _limitar_a(personas, solo, resumen):
-    """Deja solo a las personas de `--solo`; las demás se reportan omitidas."""
+def _limitar_a(cliente, personas, solo, resumen):
+    """Deja solo a las personas de `--solo`; las demás se reportan omitidas.
+
+    Quien se pide con `--solo` sin ser miembro de los grupos de la corrida se
+    busca directo en LDAP (bajo `LDAP_USERS_BASE_DN`, FNC-201); si no existe,
+    es un `ERROR`.
+    """
     pedidos = {uid.strip().lower() for uid in solo}
     for clave, persona in sorted(personas.items()):
         if clave not in pedidos:
             resumen.agregar(persona.identificador, OMITIDO, DETALLE_FUERA_DE_SOLO)
+    elegidas = {c: p for c, p in personas.items() if c in pedidos}
     for uid in sorted(pedidos - set(personas)):
-        resumen.agregar(uid, ERROR, DETALLE_SOLO_AUSENTE)
-    return {c: p for c, p in personas.items() if c in pedidos}
+        try:
+            persona = cliente.buscar_usuario(uid)
+        except ErrorDirectorio:
+            resumen.agregar(uid, ERROR, DETALLE_DIRECTORIO)
+            continue
+        if persona is None:
+            resumen.agregar(uid, ERROR, DETALLE_NO_ENCONTRADA)
+            continue
+        elegidas[uid] = persona
+    return elegidas
 
 
 def migrar(dry_run, rotar, nombres_de_grupo, rol_forzado, actualizar_rol,
@@ -113,7 +128,7 @@ def migrar(dry_run, rotar, nombres_de_grupo, rol_forzado, actualizar_rol,
 
     personas = _personas(cliente, grupos, resumen)
     if solo:
-        personas = _limitar_a(personas, solo, resumen)
+        personas = _limitar_a(cliente, personas, solo, resumen)
     nuevas, procesables = [], []   # procesables: (persona, correo, rol)
     for clave, persona in sorted(personas.items()):
         correo = normalizar_correo(persona.correo)

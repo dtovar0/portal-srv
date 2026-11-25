@@ -149,3 +149,35 @@ def test_la_api_y_el_portal_no_aceptan_destinatario(
         assert r.get_json()['code'] == 'campo_no_permitido'
         r = actor.post('/api/v1/users/1/rotar-contrasena', json={campo: DESTINO})
         assert r.status_code == 400
+
+
+def test_solo_con_persona_fuera_de_los_grupos_se_busca_en_ldap(  # FNC-201
+        base, correr, con_entrega):  # noqa: F811
+    """Caso de dmartinez: existe en LDAP pero no está en el grupo pedido."""
+    from app.modules.auth.models import User
+    r = correr('migrar-ldap', '--grupo', 'app-aduana-users', '--solo', 'eli',
+               '--sin-grupo-del-portal')
+    assert r.exit_code == 0, r.output
+    assert 'no es miembro' not in r.output
+    assert [u.email for u in User.query.all()] == ['eli@pruebas.local']
+
+
+def test_solo_sin_grupo_busca_en_ldap(base, correr):  # noqa: F811
+    from app.modules.auth.models import User
+    r = correr('migrar-ldap', '--solo', 'eli', '--sin-grupo-del-portal')
+    assert r.exit_code == 0, r.output
+    assert [u.email for u in User.query.all()] == ['eli@pruebas.local']
+
+
+def test_solo_superadmin_fuera_de_grupo_se_omite(base, correr):  # noqa: F811
+    from app.modules.auth.models import User
+    r = correr('migrar-ldap', '--grupo', 'app-tacacs-user', '--solo', 'cora',
+               '--sin-grupo-del-portal')
+    assert r.exit_code == 0, r.output
+    assert 'omitido: superadmin' in r.output and User.query.count() == 0
+
+
+def test_solo_inexistente_dice_que_no_esta_en_ldap(base, correr):  # noqa: F811
+    r = correr('migrar-ldap', '--solo', 'nadie', '--dry-run')
+    assert r.exit_code == 1
+    assert 'no está en LDAP_USERS_BASE_DN' in r.output

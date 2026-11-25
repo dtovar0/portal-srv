@@ -22,7 +22,7 @@ Convenciones comunes: [README.md](README.md). Tabla `platform_access_grants`.
 | Campo | Valores |
 |---|---|
 | `level` | `usuario` \| `admin` (P5: uno vigente por usuario y plataforma; subir reemplaza) |
-| `origin` | `solicitud` \| `admin_de_area` (P4: sin `heredado`; los accesos de NEXUS se descartan) |
+| `origin` | `solicitud` \| `admin_de_area` \| `migracion` (P4: sin `heredado`; los accesos de NEXUS se descartan) |
 
 - Vigente = `en_proceso`, `activo`, `revocando`, `fallido` o `fallo_revocacion`.
 - Subir a `admin`: el acceso `usuario` pasa a `revocando` (motivo `reemplazado_por_nivel_superior`) y el nuevo `admin` a `en_proceso`, en una transacción.
@@ -59,7 +59,7 @@ Orden: `granted_at` descendente. Respuesta paginada de `Access`.
 ```
 | Campo | Tipo |
 |---|---|
-| `granted_by` | `{id, name}` \| null (null = `sistema`, origen `admin_de_area`) |
+| `granted_by` | `{id, name}` \| null (null = `sistema`, origen `admin_de_area` o `migracion`) |
 | `revoked_by` | `{id, name}` \| null |
 | `last_job_id` | int \| null (ver conectores-y-ejecuciones.md); se omite en `/me/access` para el rol usuario |
 
@@ -78,7 +78,7 @@ F-AUD-02: quién tiene qué plataforma, nivel, desde cuándo y quién aprobó.
 |---|---|
 | `area_id`, `platform_id`, `user_id` | int |
 | `level` | `usuario` \| `admin` |
-| `origin` | `solicitud` \| `admin_de_area` |
+| `origin` | `solicitud` \| `admin_de_area` \| `migracion` |
 | `status` | estado o `vigente` (por defecto `vigente`) |
 | `q` | texto ≤ 100 (nombre o correo del usuario) |
 | `page`, `per_page` | int |
@@ -115,3 +115,4 @@ Orden: área, plataforma, usuario. Respuesta paginada de `Access` (mismos campos
 | 1 | 2026-10-14 | Versión inicial (FNC-038) |
 | 1.1 | 2026-10-20 | Corrección (FNC-054, auditor-seguridad): el acceso automático (`admin_de_area`) es de nivel `usuario` para todos los admins del área, incluido el creador (P6, dueño 2026-10-14); el ejemplo de datos simulados decía `admin` |
 | 1.2 | 2026-11-24 | FNC-185 (dueño, reemplaza P6 de 2026-10-14): el acceso automático (`admin_de_area`) del admin del área es de nivel `admin` (grupo `-admins`); al dejar de administrar baja a nivel `usuario` (origen `admin_de_area`) y se conserva, ya no se revoca. Quien ya tenía `usuario` sube a `admin` (el de `usuario` pasa a `revocando`, motivo `reemplazado_por_nivel_superior`). Ejemplo de datos simulados con nivel `admin`. Sin cambios de forma; la web puede ver accesos `admin_de_area` de nivel `usuario` |
+| 1.3 | 2026-11-25 | FNC-202: nuevo origen `migracion`, otorgado por el sistema (sin actor) desde la CLI `flask alta migrar-usuario`; exige cuenta activa del área de la plataforma (P1), no superadmin; mismas reglas de nivel y de responsiva. Solo aparece en listados e inventario (`origin`); la web debe mostrarlo (etiqueta nueva) |

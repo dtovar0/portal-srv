@@ -200,47 +200,15 @@ def get_responsiva():
 @login_required
 def sign_responsiva():
     """Firma digital y aceptación formal de la carta responsiva de primer ingreso o accesos aprobados."""
-    from datetime import datetime
-    from app.modules.audit.services import add_audit_log
-    from app.modules.access.models import PlatformAccessGrant
-    from app.modules.access.tipos import ESTADOS_VIGENTES
-    from app.modules.provisioning.tipos import OPERACION_OTORGAR
-    from app.modules.access.services import _encolar, registro_manual
+    from app.modules.access.responsiva import registrar_firma
 
-    current_user.responsiva_firmada = True
-    current_user.responsiva_firmada_at = datetime.utcnow()
-
-    # Firmar y disparar aprovisionamiento de todos los accesos pendientes de responsiva
-    accesos_pendientes = PlatformAccessGrant.query.filter(
-        PlatformAccessGrant.user_id == current_user.id,
-        PlatformAccessGrant.status.in_(ESTADOS_VIGENTES),
-        PlatformAccessGrant.responsiva_firmada.is_(False),
-    ).all()
-
-    ahora_momento = datetime.utcnow()
-    for acceso in accesos_pendientes:
-        acceso.responsiva_firmada = True
-        acceso.responsiva_firmada_at = ahora_momento
-        if acceso.last_job_id is None and not registro_manual(acceso.platform):
-            _encolar(acceso, OPERACION_OTORGAR, acceso.platform)
-
-    add_audit_log(
-        action='firma_responsiva',
-        status='success',
-        detail=(f'Usuario {current_user.email} firmó la carta responsiva v{getattr(current_user, "responsiva_version", "1.0")}. '
-                f'Aprovisionamiento activado para {len(accesos_pendientes)} accesos.'),
-        module='auth',
-        target=current_user.email,
-        target_user_id=current_user.id,
-        commit=False,
-    )
-
+    total = registrar_firma(current_user)
     db.session.commit()
     return jsonify({
         'status': 'success',
         'message': 'Carta responsiva firmada correctamente.',
         'firmada_at': current_user.responsiva_firmada_at.isoformat(),
-        'provisioned_grants': len(accesos_pendientes),
+        'provisioned_grants': total,
     })
 
 
