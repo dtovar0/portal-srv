@@ -98,7 +98,7 @@ export interface RequestListParams extends PageParams {
 
 export type AccessStatus =
   | 'en_proceso' | 'activo' | 'fallido' | 'revocando' | 'revocado' | 'fallo_revocacion';
-export type AccessOrigin = 'solicitud' | 'admin_de_area';
+export type AccessOrigin = 'solicitud' | 'admin_de_area' | 'migracion';
 
 export interface Access {
   id: number;
@@ -109,7 +109,7 @@ export interface Access {
   platform: Ref & { integration_type: IntegrationType };
   area: Ref;
   request_id: number | null;
-  /** null = `sistema` (origen `admin_de_area`). */
+  /** null = `sistema` (origen `admin_de_area` o `migracion`). */
   granted_by: Ref | null;
   granted_at: string;
   revoked_by: Ref | null;
