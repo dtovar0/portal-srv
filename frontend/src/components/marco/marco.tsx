@@ -23,7 +23,9 @@ export function Marco({ session, children }: { session: Session; children: React
   const { colapsado: colapsada, alternar } = useMenuColapsado();
   const { oscuro, alternar: alternarTema } = useTema();
   const esAdmin = session.permissions.is_admin || session.permissions.is_area_admin;
-  const { noLeidas, pendientes } = useIndicadores({ esAdmin, ruta: pathname });
+  const { noLeidas, pendientes } = useIndicadores({
+    esAdmin, ruta: pathname, intervaloS: session.preferences?.refresh_interval,
+  });
   const contadores = useMemo(() => ({ '/approvals': pendientes }), [pendientes]);
 
   return (
