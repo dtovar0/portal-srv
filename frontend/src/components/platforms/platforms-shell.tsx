@@ -23,6 +23,8 @@ import { useCatalogoSolicitable } from '../access/use-catalogo-solicitable';
 import { ModalResponsiva } from '../responsiva/modal-responsiva';
 import { responsivaAplica } from '@/lib/access/responsiva';
 import { useRefrescoTrasFirma } from '../access/use-refresco-tras-firma';
+import { useRecargaPeriodica } from '@/lib/use-recarga-periodica';
+import { avisarAccesosCambiados } from '@/lib/access/eventos';
 import { SessionProvider, useSession } from '../session-provider';
 import { ErrorNote, PantallaCarga } from '../ui';
 import { PlatformsTopbar } from './platforms-topbar';
@@ -51,6 +53,9 @@ function PlatformsShellInternal({ children }: { children?: React.ReactNode }) {
 
   const { items, areas, mias: abribles } = useCatalogoSolicitable(mias);
   const refrescarTrasFirma = useRefrescoTrasFirma(items);
+  // DIS-129: el Portal se actualiza solo (estado de solicitudes y accesos) con
+  // el intervalo de las preferencias; cada vista del catálogo escucha el aviso.
+  useRecargaPeriodica(avisarAccesosCambiados, session?.preferences.refresh_interval);
   const [areaIdLaunchpad, setAreaIdLaunchpad] = useState<number | null>(null);
   const [soloFavoritasLaunchpad, setSoloFavoritasLaunchpad] = useState(false);
   const areaNombreLaunchpad = areaIdLaunchpad !== null ? (areas.find((a) => a.id === areaIdLaunchpad)?.name ?? null) : null;

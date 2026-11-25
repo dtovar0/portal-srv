@@ -69,7 +69,9 @@ export function PlatformsTopbar({
   const { oscuro, alternar: alternarTema } = useTema();
   const esAdmin = session.permissions.is_admin || session.permissions.is_area_admin;
   const responsivaFirmada = session?.responsiva_firmada !== false;
-  const { noLeidas } = useIndicadores({ esAdmin, ruta: '/platforms' });
+  const { noLeidas } = useIndicadores({
+    esAdmin, ruta: '/platforms', intervaloS: session.preferences?.refresh_interval,
+  });
   const inputBusqueda = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
   const esSolicitudes = pathname?.startsWith('/requests');
