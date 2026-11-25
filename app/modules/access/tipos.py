@@ -24,7 +24,9 @@ RANGO_NIVEL = {NIVEL_USUARIO: 1, NIVEL_ADMIN: 2}
 # Origen (P4: sin `heredado`; los accesos de NEXUS se descartan).
 ORIGEN_SOLICITUD = 'solicitud'
 ORIGEN_ADMIN_DE_AREA = 'admin_de_area'
-ORIGENES = (ORIGEN_SOLICITUD, ORIGEN_ADMIN_DE_AREA)
+# Lo otorga el sistema por la CLI `flask alta migrar-usuario` (FNC-202).
+ORIGEN_MIGRACION = 'migracion'
+ORIGENES = (ORIGEN_SOLICITUD, ORIGEN_ADMIN_DE_AREA, ORIGEN_MIGRACION)
 
 # Motivo que el sistema pone al acceso reemplazado al subir de nivel.
 MOTIVO_REEMPLAZO = 'reemplazado_por_nivel_superior'
