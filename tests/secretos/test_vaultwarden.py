@@ -281,3 +281,48 @@ def test_leer_sin_coleccion_configurada_falla(servidor):
         cliente.leer('cualquiera')
     assert 'VAULTWARDEN_COLLECTION_ID' in str(exc.value)
 
+
+
+# ------------------------------------------------------------ FNC-204
+def _sin_cabeceras_de_cliente(cabeceras):
+    return {vaultwarden.CABECERA_CLIENTE_NOMBRE,
+            vaultwarden.CABECERA_CLIENTE_VERSION,
+            vaultwarden.CABECERA_TIPO_DISPOSITIVO} - set(cabeceras)
+
+
+def test_cada_peticion_lleva_las_cabeceras_de_cliente_de_bitwarden(servidor):
+    servidor.item(REFERENCIA, SECRETO)
+    servidor.kdf_en_token = False  # fuerza también el prelogin
+    cliente = _cliente(servidor)
+    cliente.leer(REFERENCIA)
+    cliente.pedir_autenticado('DELETE',
+                              '/api/sends/00000000-0000-4000-8000-000000000000')
+    rutas = {ruta for _, ruta, _ in servidor.cabeceras}
+    assert {RUTA_TOKEN, RUTA_PRELOGIN, RUTA_SYNC,
+            '/api/sends/00000000-0000-4000-8000-000000000000'} <= rutas
+    for metodo, ruta, cabeceras in servidor.cabeceras:
+        assert not _sin_cabeceras_de_cliente(cabeceras), (metodo, ruta)
+        assert cabeceras['Bitwarden-Client-Name'] == 'cli'
+        assert cabeceras['Bitwarden-Client-Version'] == \
+            vaultwarden.CLIENTE_VERSION
+        assert cabeceras['Device-Type'] == vaultwarden.TIPO_DISPOSITIVO
+
+
+def test_la_creacion_de_un_send_lleva_las_cabeceras_de_cliente(servidor):
+    from app.modules.secretos.sends import SendsPorApi
+    from app.modules.secretos.configuracion import cargar_configuracion_send
+    cliente = _cliente(servidor)
+    cfg = cargar_configuracion_send(vf.ENTORNO)
+    SendsPorApi(cfg, cliente, 'https://vw.example').crear_texto(
+        'nombre', 'texto', codigo='123456')
+    creaciones = [c for m, r, c in servidor.cabeceras
+                  if (m, r) == ('POST', '/api/sends')]
+    assert len(creaciones) == 1
+    assert not _sin_cabeceras_de_cliente(creaciones[0])
+
+
+def test_las_cabeceras_propias_de_la_llamada_tienen_prioridad(servidor):
+    cliente = _cliente(servidor)
+    cliente._pedir('GET', '/api/x', {'Bitwarden-Client-Name': 'otro'})
+    assert servidor.cabeceras[-1][2]['Bitwarden-Client-Name'] == 'otro'
+    assert servidor.cabeceras[-1][2]['Bitwarden-Client-Version']
