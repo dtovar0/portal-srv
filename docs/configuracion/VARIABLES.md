@@ -425,6 +425,15 @@ Definidos en `frontend/src/styles/tokens.css` bajo la arquitectura de 3 capas (A
 | `--color-indicador-visitas-fin` | Extremo del degradado de «Visitas» | `22 163 74` (3,30:1 sobre panel; el `34 197 94` daba 2,28:1) | `34 197 94` | `tokens.css` | DIS-112, 2026-11-19 | Vigente |
 | `--color-indicador-usuarios` | Color de la tarjeta «Usuarios» del dashboard (icono, trazo, borde, badge; el texto lo mezcla al 35 % con `--color-texto`) | `219 39 119` | `219 39 119` (igual: medido AA en ambos temas) | `tokens.css` | DIS-112, 2026-11-19 | Vigente |
 | `--color-indicador-usuarios-fin` | Extremo del degradado de «Usuarios» | `244 63 94` | `244 63 94` | `tokens.css` | DIS-112, 2026-11-19 | Vigente |
+| `--color-indicador-pendientes` | Color de la tarjeta «Pendientes» de Solicitudes, de su segmento de dona y de su punto de leyenda | `180 83 9` (5,02:1 sobre blanco; el ámbar `245 158 11` daba 2,15:1) | `245 158 11` (8,02:1) | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-pendientes-fin` | Extremo del degradado de «Pendientes» (igual al color) | igual | igual | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-pendientes-icono` | Color del icono de «Pendientes» sobre su caja | `255 255 255` | `0 0 0` (blanco sobre el color daba < 3:1) | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-aprobadas` | Color de la tarjeta «Aprobadas» de Solicitudes, de su segmento de dona y de su punto de leyenda | `5 150 105` | `16 185 129` | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-aprobadas-fin` | Extremo del degradado de «Aprobadas» (igual al color) | igual | igual | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-aprobadas-icono` | Color del icono de «Aprobadas» sobre su caja | `255 255 255` | `0 0 0` (blanco sobre el color daba < 3:1) | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-rechazadas` | Color de la tarjeta «Rechazadas» de Solicitudes, de su segmento de dona y de su punto de leyenda | `220 38 38` | `220 38 38` | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-rechazadas-fin` | Extremo del degradado de «Rechazadas» (igual al color) | igual | igual | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
+| `--color-indicador-rechazadas-icono` | Color del icono de «Rechazadas» sobre su caja | `255 255 255` | `255 255 255` (blanco sobre el color daba < 3:1) | `tokens.css` | DIS-131, 2026-11-25 | Vigente |
 | `--text-hero-compacto` | Tamaño del titular de la portada en pantallas bajas (laptops ≤ 760 px de alto); reemplaza `clamp(2.75rem, 4.5vw, 4.5rem)` | `56px` | `56px` | `tokens.css` | DIS-119, 2026-11-24 | Vigente |
 | `--opacidad-atenuada` | Opacidad de lo atenuado (secciones bloqueadas); clase `opacity-atenuada` | `0.6` | `0.6` | `tokens.css` | DIS-119, 2026-11-24 | Vigente |
 | `--opacidad-deshabilitada` | Opacidad de controles deshabilitados (`disabled:`/`aria-disabled:`); clase `opacity-deshabilitada` | `0.4` | `0.4` | `tokens.css` | DIS-119, 2026-11-24 | Vigente |

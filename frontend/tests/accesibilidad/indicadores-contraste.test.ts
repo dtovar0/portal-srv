@@ -11,7 +11,9 @@ import { describe, expect, it } from 'vitest';
 import { cargarContextos, resolver, type NombreContexto } from '../utils/tokens-css';
 import { MIN_NO_TEXTO, MIN_TEXTO, componer, parseColor, razonContraste, type Rgba } from '../utils/wcag';
 
-const INDICADORES = ['areas', 'plataformas', 'solicitudes', 'visitas', 'usuarios'];
+const INDICADORES = ['areas', 'plataformas', 'solicitudes', 'visitas', 'usuarios', 'pendientes', 'aprobadas', 'rechazadas'];
+/** DIS-131: tarjetas de Solicitudes; su icono toma color propio por tema (`-icono`). */
+const CON_ICONO_PROPIO = ['pendientes', 'aprobadas', 'rechazadas'];
 const contextos = cargarContextos();
 const CSS = readFileSync(resolve(import.meta.dirname, '../../src/styles/components.css'), 'utf8');
 
@@ -64,7 +66,9 @@ for (const tema of Object.keys(contextos) as NombreContexto[]) {
       });
 
       it(`${nombre}: el icono blanco sobre su caja de color >= 3:1`, () => {
-        const blanco = tok('--color-texto-sobre-accion');
+        const blanco = CON_ICONO_PROPIO.includes(nombre)
+          ? tok(`--color-indicador-${nombre}-icono`)
+          : tok('--color-texto-sobre-accion');
         const oscuro = mezclar(color, tok('--color-texto-sobre-fondo-claro'), 0.72);
         expect(razonContraste(blanco, color)).toBeGreaterThanOrEqual(MIN_NO_TEXTO);
         expect(razonContraste(blanco, oscuro)).toBeGreaterThanOrEqual(MIN_NO_TEXTO);

@@ -312,3 +312,11 @@ export interface HomeSummary {
   oldest_pending_at?: string | null;
   totals?: { areas: number; platforms: number; active_access: number };
 }
+
+/** `GET /access-requests/inbox/stats` (FNC-200, contrato solicitudes 1.3): resumen de Solicitudes (DIS-131). */
+export interface InboxStats {
+  total: number;
+  by_status: Record<RequestStatus, number>;
+  by_area: { area_id: number; area: string; count: number }[];
+  by_platform: { platform_id: number; platform: string; area: string; count: number }[];
+}

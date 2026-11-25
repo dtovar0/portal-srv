@@ -26,7 +26,7 @@ from app.authz import any_admin_required
 from app.modules.access import errores as errores_acceso
 from app.modules.access.errores import ErrorDeAcceso
 from app.modules.access_requests import (approvals, catalogo, consultas,
-                                         errores, serializacion)
+                                         errores, resumen, serializacion)
 from app.modules.access_requests.models import PlatformAccessRequest
 from app.modules.access_requests.services import crear
 from app.modules.access_requests.tipos import ESTADO_PENDIENTE, ESTADOS
@@ -187,6 +187,14 @@ def inbox():
                   for r in registros],
         'page': paginacion.page, 'per_page': paginacion.per_page,
         'total': total})
+
+
+@access_requests_api_bp.route('/access-requests/inbox/stats')
+@login_required
+@any_admin_required
+def inbox_stats():
+    """Resumen para la pantalla Solicitudes (FNC-200)."""
+    return jsonify(resumen.resumen(current_user))
 
 
 def _solicitud_a_decidir(solicitud_id, campos):

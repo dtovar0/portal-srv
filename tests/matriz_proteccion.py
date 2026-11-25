@@ -523,6 +523,8 @@ CASOS = (
     # ---- Aprobaciones (access_requests/api.py, FNC-057) ----
     Caso('GET', f'{A}/access-requests/inbox',
          _fija(f'{A}/access-requests/inbox'), administradores()),
+    Caso('GET', f'{A}/access-requests/inbox/stats',
+         _fija(f'{A}/access-requests/inbox/stats'), administradores()),
     Caso('POST', f'{A}/access-requests/<int:request_id>/approve',
          lambda esc: f'{A}/access-requests/{esc.solicitud_id}/approve',
          administradores(), _json({}), _con_solicitud_pendiente,

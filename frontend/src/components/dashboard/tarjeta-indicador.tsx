@@ -8,6 +8,7 @@
  * (en el lector, solo el valor); no se inventan datos. Total 0 = anillo vacío y «0 %».
  */
 
+import type React from 'react';
 import type { ClaveIndicador, DesgloseIndicador } from '@/lib/types';
 import { Icono } from '../icono';
 import { AnilloIndicador, MedidorIndicador } from './anillo-indicador';
@@ -24,6 +25,10 @@ interface Props {
   /** Sin él (o incoherente) la tarjeta muestra el anillo vacío. */
   desglose?: DesgloseIndicador;
   diseno: DisenoTarjeta;
+  /** Total con el que debe cuadrar el desglose si difiere del valor (tarjetas de estado, DIS-131). */
+  base?: number;
+  /** Acción al pie de la tarjeta (p. ej. «Abrir»). */
+  accion?: React.ReactNode;
 }
 
 function CajaIcono({ icono, className }: { icono: (typeof INDICADORES)[ClaveIndicador]['icono']; className: string }) {
@@ -152,9 +157,9 @@ function Medidor({ indicador, valor, desglose }: { indicador: ClaveIndicador; va
   );
 }
 
-export function TarjetaIndicador({ indicador, valor, desglose, diseno }: Props) {
+export function TarjetaIndicador({ indicador, valor, desglose, diseno, base, accion }: Props) {
   const def = INDICADORES[indicador];
-  const reparto = desgloseValido(desglose, valor);
+  const reparto = desgloseValido(desglose, base ?? valor);
   return (
     <div
       role="group"
@@ -165,6 +170,7 @@ export function TarjetaIndicador({ indicador, valor, desglose, diseno }: Props) 
       {diseno === 'brillo' ? <Brillo indicador={indicador} valor={valor} desglose={reparto} /> : null}
       {diseno === 'segmentos' ? <Segmentos indicador={indicador} valor={valor} desglose={reparto} /> : null}
       {diseno === 'medidor' ? <Medidor indicador={indicador} valor={valor} desglose={reparto} /> : null}
+      {accion ? <div className="relative mt-3 flex justify-center">{accion}</div> : null}
     </div>
   );
 }
