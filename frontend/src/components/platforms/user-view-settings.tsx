@@ -8,6 +8,7 @@
  * 2. Visibilidad de Documentos: Mostrar u ocultar la sección de Carta Responsiva en la barra lateral.
  * 3. Indicadores circulares (Badges): Mostrar u ocultar los contadores numéricos en pastilla circular del sidebar.
  * 4. Variante de diseño de tarjetas: Estándar (Completa con métricas), Compacta (Minimalista) y Horizontal (Lista).
+ * 5. Notificaciones (DIS-130): mensaje de bienvenida y avisos por correo (guardado en el perfil).
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -16,6 +17,8 @@ import type { CatalogItem } from '@/lib/access/types';
 import { Button } from '../form';
 import { Icono } from '../icono';
 import { useToast } from '../toast';
+import { useSession } from '../session-provider';
+import { api } from '@/lib/api';
 import {
   guardarOmitirBienvenida,
   leerOmitirBienvenida,
@@ -194,6 +197,9 @@ export function UserViewSettings({
   tabInicial = 'general',
 }: UserViewSettingsProps) {
   const { avisar } = useToast();
+  const { session, actualizarSesion } = useSession();
+  const avisosCorreo = session?.preferences?.email_notifications !== false;
+  const [guardandoCorreo, setGuardandoCorreo] = useState(false);
   const [tabActiva, setTabActiva] = useState<SettingsTab>(() => {
     if (tabInicial === 'diseno') return 'plataformas';
     return (tabInicial as SettingsTab) || 'general';
@@ -272,6 +278,28 @@ export function UserViewSettings({
       avisar('success', 'Mensaje de bienvenida restaurado. Se mostrará en tus próximas visitas.', 'Restaurado');
     } else {
       avisar('info', 'Mensaje de bienvenida omitido para las próximas visitas.', 'Omitido');
+    }
+  };
+
+  // DIS-130: se guarda en el perfil (no en el navegador) porque el backend
+  // decide con él si envía los correos de aprobado o rechazado.
+  const handleToggleAvisosCorreo = async (activar: boolean) => {
+    if (!session || guardandoCorreo) return;
+    setGuardandoCorreo(true);
+    try {
+      const resultado = await api.savePreferences({ email_notifications: activar });
+      actualizarSesion?.({ ...session, preferences: resultado.preferences });
+      avisar(
+        activar ? 'success' : 'info',
+        activar
+          ? 'Te avisaremos por correo cuando respondan tus solicitudes.'
+          : 'Ya no recibirás avisos por correo.',
+        'Notificaciones',
+      );
+    } catch {
+      avisar('error', 'No se pudo guardar la preferencia. Intenta de nuevo.', 'Notificaciones');
+    } finally {
+      setGuardandoCorreo(false);
     }
   };
 
@@ -385,16 +413,16 @@ export function UserViewSettings({
               </div>
             </div>
 
-            {/* 2. SECCIÓN: MENSAJE DE BIENVENIDA */}
+            {/* 2. SECCIÓN: NOTIFICACIONES (bienvenida y avisos por correo, DIS-130) */}
             <div className="rounded-2xl border border-panel-border bg-panel-fill shadow-1 flex flex-col justify-between h-full overflow-hidden">
               <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-surface-container border-b border-panel-border flex items-start justify-between gap-3 shrink-0 min-h-16">
                 <div className="min-w-0">
                   <h4 className="text-sm font-bold text-body-text flex items-center gap-2">
                     <Icono nombre="info" tamano="sm" className="text-primary-text" />
-                    <span>Mensaje de Bienvenida</span>
+                    <span>Notificaciones</span>
                   </h4>
                   <p className="text-xs text-label mt-1">
-                    Controla el modal de saludo y resumen al ingresar al portal.
+                    Controla el mensaje de bienvenida y los avisos por correo.
                   </p>
                 </div>
 
@@ -411,7 +439,7 @@ export function UserViewSettings({
 
               {/* Contenedor del toggle con altura y padding exactamente simétricos con los botones de disposición */}
               <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-                <div className="flex-1 h-full flex flex-col justify-between p-3.5 rounded-xl border border-panel-border bg-superficie hover:border-panel-border/90 transition-colors">
+                <div className="flex-1 flex flex-col justify-between p-3.5 rounded-xl border border-panel-border bg-superficie hover:border-panel-border/90 transition-colors">
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-primary-text shrink-0">
@@ -451,6 +479,51 @@ export function UserViewSettings({
 
                   <p className="text-xs text-texto-secundario leading-relaxed line-clamp-3">
                     Desactiva para omitir el modal de saludo automáticamente o activa para restaurar su visualización al ingresar al portal de plataformas.
+                  </p>
+                </div>
+
+                <div className="mt-3 flex-1 flex flex-col justify-between p-3.5 rounded-xl border border-panel-border bg-superficie hover:border-panel-border/90 transition-colors">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-primary-text shrink-0">
+                        <Icono nombre="correo" tamano="xs" ariaHidden={true} />
+                      </span>
+                      <label
+                        htmlFor="toggle-avisos-correo"
+                        className="text-xs font-bold text-body-text cursor-pointer select-none truncate"
+                      >
+                        Recibir avisos por correo
+                      </label>
+                    </div>
+
+                    <button
+                      type="button"
+                      id="toggle-avisos-correo"
+                      role="switch"
+                      aria-checked={avisosCorreo}
+                      aria-label="Recibir avisos por correo"
+                      disabled={!session || guardandoCorreo}
+                      aria-busy={guardandoCorreo}
+                      onClick={() => void handleToggleAvisosCorreo(!avisosCorreo)}
+                      className="inline-flex min-h-12 min-w-12 items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span
+                        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${
+                          avisosCorreo ? 'bg-primary border-transparent' : 'bg-surface-container border-panel-border'
+                        }`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none inline-block size-5 transform rounded-full bg-superficie shadow-md ring-0 transition duration-200 ease-in-out ${
+                            avisosCorreo ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </span>
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-texto-secundario leading-relaxed line-clamp-3">
+                    Te avisamos por correo cuando aprueban o rechazan tus solicitudes de acceso.
                   </p>
                 </div>
               </div>
