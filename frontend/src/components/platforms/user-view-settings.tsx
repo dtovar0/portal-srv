@@ -159,6 +159,8 @@ export interface UserViewSettingsProps {
   onLayoutChange: (layout: PlatformsLayout) => void;
   mostrarDocumentos: boolean;
   onToggleMostrarDocumentos: (mostrar: boolean) => void;
+  /** DIS-124: falso mientras la persona no tenga ninguna plataforma aprobada. */
+  responsivaDisponible?: boolean;
   mostrarBadgesSidebar: boolean;
   onToggleMostrarBadgesSidebar: (mostrar: boolean) => void;
   botonUsuarioCompacto?: boolean;
@@ -178,6 +180,7 @@ export function UserViewSettings({
   onLayoutChange,
   mostrarDocumentos,
   onToggleMostrarDocumentos,
+  responsivaDisponible = true,
   mostrarBadgesSidebar,
   onToggleMostrarBadgesSidebar,
   botonUsuarioCompacto,
@@ -470,35 +473,55 @@ export function UserViewSettings({
 
             <div className="p-4 sm:p-5 flex-1 min-h-0 flex flex-col justify-between">
               <div className="flex flex-col gap-3 flex-1 justify-between my-auto">
-                {/* Opción 1: Mostrar Documentos (Carta Responsiva) */}
-                <div className="flex-1 min-h-14 flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border bg-superficie hover:border-panel-border/90 transition-colors">
+                {/* Opción 1: Mostrar Documentos (Carta Responsiva). DIS-124: sin
+                    plataformas aprobadas queda apagada y deshabilitada. */}
+                <div
+                  className={`flex-1 min-h-14 flex items-center justify-between gap-4 p-4 rounded-xl border border-panel-border transition-colors ${
+                    responsivaDisponible
+                      ? 'bg-superficie hover:border-panel-border/90'
+                      : 'bg-surface-container/40 opacity-atenuada cursor-not-allowed'
+                  }`}
+                  aria-disabled={!responsivaDisponible}
+                >
                   <div className="min-w-0 flex-1">
                     <label
                       htmlFor="toggle-documentos"
-                      className="text-xs font-bold text-body-text cursor-pointer select-none block"
+                      className={`text-xs font-bold text-body-text select-none block ${
+                        responsivaDisponible ? 'cursor-pointer' : 'cursor-not-allowed text-texto-secundario'
+                      }`}
                     >
                       Mostrar Sección de Documentos (Carta Responsiva)
                     </label>
                     <p className="text-xs text-texto-secundario mt-0.5 select-none leading-relaxed">
-                      Muestra en el menú lateral la caja de estado de tu Carta Responsiva corporativa con su indicador de firma.
+                      {responsivaDisponible
+                        ? 'Muestra en el menú lateral la caja de estado de tu Carta Responsiva corporativa con su indicador de firma.'
+                        : 'Se activa cuando se te apruebe el acceso a al menos una plataforma.'}
                     </p>
                   </div>
                   <button
                     type="button"
                     id="toggle-documentos"
                     role="switch"
-                    aria-checked={mostrarDocumentos}
+                    disabled={!responsivaDisponible}
+                    aria-disabled={!responsivaDisponible}
+                    aria-checked={responsivaDisponible && mostrarDocumentos}
                     aria-label="Mostrar u ocultar sección de documentos"
-                    onClick={() => onToggleMostrarDocumentos(!mostrarDocumentos)}
-                    className="min-h-12 min-w-12 inline-flex items-center justify-end p-1 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0"
+                    onClick={() => {
+                      if (responsivaDisponible) {
+                        onToggleMostrarDocumentos(!mostrarDocumentos);
+                      }
+                    }}
+                    className={`min-h-12 min-w-12 inline-flex items-center justify-end p-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shrink-0 ${
+                      responsivaDisponible ? 'cursor-pointer' : 'cursor-not-allowed opacity-atenuada'
+                    }`}
                   >
                     <span
-                      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${mostrarDocumentos ? 'bg-primary border-transparent' : 'bg-surface-container border-panel-border'
+                      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out ${responsivaDisponible && mostrarDocumentos ? 'bg-primary border-transparent' : 'bg-surface-container border-panel-border'
                         }`}
                     >
                       <span
                         aria-hidden="true"
-                        className={`pointer-events-none inline-block size-5 transform rounded-full bg-superficie shadow-md ring-0 transition duration-200 ease-in-out ${mostrarDocumentos ? 'translate-x-5' : 'translate-x-0'
+                        className={`pointer-events-none inline-block size-5 transform rounded-full bg-superficie shadow-md ring-0 transition duration-200 ease-in-out ${responsivaDisponible && mostrarDocumentos ? 'translate-x-5' : 'translate-x-0'
                           }`}
                       />
                     </span>
