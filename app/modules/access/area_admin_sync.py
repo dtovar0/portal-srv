@@ -14,8 +14,6 @@ admin de área debe cambiar a `-admins` en las plataformas de sus áreas.
   y lo conserva; si no tenía acceso, queda con uno de `usuario`. Solo si es
   miembro del área de la plataforma (P1); si no, el acceso automático se
   revoca (decisión del orquestador, pendiente de validar con el dueño).
-- Plataformas `ldap` sin `ldap_group_admin_dn`: no se puede subir a `admin`;
-  queda en `usuario` y se avisa en el log (sin fallar).
 - Los accesos de las plataformas de otras áreas no cambian. El superadmin no
   recibe accesos automáticos (acceso por defecto, sin grupos LDAP).
 
@@ -38,9 +36,9 @@ Decisiones del orquestador (pendientes de validar en la prueba de concepto):
   automático.
 - Si la cuenta tiene una revocación en curso del nivel que le toca, no se
   otorga otro de ese nivel.
-- Plataformas `ldap` sin el grupo del nivel `usuario` (heredadas) no reciben
-  accesos: el trabajo fallaría y el acceso `fallido` bloquearía completar los
-  grupos. Al completarlos se sincroniza.
+- Toda plataforma da acceso por el grupo de su nivel (FNC-196): sin DN
+  guardado se derivan de la convención al otorgar; ya no hay plataformas
+  «no aprovisionables».
 - Un admin inactivo no recibe accesos automáticos.
 - Al mover la plataforma de área se revocan los automáticos de quien no
   administra la nueva (como antes); los demás cambios de plataforma solo
@@ -57,8 +55,7 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADOS_OCUPANTES,
                                       ESTADOS_VIGENTES, MOTIVO_RETIRO_ADMIN,
                                       ORIGEN_ADMIN_DE_AREA)
 from app.modules.core.models import Area, Platform
-from app.modules.platforms.tipos import (CAMPOS_DN, NIVEL_ADMIN, NIVEL_USUARIO,
-                                         TIPO_LDAP, TIPOS_INTEGRACION)
+from app.modules.platforms.tipos import NIVEL_ADMIN, NIVEL_USUARIO
 
 logger = logging.getLogger(__name__)
 
@@ -78,13 +75,6 @@ def administra(cuenta, plataforma):
             and plataforma.area_id in managed_area_ids(cuenta))
 
 
-def aprovisionable(plataforma, nivel=NIVEL_BASE):
-    """Conector, o `ldap` con el grupo del `nivel`."""
-    if plataforma.integration_type == TIPO_LDAP:
-        return bool(getattr(plataforma, CAMPOS_DN[nivel]))
-    return plataforma.integration_type in TIPOS_INTEGRACION
-
-
 def _automaticos_vigentes(**filtros):
     return (PlatformAccessGrant.query
             .filter_by(origin=ORIGEN_ADMIN_DE_AREA, **filtros)
@@ -94,19 +84,12 @@ def _automaticos_vigentes(**filtros):
 
 def _nivel_objetivo(cuenta, plataforma):
     """Nivel que le toca a la cuenta en la plataforma, o `None` si no puede
-    recibir acceso (inactiva, superadmin o plataforma sin grupo/conector)."""
+    recibir acceso (inactiva o superadmin). Toda plataforma tiene grupo de
+    ambos niveles (FNC-196)."""
     if not cuenta.is_active or is_admin(cuenta):
         return None
-    if not aprovisionable(plataforma, NIVEL_BASE):
-        return None  # `ldap` heredada: sin grupo `usuario` no hay accesos
     if administra(cuenta, plataforma):
-        if aprovisionable(plataforma, NIVEL_AUTOMATICO):
-            return NIVEL_AUTOMATICO
-        logger.warning(
-            'Accesos automáticos: la plataforma %s (ldap) no tiene grupo de '
-            'nivel admin; la cuenta %s queda con nivel usuario.',
-            plataforma.id, cuenta.id)
-        return NIVEL_BASE
+        return NIVEL_AUTOMATICO
     # Quien ya no administra conserva `usuario` solo si es del área (P1).
     return NIVEL_BASE if pertenece(cuenta, plataforma) else None
 

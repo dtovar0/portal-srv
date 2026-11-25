@@ -231,13 +231,15 @@ def test_put_con_campos_fuera_de_la_lista_blanca_responde_400(
     assert SECRETO_FICTICIO not in respuesta.get_data(as_text=True)
 
 
-def test_put_en_plataforma_sin_conector_responde_409(app, entorno_conector,
-                                                     superadmin):
+def test_put_en_plataforma_ldap_configura_el_conector_adicional(
+        app, entorno_conector, superadmin):
+    # FNC-196: el conector es un paso adicional a los grupos; antes esta
+    # petición daba 409 `plataforma_sin_conector`.
     ldap = fabricas.crear_plataforma(fabricas.crear_area(),
                                      integration_type=TIPO_LDAP)
     respuesta = superadmin.put(ruta(ldap.id), json=CUERPO_VALIDO)
-    assert respuesta.status_code == 409
-    assert respuesta.get_json()['code'] == 'plataforma_sin_conector'
+    assert respuesta.status_code == 200
+    assert respuesta.get_json()['connector']['type'] == TIPO_NOOP
 
 
 def test_put_en_plataforma_inexistente_responde_404(app, entorno_conector,

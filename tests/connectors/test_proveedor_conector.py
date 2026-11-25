@@ -124,9 +124,18 @@ def test_fuera_de_dev_sin_vaultwarden_es_permanente(conector_noop,
         'El gestor de secretos no está configurado.')
 
 
+# Mensaje del proveedor `conector` solo y mensaje del trabajo completo. Desde
+# FNC-196 el trabajo pasa antes por el grupo: esta plataforma heredada no tiene
+# grupo ni directorio, y con el conector inutilizable lo único que falla (de
+# forma permanente) es la falta de directorio. Con un host no autorizado el
+# conector sí corre y su error se propaga tal cual.
+SIN_CONECTOR = 'El conector de la plataforma no está disponible.'
+SIN_DIRECTORIO = 'El directorio no está configurado.'
+
+
 @pytest.mark.parametrize('cambio, mensaje', [
-    ({'active': False}, 'El conector de la plataforma no está disponible.'),
-    ({'type': 'otro'}, 'El conector de la plataforma no está disponible.'),
+    ({'active': False}, SIN_DIRECTORIO),
+    ({'type': 'otro'}, SIN_DIRECTORIO),
     ({'host': 'ajeno.pruebas.local'},
      'El host del conector no está autorizado.'),
 ])

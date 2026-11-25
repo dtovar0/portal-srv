@@ -1,6 +1,9 @@
 """Valores enumerados de una plataforma (contrato `plataformas-integracion.md`)."""
 
-# Tipo de integración: grupos del directorio o conector (FNC-050).
+# Tipo de integración (FNC-050). Desde FNC-196 es informativo y de
+# compatibilidad: toda plataforma da acceso por sus grupos y el conector es un
+# paso adicional que existe si hay una configuración de conector
+# (`platforms.estado.tiene_conector`, `has_connector` en la API).
 TIPO_LDAP = 'ldap'
 TIPO_CONECTOR = 'conector'
 TIPOS_INTEGRACION = (TIPO_LDAP, TIPO_CONECTOR)

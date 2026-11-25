@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from app import db
 from app.modules.audit.events import ACTOR_SISTEMA
 from app.modules.audit.models import AuditLog
-from app.modules.provisioning import ejecucion, manejadores
+from app.modules.provisioning import ejecucion, manejadores, providers
+from app.modules.provisioning.compuesto import ProveedorGrupoYConector
 from app.modules.provisioning.configuracion import cargar_configuracion
 from app.modules.provisioning.ejecucion import (ejecutar_trabajo, reservar,
                                                 sentencia_reserva)
@@ -16,7 +17,7 @@ from app.modules.provisioning.models import ProvisioningJob
 from app.modules.provisioning.providers import (ResultadoProveedor,
                                                 permanente, transitorio)
 from app.modules.provisioning.reloj import ahora
-from app.modules.provisioning.tipos import (ESTADO_EN_EJECUCION,
+from app.modules.provisioning.tipos import (ESTADO_EN_EJECUCION, PROVEEDOR_LDAP,
                                             ESTADO_EXITOSO, ESTADO_FALLIDO,
                                             ESTADO_REINTENTANDO,
                                             OPERACION_REVOCAR,
@@ -153,8 +154,13 @@ def test_conector_sin_proveedor_falla_controlado(datos, nuevo_trabajo, avisos):
     area, _, _ = datos
     plataforma = fabricas.crear_plataforma(area, integration_type='conector')
     trabajo_id = nuevo_trabajo(plataforma_=plataforma)
-
-    assert ejecutar_trabajo(trabajo_id) == ESTADO_FALLIDO
+    # FNC-196: todo trabajo usa el proveedor de grupos (`ldap`); sin ninguno
+    # registrado falla igual de controlado.
+    providers.quitar_proveedor(PROVEEDOR_LDAP)
+    try:
+        assert ejecutar_trabajo(trabajo_id) == ESTADO_FALLIDO
+    finally:
+        providers.registrar_proveedor(PROVEEDOR_LDAP, ProveedorGrupoYConector)
 
     intento = trabajo(trabajo_id).attempts[0]
     assert intento.result == RESULTADO_ERROR_PERMANENTE

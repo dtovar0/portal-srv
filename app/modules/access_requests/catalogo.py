@@ -8,9 +8,10 @@ Decisiones del orquestador (pendientes de validar en la prueba de concepto):
   además las que administra, solo para ver (`can_request = false`, RF-03). El
   superadmin ve todas, solo para ver.
 - Solo plataformas `Activo` de áreas `Activo`.
-- Un nivel es solicitable si la plataforma lo tiene integrado: tipo `ldap`
-  con el DN de grupo de ese nivel, o tipo `conector` configurado
-  (`platforms.estado.tiene_conector`).
+- Toda plataforma activa de un área activa es solicitable en ambos niveles
+  (FNC-196): el acceso siempre se da por el grupo `app-{plataforma}-{nivel}`
+  del directorio y, si hay conector disponible, además por su operación de
+  alta. El DN del grupo se deriva de la convención si falta.
 """
 from dataclasses import dataclass
 from typing import Optional
@@ -26,8 +27,6 @@ from app.modules.access.tipos import (ESTADOS_OCUPANTES, ESTADOS_VIGENTES,
 from app.modules.access_requests.models import PlatformAccessRequest
 from app.modules.access_requests.tipos import ESTADO_PENDIENTE
 from app.modules.core.models import Area, Platform
-from app.modules.platforms.estado import tiene_conector
-from app.modules.platforms.tipos import CAMPOS_DN, TIPO_CONECTOR, TIPO_LDAP
 
 # `status` de un área o plataforma visible en el catálogo.
 ESTADO_ACTIVO = 'Activo'
@@ -88,13 +87,7 @@ def activa(plataforma):
 
 def niveles_integrados(plataforma):
     """Niveles que la plataforma puede otorgar hoy (ninguno si está inactiva)."""
-    if not activa(plataforma):
-        return ()
-    if plataforma.integration_type == TIPO_CONECTOR:
-        return NIVELES if tiene_conector(plataforma) else ()
-    if plataforma.integration_type == TIPO_LDAP:
-        return tuple(n for n in NIVELES if getattr(plataforma, CAMPOS_DN[n]))
-    return ()
+    return NIVELES if activa(plataforma) else ()
 
 
 # --------------------------------------------------------------------------- #

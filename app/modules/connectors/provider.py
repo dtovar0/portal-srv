@@ -1,8 +1,9 @@
 """Proveedor `conector` del ejecutor de aprovisionamiento (FNC-050 sobre FNC-049).
 
 Por cada operación:
-1. Plataforma `conector` con configuración activa de un tipo registrado; si
-   no, error permanente (`tipo_integracion` o `conector_no_disponible`).
+1. Plataforma con configuración de conector activa de un tipo registrado
+   (FNC-196: el conector es un paso adicional a los grupos); si no, error
+   permanente `conector_no_disponible`.
 2. Host en `CONNECTOR_ALLOWED_HOSTS` (se revalida en cada ejecución,
    SEC-CON-07); si no, permanente `host_no_autorizado`.
 3. Cuenta: correo de la cuenta del portal (dato del servidor, SEC-CON-03).
@@ -40,7 +41,7 @@ from app.modules.connectors.credenciales import (CredencialNoEncontrada,
                                                  referencias_en_conflicto)
 from app.modules.connectors.registry import obtener_tipo
 from app.modules.core.models import Platform
-from app.modules.platforms.tipos import CAMPOS_DN, TIPO_CONECTOR
+from app.modules.platforms.tipos import CAMPOS_DN
 from app.modules.provisioning.providers import (Provisioner,
                                                 ResultadoProveedor, permanente,
                                                 transitorio)
@@ -51,8 +52,7 @@ from app.modules.provisioning.saneo import (LARGO_MINIMO_SECRETO,
                                             MOTIVO_GESTOR_NO_CONFIGURADO,
                                             MOTIVO_GESTOR_NO_DISPONIBLE,
                                             MOTIVO_HOST_NO_AUTORIZADO,
-                                            MOTIVO_INESPERADO,
-                                            MOTIVO_TIPO_INTEGRACION)
+                                            MOTIVO_INESPERADO)
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +94,6 @@ class ProveedorConector(Provisioner):
                       if operacion.plataforma_id else None)
         if plataforma is None or operacion.nivel not in CAMPOS_DN:
             raise _Fallo(permanente(MOTIVO_DATOS_INCOMPLETOS))
-        if plataforma.integration_type != TIPO_CONECTOR:
-            raise _Fallo(permanente(MOTIVO_TIPO_INTEGRACION))
         configuracion = configuracion_de(plataforma.id)
         tipo = obtener_tipo(configuracion.type) if configuracion else None
         if configuracion is None or not configuracion.active or tipo is None:

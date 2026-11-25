@@ -264,46 +264,20 @@ def test_un_admin_por_solicitud_no_se_baja(escena, cliente_como, cola_falsa,
 # Casos límite
 # --------------------------------------------------------------------------- #
 
-def test_ldap_sin_grupo_admin_queda_en_usuario(escena, cliente_como,
-                                               cola_falsa, caplog):
+def test_sin_grupo_admin_guardado_igual_recibe_admin(escena, cliente_como,
+                                                     cola_falsa):
+    """FNC-196: toda plataforma tiene grupo de ambos niveles (se deriva si
+    falta); antes el admin quedaba en `usuario` con un aviso en el log."""
     sin_admin = fabricas.crear_plataforma(
         escena['area'], 'Sin admin', integration_type=TIPO_LDAP,
         ldap_group_user_dn=GRUPO_USUARIO)
     cuenta = fabricas.crear_usuario(ROLE_AREA_ADMIN)
 
-    with caplog.at_level('WARNING'):
-        _asignar(cliente_como, escena, cuenta, [escena['area']])
+    _asignar(cliente_como, escena, cuenta, [escena['area']])
 
     acceso, = _accesos(cuenta, sin_admin)
-    assert (acceso.level, acceso.status) == (NIVEL_USUARIO, ESTADO_EN_PROCESO)
-    assert 'no tiene grupo de nivel admin' in caplog.text
-    # La plataforma con ambos grupos sí le da `admin`.
+    assert (acceso.level, acceso.status) == (NIVEL_ADMIN, ESTADO_EN_PROCESO)
     assert NIVEL_ADMIN in _por_nivel(cuenta, escena['plataforma'])
-
-
-def test_completar_el_grupo_admin_sube_a_los_admins(escena, cliente_como,
-                                                    cola_falsa,
-                                                    proveedor_simulado):
-    sin_admin = fabricas.crear_plataforma(
-        escena['area'], 'Sin admin', integration_type=TIPO_LDAP,
-        ldap_group_user_dn=GRUPO_USUARIO)
-    cuenta = fabricas.crear_usuario(ROLE_AREA_ADMIN,
-                                    areas_administradas=[escena['area']])
-    sincronizar_cuenta(cuenta, [escena['area']])
-    db.session.commit()
-    _procesar(cola_falsa)
-    assert set(_por_nivel(cuenta, sin_admin)) == {NIVEL_USUARIO}
-
-    from app.modules.access.area_admin_sync import sincronizar_plataforma
-    sin_admin.ldap_group_admin_dn = (
-        'cn=sin-admin,ou=grupos,dc=pruebas,dc=local')
-    sincronizar_plataforma(sin_admin)
-    db.session.commit()
-
-    assert _por_nivel(cuenta, sin_admin)[NIVEL_ADMIN].status == \
-        ESTADO_EN_PROCESO
-    assert _por_nivel(cuenta, sin_admin)[NIVEL_USUARIO].status == \
-        ESTADO_REVOCANDO
 
 
 def test_el_superadmin_no_recibe_accesos_automaticos(escena, cola_falsa):
@@ -405,7 +379,7 @@ def test_nivel_destino_aun_saliendo_no_lanza_error(escena, cliente_como,
     assert niveles[NIVEL_ADMIN].status == ESTADO_REVOCANDO  # sin 500
 
 
-def test_ldap_heredada_con_solo_grupo_admin_no_recibe_acceso(
+def test_ldap_heredada_con_solo_grupo_admin_si_recibe_acceso(
         escena, cliente_como, cola_falsa):
     heredada = fabricas.crear_plataforma(
         escena['area'], 'Solo admin', integration_type=TIPO_LDAP,
@@ -414,4 +388,6 @@ def test_ldap_heredada_con_solo_grupo_admin_no_recibe_acceso(
 
     _asignar(cliente_como, escena, cuenta, [escena['area']])
 
-    assert not _accesos(cuenta, heredada)
+    # FNC-196: el grupo `usuario` que falta se deriva; antes no recibía acceso.
+    acceso, = _accesos(cuenta, heredada)
+    assert acceso.level == NIVEL_ADMIN

@@ -4,9 +4,11 @@ Uso desde otro módulo (p. ej. FNC-054):
 - `queue.encolar(...)` dentro de la transacción del cambio de negocio;
 - `manejadores.registrar_manejador(on_success=..., on_failure=...)`.
 """
-from app.modules.provisioning.ldap_provider import ProveedorLdap
+from app.modules.provisioning.compuesto import ProveedorGrupoYConector
 from app.modules.provisioning.providers import registrar_proveedor
 from app.modules.provisioning.tipos import PROVEEDOR_LDAP
 
-# `conector` lo registra `connectors.registrar(app)` en `create_app()` (FNC-050).
-registrar_proveedor(PROVEEDOR_LDAP, ProveedorLdap)
+# Todo trabajo va por el grupo del nivel y, si la plataforma tiene conector,
+# además por su operación (FNC-196). El proveedor `conector` lo registra
+# `connectors.registrar(app)` en `create_app()` (FNC-050) y lo usa este.
+registrar_proveedor(PROVEEDOR_LDAP, ProveedorGrupoYConector)

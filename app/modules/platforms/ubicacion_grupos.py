@@ -12,8 +12,7 @@ from app.modules.core.models import Area
 from app.modules.directory.dn import separar_dn
 from app.modules.platforms.models import (UBICACION_ACTIVOS, UBICACION_PARCIAL,
                                           UBICACION_INACTIVOS, TrasladoGrupos)
-from app.modules.platforms.tipos import (CAMPOS_DN, NIVEL_ADMIN, NIVEL_USUARIO,
-                                         TIPO_LDAP)
+from app.modules.platforms.tipos import CAMPOS_DN, NIVEL_ADMIN, NIVEL_USUARIO
 
 ESTADO_ACTIVO = 'Activo'
 NIVELES = (NIVEL_USUARIO, NIVEL_ADMIN)
@@ -30,9 +29,9 @@ def ubicacion_deseada(plataforma):
 
 
 def aplica(plataforma):
-    """Solo las plataformas `ldap` con algún grupo tienen algo que mover."""
-    return (plataforma.integration_type == TIPO_LDAP
-            and any(getattr(plataforma, campo) for campo in CAMPOS_DN.values()))
+    """Solo las plataformas con algún grupo tienen algo que mover (FNC-196:
+    todas dan acceso por grupo, con o sin conector)."""
+    return any(getattr(plataforma, campo) for campo in CAMPOS_DN.values())
 
 
 def dn_original(plataforma, nivel):
