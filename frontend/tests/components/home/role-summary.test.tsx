@@ -94,7 +94,7 @@ describe('RoleSummary', () => {
     expect(enlace('En proceso: 1. Ir a Mis accesos').getAttribute('href')).toBe('/requests?tab=accesos&status=en_proceso');
     // Indicación de hover con un token existente sobre el borde del `Card` (auditor-accesibilidad).
     expect(enlace('En proceso: 1. Ir a Mis accesos').className).toContain('[&:hover>div]:border-primary');
-    expect(screen.queryByRole('link', { name: /Ir a Aprobaciones/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Ir a Solicitudes/ })).toBeNull();
     expect(screen.queryByRole('link', { name: /Ir a Inventario/ })).toBeNull();
     expect(enlace('Ver auditoría').getAttribute('href')).toBe('/audit');
   });
@@ -103,7 +103,7 @@ describe('RoleSummary', () => {
     vi.mocked(homeApi.summary).mockResolvedValue(ADMIN);
     render(<RoleSummary />);
     expect(await screen.findByRole('heading', { name: TITULOS.areas })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /^Por aprobar: 4\. La más antigua: .+\. Ir a Aprobaciones$/ }).getAttribute('href')).toBe('/approvals?status=pendiente');
+    expect(screen.getByRole('link', { name: /^Por aprobar: 4\. La más antigua: .+\. Ir a Solicitudes$/ }).getAttribute('href')).toBe('/approvals?status=pendiente');
     expect(enlace('Accesos con falla: 1. Requieren atención. Ir a Inventario').getAttribute('href')).toBe('/inventory?status=fallido');
     expect(enlace('Áreas: 2. Ir a Áreas').getAttribute('href')).toBe(RUTAS_INICIO.areas);
     expect(enlace('Plataformas: 7. Ir a Administrar plataformas').getAttribute('href')).toBe(RUTAS_INICIO.plataformas);
@@ -117,7 +117,7 @@ describe('RoleSummary', () => {
     vi.mocked(homeApi.summary).mockResolvedValue(SUPERADMIN);
     render(<RoleSummary />);
     expect(await screen.findByRole('heading', { name: TITULOS.global })).toBeTruthy();
-    expect(enlace('Por aprobar: 9. Ir a Aprobaciones')).toBeTruthy();
+    expect(enlace('Por aprobar: 9. Ir a Solicitudes')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Todo el sistema' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Mis solicitudes' })).toBeNull();
     expect(screen.queryByRole('link', { name: /Ir a Mis/ })).toBeNull();

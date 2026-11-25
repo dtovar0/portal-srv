@@ -62,7 +62,7 @@ describe('Indicadores del Panel', () => {
     const porAprobar = await screen.findByRole('link', { name: /Por aprobar: 3/ });
     expect(porAprobar.textContent).toContain('La más antigua:');
     // H1: la nota forma parte del nombre accesible.
-    expect(porAprobar.getAttribute('aria-label')).toMatch(/Por aprobar: 3\. La más antigua: .+\. Ir a Aprobaciones/);
+    expect(porAprobar.getAttribute('aria-label')).toMatch(/Por aprobar: 3\. La más antigua: .+\. Ir a Solicitudes/);
     expect(porAprobar.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
     expect(screen.getByRole('link', { name: /Accesos con falla: 2/ }).textContent).toContain('Requieren atención');
     expect(screen.getByRole('link', { name: /Accesos activos: 4/ })).toBeTruthy();
