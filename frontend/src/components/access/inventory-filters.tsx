@@ -12,6 +12,7 @@
  */
 
 import { useState } from 'react';
+import { ORIGENES, etiquetaOrigenAcceso } from '@/lib/access/origen';
 import type { AccessLevel, AccessOrigin, InventoryParams } from '@/lib/access/types';
 import { Button, Option, Select, TextInput } from '../form';
 import { Icono } from '../icono';
@@ -43,12 +44,6 @@ export const FILTROS_INICIALES: FiltrosInventario = {
 
 /** Máximo de `q` (contrato `accesos.md`: texto ≤ 100). */
 export const BUSQUEDA_MAX = 100;
-
-/** Origen del acceso, visto por quien administra. */
-export const ORIGENES_INVENTARIO: Record<AccessOrigin, string> = {
-  solicitud: 'Por solicitud',
-  admin_de_area: 'Automático (admin del área)',
-};
 
 export const FILTRO_AREA_ID = 'inventario-filtro-area';
 
@@ -177,8 +172,8 @@ export function InventoryFilters({
           className="h-12 !w-auto min-w-36 rounded-xl border border-panel-border bg-fondo px-3 py-2 text-xs font-semibold text-body-text transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <Option value="">Todos los orígenes</Option>
-          {(Object.keys(ORIGENES_INVENTARIO) as AccessOrigin[]).map((origen) => (
-            <Option key={origen} value={origen}>{ORIGENES_INVENTARIO[origen]}</Option>
+          {ORIGENES.map((origen) => (
+            <Option key={origen} value={origen}>{etiquetaOrigenAcceso(origen, 'admin')}</Option>
           ))}
         </Select>
       </div>
