@@ -12,7 +12,7 @@ import { PlatformsSidebarView } from '@/components/platforms/platforms-sidebar-v
 import { PlatformsPageShell } from '@/components/platforms/platforms-shell';
 import { CLAVE_OMITIR_BIENVENIDA, PlatformsLaunchpadView } from '@/components/platforms/platforms-launchpad-view';
 import { UserRequestsTable } from '@/components/platforms/user-requests-table';
-import { CLAVE_BOTON_USUARIO_COMPACTO, UserViewSettings } from '@/components/platforms/user-view-settings';
+import { CLAVE_BOTON_USUARIO_COMPACTO, CLAVE_MOSTRAR_DOCUMENTOS, UserViewSettings } from '@/components/platforms/user-view-settings';
 import { PlatformMockupCard } from '@/components/platforms/platform-mockup-card';
 import { MenuNotificaciones } from '@/components/platforms/menu-notificaciones';
 import { PreferencesTab } from '@/components/settings/preferences-tab';
@@ -31,6 +31,8 @@ const mockMarcarFavorito = vi.fn();
 // DIS-124: plataformas aprobadas del usuario (vacío = sin accesos).
 const MIAS_CON_ACCESO = new Map([[1, { id: 1, name: 'Slack', is_favorite: true }]]);
 let mockMias: Map<number, { id: number; name: string; is_favorite: boolean }> = MIAS_CON_ACCESO;
+// DIS-127: estado del acceso de la plataforma del catálogo simulado.
+let mockEstadoAcceso: string | null = 'activo';
 
 vi.mock('@/components/access/use-catalogo-solicitable', () => ({
   useCatalogoSolicitable: () => ({
@@ -39,7 +41,7 @@ vi.mock('@/components/access/use-catalogo-solicitable', () => ({
       {
         platform: { id: 1, name: 'Slack', description: 'Chat', icon: 'slack' },
         area: { id: 1, name: 'TI' },
-        my_access_status: 'activo',
+        my_access_status: mockEstadoAcceso,
         my_level: 'usuario',
         can_request: false,
         pending_request_id: mockPendingRequestId,
@@ -1709,7 +1711,7 @@ describe('MenuNotificaciones - menú desplegable de notificaciones en portal de 
     expect(screen.queryByRole('link', { name: /carta responsiva/i })).toBeNull();
   });
 
-  it('no muestra el modal de Carta Responsiva si mostrarDocumentos está desactivado en ajustes de vista', () => {
+  it('DIS-127: con accesos aprobados pide firmar aunque «Mostrar documentos» esté desactivado', () => {
     window.localStorage.setItem(CLAVE_PLATFORMS_LAYOUT, 'topbar');
     window.localStorage.setItem('nexus.platforms.show_documents', 'false');
     sesionActual = {
@@ -1719,9 +1721,9 @@ describe('MenuNotificaciones - menú desplegable de notificaciones en portal de 
 
     render(<PlatformsPageShell />);
 
-    // Al tener mostrarDocumentos = false, el modal no debe aparecer
-    expect(screen.queryByRole('dialog', { name: /carta responsiva/i })).toBeNull();
-    expect(screen.queryByText(/firma de carta responsiva/i)).toBeNull();
+    // Firmar es obligatorio para activar los accesos: no depende de la
+    // preferencia de vista (antes no aparecía y los accesos quedaban en proceso).
+    expect(screen.getByRole('dialog')).toBeDefined();
   });
 });
 
@@ -1731,10 +1733,11 @@ describe('Carta responsiva sin plataformas aprobadas (DIS-124)', () => {
     window.localStorage.clear();
     window.localStorage.setItem(CLAVE_PLATFORMS_LAYOUT, 'topbar');
   });
-  afterEach(() => { cleanup(); mockMias = MIAS_CON_ACCESO; });
+  afterEach(() => { cleanup(); mockMias = MIAS_CON_ACCESO; mockEstadoAcceso = 'activo'; });
 
   it('sin accesos no muestra el ícono de la responsiva', () => {
     mockMias = new Map();
+    mockEstadoAcceso = null;
     sesionActual = crearSesion(false);
     render(<PlatformsPageShell />);
     expect(screen.queryByRole('button', { name: /carta responsiva/i })).toBeNull();
@@ -1742,6 +1745,7 @@ describe('Carta responsiva sin plataformas aprobadas (DIS-124)', () => {
 
   it('sin accesos, en Ajustes la opción está apagada y deshabilitada', () => {
     mockMias = new Map();
+    mockEstadoAcceso = null;
     sesionActual = crearSesion(false);
     render(<PlatformsPageShell />);
     fireEvent.click(screen.getByRole('button', { name: /configuración y diseño de vista/i }));
@@ -1779,5 +1783,40 @@ describe('Tarjeta con solicitud pendiente (DIS-125)', () => {
     expect(screen.queryByText('Esperando admin')).toBeNull();
     expect(screen.queryByText('EN REVISIÓN')).toBeNull();
     expect(screen.queryByRole('button', { name: /Solicitar acceso/ })).toBeNull();
+  });
+});
+
+
+describe('Responsiva con acceso aprobado en proceso (DIS-127)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.localStorage.setItem(CLAVE_PLATFORMS_LAYOUT, 'topbar');
+  });
+  afterEach(() => { cleanup(); mockMias = MIAS_CON_ACCESO; mockEstadoAcceso = 'activo'; });
+
+  it('aprobado y esperando la firma: muestra el ícono y pide firmar (regresión del bloqueo)', () => {
+    mockMias = new Map();
+    mockEstadoAcceso = 'en_proceso';
+    sesionActual = { ...crearSesion(false), responsiva_firmada: false };
+    render(<PlatformsPageShell />);
+    expect(screen.getAllByRole('button', { name: /carta responsiva/i }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('pide firmar aunque la preferencia «Mostrar documentos» esté apagada', () => {
+    window.localStorage.setItem(CLAVE_MOSTRAR_DOCUMENTOS, 'false');
+    mockMias = new Map();
+    mockEstadoAcceso = 'en_proceso';
+    sesionActual = { ...crearSesion(false), responsiva_firmada: false };
+    render(<PlatformsPageShell />);
+    expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('sin ningún acceso aprobado no pide firmar', () => {
+    mockMias = new Map();
+    mockEstadoAcceso = null;
+    sesionActual = { ...crearSesion(false), responsiva_firmada: false };
+    render(<PlatformsPageShell />);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

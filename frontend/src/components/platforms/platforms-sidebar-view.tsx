@@ -33,6 +33,7 @@ import { Icono } from '../icono';
 import { MenuUsuario } from '../marco/menu-usuario';
 import { usePlatformsLayout } from '@/lib/platforms-layout';
 import { UserResponsivaSection } from './user-responsiva-section';
+import { responsivaAplica } from '@/lib/access/responsiva';
 import { useSession } from '../session-provider';
 import { useTema } from '../use-tema';
 import { useToast } from '../toast';
@@ -376,7 +377,7 @@ export function PlatformsSidebarView({
 
   const { catalogo, items, areas, mias: abribles, marcarSolicitada, marcarFavorito } = useCatalogoSolicitable(mias);
   // DIS-124: sin ninguna plataforma aprobada no aplica la carta responsiva.
-  const responsivaDisponible = abribles.size > 0;
+  const responsivaDisponible = responsivaAplica(items, abribles);
   const documentosVisibles = mostrarDocumentos && responsivaDisponible;
   const areasAsync = useAsync(() => api.areas().catch(() => []), [], 'nexus.platforms.areas');
 
