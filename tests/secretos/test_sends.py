@@ -124,7 +124,7 @@ def test_crea_el_send_cifrado_y_el_enlace_lleva_la_llave_en_el_fragmento(
     cuerpo = servidor.sends[send.id]
     # Nada en claro viaja al servidor.
     assert TEXTO not in json.dumps(cuerpo) and NOMBRE not in json.dumps(cuerpo)
-    assert cuerpo['text']['hidden'] is True and cuerpo['hideEmail'] is True
+    assert cuerpo['text']['hidden'] is True and cuerpo['hideEmail'] is False  # FNC-195
     assert cuerpo['type'] == 0 and cuerpo['maxAccessCount'] == 3
     assert cuerpo['expirationDate'] == '2026-11-25T12:00:00.000Z'
     assert cuerpo['deletionDate'] == '2026-11-25T12:00:00.000Z'
@@ -284,7 +284,7 @@ def test_bw_crea_el_send_con_el_json_por_stdin_y_la_sesion_en_el_entorno(cli):
     assert opciones['env']['BW_NOINTERACTION'] == 'true'
     envio = json.loads(base64.b64decode(opciones['input']))
     assert envio['text'] == {'text': TEXTO, 'hidden': True}
-    assert envio['maxAccessCount'] == 3 and envio['hideEmail'] is True
+    assert envio['maxAccessCount'] == 3 and envio['hideEmail'] is False  # FNC-195
     assert envio['deletionDate'] == '2026-11-25T12:00:00.000Z'
 
 
@@ -431,3 +431,12 @@ def test_servicio_de_sends_deshabilitado_falla():
         sends.servicio_de_sends({'VAULTWARDEN_ENABLED': 'false'})
     assert exc.value.motivo == sends.MOTIVO_SEND_DESHABILITADO
 
+
+
+def test_ocultar_correo_es_configurable_regresion_fnc_195():
+    """Por omisión el Send muestra el correo del creador (sin la advertencia
+    de «ocultó su correo»); con la variable, se oculta."""
+    from app.modules.secretos.configuracion import cargar_configuracion_send
+    assert cargar_configuracion_send({}).ocultar_correo is False
+    assert cargar_configuracion_send(
+        {'VAULTWARDEN_SEND_OCULTAR_CORREO': 'true'}).ocultar_correo is True

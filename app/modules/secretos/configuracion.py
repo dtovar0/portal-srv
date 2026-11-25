@@ -52,6 +52,9 @@ VAR_BW_SESSION = 'VAULTWARDEN_BW_SESSION'
 VAR_SEND_CADUCIDAD = 'ONBOARDING_SEND_EXPIRATION_DAYS'
 VAR_SEND_APERTURAS = 'ONBOARDING_SEND_MAX_ACCESS_COUNT'
 VAR_SEND_BORRADO = 'ONBOARDING_SEND_DELETION_DAYS'
+# FNC-195: con el correo oculto, la página del Send advierte «el usuario ocultó
+# su correo; confía en la fuente». Por omisión se muestra (sin advertencia).
+VAR_SEND_OCULTAR_CORREO = 'VAULTWARDEN_SEND_OCULTAR_CORREO'
 VAR_HABILITADO = 'VAULTWARDEN_ENABLED'
 VAR_HABILITADO_ES = 'VAULTWARDEN_HABILITADO'
 VAR_ENABLE_ALT = 'VAULTWARDEN_ENABLE'
@@ -111,6 +114,7 @@ class ConfiguracionSend:
     base_url: str | None = None
     bw_bin: str = BW_POR_DEFECTO
     bw_session: str = field(default='', repr=False)
+    ocultar_correo: bool = False
 
 
 def _leer(entorno, nombre):
@@ -257,7 +261,9 @@ def cargar_configuracion_send(entorno=None):
         modo=modo, caducidad_dias=caducidad, max_aperturas=aperturas,
         borrado_dias=borrado, base_url=base,
         bw_bin=_leer(entorno, VAR_BW_BIN) or BW_POR_DEFECTO,
-        bw_session=sesion)
+        bw_session=sesion,
+        ocultar_correo=_leer(entorno, VAR_SEND_OCULTAR_CORREO).lower()
+        in VALORES_ENCENDIDO)
 
 
 def cargar_configuracion(entorno=None):

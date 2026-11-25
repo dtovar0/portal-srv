@@ -144,7 +144,7 @@ def construir_send(nombre, texto, clave_usuario, cfg, ahora=None,
         'expirationDate': expiracion,
         'deletionDate': borrado,
         'disabled': False,
-        'hideEmail': True,
+        'hideEmail': cfg.ocultar_correo,
     }
     if codigo:
         cuerpo['password'] = cifrado.clave_de_acceso_send(codigo, material)
@@ -224,7 +224,7 @@ class SendsPorCli:
                  'text': {'text': texto, 'hidden': True},
                  'maxAccessCount': cfg.max_aperturas,
                  'expirationDate': expiracion, 'deletionDate': borrado,
-                 'disabled': False, 'hideEmail': True}
+                 'disabled': False, 'hideEmail': cfg.ocultar_correo}
         if codigo:
             envio['password'] = codigo
         codificado = base64.b64encode(json.dumps(envio).encode()).decode()
