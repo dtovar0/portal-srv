@@ -24,7 +24,7 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO, ESTADO_F
                                       ESTADO_FALLO_REVOCACION,
                                       ESTADO_REVOCADO, ESTADO_REVOCANDO,
                                       ESTADOS_OCUPANTES, MOTIVO_REEMPLAZO,
-                                      ORIGEN_ADMIN_DE_AREA)
+                                      ORIGEN_ADMIN_DE_AREA, ORIGEN_MIGRACION)
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
 from app.modules.platforms import grupos
@@ -151,6 +151,9 @@ def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None,
     elif origen == ORIGEN_ADMIN_DE_AREA:
         detalle = (f'sistema dejó a {usuario.email} con acceso de usuario en '
                    f'{plataforma.name}.')
+    elif origen == ORIGEN_MIGRACION:
+        detalle = (f'sistema otorgó por migración acceso nivel {nivel} a '
+                   f'{plataforma.name} a {usuario.email}.')
     else:
         detalle = f'Acceso nivel {nivel} a {plataforma.name} otorgado.'
     _auditar(Evento.ACCESO_OTORGADO, acceso, usuario, plataforma, None,
