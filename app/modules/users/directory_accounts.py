@@ -48,7 +48,8 @@ from app.modules.auth.services import ORIGEN_DIRECTORIO, normalizar_correo
 from app.modules.core.models import Area
 from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
                                                  directorio_activo)
-from app.modules.directory.errors import Resultado
+from app.modules.directory.errors import (MENSAJE_SIN_PERMISO,
+                                          MOTIVO_SIN_PERMISO, Resultado)
 from app.modules.directory.ldap_client import ErrorDirectorio, PersonaAmbigua
 from app.modules.directory.writer import (MOTIVO_CONTRASENA_RECHAZADA,
                                           PATRON_CORREO, DatosCuenta,
@@ -105,6 +106,8 @@ CORREO_DUPLICADO = ('El correo ya está registrado.', 409, 'correo_duplicado')
 DIRECTORIO_NO_DISPONIBLE = ('No se pudo crear la cuenta en el directorio; '
                             'intenta más tarde.', 503,
                             'directorio_no_disponible')
+SIN_PERMISO_EN_DIRECTORIO = (MENSAJE_SIN_PERMISO, 503,
+                             'sin_permiso_en_directorio')
 ERROR_INTERNO = ('Ocurrió un error. Intenta de nuevo.', 500, 'error_interno')
 # `ppolicy` del directorio rechazó la contraseña: el API lo traduce a
 # `422 validacion` en `fields.password` (sin el texto del servidor).
@@ -323,6 +326,10 @@ def crear_cuenta_directorio(alta, escritor_factory=EscritorDirectorio):
         return _descartar_reserva(
             alta, CONTRASENA_RECHAZADA, 'warning',
             f'{SISTEMA_DIRECTORIO}: {MOTIVO_CONTRASENA_RECHAZADA}')
+    if resultado.motivo == MOTIVO_SIN_PERMISO:
+        return _descartar_reserva(
+            alta, SIN_PERMISO_EN_DIRECTORIO, 'error',
+            f'{SISTEMA_DIRECTORIO}: {MOTIVO_SIN_PERMISO}')
     if resultado.resultado is not Resultado.HECHO:
         return _descartar_reserva(
             alta, DIRECTORIO_NO_DISPONIBLE, 'error',

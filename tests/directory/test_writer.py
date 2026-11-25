@@ -356,13 +356,17 @@ def test_errores_permanentes(excepcion, esperado):
     assert resultado.exito is False
 
 
-@pytest.mark.parametrize('excepcion, esperado', [
-    (exc_ldap.LDAPBusyResult(), Resultado.ERROR_TRANSITORIO),
-    (exc_ldap.LDAPInsufficientAccessRightsResult(), Resultado.ERROR_PERMANENTE),
-    (exc_ldap.LDAPObjectClassViolationResult(), Resultado.ERROR_PERMANENTE),
+@pytest.mark.parametrize('excepcion, esperado, motivo', [
+    (exc_ldap.LDAPBusyResult(), Resultado.ERROR_TRANSITORIO,
+     errors.MOTIVO_DIRECTORIO),
+    # FNC-206: el rechazo de permisos tiene su propio motivo.
+    (exc_ldap.LDAPInsufficientAccessRightsResult(), Resultado.ERROR_PERMANENTE,
+     errors.MOTIVO_SIN_PERMISO),
+    (exc_ldap.LDAPObjectClassViolationResult(), Resultado.ERROR_PERMANENTE,
+     errors.MOTIVO_DIRECTORIO),
 ])
 def test_error_al_escribir_se_clasifica(directorio, escritor, monkeypatch,
-                                        excepcion, esperado):
+                                        excepcion, esperado, motivo):
     directorio.persona('ana')
     grupo = directorio.grupo('conta-usuario', [dn_persona('beto')])
     _fallar(monkeypatch, 'modify', excepcion)
@@ -370,7 +374,7 @@ def test_error_al_escribir_se_clasifica(directorio, escritor, monkeypatch,
     resultado = escritor.add_member(grupo, _usuario('ana'))
 
     assert resultado.resultado is esperado
-    assert resultado.motivo == errors.MOTIVO_DIRECTORIO
+    assert resultado.motivo == motivo
 
 
 def test_fallo_de_red_al_conectar_es_transitorio(directorio, escritor,

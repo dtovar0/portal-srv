@@ -21,9 +21,11 @@ from app.authz import is_admin
 from app.modules.auth.acceso_local import es_origen_local
 from app.modules.auth.services import ORIGENES_VINCULADOS
 from app.modules.directory.configuracion import directorio_activo
+from app.modules.directory.errors import MENSAJE_SIN_PERMISO
 from app.modules.directory.ldap_client import ClienteDirectorio, ErrorDirectorio
 from app.modules.users.entrega_credenciales import (
-    CODIGO_CONTRASENA_RECHAZADA, fijar_contrasena_en_directorio)
+    CODIGO_CONTRASENA_RECHAZADA, CODIGO_SIN_PERMISO,
+    fijar_contrasena_en_directorio)
 from app.modules.provisioning.reloj import ahora
 from app.modules.users.models import ESTADO_ENVIADAS, ESTADO_PENDIENTES
 from app.modules.users.politica_contrasena import (MENSAJE_RECHAZO_DIRECTORIO,
@@ -39,6 +41,8 @@ SIN_CUENTA_EN_DIRECTORIO = ('No se encontró la cuenta en el directorio.', 409,
                             'cuenta_no_encontrada_en_directorio')
 DIRECTORIO_NO_DISPONIBLE = ('No se pudo actualizar la contraseña en el '
                             'directorio.', 503, 'directorio_no_disponible')
+SIN_PERMISO_EN_DIRECTORIO = (MENSAJE_SIN_PERMISO, 503,
+                             'sin_permiso_en_directorio')
 CONTRASENA_INVALIDA = 'La contraseña no es válida.'
 
 
@@ -110,6 +114,8 @@ def aplicar_cambio(cuenta, contrasena):
     codigo = fijar_contrasena_en_directorio(identificador, contrasena)
     if codigo == CODIGO_CONTRASENA_RECHAZADA:
         return (MENSAJE_RECHAZO_DIRECTORIO, 400, 'contrasena_rechazada')
+    if codigo == CODIGO_SIN_PERMISO:
+        return SIN_PERMISO_EN_DIRECTORIO
     if codigo:
         return DIRECTORIO_NO_DISPONIBLE
     _cerrar_entrega_pendiente(cuenta)

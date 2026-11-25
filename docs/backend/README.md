@@ -303,6 +303,7 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 ### Escritura en OpenLDAP (`app/modules/directory/writer.py`, FNC-041)
 - `EscritorDirectorio(cliente)`: `add_member(group_dn, user)`, `remove_member(group_dn, user)`, `create_user(DatosCuenta)`; sin borrado de cuentas.
 - Devuelve `ResultadoEscritura` (`errors.py`): `hecho`, `ya_estaba`, `no_existe`, `error_transitorio` (reintentable), `error_permanente`; nunca lanza por fallos del directorio.
+- Permisos (FNC-206): `insufficientAccessRights` (código 50) es `error_permanente` con motivo `sin_permiso_en_directorio` (`errors.MOTIVO_SIN_PERMISO`, `MENSAJE_SIN_PERMISO`); la caída de conexión y otros fallos siguen con motivo `directorio`. Las capas de usuarios responden `503 sin_permiso_en_directorio`; el worker de entregas agota los intentos (`CODIGOS_SIN_REINTENTO`) y avisa a los superadmins; el aprovisionamiento ya lo trata como permanente.
 - Solo bajo `LDAP_GROUPS_BASE_DN` / `LDAP_USERS_BASE_DN` (RDN normalizados); fuera → `error_permanente` `fuera_de_base` sin conectar.
 - Membresía: lee el grupo y aplica un solo `MODIFY_ADD`/`MODIFY_DELETE`; DN comparados normalizados; `memberUid` usa el identificador.
 - Último miembro de `groupOfNames`/`groupOfUniqueNames`: con `LDAP_GROUP_PLACEHOLDER_MEMBER` agrega el relleno y quita al usuario en la misma operación; sin él, `error_permanente` `ultimo_miembro`. Al agregar un miembro real se quita el relleno.
@@ -315,7 +316,7 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 ### Entrega de credenciales iniciales (`app/modules/users/entrega_credenciales.py`, FNC-138, ADR-008)
 - Un intento = contraseña en LDAP (Password Modify) → Send de texto (`secretos/sends.py`, modo `VAULTWARDEN_SEND_MODO`) → correo `credenciales_iniciales` con solo el enlace. Sin notificaciones activas o sin `BASE_URL` no se crea Send; si el correo falla se borra el Send creado; al éxito de un reenvío se borra el anterior.
 - Reintento: tipo de trabajo `entrega_credenciales.ejecutar_entrega` registrado en `provisioning/tipos_de_trabajo` (lo admite y barre el mismo worker); reserva atómica por `UPDATE`, *backoff* de accesos, `PROVISIONING_MAX_ATTEMPTS`; cada reintento genera contraseña nueva (`secrets`). Agotados: sigue `pendientes`, sin barrido, aviso `credenciales_no_entregadas` a superadmins.
-- `last_error`: `notificaciones_desactivadas`, `base_url_no_configurada`, `gestor_no_disponible`, `gestor_mal_configurado`, `send_deshabilitado`, `correo_no_enviado`, `directorio_no_disponible`, `contrasena_rechazada`, `error_inesperado`.
+- `last_error`: `notificaciones_desactivadas`, `base_url_no_configurada`, `gestor_no_disponible`, `gestor_mal_configurado`, `send_deshabilitado`, `correo_no_enviado`, `directorio_no_disponible`, `sin_permiso_en_directorio` (FNC-206; agota los intentos, sin reintento), `contrasena_rechazada`, `error_inesperado`.
 - La contraseña vive solo en variables locales del intento: `AltaDirectorio.password` y `DatosCuenta.password` no salen en `repr`.
 
 ### Ejecutor de aprovisionamiento (`app/modules/provisioning/`, FNC-049)

@@ -14,7 +14,9 @@ import logging
 from app.modules.auth.services import ORIGENES_VINCULADOS
 from app.modules.directory.configuracion import directorio_activo
 from app.modules.directory.writer import EscritorDirectorio
-from app.modules.users.grupos_de_rol import sincronizar_grupo_de_rol
+from app.modules.directory.errors import MENSAJE_SIN_PERMISO
+from app.modules.users.grupos_de_rol import (sin_permiso_en,
+                                             sincronizar_grupo_de_rol)
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ DIRECTORIO_NO_DISPONIBLE = ('No se pudo cambiar el rol: el directorio (LDAP) no 
 SIN_CUENTA_EN_DIRECTORIO = ('No se pudo cambiar el rol: la cuenta no está en el '
                             'directorio (LDAP).', 409,
                             'cuenta_no_encontrada_en_directorio')
+SIN_PERMISO_EN_DIRECTORIO = (MENSAJE_SIN_PERMISO + ' El rol no se cambió.', 503,
+                             'sin_permiso_en_directorio')
 GRUPO_NO_ACTUALIZADO = ('No se pudo actualizar el grupo en el directorio; el rol '
                         'no se cambió.', 503, 'grupo_no_actualizado')
 
@@ -54,9 +58,11 @@ def mover_grupo_de_rol(cuenta, rol):
     escritor, persona, error = _persona(cuenta)
     if error:
         return error
-    if not sincronizar_grupo_de_rol(escritor, persona.dn, rol,
-                                    quitar_del_otro=True):
-        return GRUPO_NO_ACTUALIZADO
+    sincronizacion = sincronizar_grupo_de_rol(escritor, persona.dn, rol,
+                                              quitar_del_otro=True)
+    if not sincronizacion:
+        return (SIN_PERMISO_EN_DIRECTORIO if sin_permiso_en(sincronizacion)
+                else GRUPO_NO_ACTUALIZADO)
     return None
 
 

@@ -38,7 +38,7 @@ from app.modules.audit.services import add_audit_log
 from app.modules.auth.models import User
 from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
                                                  directorio_activo)
-from app.modules.directory.errors import Resultado
+from app.modules.directory.errors import MOTIVO_SIN_PERMISO, Resultado
 from app.modules.directory.writer import (MOTIVO_CONTRASENA_RECHAZADA,
                                           EscritorDirectorio)
 from app.modules.notifications import services
@@ -90,6 +90,10 @@ CODIGO_SEND_DESHABILITADO = 'send_deshabilitado'
 CODIGO_CORREO = 'correo_no_enviado'
 CODIGO_DIRECTORIO = 'directorio_no_disponible'
 CODIGO_CONTRASENA_RECHAZADA = 'contrasena_rechazada'
+# La cuenta de servicio no puede escribir en el directorio (FNC-206).
+CODIGO_SIN_PERMISO = MOTIVO_SIN_PERMISO
+# Errores que reintentar no arregla: la entrega se agota de inmediato.
+CODIGOS_SIN_REINTENTO = frozenset({CODIGO_SIN_PERMISO})
 CODIGO_PLANTILLA_SIN_CODIGO = 'plantilla_sin_codigo'
 CODIGO_INESPERADO = 'error_inesperado'
 CODIGO_AGOTADOS = 'intentos_agotados'
@@ -120,6 +124,8 @@ def fijar_contrasena_en_directorio(uid, contrasena):
         return None
     if resultado.motivo == MOTIVO_CONTRASENA_RECHAZADA:
         return CODIGO_CONTRASENA_RECHAZADA
+    if resultado.motivo == MOTIVO_SIN_PERMISO:
+        return CODIGO_SIN_PERMISO
     return CODIGO_DIRECTORIO
 
 
@@ -257,8 +263,14 @@ def marcar_enviada(entrega, send_id, momento, evento, como_sistema):
 
 
 def marcar_pendiente(entrega, codigo, momento, cfg):
-    """Entrega fallida (sin commit). `True` si se agotaron los intentos."""
+    """Entrega fallida (sin commit). `True` si se agotaron los intentos.
+
+    Un error de `CODIGOS_SIN_REINTENTO` (p. ej. el directorio rechaza por
+    permisos) agota los intentos: el worker no lo reintenta en bucle."""
     entrega.status = ESTADO_PENDIENTES
+    if codigo in CODIGOS_SIN_REINTENTO:
+        entrega.attempts_count = max(entrega.attempts_count,
+                                     entrega.max_attempts)
     entrega.last_error = codigo
     entrega.locked_at = entrega.locked_by = None
     agotada = entrega.attempts_count >= entrega.max_attempts
