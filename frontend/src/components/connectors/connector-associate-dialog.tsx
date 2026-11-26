@@ -99,7 +99,7 @@ export function ConnectorAssociateDialog({
                 type="button"
                 onClick={() => elegir(p)}
                 aria-disabled={sending !== null || undefined}
-                className="flex w-full min-h-12 items-center justify-between p-3.5 text-left transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer aria-disabled:opacity-deshabilitada"
+                className="flex w-full min-h-12 items-center justify-between p-3.5 text-left transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary cursor-pointer aria-disabled:opacity-deshabilitada"
               >
                 <div className="min-w-0">
                   <span className="block text-sm font-bold text-body-text">{p.name}</span>

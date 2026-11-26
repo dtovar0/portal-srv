@@ -450,6 +450,8 @@ describe('Asociar y desasociar', () => {
     expect(nombres.some((t) => t.includes('Nómina'))).toBe(true);
     expect(nombres.some((t) => t.includes('Wiki'))).toBe(true);
     expect(nombres.some((t) => t.includes('Contabilidad'))).toBe(false);
+    // Auditoría de accesibilidad: la lista recorta (overflow), así que el anillo de foco va hacia adentro.
+    expect(within(picker).getByRole('button', { name: /Nómina/ }).className).toContain('focus-visible:ring-inset');
 
     fireEvent.click(within(picker).getByRole('button', { name: /Nómina/ }));
     await waitFor(() => expect(mocks.associate).toHaveBeenCalledWith(5, 14));
