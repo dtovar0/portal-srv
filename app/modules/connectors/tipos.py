@@ -21,6 +21,10 @@ LARGO_TIPO = 20
 LARGO_HOST = 253  # nombre de host completo (RFC 1035)
 LARGO_REFERENCIA = 200
 LARGO_ESTADO_CREDENCIAL = 20
+LARGO_NOMBRE = 100  # igual que `platforms.name` (FNC-213)
+# `name_norm` = `name.casefold()`, que puede alargar el texto hasta 3 veces
+# («ﬃ» → «ffi»).
+LARGO_CLAVE_NOMBRE = LARGO_NOMBRE * 3
 
 PUERTO_MINIMO = 1
 PUERTO_MAXIMO = 65535

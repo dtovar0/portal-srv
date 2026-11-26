@@ -6,7 +6,7 @@ from app.modules.connectors.tipos import (CREDENCIAL_OK,
 from tests.connectors.conftest import crear_conector
 
 # Columnas permitidas: ninguna guarda el valor de una credencial.
-COLUMNAS_ESPERADAS = {'id', 'platform_id', 'type', 'host', 'port', 'params',
+COLUMNAS_ESPERADAS = {'id', 'name', 'name_norm', 'platform_id', 'type', 'host', 'port', 'params',
                       'credential_ref', 'credential_status', 'active',
                       'created_at', 'updated_at'}
 FRAGMENTOS_DE_SECRETO = ('password', 'pass', 'secret', 'secreto', 'token',
@@ -22,7 +22,8 @@ def test_la_tabla_solo_tiene_referencias_y_ninguna_columna_de_secreto():
 
 def test_una_configuracion_por_plataforma(conector_noop):
     plataforma, _, _ = conector_noop
-    duplicado = PlatformConnector(platform_id=plataforma.id, type='noop',
+    duplicado = PlatformConnector(platform_id=plataforma.id, name='Duplicado',
+                                  type='noop',
                                   host='otro.pruebas.local', port=22,
                                   params={}, credential_ref='pokemon/otra')
     db.session.add(duplicado)
@@ -53,6 +54,6 @@ def test_cambiar_host_o_referencia_invalida_la_verificacion(conector_noop):
 def test_el_diccionario_no_trae_valores_de_credencial(conector_noop):
     _, configuracion, _ = conector_noop
     datos = configuracion.to_dict()
-    assert set(datos) == {'platform_id', 'type', 'host', 'port', 'params',
+    assert set(datos) == {'id', 'name', 'platform_id', 'type', 'host', 'port', 'params',
                           'credential_ref', 'credential_status', 'active',
                           'updated_at'}

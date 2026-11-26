@@ -39,10 +39,14 @@ def entorno_conector(monkeypatch):
 
 
 def crear_conector(plataforma, **campos):
-    valores = {'type': TIPO_NOOP, 'host': HOST_PERMITIDO, 'port': 443,
+    """Conector con valores de prueba; `plataforma=None` lo deja sin asociar
+    (FNC-213). Sin `name` usa «Conector de prueba <plataforma>»."""
+    nombre = f'Conector de prueba {plataforma.id if plataforma else "libre"}'
+    valores = {'name': nombre, 'type': TIPO_NOOP, 'host': HOST_PERMITIDO, 'port': 443,
                'params': {}, 'credential_ref': REFERENCIA, 'active': True}
     valores.update(campos)
-    conector = PlatformConnector(platform_id=plataforma.id, **valores)
+    conector = PlatformConnector(
+        platform_id=plataforma.id if plataforma else None, **valores)
     db.session.add(conector)
     db.session.commit()
     return conector

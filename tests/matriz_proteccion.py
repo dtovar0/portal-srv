@@ -276,6 +276,39 @@ def _con_conector_noop(esc, monkeypatch):
     crear_conector(plataforma)
 
 
+def _con_conector_independiente(esc, monkeypatch, asociado=False):
+    """Conector `noop` con nombre propio (FNC-213), sin plataforma o asociado
+    a la del escenario; deja su id en `esc.conector_id`."""
+    from app.modules.core.models import Platform
+    from tests.connectors.conftest import (HOST_PERMITIDO, SECRETO_FICTICIO,
+                                           VARIABLE_CREDENCIAL, crear_conector)
+
+    monkeypatch.setenv('APP_ENV', 'development')
+    monkeypatch.setenv('CONNECTOR_ALLOWED_HOSTS', HOST_PERMITIDO)
+    monkeypatch.setenv(VARIABLE_CREDENCIAL, SECRETO_FICTICIO)
+    plataforma = db.session.get(Platform, esc.plataforma_id)
+    esc.conector_id = crear_conector(plataforma if asociado else None).id
+
+
+def _con_conector_libre(esc, monkeypatch):
+    _con_conector_independiente(esc, monkeypatch)
+
+
+def _con_conector_asociado(esc, monkeypatch):
+    _con_conector_independiente(esc, monkeypatch, asociado=True)
+
+
+def _conector_independiente(esc):
+    from tests.connectors.conftest import HOST_PERMITIDO, REFERENCIA
+    return {'json': {'name': 'Conector de matriz', 'type': 'noop',
+                     'host': HOST_PERMITIDO, 'port': 443, 'params': {},
+                     'credential_ref': REFERENCIA}}
+
+
+def _asociar_a_la_plataforma(esc):
+    return {'json': {'platform_id': esc.plataforma_id}}
+
+
 def _conector_noop(esc):
     from tests.connectors.conftest import HOST_PERMITIDO, REFERENCIA
     return {'json': {'type': 'noop', 'host': HOST_PERMITIDO, 'port': 443,
@@ -561,6 +594,37 @@ CASOS = (
     Caso('POST', f'{A}/platforms/<int:platform_id>/connector/test',
          _plataforma('/connector/test'), solo_superadmin(), _json({}),
          _con_conector_noop, nota='Fallo: 200 con result "error" genérico'),
+    # ---- Conectores independientes (connectors/api_independientes.py,
+    # FNC-213, contrato 1.6) ----
+    Caso('GET', f'{A}/connectors', _fija(f'{A}/connectors'),
+         solo_superadmin()),
+    Caso('POST', f'{A}/connectors', _fija(f'{A}/connectors'),
+         solo_superadmin(201), _conector_independiente,
+         _con_conector_noop,
+         nota='Crea sin plataforma; nombre repetido: 422'),
+    Caso('GET', f'{A}/connectors/<int:connector_id>',
+         lambda esc: f'{A}/connectors/{esc.conector_id}', solo_superadmin(),
+         preparar=_con_conector_libre, nota='Inexistente: 404'),
+    Caso('PUT', f'{A}/connectors/<int:connector_id>',
+         lambda esc: f'{A}/connectors/{esc.conector_id}', solo_superadmin(),
+         _conector_independiente, _con_conector_libre,
+         nota='El admin de área recibe 403 aunque administre el área'),
+    Caso('DELETE', f'{A}/connectors/<int:connector_id>',
+         lambda esc: f'{A}/connectors/{esc.conector_id}', solo_superadmin(),
+         _json({}), _con_conector_libre,
+         nota='Asociado con accesos vigentes: 409'),
+    Caso('PUT', f'{A}/connectors/<int:connector_id>/platform',
+         lambda esc: f'{A}/connectors/{esc.conector_id}/platform',
+         solo_superadmin(), _asociar_a_la_plataforma, _con_conector_libre,
+         nota='Plataforma con otro conector: 409'),
+    Caso('DELETE', f'{A}/connectors/<int:connector_id>/platform',
+         lambda esc: f'{A}/connectors/{esc.conector_id}/platform',
+         solo_superadmin(), _json({}), _con_conector_asociado,
+         nota='Sin plataforma: 409'),
+    Caso('POST', f'{A}/connectors/<int:connector_id>/test',
+         lambda esc: f'{A}/connectors/{esc.conector_id}/test',
+         solo_superadmin(), _json({}), _con_conector_asociado,
+         nota='Sin plataforma: 409'),
 )
 
 # Entradas inválidas: con un rol que pasa la protección, la validación
