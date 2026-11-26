@@ -10,6 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { enlaceSeguro } from '@/lib/enlace-seguro';
 import { useAsync } from '@/lib/use-async';
+import { usePolling } from '@/lib/use-polling';
+import { requestsApi } from '@/lib/access/requests';
 import type { Area, Platform, PlatformWarning } from '@/lib/types';
 import { AreaAdminsPanel } from './areas/area-admins-panel';
 import { AreaForm } from './areas/area-form';
@@ -372,6 +374,17 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     }
     return mapa;
   }, [platforms.data, isSuperadmin, hasManagedAreasExplicit, managedAreaIds]);
+
+  // DIS-137: solicitudes por aprobar en cada área (FNC-212, mismo alcance que la bandeja). Si la
+  // consulta falla, las tarjetas simplemente no muestran la cifra.
+  const resumenSolicitudes = usePolling(() => requestsApi.inboxStats(), {
+    intervalSeconds: session?.preferences?.refresh_interval,
+  });
+  const pendientesPorArea = useMemo(() => {
+    const mapa: Record<number, number> = {};
+    for (const fila of resumenSolicitudes.data?.pending_by_area ?? []) mapa[fila.area_id] = fila.count;
+    return mapa;
+  }, [resumenSolicitudes.data]);
 
   // Áreas gestionables según el rol (superadmin ve todas; admin de área solo las suyas)
   const assignableAreas = useMemo(() => {
@@ -949,6 +962,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                       area={area}
                       conteo={conteoPorArea[area.id] ?? 0}
                       plataformas={plataformasPorArea[area.id] ?? []}
+                      pendientes={pendientesPorArea[area.id] ?? 0}
                       onSelect={handleSelectArea}
                       puedeEditar={isSuperadmin || managedAreaIds.has(area.id)}
                       actualizarEstado={(status) => api.updateArea(area.id, { status })}

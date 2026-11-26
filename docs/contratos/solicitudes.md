@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.3 (2026-11-25) |
+| Versión | 1.4 (2026-11-26) |
 | Proveedor | backend (FNC-056, FNC-057) |
 | Consumidores | web (FNC-069; pantallas DIS-013, DIS-014, DIS-015, DIS-131) |
 | Solicitudes | — |
@@ -91,13 +91,15 @@ Resumen para la pantalla Solicitudes (DIS-131). Mismo alcance que `inbox` (`appr
 { "total": 12,
   "by_status": { "pendiente": 3, "aprobada": 7, "rechazada": 2 },
   "by_area": [ { "area_id": 3, "area": "Finanzas", "count": 8 } ],
-  "by_platform": [ { "platform_id": 12, "platform": "Contabilidad", "area": "Finanzas", "count": 5 } ] }
+  "by_platform": [ { "platform_id": 12, "platform": "Contabilidad", "area": "Finanzas", "count": 5 } ],
+  "pending_by_area": [ { "area_id": 3, "area": "Finanzas", "count": 2 } ] }
 ```
 | Campo | Regla |
 |---|---|
 | `by_status` | Siempre las 3 claves (0 si no hay) |
 | `by_area`, `by_platform` | Solo con `count > 0`; orden `count` descendente y nombre ascendente; sin límite (la web recorta) |
 | `total` | Suma de `by_status` |
+| `pending_by_area` | v1.4 (FNC-212): como `by_area`, pero solo `pendiente` (por aprobar); lo usa la tarjeta de área |
 
 ## `POST /access-requests/<id>/approve`
 - Sin cuerpo (`{}`).
@@ -148,3 +150,4 @@ Respuesta: `{"status": "success", "request": AccessRequest}`. Auditoría `solici
 | 1.1 | 2026-10-20 | `justification` opcional, sin mínimo (decisión del dueño); catálogo solo de áreas `Activo` y admin ve sus áreas sin solicitar; `409 estado_invalido` al subir con acceso no activo (FNC-056) |
 | 1.2 | 2026-11-24 | FNC-196 (dueño): toda plataforma activa de un área activa es solicitable en ambos niveles; el acceso se da por el grupo `app-{plataforma}-{nivel}` y, si hay conector, además por su alta. `plataforma_no_disponible` solo por plataforma o área inactivas. Sin cambios de forma |
 | 1.3 | 2026-11-24 | FNC-199 (dueño): solo se solicita el nivel `usuario`; `level` opcional (por omisión `usuario`), `admin` → `422`. `requestable_levels` ⊆ `["usuario"]` |
+| 1.4 | 2026-11-26 | FNC-212: `inbox/stats` agrega `pending_by_area` (solo pendientes por área). Campo nuevo, sin cambios de forma en lo existente |

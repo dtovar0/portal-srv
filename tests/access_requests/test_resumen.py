@@ -32,7 +32,8 @@ def test_sin_datos_devuelve_las_tres_claves_en_cero(escena, cliente_como):
     assert cuerpo == {'total': 0,
                       'by_status': {'pendiente': 0, 'aprobada': 0,
                                     'rechazada': 0},
-                      'by_area': [], 'by_platform': []}
+                      'by_area': [], 'by_platform': [],
+                      'pending_by_area': []}
 
 
 def test_admin_de_area_cuenta_solo_sus_areas_y_no_las_propias(
@@ -78,3 +79,29 @@ def test_superadmin_cuenta_todas_con_agregados_y_orden(escena, cliente_como):
          'count': 1},
         {'platform_id': escena['de_otra'].id, 'platform': 'CRM',
          'area': 'Ventas', 'count': 1}]
+
+
+def test_pendientes_por_area_cuenta_solo_las_pendientes(escena, cliente_como):
+    """FNC-212: la tarjeta de área muestra cuántas hay por aprobar."""
+    otro = fabricas.crear_usuario(ROLE_USER, areas=[escena['area']])
+    solicitud(escena['usuario'], escena['plataforma'])
+    solicitud(otro, escena['plataforma'])
+    solicitud(escena['usuario'], escena['plataforma'], ESTADO_APROBADA)
+    solicitud(escena['ajeno'], escena['de_otra'], ESTADO_RECHAZADA)
+
+    cuerpo = cliente_como(escena['super']).get(STATS).get_json()
+
+    # Ventas no tiene pendientes: no aparece.
+    assert cuerpo['pending_by_area'] == [
+        {'area_id': escena['area'].id, 'area': 'Finanzas', 'count': 2}]
+
+
+def test_pendientes_por_area_respeta_el_alcance_del_admin(
+        escena, cliente_como):
+    solicitud(escena['usuario'], escena['plataforma'])
+    solicitud(escena['ajeno'], escena['de_otra'])
+
+    cuerpo = cliente_como(escena['admin']).get(STATS).get_json()
+
+    assert cuerpo['pending_by_area'] == [
+        {'area_id': escena['area'].id, 'area': 'Finanzas', 'count': 1}]
