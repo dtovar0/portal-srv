@@ -125,7 +125,7 @@ class ProveedorConector(Provisioner):
     def _credencial(self, configuracion):
         referencia = configuracion.credential_ref
         if not referencia_valida(referencia) or referencias_en_conflicto(
-                referencia, referencias_de_otras(configuracion.platform_id)):
+                referencia, referencias_de_otras(configuracion.id)):
             logger.warning('Conector: referencia ambigua en la plataforma %s.',
                            configuracion.platform_id)
             raise _Fallo(permanente(MOTIVO_CREDENCIAL_NO_ENCONTRADA))

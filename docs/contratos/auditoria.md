@@ -73,6 +73,7 @@ Los endpoints `/audit/users/<id>` y `/audit/platforms/<id>` son siempre paginado
 | `acceso_revocado` / `revocacion_fallida` | admin o `sistema` | — |
 | `cuenta_directorio_creada` | admin o superadmin | usuarios-directorio.md |
 | `conector_configurado` / `conector_eliminado` / `conector_probado` | superadmin | — |
+| `conector_creado` / `conector_asociado` / `conector_desasociado` | superadmin | Conectores independientes (FNC-213); `target` = nombre del conector; `before`/`after` con `platform_id` en asociar y desasociar |
 | `ejecucion_reintentada` | superadmin | — |
 | `ejecucion_cancelada` | admin o `sistema` | Un otorgar en espera se canceló por una revocación de la misma terna (FNC-049) |
 | `notificacion_fallida` | `sistema` | Un correo del gestor no se envió (SMTP caído o sin plantilla); `target` = plantilla (FNC-048) |
