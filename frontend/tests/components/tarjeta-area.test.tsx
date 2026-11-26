@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TarjetaArea } from '@/components/areas/tarjeta-area';
+import { TarjetaArea, rutaPendientesArea } from '@/components/areas/tarjeta-area';
 import type { Area, Platform } from '@/lib/types';
 import { CONTEXTOS, RUTA_TOKENS, variablesDeBloque } from '../utils/tokens-css';
 import { componer, MIN_TEXTO, parseColor, razonContraste, type Rgba } from '../utils/wcag';
@@ -25,6 +25,26 @@ const plataforma = (id: number, name: string, extra: Partial<Platform> = {}): Pl
 const PLATAFORMAS = [plataforma(1, 'Contabilidad'), plataforma(2, 'Tesorería'), plataforma(3, 'Nómina'), plataforma(4, 'Facturas')];
 
 describe('TarjetaArea', () => {
+  it('DIS-137: «N por aprobar» enlaza a la bandeja de pendientes del área sin abrir las plataformas', () => {
+    const onSelect = vi.fn();
+    render(<TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} pendientes={2} onSelect={onSelect} />);
+    const enlace = screen.getByRole('link', { name: '2 solicitudes por aprobar en Finanzas. Abrir Solicitudes.' });
+    expect(enlace.getAttribute('href')).toBe('/approvals?status=pendiente&area_id=3');
+    expect(enlace.textContent).toContain('2 por aprobar');
+    // Anillo de foco del sistema (`foco-visible`, token --foco-anillo), como EstadoBadgeBoton.
+    expect(enlace.className).toContain('foco-visible');
+    fireEvent.click(enlace);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(rutaPendientesArea(7)).toBe('/approvals?status=pendiente&area_id=7');
+  });
+
+  it('DIS-137: singular, y sin pendientes no hay enlace', () => {
+    const { rerender } = render(<TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} pendientes={1} onSelect={vi.fn()} />);
+    expect(screen.getByRole('link', { name: '1 solicitud por aprobar en Finanzas. Abrir Solicitudes.' })).toBeTruthy();
+    rerender(<TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} pendientes={0} onSelect={vi.fn()} />);
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
   it('encabezado con nombre y descripción, y cifras de personas y plataformas', () => {
     render(<TarjetaArea area={AREA} conteo={4} plataformas={PLATAFORMAS} onSelect={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Finanzas' })).toBeTruthy();

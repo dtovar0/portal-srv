@@ -8,6 +8,17 @@ import type { DataColumn } from '../data-table';
 import { EstadoBadgeBoton } from '../estado-badge-boton';
 import { Badge } from '../ui';
 
+/** DIS-138: etiqueta de la columna Enlace para las plataformas sin enlace a propósito. */
+export const ETIQUETA_SIN_ENLACE_WEB = 'No requiere enlace web';
+
+/**
+ * Sin enlace a propósito («Omitir enlace», DIS-133): `direct_link` vacío. Un enlace escrito
+ * pero no válido (no https) sí es un problema y se sigue avisando.
+ */
+export function sinEnlaceWeb(platform: Pick<Platform, 'direct_link'>): boolean {
+  return !platform.direct_link?.trim();
+}
+
 export function columnasPlataformas({
   selectedPlatformIds,
   allSelected,
@@ -99,6 +110,9 @@ export function columnasPlataformas({
           <span className="block truncate text-label" title={platform.direct_link ?? undefined}>
             {platform.direct_link}
           </span>
+        ) : sinEnlaceWeb(platform) ? (
+          // DIS-138: se guardó con «Omitir enlace»; no es un pendiente.
+          <Badge tone="slate">{ETIQUETA_SIN_ENLACE_WEB}</Badge>
         ) : (
           <Badge tone="warning">Sin enlace</Badge>
         ),

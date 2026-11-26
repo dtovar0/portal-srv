@@ -19,3 +19,10 @@ export function rutaConFiltro(ruta: string, consulta: Record<string, string>): s
   const texto = params.toString();
   return texto ? `${ruta}?${texto}` : ruta;
 }
+
+/** Id entero positivo de la URL (`?area_id=3`); cualquier otro valor, `null` (DIS-137). */
+export function idDeUrl(valor: string | null | undefined): number | null {
+  if (!valor || !/^\d+$/.test(valor)) return null;
+  const id = Number(valor);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}

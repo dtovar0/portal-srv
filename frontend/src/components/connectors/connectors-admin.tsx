@@ -5,8 +5,10 @@
  * `admin`): plataformas que usan conector con su configuración y, debajo, la
  * bitácora de ejecuciones.
  *
- * - Plataformas de `GET /platforms` con `integration_type` `conector`;
+ * - Plataformas de `GET /platforms` con conector (o de tipo `conector`);
  *   `has_connector` dice si ya tienen configuración (sin una petición por fila).
+ * - «Nuevo» (DIS-139): elige cualquier plataforma sin conector y abre su configuración;
+ *   al guardar, el conector queda enlazado a esa plataforma.
  * - "Configurar" abre `ConnectorPanel` bajo la lista; al cerrarlo el foco
  *   vuelve al botón de la fila.
  */
@@ -21,11 +23,14 @@ import { Icono } from '../icono';
 import { useToast } from '../toast';
 import { EmptyNote, ErrorNote, Spinner } from '../ui';
 import { ConnectorDeleteDialog } from './connector-delete-dialog';
-import { ConnectorList, botonConfigurarId, plataformasConConector } from './connector-list';
+import { ConnectorList, botonConfigurarId, plataformasConConector, plataformasSinConector } from './connector-list';
 import { ConnectorPanel } from './connector-panel';
 
 export const VACIO_CONECTORES =
-  'Ninguna plataforma usa conector. Elige el tipo de integración "conector" en Administrar plataformas.';
+  'Aún no hay conectores. Usa «Nuevo» para crear uno y enlazarlo a una plataforma.';
+/** «Nuevo» sin candidatas: todas las plataformas ya tienen conector, o no hay plataformas. */
+export const SIN_CANDIDATAS = 'Todas las plataformas ya tienen conector.';
+export const SIN_PLATAFORMAS = 'Primero crea una plataforma en Plataformas; después enlázale un conector.';
 
 export function ConnectorsAdmin() {
   const { avisar } = useToast();
@@ -39,6 +44,7 @@ export function ConnectorsAdmin() {
   const [pickerNuevoAbierto, setPickerNuevoAbierto] = useState(false);
 
   const todasPlataformas = plataformasConConector(lista.data ?? []);
+  const candidatas = plataformasSinConector(lista.data ?? []);
   const plataformas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     if (!q) return todasPlataformas;
@@ -47,7 +53,8 @@ export function ConnectorsAdmin() {
     );
   }, [todasPlataformas, busqueda]);
 
-  const seleccionada = todasPlataformas.find((p) => p.id === seleccionadaId) ?? null;
+  // La elegida en «Nuevo» puede no estar aún en la lista (sin conector ni tipo `conector`).
+  const seleccionada = (lista.data ?? []).find((p) => p.id === seleccionadaId) ?? null;
 
   const cerrar = useCallback(() => {
     const id = seleccionadaId;
@@ -76,21 +83,8 @@ export function ConnectorsAdmin() {
       });
       return;
     }
-    const sinConector = todasPlataformas.filter((p) => !p.has_connector);
-    if (sinConector.length === 0) {
-      if (todasPlataformas.length === 0) {
-        avisar('info', VACIO_CONECTORES, 'Nuevo conector');
-      } else {
-        avisar('info', 'Todas las plataformas con integración por conector ya están configuradas.', 'Nuevo conector');
-      }
-      return;
-    }
-    if (sinConector.length === 1) {
-      setSeleccionadaId(sinConector[0].id);
-      avisar('info', `Configurando conector para ${sinConector[0].name}.`, 'Nuevo conector');
-      requestAnimationFrame(() => {
-        document.getElementById(`conector-${sinConector[0].id}-titulo`)?.focus();
-      });
+    if (candidatas.length === 0) {
+      avisar('info', (lista.data ?? []).length === 0 ? SIN_PLATAFORMAS : SIN_CANDIDATAS, 'Nuevo conector');
       return;
     }
     setPickerNuevoAbierto(true);
@@ -204,7 +198,7 @@ export function ConnectorsAdmin() {
                 <span>Reintentar</span>
               </Button>
             </div>
-          ) : plataformas.length === 0 ? (
+          ) : plataformas.length === 0 && !seleccionada ? (
             <EmptyNote
               message={VACIO_CONECTORES}
               icono="plataformas"
@@ -242,11 +236,10 @@ export function ConnectorsAdmin() {
         >
           <div className="space-y-4">
             <p className="text-sm text-label">
-              Selecciona una plataforma sin conector para iniciar su configuración:
+              Elige la plataforma a la que se enlazará el nuevo conector:
             </p>
             <div className="divide-y divide-panel-border/70 rounded-xl border border-panel-border/80 bg-fondo overflow-hidden max-h-72 overflow-y-auto">
-              {todasPlataformas
-                .filter((p) => !p.has_connector)
+              {candidatas
                 .map((p) => (
                   <button
                     key={p.id}

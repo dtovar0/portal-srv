@@ -10,6 +10,7 @@
  * (components.css) lo consume; el texto sale de tokens.
  */
 
+import Link from 'next/link';
 import { atributoTexto, textoLegible, variablesChipPlataforma } from '@/lib/color-legible';
 import { enlaceSeguro } from '@/lib/enlace-seguro';
 import type { Area, Platform } from '@/lib/types';
@@ -17,6 +18,39 @@ import { variablesCss } from '@/lib/variables-css';
 import { obtenerImagenFondoArea } from '@/lib/card-backgrounds';
 import { Icono, type NombreIcono } from '../icono';
 import { EstadoBadgeBoton } from '../estado-badge-boton';
+import { Badge } from '../ui';
+import { rutaConFiltro } from '../access/filtro-url';
+
+/** Ruta de Solicitudes (`RUTA_SOLICITUDES` de approvals-resumen; aquí sin importar sus gráficas). */
+const RUTA_SOLICITUDES = '/approvals';
+
+/** Bandeja de pendientes filtrada por el área (DIS-137). */
+export function rutaPendientesArea(areaId: number): string {
+  return rutaConFiltro(RUTA_SOLICITUDES, { status: 'pendiente', area_id: String(areaId) });
+}
+
+/**
+ * «N por aprobar»: enlace a la bandeja de pendientes del área. Detiene el clic para que la
+ * tarjeta (que abre las plataformas) no lo reciba.
+ */
+function PendientesArea({ area, pendientes }: { area: Area; pendientes: number }) {
+  if (pendientes <= 0) return null;
+  const sustantivo = pendientes === 1 ? 'solicitud' : 'solicitudes';
+  return (
+    <Link
+      href={rutaPendientesArea(area.id)}
+      onClick={(evento) => evento.stopPropagation()}
+      aria-label={`${pendientes} ${sustantivo} por aprobar en ${area.name}. Abrir Solicitudes.`}
+      title="Ver solicitudes por aprobar"
+      // `.nx-estado-boton`: aspecto del badge y área táctil de 44 px con su ::after (DIS-114).
+      className="nx-estado-boton foco-visible rounded-full"
+    >
+      <Badge tone="warning" icon="reloj" iconTamano="xs">
+        {pendientes} por aprobar
+      </Badge>
+    </Link>
+  );
+}
 
 /** Logos que se muestran en el pie; el resto va como «+N». */
 export const LOGOS_VISIBLES = 3;
@@ -77,6 +111,7 @@ export function TarjetaArea({
   area,
   conteo,
   plataformas,
+  pendientes = 0,
   onSelect,
   puedeEditar = false,
   actualizarEstado,
@@ -89,6 +124,8 @@ export function TarjetaArea({
   conteo: number;
   /** Plataformas del área en el mismo alcance; de aquí salen los logos del pie. */
   plataformas: Platform[];
+  /** Solicitudes por aprobar del área (DIS-137); con 0 no se muestra nada. Solo variante estándar. */
+  pendientes?: number;
   onSelect: (area: Area) => void;
   /** Quien puede editar el área (mismo permiso que «Editar»): su badge de estado conmuta (DIS-114). */
   puedeEditar?: boolean;
@@ -790,6 +827,7 @@ export function TarjetaArea({
               {area.description || 'Área organizativa del sistema.'}
             </p>
           </div>
+          <PendientesArea area={area} pendientes={pendientes} />
         </div>
 
         <div className={`grid flex-1 grid-cols-2 content-center ${alturaEstandar ? 'gap-2 px-3 pb-2' : 'gap-2.5 px-4 pb-3'}`}>
