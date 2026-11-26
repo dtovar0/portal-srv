@@ -118,7 +118,7 @@ def test_dry_run_no_escribe_nada(datos, correr, con_entrega, cola_falsa):
 
 @pytest.mark.parametrize('argumentos, texto', [
     (('--area', 'Fantasma'), 'inexistente'),
-    ((), 'falta --area'),
+    ((), 'falta --area o --admin-area'),
     (('--area', 'Aduana', '--plataforma', 'Nada'), 'inexistente'),
     (('--area', 'Aduana', '--plataforma', 'Siebel'), 'no es de ninguna'),
 ])
