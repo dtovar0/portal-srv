@@ -70,11 +70,11 @@ Migra a **una** persona de LDAP y la deja lista en una corrida, en este orden: 1
 
 | Flag | Efecto |
 |---|---|
-| `--area NOMBRE` (repetible, **obligatorio**) | Agrega la cuenta a esas áreas si no está; inexistente o inactiva → `ERROR` antes de escribir nada |
+| `--area NOMBRE` (repetible; obligatorio salvo que se use `--admin-area`) | Agrega la cuenta a esas áreas si no está; inexistente o inactiva → `ERROR` antes de escribir nada |
 | `--responsiva-firmada` | Registra la carta responsiva como firmada (cuenta y accesos vigentes pendientes) y activa su aprovisionamiento. Auditoría `firma_responsiva` con actor «sistema/CLI», «registrada por migración» |
 | `--plataforma NOMBRE` (repetible) | Otorga el acceso (origen `migracion`, sin actor): la plataforma debe estar activa, tener el nivel y ser de una de las áreas de la persona (las de `--area` o las que ya tenía) |
 | `--plataforma-admin NOMBRE` (repetible; alias `--platform-admin`; FNC-207) | Igual que `--plataforma` (mismas validaciones, origen `migracion`, responsiva, `--notificar`) pero con nivel `admin`. Si la persona ya tiene `usuario` en esa plataforma lo **reemplaza** (como `otorgar`; exige que ese acceso esté `activo`); si ya tiene `admin` → `OMITIDO`. La misma plataforma en `--plataforma` y `--plataforma-admin` es error de uso (código 2) antes de escribir. Nivel `admin` no integrado o plataforma inactiva → `ERROR` |
-| `--admin-area NOMBRE` (repetible; FNC-207) | Hace a la persona administradora de esa área con el mismo servicio del portal (`asignar_areas_administradas`): rol `admin_area` (`cambiar_rol`, auditado), grupo de Authelia `OIDC_GROUP_AREA_ADMIN` (y la quita de `OIDC_GROUP_USER`), áreas administradas **sumadas** a las que ya tenía y accesos automáticos `admin_de_area` (nivel `admin`) a las plataformas del área; auditoría `admin_asignado` con actor «sistema» (la CLI no tiene sesión). El área debe existir y estar activa. **No** la agrega a las áreas de la persona (el portal tampoco): para otorgarle accesos `migracion` en sus plataformas sigue haciendo falta `--area`. Superadmin → `OMITIDO` |
+| `--admin-area NOMBRE` (repetible; FNC-207) | Hace a la persona administradora de esa área con el mismo servicio del portal (`asignar_areas_administradas`): rol `admin_area` (`cambiar_rol`, auditado), grupo de Authelia `OIDC_GROUP_AREA_ADMIN` (y la quita de `OIDC_GROUP_USER`), áreas administradas **sumadas** a las que ya tenía y accesos automáticos `admin_de_area` (nivel `admin`) a las plataformas del área; auditoría `admin_asignado` con actor «sistema» (la CLI no tiene sesión). El área debe existir y estar activa. También la hace **miembro** del área (FNC-208): no hace falta repetirla con `--area`. Superadmin → `OMITIDO` |
 | `--nivel usuario\|admin` | Nivel de los accesos de `--plataforma` (por omisión `usuario`); no afecta a `--plataforma-admin`, que siempre es `admin` |
 | `--notificar` (apagado por omisión) | Por cada plataforma **otorgada en la corrida** (no las omitidas por ya vigentes) envía a la persona el correo existente «solicitud aprobada» (`notificar_solicitud_aprobada`, plantilla `solicitud_aprobada`), tras confirmar la transacción. Respeta `ENABLE_NOTIFICATIONS`, `NOTIFY_ACCESS_EVENTS` y su preferencia de correo (si no se envía, línea `OMITIDO`). Un fallo de correo se reporta `ERROR` sin deshacer ni detener la rotación. **`--enviar-a` solo aplica a la rotación**: este aviso va siempre a la persona. `--dry-run`: «se notificaría a …» |
 | `--rotar-contrasena`, `--plantilla`, `--enviar-a`, `--si` | Como en `migrar-ldap`; rota **al final** y solo si ningún paso dio `ERROR` |
@@ -88,7 +88,10 @@ Migra a **una** persona de LDAP y la deja lista en una corrida, en este orden: 1
 ```bash
 ./scripts/alta/alta.sh migrar-usuario dmartinez --area Aduana --plataforma Zabbix --responsiva-firmada --rotar-contrasena --dry-run
 ./scripts/alta/alta.sh migrar-usuario dmartinez --area Aduana --plataforma Zabbix --responsiva-firmada --rotar-contrasena
-./scripts/alta/alta.sh migrar-usuario gsantos --area Packet --plataforma-admin tacacs --admin-area Packet --responsiva-firmada --notificar --rotar-contrasena --dry-run
+# Administrador del área Packet (admin automático en todas sus plataformas, incluida tacacs)
+./scripts/alta/alta.sh migrar-usuario gsantos --admin-area Packet --responsiva-firmada --notificar --rotar-contrasena --dry-run
+# Solo admin de tacacs, sin administrar el área
+./scripts/alta/alta.sh migrar-usuario gsantos --area Packet --plataforma-admin tacacs --responsiva-firmada --notificar --rotar-contrasena --dry-run
 ```
 
 ## Rotación de contraseñas

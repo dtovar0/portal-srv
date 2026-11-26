@@ -45,7 +45,7 @@ from app.modules.users.areas_administradas import asignar_areas_administradas
 from app.modules.users.entrega_credenciales import SLUG_ONBOARDING
 
 ESTADO_ACTIVO = 'Activo'
-DETALLE_SIN_AREAS = 'falta --area: indica al menos un área'
+DETALLE_SIN_AREAS = 'falta --area o --admin-area: indica al menos un área'
 DETALLE_AREA_INEXISTENTE = 'área «{nombre}» inexistente'
 DETALLE_AREA_INACTIVA = 'área «{nombre}» inactiva'
 DETALLE_PLATAFORMA_INEXISTENTE = 'plataforma «{nombre}» inexistente'
@@ -121,14 +121,27 @@ def _resolver_plataformas(nombres, nivel, ids_de_la_persona, errores_):
     return plataformas
 
 
+def _union(*listas):
+    """Nombres sin repetir (sin distinguir mayúsculas), en el orden pedido."""
+    vistos, salida = set(), []
+    for nombre in (n for lista in listas for n in lista):
+        clave = nombre.strip().casefold()
+        if clave and clave not in vistos:
+            vistos.add(clave)
+            salida.append(nombre)
+    return salida
+
+
 def validar_catalogo(nombres_areas, nombres_plataformas, nivel, cuenta,
                      nombres_plataformas_admin=(), nombres_areas_admin=()):
     """`(areas, accesos, areas_admin, errores)` sin escribir: lo que se pidió
     existe, está activo y cuadra (la plataforma es de un área de la persona).
     `accesos` son pares `(plataforma, nivel)`: `--plataforma` en `nivel` y
-    `--plataforma-admin` en `admin`. Las áreas de `--admin-area` no cuentan
-    como áreas de la persona (el portal tampoco las agrega a `user.areas`)."""
+    `--plataforma-admin` en `admin`. FNC-208 (dueño, 2026-11-25): `--admin-area`
+    implica `--area`: quien administra un área también queda como miembro
+    (no hace falta repetirla con `--area`)."""
     errores_ = []
+    nombres_areas = _union(nombres_areas, nombres_areas_admin)
     if not nombres_areas:
         errores_.append(DETALLE_SIN_AREAS)
     areas = []
