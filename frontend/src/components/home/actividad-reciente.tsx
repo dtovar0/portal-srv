@@ -57,6 +57,11 @@ const ACCION_ICONO: Record<string, NombreIcono> = {
   acceso_fallido: 'inventario',
   acceso_revocado: 'inventario',
   revocacion_fallida: 'inventario',
+  // DIS-136: alta y baja en grupos LDAP (FNC-209) y traslado de grupos (FNC-163).
+  miembro_agregado: 'usuarios',
+  miembro_quitado: 'usuarios',
+  grupos_movidos: 'plataformas',
+  grupos_traslado_fallido: 'plataformas',
 
   // Conectores / Ejecuciones
   conector_configurado: 'ejecuciones',
