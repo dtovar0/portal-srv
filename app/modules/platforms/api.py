@@ -35,6 +35,8 @@ from app.modules.audit.services import add_audit_log
 from app.modules.connectors.credenciales import limpiar_cache
 from app.modules.core.models import Area, Platform
 from app.modules.directory.dn import mismo_dn, separar_dn
+from app.modules.notifications.desactivacion import (
+    ESTADO_INACTIVO, esta_activa, notificar_plataformas_desactivadas)
 from app.modules.platforms import baja, grupos, traslado_grupos
 from app.modules.platforms.ubicacion_grupos import ubicacion_actual
 from app.modules.platforms.estado import (accesos_que_impiden_mover,
@@ -45,6 +47,8 @@ from app.modules.platforms.tipos import (CAMPOS_DN, GRUPOS_SIN_VERIFICAR,
 from app.modules.platforms.validacion import (CAMPOS_PERMITIDOS,
                                               MENSAJE_DN_BASE,
                                               validar_campos)
+
+logger = logging.getLogger(__name__)
 
 platforms_api_bp = Blueprint('api_platforms', __name__, url_prefix='/api/v1')
 
@@ -302,6 +306,16 @@ def _mismo_grupo(uno, otro):
     return uno == otro or mismo_dn(uno, otro)
 
 
+def _avisar_desactivacion(plataforma):
+    """Correo a quienes tienen acceso; después del commit y sin romper la
+    petición si falla (FNC-210)."""
+    try:
+        notificar_plataformas_desactivadas([plataforma], plataforma.area)
+    except Exception:
+        logger.exception('Aviso plataforma_desactivada no enviado '
+                         '(plataforma %s).', plataforma.id)
+
+
 @platforms_api_bp.route('/platforms/<int:platform_id>', methods=['PUT'])
 @login_required
 @any_admin_required
@@ -328,6 +342,7 @@ def update_platform(platform_id):
     avisos = []
     antes = _estado_auditado(plataforma)
     previo = _valores(plataforma, CAMPOS_EDITABLES)
+    estaba_activa = esta_activa(plataforma)  # FNC-210: ¿se desactiva ahora?
     if cambio_grupos:
         tipo, configuracion, dns = cambio_grupos
         plataforma.groups_status, avisos = _comprobar(configuracion, dns)
@@ -358,6 +373,8 @@ def update_platform(platform_id):
     traslados = traslado_grupos.conciliar([plataforma])
     db.session.commit()
     traslado_grupos.despertar(traslados)
+    if estaba_activa and plataforma.status == ESTADO_INACTIVO:
+        _avisar_desactivacion(plataforma)
     return _respuesta(plataforma, avisos)
 
 

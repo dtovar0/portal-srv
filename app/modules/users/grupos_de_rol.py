@@ -13,6 +13,8 @@ import logging
 import os
 
 from app.authz import ROLE_AREA_ADMIN
+from app.modules.audit.events import Evento
+from app.modules.audit.miembros import auditar_miembro
 from app.modules.auth.oidc_cuentas import (GRUPO_AREA_ADMIN_POR_DEFECTO,
                                            GRUPO_USER_POR_DEFECTO,
                                            VAR_GRUPO_AREA_ADMIN,
@@ -75,6 +77,14 @@ def _salida_ok(resultado):
     return _ok(resultado) or getattr(resultado, 'resultado', None) is Resultado.NO_EXISTE
 
 
+def _auditado(evento, resultado, grupo_dn, persona_dn):
+    """Deja la alta o baja en el log de eventos (FNC-209) y devuelve el
+    resultado. Solo log: quien llama puede tener cambios sin guardar, y un
+    commit aquí los guardaría antes de tiempo."""
+    auditar_miembro(evento, resultado, grupo_dn, persona_dn, solo_log=True)
+    return resultado
+
+
 def sincronizar_grupo_de_rol(escritor, persona_dn, rol, quitar_del_otro=False):
     """Agrega `persona_dn` al grupo de su rol (creándolo si falta) y, con
     `quitar_del_otro`, lo quita del grupo del otro rol. Devuelve una
@@ -92,14 +102,20 @@ def sincronizar_grupo_de_rol(escritor, persona_dn, rol, quitar_del_otro=False):
         creacion = escritor.create_group(destino)
         if not _ok(creacion):
             return _fallo('crear el grupo', creacion)
-        alta = escritor.add_member(destino, persona_dn)
+        alta = _auditado(Evento.MIEMBRO_AGREGADO,
+                         escritor.add_member(destino, persona_dn),
+                         destino, persona_dn)
         if not _ok(alta):
             return _fallo('agregar al grupo', alta)
         if quitar_del_otro:
-            baja = escritor.remove_member(otro, persona_dn)
+            baja = _auditado(Evento.MIEMBRO_QUITADO,
+                             escritor.remove_member(otro, persona_dn),
+                             otro, persona_dn)
             if not _salida_ok(baja):
                 if alta.resultado is Resultado.HECHO:  # solo deshace lo que agregó
-                    escritor.remove_member(destino, persona_dn)
+                    _auditado(Evento.MIEMBRO_QUITADO,
+                              escritor.remove_member(destino, persona_dn),
+                              destino, persona_dn)
                 return _fallo('quitar del otro grupo', baja)
     except Exception as exc:  # el directorio no detiene al portal
         logger.warning('Grupo de rol en LDAP no sincronizado (%s).',

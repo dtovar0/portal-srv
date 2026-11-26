@@ -78,6 +78,8 @@ Los endpoints `/audit/users/<id>` y `/audit/platforms/<id>` son siempre paginado
 | `notificacion_fallida` | `sistema` | Un correo del gestor no se envió (SMTP caído o sin plantilla); `target` = plantilla (FNC-048) |
 | `credenciales_enviadas` / `credenciales_pendientes` | admin, superadmin o `sistema` (worker) | Entrega de la contraseña inicial por Send (usuarios-directorio.md v2); sin contraseña ni enlace; `target` = correo (FNC-138) |
 | `grupos_movidos` / `grupos_traslado_fallido` | `sistema` (worker) | Los grupos LDAP de una plataforma inactiva se movieron a la OU de inactivos o regresaron / el traslado quedó fallido; `target` = plataforma, `after` = `groups_location` y `groups_move_status` (FNC-163) |
+| `miembro_agregado` / `miembro_quitado` | `sistema` (worker) o quien opera | Alta o baja de una persona en un grupo del directorio; `target` = uid, `after` = `grupo` (DN), `resultado` (`hecho`, `ya_estaba` o el error) y `motivo`. Solo el aprovisionamiento llega a la BD; las altas por rol/alta de cuenta van solo al log (FNC-209) |
+| `correo_enviado` | `sistema` o quien opera | Un correo salió bien; `target` = plantilla. **Solo log** (`DEBUG_EVENTOS`), no se guarda en la BD; sin cuerpo ni enlaces, correos enmascarados (FNC-209) |
 | `credenciales_reenviadas` | superadmin | «Reenviar credenciales» (FNC-138; ruta retirada en FNC-161, el evento solo aparece en registros históricos) |
 
 El catálogo vive en FNC-047; agregar valores es aditivo (misma versión).
@@ -102,3 +104,4 @@ El catálogo vive en FNC-047; agregar valores es aditivo (misma versión).
 | 1 | 2026-10-20 | Corrección del ejemplo: `acceso_otorgado` automático con nivel `usuario` (P6; accesos.md 1.1, FNC-054) |
 | 1 | 2026-11-18 | Aditivo: `action` `credenciales_enviadas`, `credenciales_pendientes` y `credenciales_reenviadas` (FNC-138, ADR-008) |
 | 1 | 2026-11-19 | Aditivo: `action` `grupos_movidos` y `grupos_traslado_fallido` (FNC-163) |
+| 1 | 2026-11-25 | Aditivo: `action` `miembro_agregado`, `miembro_quitado` y `correo_enviado` (FNC-209) |
