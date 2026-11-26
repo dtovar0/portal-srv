@@ -1,6 +1,7 @@
 from app import db
 from app.modules.audit.events import ACTOR_SISTEMA, Evento
 from app.modules.audit.ip_cliente import ip_cliente
+from app.modules.audit.log_eventos import registrar_evento
 from app.modules.audit.models import AuditLog
 from app.modules.audit.sanitizar import limpiar_detalle
 from flask import has_request_context
@@ -29,7 +30,7 @@ def add_audit_log(action, status='info', detail=None, user_override=None,
                   module=None, target=None, *, target_user_id=None,
                   area_id=None, platform_id=None, before=None, after=None,
                   request_id=None, grant_id=None, as_system=False,
-                  commit=True):
+                  commit=True, solo_log=False):
     """
     Registra un evento en la tabla de auditoría.
 
@@ -43,6 +44,8 @@ def add_audit_log(action, status='info', detail=None, user_override=None,
     - `commit=False` (FNC-044): solo agrega el registro a la sesión para que
       quien llama lo guarde junto con su cambio en una sola transacción
       (SEC-AUD-06); un error se propaga en lugar de ocultarse.
+    - Con `DEBUG_EVENTOS=true` el evento también se escribe en `logs/eventos.log`
+      (FNC-209); `solo_log=True` lo deja solo en el log, sin tocar la BD.
     """
     try:
         user_name, actor_id = _actor(as_system)
@@ -69,10 +72,15 @@ def add_audit_log(action, status='info', detail=None, user_override=None,
             request_id=request_id,
             grant_id=grant_id,
         )
-        db.session.add(log)
-        if commit:
-            db.session.commit()
+        if not solo_log:
+            db.session.add(log)
+            if commit:
+                db.session.commit()
+        registrar_evento(action, status, user_name, detail, module, target,
+                         target_user_id, area_id, platform_id)
     except Exception as e:
+        if solo_log:  # nunca toca la sesión de quien llama
+            return
         if not commit:
             raise
         print(f"❌ Error al escribir en AuditLog: {e}")

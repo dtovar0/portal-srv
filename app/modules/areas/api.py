@@ -13,6 +13,8 @@ Contrato: `docs/contratos/areas-y-roles.md`; matriz: Anexo A de
 usuarios del área.
 """
 
+import logging
+
 from flask import Blueprint, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
@@ -29,7 +31,11 @@ from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
 from app.modules.auth.models import User
 from app.modules.core.models import Area
+from app.modules.notifications.desactivacion import (
+    ESTADO_INACTIVO, esta_activa, notificar_plataformas_desactivadas)
 from app.modules.platforms import traslado_grupos
+
+logger = logging.getLogger(__name__)
 
 areas_api_bp = Blueprint('api_areas', __name__, url_prefix='/api/v1')
 
@@ -130,6 +136,9 @@ def update_area(area_id):
     if not valores:
         return jsonify({'status': 'success', 'area': area.to_dict()})
     antes = area.to_dict()
+    # FNC-210: plataformas que dejan de estar activas si el área se desactiva.
+    estaba_activa = area.status != ESTADO_INACTIVO
+    afectadas = [p for p in area.platforms if esta_activa(p)]
     for campo, valor in valores.items():
         setattr(area, campo, valor)
     _auditar(Evento.AREA_EDITADA, area, area_id=area.id, antes=antes,
@@ -142,6 +151,12 @@ def update_area(area_id):
     if error:
         return error
     traslado_grupos.despertar(traslados)
+    if estaba_activa and area.status == ESTADO_INACTIVO and afectadas:
+        try:  # después del commit; un fallo no rompe la petición
+            notificar_plataformas_desactivadas(afectadas, area)
+        except Exception:
+            logger.exception('Aviso plataforma_desactivada no enviado '
+                             '(área %s).', area.id)
     return jsonify({'status': 'success', 'area': area.to_dict()})
 
 
