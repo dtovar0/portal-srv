@@ -51,7 +51,7 @@ alembic.ini            # Configuración de Alembic (sin URL ni secretos)
 migrations/
 ├── env.py             # URL de construir_uri_bd(); importa app/modules/*/models.py
 ├── script.py.mako     # Plantilla de nuevas migraciones
-└── versions/          # 0001_linea_base_esquema_actual.py y las siguientes; 0022 (FNC-203) resiembra las plantillas de correo que falten, sin tocar las existentes
+└── versions/          # 0001_linea_base_esquema_actual.py y las siguientes; 0022 (FNC-203) resiembra las plantillas de correo que falten, sin tocar las existentes; 0023 (FNC-210) agrega `plataforma_desactivada` (no está en la resiembra de 0022, ya publicada)
 ```
 
 ## 2. Autorización (`app/authz.py`)
@@ -442,6 +442,8 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 | `notificar_solicitud_aprobada(solicitante, plataforma, nivel)` | `solicitud_aprobada` | Solicitante, si tiene `pref_email_notifications` |
 | `notificar_solicitud_rechazada(solicitante, plataforma, nivel, motivo)` | `solicitud_rechazada` | Solicitante, si tiene `pref_email_notifications` |
 | `notificar_aprovisionamiento_fallido(usuario, plataforma, nivel, operacion)` | `aprovisionamiento_fallido` | Admins del área y superadmins con `pref_email_notifications` (P10, 2026-10-15) |
+
+| `notificar_plataformas_desactivadas(plataformas, area)` (`notifications/desactivacion.py`, FNC-210) | `plataforma_desactivada` | Cuentas activas con acceso `activo` o `en_proceso` a las plataformas, con `pref_email_notifications`; un correo por persona (con varias plataformas, `plataforma` las lista). Se llama tras el commit de `PUT /platforms/<id>` y `PUT /areas/<id>` solo al pasar de activa a `Inactivo` (reactivar no avisa; una plataforma ya inactiva o de un área inactiva no repite). Interruptor `NOTIFY_PLATFORM_DEACTIVATION`; plantilla de la migración `0023` |
 
 - Plantillas: migración `0003` (HTML, español, editables en Ajustes → Plantillas); variables en `CLAVES_POR_PLANTILLA`; enlace `{url}` = `BASE_URL`.
 - Plantilla usada por el código: `usuario_creado` (alta por LDAP o SSO, si `NOTIFY_USER_CREATED` no es `false`), enviada por `avisar_usuario_creado` de `notifications/services.py` (FNC-030). Variables: `nombre`, `usuario`, `base_url`, `url`.

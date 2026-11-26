@@ -109,10 +109,11 @@ def correos(usuarios):
 # Envío
 # --------------------------------------------------------------------------- #
 
-def avisos_activos():
-    """`ENABLE_NOTIFICATIONS` (global) y `NOTIFY_ACCESS_EVENTS` encendidos."""
+def avisos_activos(variable=VARIABLE_INTERRUPTOR):
+    """`ENABLE_NOTIFICATIONS` (global) y el interruptor del aviso (por omisión
+    `NOTIFY_ACCESS_EVENTS`) encendidos."""
     return (services.notifications_enabled()
-            and services._env_flag(VARIABLE_INTERRUPTOR, True))
+            and services._env_flag(variable, True))
 
 
 def _url_portal():
@@ -131,9 +132,9 @@ def _contexto(slug, **valores):
 
 
 def _enviar(slug, destinatarios, contexto, *, area_id=None, platform_id=None,
-            target_user_id=None):
+            target_user_id=None, interruptor=VARIABLE_INTERRUPTOR):
     """Envía `slug` a todos los destinatarios; nunca lanza excepción."""
-    if not avisos_activos():
+    if not avisos_activos(interruptor):
         return {'status': OMITIDO, 'recipients': 0}
     if not destinatarios:
         logger.warning("Aviso '%s' sin destinatarios.", slug)
