@@ -27,6 +27,7 @@ from app.modules.access.tipos import (ESTADO_ACTIVO, ESTADO_EN_PROCESO, ESTADO_F
                                       ORIGEN_ADMIN_DE_AREA, ORIGEN_MIGRACION)
 from app.modules.audit.events import Evento
 from app.modules.audit.services import add_audit_log
+from app.modules.platforms import estado as estado_plataforma
 from app.modules.platforms import grupos
 from app.modules.platforms.tipos import NIVEL_ADMIN, NIVEL_USUARIO
 from app.modules.provisioning import queue
@@ -117,6 +118,9 @@ def otorgar(usuario, plataforma, nivel, origen, actor=None, request_id=None,
     administrar el área (FNC-185).
     """
     rules.validar_datos(nivel, origen, request_id)
+    # FNC-215: quien decide por los accesos vigentes (conectores, baja) bloquea
+    # la misma fila; así no se cruza con este alta.
+    estado_plataforma.bloquear_plataforma(plataforma.id)
     rules.validar_otorgamiento(actor, usuario, plataforma, origen, regreso_de_admin)
     reemplazado = rules.acceso_a_reemplazar(
         vigentes_de(usuario.id, plataforma.id), nivel)

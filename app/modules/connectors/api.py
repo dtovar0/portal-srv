@@ -8,6 +8,9 @@
 | `DELETE /platforms/<id>/connector` | 403 | 403 | 200 |
 | `POST /platforms/<id>/connector/test` | 403 | 403 | 200 |
 
+Los conectores independientes (`/connectors`, FNC-213) están en
+`api_independientes.py` y comparten estas reglas (`servicio.py`).
+
 Solo el superadmin (SEC-CON-11, `admin_required`). Escrituras con
 `escritura_del_portal` (JSON obligatorio mientras no esté FNC-008, P13);
 `DELETE` y `test` llevan cuerpo `{}` y cualquier campo → `400
@@ -18,10 +21,12 @@ Orden en `PUT`:
 2. Cuerpo JSON objeto y lista blanca (`400`).
 3. (Desde FNC-196 cualquier plataforma puede tener conector: el conector es
    un paso adicional a sus grupos.)
-4. `connectors.validacion.validar_configuracion` con las referencias de las
-   demás plataformas (`422 validacion`; host fuera de
+4. `connectors.validacion.validar_configuracion` con las referencias de los
+   demás conectores (`422 validacion`; host fuera de
    `CONNECTOR_ALLOWED_HOSTS`, SEC-CON-07).
 5. Cambiar el `type` con accesos vigentes → `409 plataforma_con_accesos`.
+   Sin conector aún, se crea asociado con el nombre de la plataforma
+   (`servicio.nombre_para_plataforma`); `DELETE` lo elimina (FNC-213).
 6. Guardado y auditoría (`conector_configurado`, antes y después de lo que
    cambió) en la misma transacción; después, `limpiar_cache()` (B4). Si otra
    petición creó la configuración a la vez (restricción única) →
@@ -44,15 +49,16 @@ from app.modules.audit.services import add_audit_log
 from app.modules.connectors.credenciales import limpiar_cache
 from app.modules.connectors.consultas import (configuracion_de,
                                               referencias_de_otras)
+from app.modules.connectors.servicio import (MODULO_AUDITORIA, auditar_cambio,
+                                             estado as _estado,
+                                             nombre_para_plataforma)
 from app.modules.connectors.models import PlatformConnector
 from app.modules.connectors.prueba import probar_conexion
 from app.modules.connectors.validacion import validar_configuracion
 from app.modules.core.models import Platform
-from app.modules.platforms.estado import accesos_vigentes
+from app.modules.platforms import estado as estado_plataforma
 
 connectors_api_bp = Blueprint('api_connectors', __name__, url_prefix='/api/v1')
-
-MODULO_AUDITORIA = 'Conectores'
 
 PLATAFORMA_CON_ACCESOS = ('Hay accesos vigentes con este conector.', 409,
                           'plataforma_con_accesos')
@@ -65,21 +71,19 @@ RESULTADO_ERROR = 'error'
 MENSAJE_PRUEBA_OK = 'Conexión correcta.'
 MENSAJE_PRUEBA_ERROR = 'No se pudo conectar con la plataforma.'
 
-# Lista blanca del cuerpo del `PUT` y campos auditados (antes y después).
+# Lista blanca del cuerpo del `PUT`.
 CAMPOS_PERMITIDOS = frozenset(('type', 'host', 'port', 'params',
                                'credential_ref', 'active'))
-CAMPOS_AUDITADOS = ('type', 'host', 'port', 'params', 'credential_ref',
-                    'active')
+
+
+def _vigentes(plataforma):
+    """Accesos vigentes con la fila de la plataforma bloqueada (FNC-215)."""
+    estado_plataforma.bloquear_plataforma(plataforma.id)
+    return estado_plataforma.accesos_vigentes(plataforma)
 
 
 def _plataforma(platform_id):
     return db.session.get(Platform, platform_id)
-
-
-def _estado(configuracion):
-    if configuracion is None:
-        return {}
-    return {campo: getattr(configuracion, campo) for campo in CAMPOS_AUDITADOS}
 
 
 def _respuesta(configuracion):
@@ -109,21 +113,12 @@ def _guardar(plataforma, configuracion, limpio):
     """Crea o reemplaza la configuración y audita, en una transacción."""
     antes = _estado(configuracion)
     if configuracion is None:
-        configuracion = PlatformConnector(platform_id=plataforma.id)
+        configuracion = PlatformConnector(
+            platform_id=plataforma.id, name=nombre_para_plataforma(plataforma))
         db.session.add(configuracion)
     for campo, valor in limpio.items():
         setattr(configuracion, campo, valor)
-    despues = _estado(configuracion)
-    # Sin cambios no hay evento (como en plataformas, FNC-046).
-    if antes != despues:
-        add_audit_log(Evento.CONECTOR_CONFIGURADO, status='success',
-                      module=MODULO_AUDITORIA, target=plataforma.name,
-                      platform_id=plataforma.id, area_id=plataforma.area_id,
-                      before={k: v for k, v in antes.items()
-                              if despues.get(k) != v} or None,
-                      after={k: v for k, v in despues.items()
-                             if antes.get(k) != v},
-                      commit=False)
+    auditar_cambio(configuracion, antes, plataforma)
     db.session.commit()
     return configuracion
 
@@ -140,14 +135,15 @@ def put_connector(platform_id):
     datos, error = leer_cuerpo(CAMPOS_PERMITIDOS)
     if error is not None:
         return error
+    configuracion = configuracion_de(plataforma.id)
     limpio, errores = validar_configuracion(
-        datos, referencias_en_uso=referencias_de_otras(plataforma.id))
+        datos, referencias_en_uso=referencias_de_otras(
+            configuracion.id if configuracion else None))
     if errores:
         return validation_error(errores)
 
-    configuracion = configuracion_de(plataforma.id)
     if (configuracion is not None and configuracion.type != limpio['type']
-            and accesos_vigentes(plataforma) > 0):
+            and _vigentes(plataforma) > 0):
         return error_response(*PLATAFORMA_CON_ACCESOS)
 
     try:
@@ -176,7 +172,7 @@ def delete_connector(platform_id):
     _, error = leer_cuerpo()
     if error is not None:
         return error
-    if accesos_vigentes(plataforma) > 0:
+    if _vigentes(plataforma) > 0:
         return error_response(*PLATAFORMA_CON_ACCESOS)
     add_audit_log(Evento.CONECTOR_ELIMINADO, status='warning',
                   module=MODULO_AUDITORIA, target=plataforma.name,
@@ -214,3 +210,7 @@ def test_connector(platform_id):
                         'message': MENSAJE_PRUEBA_OK})
     return jsonify({'status': 'success', 'result': RESULTADO_ERROR,
                     'message': MENSAJE_PRUEBA_ERROR})
+
+
+# Rutas de `/connectors` (FNC-213): se registran en este mismo blueprint.
+from app.modules.connectors import api_independientes  # noqa: E402,F401

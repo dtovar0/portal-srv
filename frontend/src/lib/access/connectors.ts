@@ -1,9 +1,13 @@
-/** Conector de una plataforma, solo superadmin (`docs/contratos/conectores-y-ejecuciones.md`). */
+/** Conectores, solo superadmin (por plataforma y, desde 1.6, independientes) (`docs/contratos/conectores-y-ejecuciones.md`). */
 
 import { accessRequest } from './client';
-import { MOCK_CONNECTOR } from './mocks';
+import { MOCK_CONNECTOR, MOCK_CONNECTOR_ITEM, MOCK_CONNECTOR_SIN_PLATAFORMA } from './mocks';
 import { jsonBody } from './query';
-import type { Connector, ConnectorInput, ConnectorTestResult, StatusOk } from './types';
+import type {
+  Connector, ConnectorInput, ConnectorItem, ConnectorItemInput, ConnectorTestResult, StatusOk,
+} from './types';
+
+type Guardado = { status: 'success'; connector: ConnectorItem };
 
 export const connectorsApi = {
   get: (platformId: number) =>
@@ -27,5 +31,47 @@ export const connectorsApi = {
   test: (platformId: number) =>
     accessRequest<ConnectorTestResult>(
       `/platforms/${platformId}/connector/test`, jsonBody('POST'),
+      () => ({ status: 'success', result: 'ok', message: 'Conexión correcta.' })),
+
+  // --- Conectores independientes (contrato 1.6, FNC-213 / DIS-140) ---
+
+  /** Ordenados por nombre, sin paginación. */
+  list: () =>
+    accessRequest<{ items: ConnectorItem[] }>(
+      '/connectors', undefined,
+      () => ({ items: [MOCK_CONNECTOR_ITEM, MOCK_CONNECTOR_SIN_PLATAFORMA] })),
+
+  /** Crea sin plataforma. */
+  create: (input: ConnectorItemInput) =>
+    accessRequest<Guardado>(
+      '/connectors', jsonBody('POST', input),
+      () => ({ status: 'success', connector: { ...MOCK_CONNECTOR_SIN_PLATAFORMA, ...input } })),
+
+  update: (id: number, input: ConnectorItemInput) =>
+    accessRequest<Guardado>(
+      `/connectors/${id}`, jsonBody('PUT', input),
+      () => ({ status: 'success', connector: { ...MOCK_CONNECTOR_ITEM, ...input, id } })),
+
+  /** Cuerpo `{}`. */
+  destroy: (id: number) =>
+    accessRequest<StatusOk>(`/connectors/${id}`, jsonBody('DELETE'), () => ({ status: 'success' })),
+
+  /** `confirmar` (contrato 1.7): asociar aunque la plataforma tenga accesos vigentes. */
+  associate: (id: number, platformId: number, confirmar = false) =>
+    accessRequest<Guardado>(
+      `/connectors/${id}/platform`,
+      jsonBody('PUT', confirmar ? { platform_id: platformId, confirmar: true } : { platform_id: platformId }),
+      () => ({ status: 'success', connector: { ...MOCK_CONNECTOR_SIN_PLATAFORMA, id, platform_id: platformId } })),
+
+  /** Cuerpo `{}`. */
+  dissociate: (id: number) =>
+    accessRequest<Guardado>(
+      `/connectors/${id}/platform`, jsonBody('DELETE'),
+      () => ({ status: 'success', connector: { ...MOCK_CONNECTOR_SIN_PLATAFORMA, id } })),
+
+  /** Sin plataforma → `409 conector_sin_plataforma`. */
+  testById: (id: number) =>
+    accessRequest<ConnectorTestResult>(
+      `/connectors/${id}/test`, jsonBody('POST'),
       () => ({ status: 'success', result: 'ok', message: 'Conexión correcta.' })),
 };

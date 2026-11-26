@@ -1,102 +1,99 @@
 'use client';
 
 /**
- * Plataformas que se aprovisionan por conector (DIS-022, F-CON-01): nombre,
- * área, si ya tienen configuración (`has_connector`) y accesos vigentes.
+ * Conectores (DIS-022, F-CON-01; DIS-140: independientes, `GET /connectors`): nombre,
+ * tipo, host, plataforma (o «Sin asociar») y estado de la credencial.
  * "Configurar" abre el panel del conector bajo la lista.
  *
  * Tabla en escritorio y tarjeta en móvil con `ResponsiveList` (DIS-014).
  */
 
-import type { Platform } from '@/lib/types';
+import type { ConnectorItem } from '@/lib/access/types';
 import { Button } from '../form';
 import { Icono } from '../icono';
 import { Badge } from '../ui';
 import { ETIQUETA_CELDA, ResponsiveList, ResponsiveRow } from '../access/responsive-list';
+import { ESTADOS_CREDENCIAL, TIPOS_CONECTOR, esTipoConocido } from './connector-catalog';
 
-const COLUMNAS = 'md:grid-cols-[minmax(0,2.5fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.5fr)]';
+const COLUMNAS =
+  'md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)_minmax(0,1.5fr)_minmax(0,1fr)]';
 
-export const ENCABEZADOS_CONECTORES = ['Plataforma', 'Conector', 'Accesos vigentes', 'Acciones'];
+export const ENCABEZADOS_CONECTORES = ['Nombre', 'Tipo', 'Host', 'Plataforma', 'Credencial', 'Acciones'];
 
-const porNombre = (a: Platform, b: Platform) => a.name.localeCompare(b.name, 'es');
-
-/**
- * Plataformas de la lista, por nombre: las que ya tienen conector y las de tipo `conector`
- * aunque falte configurarlo. Desde FNC-196 cualquier plataforma puede tener conector (DIS-139).
- */
-export function plataformasConConector(plataformas: Platform[]): Platform[] {
-  return plataformas
-    .filter((p) => p.has_connector || p.integration_type === 'conector')
-    .sort(porNombre);
-}
-
-/** Candidatas de «Nuevo»: cualquier plataforma que aún no tenga conector, por nombre (DIS-139). */
-export function plataformasSinConector(plataformas: Platform[]): Platform[] {
-  return plataformas.filter((p) => !p.has_connector).sort(porNombre);
-}
-
-export function botonConfigurarId(platformId: number): string {
-  return `conector-configurar-${platformId}`;
+export function botonConfigurarId(connectorId: number): string {
+  return `conector-configurar-${connectorId}`;
 }
 
 export function ConnectorList({
-  plataformas,
-  seleccionada,
+  conectores,
+  seleccionado,
   onSelect,
 }: {
-  plataformas: Platform[];
-  seleccionada: number | null;
-  onSelect: (plataforma: Platform) => void;
+  conectores: ConnectorItem[];
+  seleccionado: number | null;
+  onSelect: (conector: ConnectorItem) => void;
 }) {
   return (
-    <ResponsiveList columns={COLUMNAS} headers={ENCABEZADOS_CONECTORES} label="Plataformas con conector">
-      {plataformas.map((p) => (
-        <ResponsiveRow
-          key={p.id}
-          columns={COLUMNAS}
-          label={`Conector de ${p.name}`}
-          interactive={true}
-          selected={seleccionada === p.id}
-          onClick={() => onSelect(p)}
-        >
-          <div className="min-w-0">
-            <dt className={ETIQUETA_CELDA}>Plataforma</dt>
-            <dd className="break-words font-semibold text-body-text">{p.name}</dd>
-            <dd className="text-sm text-label">{p.area_name ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className={ETIQUETA_CELDA}>Conector</dt>
-            <dd>
-              {p.has_connector
-                ? <Badge tone="success">Configurado</Badge>
-                : <Badge tone="warning">Sin configurar</Badge>}
-            </dd>
-          </div>
-          <div>
-            <dt className={ETIQUETA_CELDA}>Accesos vigentes</dt>
-            <dd className="text-sm tabular-nums text-body-text">{p.active_grants}</dd>
-          </div>
-          <div>
-            <dt className={ETIQUETA_CELDA}>Acciones</dt>
-            <dd>
-              <Button
-                id={botonConfigurarId(p.id)}
-                variant={seleccionada === p.id ? 'fila-primario' : 'fila'}
-                aria-label={`Configurar el conector de ${p.name}`}
-                aria-current={seleccionada === p.id || undefined}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(p);
-                }}
-                className="nx-btn-toolbar !px-2.5 focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <Icono nombre="ajustes" tamano="sm" ariaHidden={true} />
-                <span>Configurar</span>
-              </Button>
-            </dd>
-          </div>
-        </ResponsiveRow>
-      ))}
+    <ResponsiveList columns={COLUMNAS} headers={ENCABEZADOS_CONECTORES} label="Conectores">
+      {conectores.map((c) => {
+        const credencial = ESTADOS_CREDENCIAL[c.credential_status];
+        return (
+          <ResponsiveRow
+            key={c.id}
+            columns={COLUMNAS}
+            label={`Conector ${c.name}`}
+            interactive={true}
+            selected={seleccionado === c.id}
+            onClick={() => onSelect(c)}
+          >
+            <div className="min-w-0">
+              <dt className={ETIQUETA_CELDA}>Nombre</dt>
+              <dd className="break-words font-semibold text-body-text">{c.name}</dd>
+            </div>
+            <div>
+              <dt className={ETIQUETA_CELDA}>Tipo</dt>
+              <dd className="text-sm text-body-text">{esTipoConocido(c.type) ? TIPOS_CONECTOR[c.type] : c.type}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className={ETIQUETA_CELDA}>Host</dt>
+              <dd className="break-words text-sm text-body-text">{c.host}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className={ETIQUETA_CELDA}>Plataforma</dt>
+              <dd>
+                {c.platform
+                  ? <span className="break-words text-sm text-body-text">{c.platform.name}</span>
+                  : <Badge tone="warning">Sin asociar</Badge>}
+              </dd>
+            </div>
+            <div>
+              <dt className={ETIQUETA_CELDA}>Credencial</dt>
+              <dd>
+                <Badge tone={credencial?.tono ?? 'slate'}>{credencial?.texto ?? c.credential_status}</Badge>
+              </dd>
+            </div>
+            <div>
+              <dt className={ETIQUETA_CELDA}>Acciones</dt>
+              <dd>
+                <Button
+                  id={botonConfigurarId(c.id)}
+                  variant={seleccionado === c.id ? 'fila-primario' : 'fila'}
+                  aria-label={`Configurar el conector ${c.name}`}
+                  aria-current={seleccionado === c.id || undefined}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(c);
+                  }}
+                  className="nx-btn-toolbar !px-2.5 focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Icono nombre="ajustes" tamano="sm" ariaHidden={true} />
+                  <span>Configurar</span>
+                </Button>
+              </dd>
+            </div>
+          </ResponsiveRow>
+        );
+      })}
     </ResponsiveList>
   );
 }

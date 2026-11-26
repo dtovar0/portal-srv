@@ -11,7 +11,7 @@
  *   `connector-params.ts` (DIS-042); aquí se re-exportan.
  */
 
-import type { Connector, ConnectorInput, ConnectorType } from '@/lib/access/types';
+import type { Connector, ConnectorItemInput, ConnectorType } from '@/lib/access/types';
 import type { Badge } from '../ui';
 import {
   PARAMETROS_POR_TIPO, construirParams, parametrosDe, parametrosSinEditor, validarParametros, valoresDesde,
@@ -19,6 +19,9 @@ import {
 
 export { PARAMETROS_POR_TIPO, validarParametros };
 export type { CampoParametro } from './connector-params';
+
+/** Lo guardado de un conector, con o sin plataforma (`Connector` y `ConnectorItem`). */
+export type ConectorGuardado = Omit<Connector, 'platform_id'> & { name?: string };
 
 type Tono = React.ComponentProps<typeof Badge>['tone'];
 
@@ -35,6 +38,7 @@ export const ESTADOS_CREDENCIAL: Record<Connector['credential_status'], { texto:
 };
 
 /** Largos y límites del contrato (`app/modules/connectors/tipos.py`). */
+export const NOMBRE_MAX = 100;
 export const HOST_MAX = 253;
 export const REFERENCIA_MAX = 200;
 export const PUERTO_MIN = 1;
@@ -45,9 +49,10 @@ const PATRON_REFERENCIA = /^[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._
 /** Caracteres de un nombre de host; el servidor decide si está autorizado. */
 const PATRON_HOST = /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
 
-export type CampoConector = 'type' | 'host' | 'port' | 'credential_ref' | 'params' | 'active';
+export type CampoConector = 'name' | 'type' | 'host' | 'port' | 'credential_ref' | 'params' | 'active';
 
 export interface FormularioConector {
+  name: string;
   type: string;
   host: string;
   port: string;
@@ -58,9 +63,11 @@ export interface FormularioConector {
 }
 
 export const OBLIGATORIO = 'Es obligatorio.';
+export const NOMBRE_INVALIDO = `Usa un nombre de 1 a ${NOMBRE_MAX} caracteres, sin caracteres de control.`;
 
 /** Mensaje fijo por campo (no se repite el del servidor). */
 export const MENSAJES_CAMPO: Record<CampoConector, string> = {
+  name: 'Ya existe un conector con ese nombre.',
   type: 'Este tipo de conector no está disponible en el servidor.',
   host: 'Usa un nombre de host autorizado por el despliegue (nunca una dirección IP).',
   port: `Usa un puerto entre ${PUERTO_MIN} y ${PUERTO_MAX}.`,
@@ -70,7 +77,7 @@ export const MENSAJES_CAMPO: Record<CampoConector, string> = {
 };
 
 export const FORMULARIO_VACIO: FormularioConector = {
-  type: 'api', host: '', port: '', credential_ref: '', params: {}, active: true,
+  name: '', type: 'api', host: '', port: '', credential_ref: '', params: {}, active: true,
 };
 
 /** ¿El tipo tiene editor en esta pantalla? */
@@ -79,9 +86,10 @@ export function esTipoConocido(tipo: string): tipo is ConnectorType {
 }
 
 /** Formulario con la configuración guardada (o vacío si no hay). */
-export function formularioDesde(connector: Connector | null): FormularioConector {
+export function formularioDesde(connector: ConectorGuardado | null): FormularioConector {
   if (!connector) return { ...FORMULARIO_VACIO, params: {} };
   return {
+    name: connector.name ?? '',
     type: connector.type,
     host: connector.host,
     port: String(connector.port),
@@ -99,6 +107,9 @@ export const parametrosConservados = parametrosSinEditor;
 
 export function validarConector(form: FormularioConector): Partial<Record<CampoConector, string>> {
   const errores: Partial<Record<CampoConector, string>> = {};
+  const nombre = form.name.trim();
+  if (!nombre) errores.name = OBLIGATORIO;
+  else if (nombre.length > NOMBRE_MAX || /[\u0000-\u001f\u007f]/.test(nombre)) errores.name = NOMBRE_INVALIDO;
   if (!form.type) errores.type = OBLIGATORIO;
   const host = form.host.trim();
   if (!host) errores.host = OBLIGATORIO;
@@ -117,9 +128,10 @@ export function validarConector(form: FormularioConector): Partial<Record<CampoC
 }
 
 /** Cuerpo del contrato (lista blanca): parámetros vacíos u ocultos no se envían. */
-export function cuerpoConector(form: FormularioConector, guardado: Connector | null): ConnectorInput {
+export function cuerpoConector(form: FormularioConector, guardado: ConectorGuardado | null): ConnectorItemInput {
   const params = { ...parametrosConservados(guardado, form.type), ...construirParams(form.type, form.params) };
   return {
+    name: form.name.trim(),
     type: form.type as ConnectorType,
     host: form.host.trim(),
     port: Number(form.port.trim()),

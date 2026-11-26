@@ -1,110 +1,99 @@
 'use client';
 
 /**
- * Conector de una plataforma (DIS-022, F-CON-01; `GET`, `PUT`, `DELETE
- * /platforms/<id>/connector` y `POST .../test`, contrato 1.1; solo superadmin).
+ * Conector (DIS-022, F-CON-01; DIS-140: independiente, contrato
+ * `conectores-y-ejecuciones.md` 1.6; solo superadmin). Con `connector` es el
+ * detalle y la edición (`PUT /connectors/<id>`, `POST .../test`, `DELETE`);
+ * con `null` es el alta sin plataforma (`POST /connectors`).
  *
  * - Sección bajo la lista, no `Modal`: así la confirmación de eliminar no
  *   queda dentro de otro diálogo (patrón de `UserAccessPanel`, DIS-018).
- * - `404` al leer = la plataforma aún no tiene configuración.
- * - "Probar conexión" usa la configuración guardada; el resultado es un texto
- *   propio (el detalle del fallo solo va al registro del servidor).
- * - Sin refresco periódico (contrato, "Refresco"). El resultado de guardar,
- *   eliminar o probar se avisa con toast (DIS-091).
+ * - Los datos vienen de la lista (`GET /connectors`); al guardar, probar o
+ *   eliminar se avisa con toast (DIS-091) y se recarga la lista.
+ * - "Probar conexión" usa la configuración guardada y solo con plataforma
+ *   asociada; sin ella queda deshabilitado con su motivo visible.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError } from '@/lib/api';
 import { connectorsApi } from '@/lib/access/connectors';
-import type { Connector } from '@/lib/access/types';
-import type { Platform } from '@/lib/types';
-import { useAsync } from '@/lib/use-async';
+import type { ConnectorItem } from '@/lib/access/types';
 import { formatearFecha } from '../access/fecha';
 import { Dato } from '../audit/audit-detail-modal';
 import { Button } from '../form';
 import { Icono } from '../icono';
 import { useToast } from '../toast';
-import { Badge, Card, ErrorNote, Spinner } from '../ui';
+import { Badge, Card } from '../ui';
 import { ESTADOS_CREDENCIAL, TIPOS_CONECTOR, esTipoConocido } from './connector-catalog';
 import { ConnectorDeleteDialog } from './connector-delete-dialog';
-import {
-  PRUEBA_ERROR, PRUEBA_OK, describeConnectorLoadError, describeConnectorTestError,
-} from './connector-errors';
+import { PRUEBA_ERROR, PRUEBA_OK, describeConnectorTestError } from './connector-errors';
 import { ConnectorForm } from './connector-form';
 
-type Tono = 'exito' | 'error';
-
 export const AVISO_GUARDADO = 'Conector guardado.';
+export const AVISO_CREADO = 'Conector creado. Asócialo a una plataforma para usarlo.';
 export const AVISO_SIN_VERIFICAR = 'Conector guardado. La credencial queda sin verificar: prueba la conexión.';
 export const AVISO_ELIMINADO = 'Conector eliminado.';
+export const MOTIVO_SIN_PLATAFORMA = 'Asocia el conector a una plataforma para probarlo.';
 
-/** Configuración guardada (`null` = sin configurar) o el error de carga. */
-async function cargar(platformId: number): Promise<{ connector: Connector | null }> {
-  try {
-    return { connector: await connectorsApi.get(platformId) };
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return { connector: null };
-    throw new Error(describeConnectorLoadError(err));
-  }
+/** Id del título del panel; `null` = alta. */
+export function tituloPanelId(connectorId: number | null): string {
+  return `conector-${connectorId ?? 'nuevo'}-titulo`;
 }
 
 export function ConnectorPanel({
-  platform,
+  connector,
   onClose,
+  onSaved,
   onChanged,
+  onDeleted,
 }: {
-  platform: Platform;
+  connector: ConnectorItem | null;
   onClose: () => void;
-  /** La configuración cambió (guardada o eliminada): recargar la lista. */
+  /** Guardado (`creado` = alta): la lista se recarga y se selecciona. */
+  onSaved: (connector: ConnectorItem, creado: boolean) => void;
+  /** Algo cambió en el servidor (prueba o dato desfasado): recargar la lista. */
   onChanged: () => void;
+  onDeleted: (connector: ConnectorItem) => void;
 }) {
-  const titleId = `conector-${platform.id}-titulo`;
+  const id = connector?.id ?? null;
+  const titleId = tituloPanelId(id);
   const titulo = useRef<HTMLHeadingElement>(null);
   const { avisar } = useToast();
-  const eliminarId = `conector-${platform.id}-eliminar`;
-
-  const carga = useAsync(() => cargar(platform.id), [platform.id]);
-  /** Respuesta de una escritura propia: manda sobre la última lectura. */
-  const [propio, setPropio] = useState<{ connector: Connector | null } | null>(null);
+  const eliminarId = `conector-${id ?? 'nuevo'}-eliminar`;
+  const pruebaPistaId = `${titleId}-prueba-pista`;
   const [probando, setProbando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     titulo.current?.focus();
-    setPropio(null);
-  }, [platform.id]);
+  }, [id]);
 
-  const estado = propio ?? carga.data;
-  const connector = estado?.connector ?? null;
-
-  function anunciar(texto: string, tono: Tono) {
-    avisar(tono === 'exito' ? 'success' : 'error', texto, 'Conector');
+  function anunciar(texto: string, exito: boolean) {
+    avisar(exito ? 'success' : 'error', texto, 'Conector');
   }
 
-  function recargar() {
-    setPropio(null);
-    carga.reload();
-  }
-
-  function guardado(nuevo: Connector) {
-    setPropio({ connector: nuevo });
-    anunciar(nuevo.credential_status === 'sin_verificar' ? AVISO_SIN_VERIFICAR : AVISO_GUARDADO, 'exito');
-    onChanged();
+  function guardado(nuevo: ConnectorItem) {
+    const creado = connector === null;
+    anunciar(
+      creado ? AVISO_CREADO
+        : nuevo.credential_status === 'sin_verificar' ? AVISO_SIN_VERIFICAR : AVISO_GUARDADO,
+      true,
+    );
+    onSaved(nuevo, creado);
   }
 
   async function probar() {
-    if (probando) return;
+    if (!connector || probando) return;
     setProbando(true);
     try {
-      const resultado = await connectorsApi.test(platform.id);
+      const resultado = await connectorsApi.testById(connector.id);
       const ok = resultado.result === 'ok';
-      anunciar(ok ? PRUEBA_OK : PRUEBA_ERROR, ok ? 'exito' : 'error');
+      anunciar(ok ? PRUEBA_OK : PRUEBA_ERROR, ok);
       // La prueba actualiza `credential_status`.
-      recargar();
+      onChanged();
     } catch (err) {
       const view = describeConnectorTestError(err);
-      anunciar(view.message, 'error');
-      if (view.stale) { recargar(); onChanged(); }
+      anunciar(view.message, false);
+      if (view.stale) onChanged();
     } finally {
       setProbando(false);
     }
@@ -120,9 +109,8 @@ export function ConnectorPanel({
 
   function eliminado() {
     setEliminando(false);
-    setPropio({ connector: null });
-    anunciar(AVISO_ELIMINADO, 'exito');
-    onChanged();
+    anunciar(AVISO_ELIMINADO, true);
+    if (connector) onDeleted(connector);
   }
 
   return (
@@ -135,9 +123,13 @@ export function ConnectorPanel({
             tabIndex={-1}
             className="rounded text-lg font-semibold outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            Conector de {platform.name}
+            {connector ? `Conector ${connector.name}` : 'Nuevo conector'}
           </h2>
-          <p className="text-sm text-label">{platform.area_name ?? '—'}</p>
+          <p className="text-sm text-label">
+            {connector
+              ? (connector.platform ? connector.platform.name : 'Sin asociar')
+              : 'Se crea sin plataforma; después se asocia a una.'}
+          </p>
         </div>
         <Button variant="secondary" onClick={onClose} className="focus-visible:ring-2 focus-visible:ring-primary">
           <Icono nombre="cerrar" tamano="sm" ariaHidden={true} className="mr-1.5" />
@@ -145,84 +137,73 @@ export function ConnectorPanel({
         </Button>
       </div>
 
-      {carga.loading && !estado ? <Spinner label="Cargando el conector…" /> : null}
+      <Card className="space-y-5">
+        {connector ? (
+          <>
+            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Dato
+                etiqueta="Tipo"
+                valor={esTipoConocido(connector.type) ? TIPOS_CONECTOR[connector.type] : connector.type}
+              />
+              <Dato etiqueta="Destino" valor={`${connector.host}:${connector.port}`} />
+              <Dato
+                etiqueta="Credencial"
+                valor={
+                  <Badge tone={ESTADOS_CREDENCIAL[connector.credential_status]?.tono ?? 'slate'}>
+                    {ESTADOS_CREDENCIAL[connector.credential_status]?.texto ?? connector.credential_status}
+                  </Badge>
+                }
+              />
+              <Dato etiqueta="Actualizado" valor={formatearFecha(connector.updated_at)} />
+            </dl>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                disabled={!connector.platform}
+                motivoDeshabilitado={MOTIVO_SIN_PLATAFORMA}
+                onClick={probar}
+                aria-disabled={probando || undefined}
+                aria-describedby={pruebaPistaId}
+                className="aria-disabled:opacity-deshabilitada focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Icono nombre="actividad" tamano="sm" ariaHidden={true} className="mr-1.5" />
+                {probando ? 'Probando…' : 'Probar conexión'}
+              </Button>
+              <Button
+                id={eliminarId}
+                variant="secondary"
+                onClick={() => setEliminando(true)}
+                aria-label={`Eliminar el conector ${connector.name}`}
+                className="focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Icono nombre="eliminar" tamano="sm" ariaHidden={true} className="mr-1.5" />
+                Eliminar
+              </Button>
+              <span id={pruebaPistaId} className="text-sm text-label">
+                {connector.platform
+                  ? 'Se prueba la configuración guardada, sin cambios en la plataforma.'
+                  : MOTIVO_SIN_PLATAFORMA}
+              </span>
+            </div>
+          </>
+        ) : null}
 
-      {carga.error && !propio ? (
-        <div className="space-y-3">
-          <ErrorNote message={carga.error} />
-          <Button variant="secondary" onClick={recargar}>Reintentar</Button>
-        </div>
-      ) : null}
+        <ConnectorForm
+          // Se reinicia con cada configuración guardada distinta.
+          key={connector ? `${connector.id}-${connector.updated_at}` : 'nuevo'}
+          conectorId={id}
+          guardado={connector}
+          onSaved={guardado}
+          onStale={onChanged}
+        />
+      </Card>
 
-      {estado ? (
-        <Card className="space-y-5">
-          {connector ? (
-            <>
-              <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Dato
-                  etiqueta="Tipo"
-                  valor={esTipoConocido(connector.type) ? TIPOS_CONECTOR[connector.type] : connector.type}
-                />
-                <Dato etiqueta="Destino" valor={`${connector.host}:${connector.port}`} />
-                <Dato
-                  etiqueta="Credencial"
-                  valor={
-                    <Badge tone={ESTADOS_CREDENCIAL[connector.credential_status]?.tono ?? 'slate'}>
-                      {ESTADOS_CREDENCIAL[connector.credential_status]?.texto ?? connector.credential_status}
-                    </Badge>
-                  }
-                />
-                <Dato etiqueta="Actualizado" valor={formatearFecha(connector.updated_at)} />
-              </dl>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  variant="secondary"
-                  onClick={probar}
-                  aria-disabled={probando || undefined}
-                  aria-describedby={`${titleId}-prueba-pista`}
-                  className="aria-disabled:opacity-deshabilitada focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <Icono nombre="actividad" tamano="sm" ariaHidden={true} className="mr-1.5" />
-                  {probando ? 'Probando…' : 'Probar conexión'}
-                </Button>
-                <Button
-                  id={eliminarId}
-                  variant="secondary"
-                  onClick={() => setEliminando(true)}
-                  aria-label={`Eliminar el conector de ${platform.name}`}
-                  className="focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <Icono nombre="eliminar" tamano="sm" ariaHidden={true} className="mr-1.5" />
-                  Eliminar
-                </Button>
-                <span id={`${titleId}-prueba-pista`} className="text-sm text-label">
-                  Se prueba la configuración guardada, sin cambios en la plataforma.
-                </span>
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-label">
-              Esta plataforma aún no tiene conector. Configúralo para que sus accesos se apliquen.
-            </p>
-          )}
-
-          <ConnectorForm
-            // Se reinicia con cada configuración guardada distinta.
-            key={connector?.updated_at ?? 'nuevo'}
-            platformId={platform.id}
-            guardado={connector}
-            onSaved={guardado}
-            onStale={() => { recargar(); onChanged(); }}
-          />
-        </Card>
-      ) : null}
-
-      {eliminando ? (
+      {eliminando && connector ? (
         <ConnectorDeleteDialog
-          platform={platform}
+          connector={connector}
           onClose={cerrarEliminar}
           onDeleted={eliminado}
-          onStale={() => { recargar(); onChanged(); }}
+          onStale={onChanged}
         />
       ) : null}
     </section>
