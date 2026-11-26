@@ -27,7 +27,9 @@ export function ApprovalsView() {
 
   if (!estado) {
     return (
-      <div className="space-y-6">
+      // DIS-144: como el Dashboard (flex + gap): el h1 oculto no suma espacio y el resumen
+      // llena el alto del contenedor.
+      <div className="flex h-full w-full min-h-0 flex-col gap-4">
         <PageHeader title="Solicitudes" />
         <ApprovalsResumen />
       </div>

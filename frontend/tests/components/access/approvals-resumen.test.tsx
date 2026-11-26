@@ -39,6 +39,7 @@ import { MOCK_REQUEST } from '@/lib/access/mocks';
 import { ApprovalsView } from '@/components/access/approvals-view';
 import { MAX_BARRAS } from '@/components/access/approvals-resumen';
 import { SOLICITUDES_POR_PAGINA } from '@/components/access/solicitudes-panel';
+import { NOMBRE_OTRAS, filasPorArea } from '@/components/access/dona-areas';
 import { ApiError, api } from '@/lib/api';
 import type { Stats } from '@/lib/types';
 
@@ -153,7 +154,8 @@ describe('DIS-131: resumen', () => {
 
   it('gráficas por área y plataforma con su tabla alternativa', async () => {
     render_();
-    expect(await screen.findByRole('heading', { name: 'Solicitudes por área' })).toBeTruthy();
+    // DIS-144: también el KPI de dona lleva ese título.
+    expect((await screen.findAllByRole('heading', { name: 'Solicitudes por área' })).length).toBe(2);
     expect(screen.getByRole('heading', { name: 'Solicitudes por plataforma' })).toBeTruthy();
     expect(screen.getByRole('table', { name: 'Solicitudes por área' })).toBeTruthy();
     expect(screen.getByText('Contabilidad')).toBeTruthy();
@@ -173,7 +175,7 @@ describe('DIS-131: resumen', () => {
       total: 0, by_status: { pendiente: 0, aprobada: 0, rechazada: 0 }, by_area: [], by_platform: [],
     });
     render_();
-    expect(await screen.findByText('Sin solicitudes por área')).toBeTruthy();
+    expect((await screen.findAllByText('Sin solicitudes por área')).length).toBe(2);
     expect(screen.getByText('Sin solicitudes por plataforma')).toBeTruthy();
     vi.mocked(requestsApi.inbox).mockResolvedValue({ items: [], page: 1, per_page: 8, total: 0 });
     expect(screen.getByText('Sin solicitudes')).toBeTruthy();
@@ -236,5 +238,36 @@ describe('DIS-131: tablas por estado (`?status=`)', () => {
     url.consulta = 'status=otro';
     render_();
     expect(await screen.findByRole('list', { name: 'Solicitudes por estado' })).toBeTruthy();
+  });
+});
+
+describe('DIS-144: KPI por área y espaciado', () => {
+  it('KPI «Solicitudes por área» con cifra y porcentaje de cada área', async () => {
+    render_();
+    const leyenda = await screen.findByRole('list', { name: 'Solicitudes por área' });
+    const items = within(leyenda).getAllByRole('listitem').map((li) => li.textContent);
+    expect(items[0]).toContain('Finanzas');
+    expect(items[0]).toContain('67 %');
+    expect(items[1]).toContain('Ventas');
+    expect(items[1]).toContain('33 %');
+  });
+
+  it('más de 5 áreas: 4 con color propio y «Otras» con el resto', () => {
+    const by_area = Array.from({ length: 7 }, (_, i) => ({ area_id: i + 1, area: `Área ${i + 1}`, count: 10 - i }));
+    const filas = filasPorArea({ ...STATS, by_area });
+    expect(filas.map((f) => f.nombre)).toEqual(['Área 1', 'Área 2', 'Área 3', 'Área 4', NOMBRE_OTRAS]);
+    expect(filas[4].cantidad).toBe(6 + 5 + 4);
+    expect(new Set(filas.map((f) => f.color)).size).toBe(5);
+    expect(filasPorArea({ ...STATS, by_area: by_area.slice(0, 5) }).map((f) => f.nombre)).not.toContain(NOMBRE_OTRAS);
+  });
+
+  it('sin doble espacio: la vista usa flex con gap (el h1 oculto no suma margen) y llena el alto', async () => {
+    const { container } = render_();
+    await screen.findByRole('list', { name: 'Solicitudes por estado' });
+    const vista = container.querySelector('section[aria-label="Resumen de solicitudes"]')!.parentElement!;
+    expect(vista.className).not.toMatch(/space-y-/);
+    expect(vista.className).toMatch(/flex-col/);
+    expect(vista.className).toMatch(/h-full/);
+    expect(container.querySelector('section[aria-label="Resumen de solicitudes"]')!.className).toMatch(/flex-1/);
   });
 });
