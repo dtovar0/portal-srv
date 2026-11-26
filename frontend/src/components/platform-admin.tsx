@@ -10,6 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { enlaceSeguro } from '@/lib/enlace-seguro';
 import { useAsync } from '@/lib/use-async';
+import { usePolling } from '@/lib/use-polling';
+import { requestsApi } from '@/lib/access/requests';
 import type { Area, Platform, PlatformWarning } from '@/lib/types';
 import { AreaAdminsPanel } from './areas/area-admins-panel';
 import { AreaForm } from './areas/area-form';
@@ -20,7 +22,7 @@ import { DataTable } from './data-table';
 import { Button, ConfirmDialog } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
-import { columnasPlataformas } from './platforms/platform-columns';
+import { columnasPlataformas, sinEnlaceWeb } from './platforms/platform-columns';
 import { MissingLinkNote } from './platforms/missing-link-note';
 import { AreaCardDesignDrawer } from './platforms/area-card-design-drawer';
 import { PlatformCardDesignDrawer } from './platforms/platform-card-design-drawer';
@@ -373,6 +375,17 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     return mapa;
   }, [platforms.data, isSuperadmin, hasManagedAreasExplicit, managedAreaIds]);
 
+  // DIS-137: solicitudes por aprobar en cada área (FNC-212, mismo alcance que la bandeja). Si la
+  // consulta falla, las tarjetas simplemente no muestran la cifra.
+  const resumenSolicitudes = usePolling(() => requestsApi.inboxStats(), {
+    intervalSeconds: session?.preferences?.refresh_interval,
+  });
+  const pendientesPorArea = useMemo(() => {
+    const mapa: Record<number, number> = {};
+    for (const fila of resumenSolicitudes.data?.pending_by_area ?? []) mapa[fila.area_id] = fila.count;
+    return mapa;
+  }, [resumenSolicitudes.data]);
+
   // Áreas gestionables según el rol (superadmin ve todas; admin de área solo las suyas)
   const assignableAreas = useMemo(() => {
     if (isSuperadmin || !hasManagedAreasExplicit) return areas.data ?? [];
@@ -614,7 +627,8 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     platforms.reload();
   }
 
-  const missingLink = (platforms.data ?? []).filter((p) => !enlaceSeguro(p.direct_link));
+  // DIS-138: solo los enlaces escritos pero no válidos; sin enlace es «Omitir enlace».
+  const missingLink = (platforms.data ?? []).filter((p) => !sinEnlaceWeb(p) && !enlaceSeguro(p.direct_link));
 
   return (
     <div className="flex h-full w-full flex-col gap-4 min-h-0">
@@ -948,6 +962,7 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
                       area={area}
                       conteo={conteoPorArea[area.id] ?? 0}
                       plataformas={plataformasPorArea[area.id] ?? []}
+                      pendientes={pendientesPorArea[area.id] ?? 0}
                       onSelect={handleSelectArea}
                       puedeEditar={isSuperadmin || managedAreaIds.has(area.id)}
                       actualizarEstado={(status) => api.updateArea(area.id, { status })}

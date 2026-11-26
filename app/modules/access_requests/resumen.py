@@ -7,13 +7,23 @@ from sqlalchemy import func
 
 from app.modules.access_requests import approvals
 from app.modules.access_requests.models import PlatformAccessRequest
-from app.modules.access_requests.tipos import ESTADOS
+from app.modules.access_requests.tipos import ESTADO_PENDIENTE, ESTADOS
 from app.modules.core.models import Area, Platform
 
 
 def _orden(fila):
     """Más solicitudes primero; a igual número, por nombre."""
     return (-fila['count'], fila['nombre'].casefold())
+
+
+def _por_area(consulta, cuenta):
+    """Filas `{area_id, area, count}` con `count > 0`, en el orden de `_orden`."""
+    filas = (consulta.join(Area, Area.id == Platform.area_id)
+             .with_entities(Area.id, Area.name, cuenta)
+             .group_by(Area.id, Area.name).all())
+    return sorted(
+        ({'area_id': i, 'area': nombre, 'count': int(n), 'nombre': nombre}
+         for i, nombre, n in filas if n > 0), key=_orden)
 
 
 def resumen(actor):
@@ -26,12 +36,11 @@ def resumen(actor):
         .group_by(PlatformAccessRequest.status).all())
     by_status = {estado: int(por_estado.get(estado, 0)) for estado in ESTADOS}
 
-    filas_area = (alcance.join(Area, Area.id == Platform.area_id)
-                  .with_entities(Area.id, Area.name, cuenta)
-                  .group_by(Area.id, Area.name).all())
-    by_area = sorted(
-        ({'area_id': i, 'area': nombre, 'count': int(n), 'nombre': nombre}
-         for i, nombre, n in filas_area if n > 0), key=_orden)
+    by_area = _por_area(alcance, cuenta)
+    # Por aprobar en cada área: la tarjeta de área enlaza a la bandeja (FNC-212).
+    pending_by_area = _por_area(
+        alcance.filter(PlatformAccessRequest.status == ESTADO_PENDIENTE),
+        cuenta)
 
     filas_plataforma = (alcance.join(Area, Area.id == Platform.area_id)
                         .with_entities(Platform.id, Platform.name, Area.name,
@@ -42,7 +51,8 @@ def resumen(actor):
           'nombre': nombre}
          for i, nombre, area, n in filas_plataforma if n > 0), key=_orden)
 
-    for fila in by_area + by_platform:
+    for fila in by_area + pending_by_area + by_platform:
         del fila['nombre']
     return {'total': sum(by_status.values()), 'by_status': by_status,
-            'by_area': by_area, 'by_platform': by_platform}
+            'by_area': by_area, 'by_platform': by_platform,
+            'pending_by_area': pending_by_area}

@@ -41,7 +41,7 @@ vi.mock('@/components/session-provider', () => ({
 import { ApiError, api } from '@/lib/api';
 import { connectorsApi } from '@/lib/access/connectors';
 import { provisioningApi } from '@/lib/access/provisioning';
-import { ConnectorsAdmin, VACIO_CONECTORES } from '@/components/connectors/connectors-admin';
+import { ConnectorsAdmin, SIN_CANDIDATAS, SIN_PLATAFORMAS, VACIO_CONECTORES } from '@/components/connectors/connectors-admin';
 import {
   FORMULARIO_VACIO, MENSAJES_CAMPO, OBLIGATORIO, cuerpoConector, formularioDesde,
   parametrosConservados, validarConector,
@@ -64,7 +64,7 @@ function plataforma(extra: Partial<Platform>): Platform {
 
 const CONTABILIDAD = plataforma({});
 const NOMINA = plataforma({ id: 14, name: 'Nómina', has_connector: false, active_grants: 0 });
-const WIKI = plataforma({ id: 5, name: 'Wiki', integration_type: 'ldap' });
+const WIKI = plataforma({ id: 5, name: 'Wiki', integration_type: 'ldap', has_connector: false, active_grants: 0 });
 
 /** `timeout` no tiene editor: se conserva sin cambios. */
 const PARAMS_API = {
@@ -206,9 +206,58 @@ describe('lista de plataformas', () => {
     expect(dialogo).toBeTruthy();
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
 
-    // Al hacer click en Nuevo conector configura la plataforma sin conector (Nómina)
+    // DIS-139: «Nuevo» pide la plataforma a la que se enlaza el conector.
     fireEvent.click(btnNuevo);
+    const picker = await screen.findByRole('dialog', { name: 'Nuevo conector' });
+    fireEvent.click(within(picker).getByRole('button', { name: /Nómina/ }));
     expect(await screen.findByRole('region', { name: 'Conector de Nómina' })).toBeTruthy();
+  });
+});
+
+describe('Nuevo conector en cualquier plataforma (DIS-139)', () => {
+  it('sin plataformas de tipo conector: «Nuevo» ofrece las demás y abre la configuración de la elegida', async () => {
+    mocks.get.mockRejectedValue(new ApiError(404, 'x', { code: 'no_encontrado' }));
+    mocks.platforms.mockResolvedValue([WIKI]);
+    render(<ConnectorsAdmin />);
+    expect(await screen.findByText(VACIO_CONECTORES)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo conector' }));
+    const picker = await screen.findByRole('dialog', { name: 'Nuevo conector' });
+    expect(within(picker).getByText('Elige la plataforma a la que se enlazará el nuevo conector:')).toBeTruthy();
+    fireEvent.click(within(picker).getByRole('button', { name: /Wiki/ }));
+    const panel = await screen.findByRole('region', { name: 'Conector de Wiki' });
+    expect(await within(panel).findByText(/aún no tiene conector/)).toBeTruthy();
+  });
+
+  it('las candidatas son todas las plataformas sin conector, de cualquier tipo', async () => {
+    render(<ConnectorsAdmin />);
+    await screen.findByRole('list', { name: 'Plataformas con conector' });
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo conector' }));
+    const picker = await screen.findByRole('dialog', { name: 'Nuevo conector' });
+    const nombres = within(picker).getAllByRole('button').map((b) => b.textContent ?? '');
+    expect(nombres.some((t) => t.includes('Nómina'))).toBe(true);
+    expect(nombres.some((t) => t.includes('Wiki'))).toBe(true);
+    expect(nombres.some((t) => t.includes('Contabilidad'))).toBe(false);
+  });
+
+  it('una plataforma de otro tipo con conector aparece en la lista', async () => {
+    mocks.platforms.mockResolvedValue([{ ...WIKI, has_connector: true }]);
+    render(<ConnectorsAdmin />);
+    const lista = await screen.findByRole('list', { name: 'Plataformas con conector' });
+    expect(within(lista).getByText('Wiki')).toBeTruthy();
+  });
+
+  it('sin candidatas avisa según el caso', async () => {
+    mocks.platforms.mockResolvedValue([CONTABILIDAD]);
+    renderConToast(<ConnectorsAdmin />);
+    await screen.findByRole('list', { name: 'Plataformas con conector' });
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo conector' }));
+    expect(await screen.findByText(SIN_CANDIDATAS)).toBeTruthy();
+    cleanup();
+    mocks.platforms.mockResolvedValue([]);
+    renderConToast(<ConnectorsAdmin />);
+    await screen.findByText(VACIO_CONECTORES);
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo conector' }));
+    expect(await screen.findByText(SIN_PLATAFORMAS)).toBeTruthy();
   });
 });
 
