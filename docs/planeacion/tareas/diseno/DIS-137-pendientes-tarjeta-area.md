@@ -24,3 +24,4 @@
 
 ## Pruebas
 - `tarjeta-area.test.tsx` (+2), `platform-admin.test.tsx` (+2), `home/filtro-url.test.tsx` (+3): fallaban sin el cambio.
+- Auditoría de accesibilidad: el enlace llevaba solo el contorno del navegador; se agregó `foco-visible` (anillo `--foco-anillo`, como `EstadoBadgeBoton`). Contraste del badge 5.20:1 claro y 9.46:1 oscuro.

@@ -31,6 +31,8 @@ describe('TarjetaArea', () => {
     const enlace = screen.getByRole('link', { name: '2 solicitudes por aprobar en Finanzas. Abrir Solicitudes.' });
     expect(enlace.getAttribute('href')).toBe('/approvals?status=pendiente&area_id=3');
     expect(enlace.textContent).toContain('2 por aprobar');
+    // Anillo de foco del sistema (`foco-visible`, token --foco-anillo), como EstadoBadgeBoton.
+    expect(enlace.className).toContain('foco-visible');
     fireEvent.click(enlace);
     expect(onSelect).not.toHaveBeenCalled();
     expect(rutaPendientesArea(7)).toBe('/approvals?status=pendiente&area_id=7');

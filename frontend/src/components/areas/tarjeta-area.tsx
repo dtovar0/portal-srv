@@ -43,7 +43,7 @@ function PendientesArea({ area, pendientes }: { area: Area; pendientes: number }
       aria-label={`${pendientes} ${sustantivo} por aprobar en ${area.name}. Abrir Solicitudes.`}
       title="Ver solicitudes por aprobar"
       // `.nx-estado-boton`: aspecto del badge y área táctil de 44 px con su ::after (DIS-114).
-      className="nx-estado-boton rounded-full"
+      className="nx-estado-boton foco-visible rounded-full"
     >
       <Badge tone="warning" icon="reloj" iconTamano="xs">
         {pendientes} por aprobar
