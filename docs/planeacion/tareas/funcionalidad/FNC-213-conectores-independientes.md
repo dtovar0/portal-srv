@@ -55,3 +55,4 @@
 ## Verificación
 - Revisor y auditor-seguridad ejecutados; hallazgos de la revisión corregidos (`name_norm`, nombre de respaldo ocupado). Seguridad: aprobado, 4 Bajas anotadas arriba.
 - Suite completa (`python -m pytest -q -p no:cacheprovider`): 3700 pasadas, 0 fallidas, código de salida 0 (18 min).
+- Integración: `name_norm` con colación `utf8mb4_bin` solo en MySQL (modelo y 0024), para que el único no ignore acentos y coincida con `casefold()` como en PostgreSQL y SQLite. Prueba `tests/connectors/test_nombre_colacion_mysql.py` (fallaba antes). Sigue sin probarse contra un MySQL real.

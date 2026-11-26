@@ -14,6 +14,8 @@
   `lower(name)` o una colación `NOCASE` no es portable a los tres; una columna
   normalizada con un único corriente sí. La app la mantiene con `validates('name')`
   y esta migración la calcula igual (Python), no con `LOWER()` de cada motor.
+  En MySQL la columna usa `utf8mb4_bin`: con la colación por omisión el único
+  ignoraría acentos y no coincidiría con `casefold()`.
 - Usa `batch_alter_table` (SQLite recrea la tabla; MySQL y PostgreSQL alteran).
 - `downgrade()` borra los conectores sin plataforma (no caben en el esquema
   anterior, donde `platform_id` es obligatorio), quita `name` y `name_norm` y
@@ -27,6 +29,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import mysql
 
 
 revision: str = '0024'
@@ -40,6 +43,11 @@ FK = 'fk_platform_connectors_platform_id'
 UNICO_CLAVE = 'uq_platform_connectors_name_norm'
 LARGO_NOMBRE = 100
 LARGO_CLAVE_NOMBRE = LARGO_NOMBRE * 3
+# MySQL: colación binaria para que el único compare exacto, como PostgreSQL y
+# SQLite (la colación por omisión ignora acentos: «Café» = «Cafe»).
+COLACION_EXACTA_MYSQL = 'utf8mb4_bin'
+TIPO_CLAVE_NOMBRE = sa.String(LARGO_CLAVE_NOMBRE).with_variant(
+    mysql.VARCHAR(LARGO_CLAVE_NOMBRE, collation=COLACION_EXACTA_MYSQL), 'mysql')
 AL_BORRAR_ANTES = 'CASCADE'
 AL_BORRAR_AHORA = 'SET NULL'
 
@@ -88,14 +96,14 @@ def upgrade() -> None:
     with op.batch_alter_table(TABLA) as lote:
         lote.add_column(sa.Column('name', sa.String(LARGO_NOMBRE),
                                   nullable=True))
-        lote.add_column(sa.Column('name_norm', sa.String(LARGO_CLAVE_NOMBRE),
+        lote.add_column(sa.Column('name_norm', TIPO_CLAVE_NOMBRE,
                                   nullable=True))
     _rellenar_nombres(op.get_bind())
     with op.batch_alter_table(TABLA) as lote:
         lote.alter_column('name', existing_type=sa.String(LARGO_NOMBRE),
                           nullable=False)
         lote.alter_column('name_norm',
-                          existing_type=sa.String(LARGO_CLAVE_NOMBRE),
+                          existing_type=TIPO_CLAVE_NOMBRE,
                           nullable=False)
         lote.create_unique_constraint(UNICO_CLAVE, ['name_norm'])
         lote.drop_constraint(FK, type_='foreignkey')

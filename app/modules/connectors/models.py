@@ -16,6 +16,7 @@
   `lower(name)` no existe igual en los tres.
 - Fechas UTC sin zona (`provisioning.reloj.ahora`).
 """
+from sqlalchemy.dialects import mysql
 from sqlalchemy.orm import validates
 
 from app import db
@@ -30,6 +31,10 @@ AL_BORRAR_PLATAFORMA = 'SET NULL'
 FORMATO_FECHA = '%Y-%m-%dT%H:%M:%SZ'
 # Cambiarlos invalida la verificación de la credencial.
 CAMPOS_QUE_INVALIDAN = ('host', 'credential_ref')
+
+
+# MySQL: el único de `name_norm` compara exacto (FNC-213).
+COLACION_EXACTA_MYSQL = 'utf8mb4_bin'
 
 
 class PlatformConnector(db.Model):
@@ -48,7 +53,13 @@ class PlatformConnector(db.Model):
                       ondelete=AL_BORRAR_PLATAFORMA),
         nullable=True)
     name = db.Column(db.String(LARGO_NOMBRE), nullable=False)
-    name_norm = db.Column(db.String(LARGO_CLAVE_NOMBRE), nullable=False)
+    # MySQL: comparación exacta (la colación por omisión ignora acentos), como en
+    # PostgreSQL y SQLite; la migración 0024 usa el mismo tipo.
+    name_norm = db.Column(
+        db.String(LARGO_CLAVE_NOMBRE).with_variant(
+            mysql.VARCHAR(LARGO_CLAVE_NOMBRE, collation=COLACION_EXACTA_MYSQL),
+            'mysql'),
+        nullable=False)
     type = db.Column(db.String(LARGO_TIPO), nullable=False)
     host = db.Column(db.String(LARGO_HOST), nullable=False)
     port = db.Column(db.Integer, nullable=False)
