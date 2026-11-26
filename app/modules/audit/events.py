@@ -44,3 +44,6 @@ class Evento(str, Enum):
     CREDENCIALES_REENVIADAS = 'credenciales_reenviadas'
     GRUPOS_MOVIDOS = 'grupos_movidos'
     GRUPOS_TRASLADO_FALLIDO = 'grupos_traslado_fallido'
+    CORREO_ENVIADO = 'correo_enviado'
+    MIEMBRO_AGREGADO = 'miembro_agregado'
+    MIEMBRO_QUITADO = 'miembro_quitado'

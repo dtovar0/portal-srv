@@ -160,6 +160,7 @@ sudo ./deploy/install.sh --name portal --domain portal.ejemplo.com
 | Unidades systemd | `portal-backend`, `portal-frontend`, `portal-worker` |
 | Carpeta del código (prefijo) | La clonada, p. ej. `/opt/portal` |
 | Registros | `/var/log/portal` |
+| Log de eventos | Con `DEBUG_EVENTOS=true` en el `.env`: `/var/log/portal/eventos.log` (o la carpeta de `LOG_DIR`) y el journal (`journalctl -u portal-backend -f`); el worker, solo en el journal de `portal-worker`. Permisos 0600; retención 5 copias de 5 MB (se descarta lo más antiguo) |
 | Config de nginx | `/etc/nginx/conf.d/portal.conf` |
 | Upstreams de nginx | `portal_api`, `portal_web` |
 

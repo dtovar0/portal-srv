@@ -51,7 +51,7 @@ alembic.ini            # Configuración de Alembic (sin URL ni secretos)
 migrations/
 ├── env.py             # URL de construir_uri_bd(); importa app/modules/*/models.py
 ├── script.py.mako     # Plantilla de nuevas migraciones
-└── versions/          # 0001_linea_base_esquema_actual.py y las siguientes; 0022 (FNC-203) resiembra las plantillas de correo que falten, sin tocar las existentes
+└── versions/          # 0001_linea_base_esquema_actual.py y las siguientes; 0022 (FNC-203) resiembra las plantillas de correo que falten, sin tocar las existentes; 0023 (FNC-210) agrega `plataforma_desactivada` (no está en la resiembra de 0022, ya publicada)
 ```
 
 ## 2. Autorización (`app/authz.py`)
@@ -443,6 +443,8 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 | `notificar_solicitud_rechazada(solicitante, plataforma, nivel, motivo)` | `solicitud_rechazada` | Solicitante, si tiene `pref_email_notifications` |
 | `notificar_aprovisionamiento_fallido(usuario, plataforma, nivel, operacion)` | `aprovisionamiento_fallido` | Admins del área y superadmins con `pref_email_notifications` (P10, 2026-10-15) |
 
+| `notificar_plataformas_desactivadas(plataformas, area)` (`notifications/desactivacion.py`, FNC-210) | `plataforma_desactivada` | Cuentas activas con acceso `activo` o `en_proceso` a las plataformas, con `pref_email_notifications`; un correo por persona (con varias plataformas, `plataforma` las lista). Se llama tras el commit de `PUT /platforms/<id>` y `PUT /areas/<id>` solo al pasar de activa a `Inactivo` (reactivar no avisa; una plataforma ya inactiva o de un área inactiva no repite). Interruptor `NOTIFY_PLATFORM_DEACTIVATION`; plantilla de la migración `0023` |
+
 - Plantillas: migración `0003` (HTML, español, editables en Ajustes → Plantillas); variables en `CLAVES_POR_PLANTILLA`; enlace `{url}` = `BASE_URL`.
 - Plantilla usada por el código: `usuario_creado` (alta por LDAP o SSO, si `NOTIFY_USER_CREATED` no es `false`), enviada por `avisar_usuario_creado` de `notifications/services.py` (FNC-030). Variables: `nombre`, `usuario`, `base_url`, `url`.
 - `add_in_app_notification()` existe en servicios.
@@ -457,6 +459,8 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - `before`/`after` sin contraseñas, hashes, tokens, cookies, cabeceras ni secretos (`audit/sanitizar.py`, SEC-AUD-05).
 - Inmutable (`audit/inmutabilidad.py`): el ORM rechaza `UPDATE`/`DELETE` (por objeto y masivos) con `RegistroInmutable`; sin rutas de edición ni borrado; borrar usuario, área o plataforma deja la referencia en NULL.
 - Migración `0002_auditoria_ampliada`.
+- **Log de eventos (FNC-209, `audit/log_eventos.py`):** con `DEBUG_EVENTOS=true`, cada evento de `add_audit_log` se escribe también como una línea `clave=valor` (`fecha accion actor= usuario= plataforma= area= modulo= objetivo= resultado= detalle=`) en `logs/eventos.log` (carpeta de `resolver_carpeta_logs`, rotación 5 MB × 5) y en consola/journald; apagado no crea el archivo ni consulta nombres. El archivo se crea con permisos 0600 (también tras rotar) y los caracteres no imprimibles (ESC, BEL, C1, U+2028/2029…) se escapan como `\uXXXX`. Retención: `eventos.log` + 5 copias de 5 MB (≈ 30 MB); lo más antiguo se descarta. Sin `before`/`after`; el detalle se limpia de secretos y enlaces. `solo_log=True` deja un evento solo en el log (sin BD).
+- `correo_enviado` (solo log, destinatarios enmascarados, desde `send_notification_by_slug`), `miembro_agregado` / `miembro_quitado` (`audit/miembros.py`: BD + log desde el aprovisionamiento LDAP; solo log desde `grupos_de_rol`, porque quien llama puede tener cambios sin guardar).
 - Se audita: accesos (local, directorio, SSO, fallidos, SSO rechazado), cierre de sesión, CRUD de áreas/plataformas/usuarios, configuración, SMTP, LDAP, respaldos, purgas, altas/bajas automáticas por LDAP y correos del gestor no enviados (`notificacion_fallida`, FNC-048).
 
 ## 6. Cómo arrancar en dev

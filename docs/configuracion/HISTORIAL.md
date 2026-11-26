@@ -4,6 +4,8 @@
 
 | Fecha | Variable | Entorno | Antes | Después | Motivo | Tarea / ADR | Autor |
 |---|---|---|---|---|---|---|---|
+| 2026-11-25 | Alta: `NOTIFY_PLATFORM_DEACTIVATION` | todos | — | `true` por omisión (`false` apaga el aviso) | pedido del dueño 2026-11-25: avisar a los miembros cuando se desactiva una plataforma o un área | FNC-210 | Claude |
+| 2026-11-25 | Alta: `DEBUG_EVENTOS`, `TAMANO_MAXIMO_BYTES` y `COPIAS_ROTACION` (constantes de `audit/log_eventos.py`: 5 MB y 5 copias) | todos | — | `false` por omisión; `true` escribe `logs/eventos.log` | pedido del dueño 2026-11-25: seguimiento de solicitudes, grupos y correos | FNC-209 | Claude |
 | 2026-11-24 | `LDAP_PLATFORM_GROUP_TEMPLATE` (valor por omisión) y `PLANTILLA_GRUPO_POR_OMISION` (alta) | todos | vacía = no se deriva el DN (el superadmin lo indicaba) | vacía = `cn=app-{plataforma}-{nivel}` | Pedido del dueño: toda plataforma da acceso por su grupo `app-{plataforma}-{nivel}`, tenga o no conector | FNC-196 | Claude |
 | 2026-11-24 | `LDAP_PROVISIONING_AUTO_CREATE_GROUPS` y `LDAP_AUTO_CREATE_PLATFORM_GROUPS` (valor por omisión del aprovisionamiento) | todos | sin definir = no se crea el grupo faltante (`grupo_inexistente`) | ambas sin definir = se crea al otorgar; definida en `false` lo apaga | Como todas las plataformas dan acceso por grupo, un grupo derivado que aún no existe no debe hacer fallar el primer acceso; `.env.example` ya las traía en `true` | FNC-196 | Claude |
 | 2026-11-24 | `VAULTWARDEN_SEND_OCULTAR_CORREO` (alta) y `hideEmail` del Send | todos | siempre oculto | visible por omisión; configurable | La página del Send advertía «el usuario ocultó su correo; confía en la fuente» y el dueño pidió quitarla | FNC-195 | Claude |
