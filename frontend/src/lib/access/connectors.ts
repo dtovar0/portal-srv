@@ -56,9 +56,11 @@ export const connectorsApi = {
   destroy: (id: number) =>
     accessRequest<StatusOk>(`/connectors/${id}`, jsonBody('DELETE'), () => ({ status: 'success' })),
 
-  associate: (id: number, platformId: number) =>
+  /** `confirmar` (contrato 1.7): asociar aunque la plataforma tenga accesos vigentes. */
+  associate: (id: number, platformId: number, confirmar = false) =>
     accessRequest<Guardado>(
-      `/connectors/${id}/platform`, jsonBody('PUT', { platform_id: platformId }),
+      `/connectors/${id}/platform`,
+      jsonBody('PUT', confirmar ? { platform_id: platformId, confirmar: true } : { platform_id: platformId }),
       () => ({ status: 'success', connector: { ...MOCK_CONNECTOR_SIN_PLATAFORMA, id, platform_id: platformId } })),
 
   /** Cuerpo `{}`. */

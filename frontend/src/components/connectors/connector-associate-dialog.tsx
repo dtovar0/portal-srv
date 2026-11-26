@@ -4,6 +4,8 @@
  * Selector de plataforma para asociar un conector (DIS-140,
  * `PUT /connectors/<id>/platform`, contrato `conectores-y-ejecuciones.md` 1.6).
  * Ofrece las plataformas de `GET /platforms` con `has_connector` falso (una por conector).
+ * DIS-143 (contrato 1.7): si la plataforma tiene accesos vigentes, el servidor responde
+ * `409 plataforma_destino_con_accesos` y se pide confirmación antes de reintentar con `confirmar`.
  */
 
 import { useState } from 'react';
@@ -13,6 +15,8 @@ import type { ConnectorItem } from '@/lib/access/types';
 import type { Platform } from '@/lib/types';
 import { useAsync } from '@/lib/use-async';
 import { listLoadError } from '../access/request-errors';
+import { ApiError } from '@/lib/api';
+import { AlertDialog } from '../alert-dialog';
 import { Button, Modal } from '../form';
 import { Icono } from '../icono';
 import { useToast } from '../toast';
@@ -20,6 +24,12 @@ import { EmptyNote, ErrorNote, Spinner } from '../ui';
 import { describeConnectorAssociateError } from './connector-errors';
 
 export const SIN_CANDIDATAS = 'Todas las plataformas ya tienen conector.';
+export const CODIGO_DESTINO_CON_ACCESOS = 'plataforma_destino_con_accesos';
+export const TITULO_CONFIRMAR = 'La plataforma tiene accesos vigentes';
+export function mensajeConfirmar(conector: string, plataforma: string): string {
+  return `«${plataforma}» ya tiene personas con acceso que no se dieron de alta con «${conector}». `
+    + 'El conector se usará en sus próximas altas y bajas. ¿Asociarlo de todos modos?';
+}
 export const SIN_PLATAFORMAS = 'Primero crea una plataforma en Plataformas; después asóciale un conector.';
 
 const porNombre = (a: Platform, b: Platform) => a.name.localeCompare(b.name, 'es');
@@ -47,16 +57,23 @@ export function ConnectorAssociateDialog({
   );
   const [sending, setSending] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [porConfirmar, setPorConfirmar] = useState<Platform | null>(null);
   const candidatas = plataformasSinConector(lista.data ?? []);
 
-  async function elegir(plataforma: Platform) {
+  async function elegir(plataforma: Platform, confirmar = false) {
     if (sending !== null) return;
     setSending(plataforma.id);
     setError(null);
     try {
-      const result = await connectorsApi.associate(connector.id, plataforma.id);
+      const result = await connectorsApi.associate(connector.id, plataforma.id, confirmar);
+      setPorConfirmar(null);
       onDone(result.connector);
     } catch (err) {
+      if (!confirmar && err instanceof ApiError && err.code === CODIGO_DESTINO_CON_ACCESOS) {
+        setSending(null);
+        setPorConfirmar(plataforma);
+        return;
+      }
       const view = describeConnectorAssociateError(err);
       setError(view.message);
       toast.avisar('error', view.message, 'Error al asociar');
@@ -112,6 +129,17 @@ export function ConnectorAssociateDialog({
         ) : null}
         {error ? <div className="sr-only">{error}</div> : null}
       </div>
+      {porConfirmar ? (
+        <AlertDialog
+          type="aviso"
+          title={TITULO_CONFIRMAR}
+          message={mensajeConfirmar(connector.name, porConfirmar.name)}
+          confirmLabel="Asociar"
+          busy={sending !== null}
+          onClose={() => setPorConfirmar(null)}
+          onConfirm={() => elegir(porConfirmar, true)}
+        />
+      ) : null}
     </Modal>
   );
 }
