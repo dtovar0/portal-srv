@@ -20,7 +20,7 @@ import { DataTable } from './data-table';
 import { Button, ConfirmDialog } from './form';
 import { Icono } from './icono';
 import { PageHeader } from './page-header';
-import { columnasPlataformas } from './platforms/platform-columns';
+import { columnasPlataformas, sinEnlaceWeb } from './platforms/platform-columns';
 import { MissingLinkNote } from './platforms/missing-link-note';
 import { AreaCardDesignDrawer } from './platforms/area-card-design-drawer';
 import { PlatformCardDesignDrawer } from './platforms/platform-card-design-drawer';
@@ -614,7 +614,8 @@ function PlatformAdminContent({ initialAreaId }: { initialAreaId?: number | null
     platforms.reload();
   }
 
-  const missingLink = (platforms.data ?? []).filter((p) => !enlaceSeguro(p.direct_link));
+  // DIS-138: solo los enlaces escritos pero no válidos; sin enlace es «Omitir enlace».
+  const missingLink = (platforms.data ?? []).filter((p) => !sinEnlaceWeb(p) && !enlaceSeguro(p.direct_link));
 
   return (
     <div className="flex h-full w-full flex-col gap-4 min-h-0">

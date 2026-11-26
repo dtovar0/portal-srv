@@ -30,6 +30,10 @@ import {
 } from './platform-payload';
 import { describeSaveError, MENSAJE_REVISA_CAMPOS } from './platform-save-errors';
 
+/** DIS-138: «Omitir enlace» es para plataformas que no se abren desde el navegador. */
+export const DESCRIPCION_OMITIR_ENLACE =
+  'Para plataformas que no necesitan un enlace web (por ejemplo, acceso por SSH o con un cliente de escritorio).';
+
 /** Coincidencia simple por nombre o correo para el buscador del Dual Picklist. */
 function coincideUsuario(user: ManagedUser, query: string): boolean {
   const q = query.trim().toLowerCase();
@@ -523,7 +527,7 @@ export function PlatformForm({
             <Toggle
               id="platform-omitir-enlace"
               label="Omitir enlace"
-              description="La plataforma se muestra en el portal, pero no se puede abrir."
+              description={DESCRIPCION_OMITIR_ENLACE}
               checked={omitirEnlace}
               onChange={(omitir) => {
                 setOmitirEnlace(omitir);
