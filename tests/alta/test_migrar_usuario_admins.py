@@ -135,13 +135,37 @@ def test_cuenta_usuario_existente_pasa_a_admin_area_con_auditoria_y_grupo(
     assert dn_persona('eli') not in base.miembros(GRUPO_USUARIOS)
 
 
-def test_admin_area_no_agrega_el_area_a_las_de_la_persona(
+def test_admin_area_tambien_lo_hace_miembro_del_area(
         datos, correr, cola_falsa):
+    """FNC-208: `--admin-area` implica `--area`."""
     r = correr(*BASE, '--admin-area', 'Ventas')
     assert r.exit_code == 0, r.output
     cuenta = _cuenta()
-    assert [a.name for a in cuenta.areas] == ['Aduana']
+    assert sorted(a.name for a in cuenta.areas) == ['Aduana', 'Ventas']
     assert [a.name for a in cuenta.managed_areas] == ['Ventas']
+
+
+def test_admin_area_sin_area_basta(datos, correr, cola_falsa):
+    """FNC-208: sin `--area`, `--admin-area` alcanza y permite otorgar
+    plataformas de esa área."""
+    r = correr(*CMD, '--admin-area', 'Aduana')
+    assert r.exit_code == 0, r.output
+    cuenta = _cuenta()
+    assert [a.name for a in cuenta.areas] == ['Aduana']
+    assert [a.name for a in cuenta.managed_areas] == ['Aduana']
+
+
+def test_sin_area_ni_admin_area_es_error(datos, correr):
+    r = correr(*CMD)
+    assert r.exit_code != 0
+    assert 'falta --area o --admin-area' in r.output
+    assert _cuenta() is None
+
+
+def test_area_y_admin_area_iguales_no_duplican(datos, correr, cola_falsa):
+    r = correr(*BASE, '--admin-area', 'aduana')
+    assert r.exit_code == 0, r.output
+    assert [a.name for a in _cuenta().areas] == ['Aduana']
 
 
 def test_admin_area_suma_a_las_que_ya_administraba(datos, correr, cola_falsa):

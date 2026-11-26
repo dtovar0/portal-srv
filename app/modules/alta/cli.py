@@ -166,7 +166,8 @@ def migrar_ldap(dry_run, grupos, rol, actualizar_rol, sin_grupo_del_portal,
 @alta_cli.command('migrar-usuario')
 @click.argument('uid')
 @click.option('--area', 'areas', multiple=True,
-              help='Área de la persona (por nombre); obligatoria y repetible.')
+              help='Área de la persona (por nombre); repetible. Obligatoria salvo '
+                   'que se use --admin-area (que también la hace miembro).')
 @click.option('--plataforma', 'plataformas', multiple=True,
               help='Plataforma a la que se le otorga acceso (por nombre, de '
                    'una de sus áreas); repetible.')
@@ -179,7 +180,8 @@ def migrar_ldap(dry_run, grupos, rol, actualizar_rol, sin_grupo_del_portal,
 @click.option('--admin-area', 'areas_admin', multiple=True,
               help='Hace a la persona administradora de esta área (rol '
                    'admin_area, grupo de Authelia y accesos automáticos, como '
-                   'en el portal); suma a las que ya administraba; repetible.')
+                   'en el portal); suma a las que ya administraba; también la hace '
+                   'miembro del área (no hace falta --area); repetible.')
 @click.option('--nivel', type=click.Choice(NIVELES), default=NIVELES[0],
               show_default=True,
               help='Nivel de los accesos de --plataforma (no de '
