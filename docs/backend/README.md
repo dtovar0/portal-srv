@@ -39,7 +39,7 @@ app/
     ├── alta/          # `flask alta ...` (FNC-182): altas por CLI desde CSV, migración de grupos de LDAP y `migrar-usuario` (FNC-202, persona por persona: cuenta, áreas, responsiva, accesos de origen `migracion` y rotación); reutiliza `bulk_import`, `directory_accounts` y `entrega_credenciales`; uso en `scripts/alta/README.md`
     ├── demo/          # `flask demo cargar` (FNC-131): datos (qué se crea), carga (servicios y modelos, idempotente) y cli (solo `APP_ENV=development`; contraseñas del prompt, stdin o aleatorias)
     ├── secretos/      # Vaultwarden (FNC-068): configuracion (VAULTWARDEN_*), cifrado (Bitwarden del lado del cliente), vaultwarden (cliente: lectura y sesión), sends (Sends de texto, FNC-136)
-    ├── connectors/    # Conectores (FNC-050): base (interfaz), registry (tipos), models (platform_connectors), validacion, credenciales (fuente y caché), provider (proveedor `conector`), consultas, noop (solo dev/pruebas), configuracion (CONNECTOR_*); api y prueba (FNC-061)
+    ├── connectors/    # Conectores (FNC-050): base (interfaz), registry (tipos), models (platform_connectors), validacion, credenciales (fuente y caché), provider (proveedor `conector`), consultas, noop (solo dev/pruebas), configuracion (CONNECTOR_*); api y prueba (FNC-061); `api_independientes` y `servicio` (FNC-213)
     ├── platforms/     # api.py (escritura de plataformas), validacion.py, grupos.py (DN), tipos.py, estado.py (puntos de extensión; `tiene_conector` desde FNC-050) (FNC-046)
     ├── audit/         # Modelo AuditLog y add_audit_log(); api.py (consulta e historiales), queries.py (alcance y filtros), parametros.py (FNC-060)
     ├── notifications/ # Modelos SMTP/plantillas/in-app, servicios de correo y avisos del gestor (access_notifications.py); api.py (SMTP, plantillas, notificaciones in-app; FNC-029)
@@ -84,7 +84,7 @@ Las tablas las crean las migraciones de Alembic (§7); `db.create_all()` sigue a
 | `user_platforms` | tabla de relación | **Obsoleta** (FNC-065, P4): `user_id`, `platform_id`; nada la lee ni la escribe y sus filas se descartan (no se migran a accesos). No se borra aquí: su borrado va en FNC-107 |
 | `platform_access_grants` | `access.models.PlatformAccessGrant` | FNC-054 (0007): `user_id`, `platform_id` (FK sin `ON DELETE`), `level` (`usuario`/`admin`), `origin` (`solicitud`/`admin_de_area`), `request_id` (sin FK; la tabla de solicitudes existe desde FNC-056, FK propuesta en FNC-088), `granted_by`/`revoked_by` (FK `SET NULL`; nulo = sistema), `granted_at`, `status`, `revoked_at`, `revoke_reason` (500), `last_job_id`, `updated_at`; únicos `slot_vigente` (usuario, plataforma, nivel) y `slot_ocupante` (usuario, plataforma: P5). Nunca se borra |
 | `platform_access_requests` | `access_requests.models.PlatformAccessRequest` | FNC-056 (0008): `user_id`, `platform_id` (FK sin `ON DELETE`), `level`, `justification` (opcional, 500), `status` (`pendiente`/`aprobada`/`rechazada`), `current_level` (nivel ocupado al solicitar), `created_at`, `decided_by` (FK `SET NULL`), `decided_at`, `rejection_reason` (500); único `slot_pendiente` (usuario, plataforma): una pendiente por plataforma también ante carreras |
-| `platform_connectors` | `connectors.models.PlatformConnector` | FNC-050 (0009): `platform_id` (FK única, `ON DELETE CASCADE`), `type` (20), `host` (253, nombre de la lista blanca), `port`, `params` (JSON sin secretos), `credential_ref` (200, referencia del gestor; nunca el valor), `credential_status` (`ok`/`no_encontrada`/`sin_verificar`; cambiar `host` o `credential_ref` la deja `sin_verificar`), `active`, `created_at`, `updated_at` |
+| `platform_connectors` | `connectors.models.PlatformConnector` | FNC-050 (0009); FNC-213 (0024): `name` (100) y `name_norm` (`name.casefold()`, único: unicidad sin mayúsculas portable a SQLite, MySQL y PostgreSQL); `platform_id` (FK única, nula = conector sin asociar, `ON DELETE SET NULL`), `type` (20), `host` (253, nombre de la lista blanca), `port`, `params` (JSON sin secretos), `credential_ref` (200, referencia del gestor; nunca el valor), `credential_status` (`ok`/`no_encontrada`/`sin_verificar`; cambiar `host` o `credential_ref` la deja `sin_verificar`), `active`, `created_at`, `updated_at` |
 | `credential_deliveries` | `users.models.EntregaCredenciales` | FNC-138 (0016): `user_id` (FK única, `ON DELETE CASCADE`), `uid`, `status` (`pendientes`/`enviadas`), `attempts_count`, `max_attempts`, `next_attempt_at`, `locked_at`/`locked_by` (reserva del worker), `send_id` (no secreto), `last_sent_at`, `last_error` (código corto), fechas. Nunca guarda la contraseña ni el enlace |
 | `user_favorites` | tabla de relación | `user_id`, `platform_id` |
 | `audit_logs` | `audit.models.AuditLog` | `timestamp`, `user` (correo o `sistema`, 255), `action` (150), `module`, `target` (255), `detail`, `ip_address`, `status` (`success`/`error`/`warning`/`info`); FNC-047: `actor_id`, `target_user_id`, `area_id`, `platform_id` (FK `SET NULL`), `before_state`/`after_state` (JSON), `request_id`, `grant_id`; índices por fecha, actor, usuario afectado, área y plataforma. Inmutable desde el ORM |
@@ -247,6 +247,23 @@ Contrato `docs/contratos/plataformas-integracion.md`. Respuesta de `POST`/`PUT`:
 | `POST /platforms/<id>/connector/test` | `admin_required` + `escritura_del_portal` | Cuerpo `{}`. `prueba.probar_conexion`: `consultar` del proveedor `conector` con la cuenta del superadmin (no otorga ni revoca), tras vaciar la caché. `200` con `result` `ok`/`error` y mensaje genérico; motivo solo al log. `credential_status` → `ok` o `no_encontrada`. Audita `conector_probado`. |
 
 - Decisiones del orquestador (pendientes de validar en la prueba de concepto): ficha FNC-061.
+
+#### Conectores independientes — `app/modules/connectors/api_independientes.py` (FNC-213, contrato 1.6)
+Todas `admin_required` (+ `escritura_del_portal` las escrituras); cuerpo `{}` en `DELETE` y `test`. Reglas compartidas en `servicio.py`.
+
+| Método y ruta | Qué hace |
+|---|---|
+| `GET /connectors` | `{"items": [ConnectorV2]}` por `name_norm`, sin paginar |
+| `POST /connectors` | `201`; crea sin plataforma. `name` + campos del `PUT` por plataforma; `422` `fields.name` si está repetido (sin mayúsculas). Audita `conector_creado` |
+| `GET /connectors/<id>` | `ConnectorV2`; `404` |
+| `PUT /connectors/<id>` | Reemplaza; cambiar `type` con accesos vigentes en su plataforma → `409 plataforma_con_accesos`. Audita `conector_configurado` si cambió |
+| `DELETE /connectors/<id>` | Asociado con accesos vigentes → `409 plataforma_con_accesos`. Audita `conector_eliminado` |
+| `PUT /connectors/<id>/platform` | `{"platform_id"}`; `404` plataforma; otro conector en ella → `409 plataforma_con_conector`; asociado a otra con accesos → `409 plataforma_con_accesos`; misma → `200` sin cambios. Audita `conector_asociado` |
+| `DELETE /connectors/<id>/platform` | Sin plataforma → `409 conector_sin_plataforma`; con accesos vigentes → `409 plataforma_con_accesos`. Audita `conector_desasociado` |
+| `POST /connectors/<id>/test` | Como la prueba por plataforma; sin plataforma → `409 conector_sin_plataforma` |
+
+- `PUT /platforms/<id>/connector` crea con `name` = nombre de la plataforma (si choca, `"<plataforma> (<id>)"`); `DELETE` elimina el conector. Borrar una plataforma (`platforms/baja.py`) **desasocia** su conector.
+- `consultas.referencias_de_otras(conector_id)` excluye por id de conector (con `platform_id` nulo `!=` no sirve). El ejecutor solo usa conectores asociados.
 
 ### 4.3.6 Inicio — `app/modules/home/api.py` (`/api/v1`, FNC-066)
 

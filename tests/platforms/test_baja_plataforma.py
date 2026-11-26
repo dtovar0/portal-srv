@@ -91,10 +91,11 @@ def test_baja_con_historial_cerrado_retira_y_desliga_trabajos(
     assert evento.before_state['trabajos_desligados'] == 1
 
 
-def test_baja_borra_el_conector_de_la_plataforma(escena, cliente_como):
+def test_baja_desasocia_el_conector_de_la_plataforma(escena, cliente_como):
     superadmin, _, plataforma = escena
     db.session.add(PlatformConnector(
-        platform_id=plataforma.id, type='noop', host='conector.pruebas.local',
+        platform_id=plataforma.id, name='Conector de baja', type='noop',
+        host='conector.pruebas.local',
         port=443, params={}, credential_ref='ref-prueba'))
     db.session.commit()
     plataforma_id = plataforma.id
@@ -103,3 +104,6 @@ def test_baja_borra_el_conector_de_la_plataforma(escena, cliente_como):
 
     assert res.status_code == 200
     assert PlatformConnector.query.filter_by(platform_id=plataforma_id).count() == 0
+    conector = PlatformConnector.query.filter_by(name='Conector de baja').one()
+    assert conector.platform_id is None  # FNC-213: se conserva, sin asociar
+    assert conector.credential_ref == 'ref-prueba'
