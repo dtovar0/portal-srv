@@ -18,11 +18,21 @@ const COLUMNAS = 'md:grid-cols-[minmax(0,2.5fr)_minmax(0,1.5fr)_minmax(0,1fr)_mi
 
 export const ENCABEZADOS_CONECTORES = ['Plataforma', 'Conector', 'Accesos vigentes', 'Acciones'];
 
-/** Solo las plataformas con `integration_type` `conector`, por nombre. */
+const porNombre = (a: Platform, b: Platform) => a.name.localeCompare(b.name, 'es');
+
+/**
+ * Plataformas de la lista, por nombre: las que ya tienen conector y las de tipo `conector`
+ * aunque falte configurarlo. Desde FNC-196 cualquier plataforma puede tener conector (DIS-139).
+ */
 export function plataformasConConector(plataformas: Platform[]): Platform[] {
   return plataformas
-    .filter((p) => p.integration_type === 'conector')
-    .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    .filter((p) => p.has_connector || p.integration_type === 'conector')
+    .sort(porNombre);
+}
+
+/** Candidatas de «Nuevo»: cualquier plataforma que aún no tenga conector, por nombre (DIS-139). */
+export function plataformasSinConector(plataformas: Platform[]): Platform[] {
+  return plataformas.filter((p) => !p.has_connector).sort(porNombre);
 }
 
 export function botonConfigurarId(platformId: number): string {
