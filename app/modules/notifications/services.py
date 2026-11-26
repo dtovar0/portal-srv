@@ -251,7 +251,8 @@ def _auditar_envio(slug, destinatarios):
         add_audit_log(Evento.CORREO_ENVIADO, status='success',
                       detail=f"Correo '{slug}' a {len(lista)} destinatario(s): "
                              + ', '.join(_enmascarar(c) for c in lista),
-                      module='Notificaciones', target=slug, solo_log=True)
+                      module='Notificaciones', target=slug, solo_log=True,
+                      commit=False)
     except Exception:
         pass
 

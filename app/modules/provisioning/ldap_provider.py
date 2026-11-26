@@ -13,6 +13,7 @@
   `sin_cambios`, `error_transitorio` se reintenta, `no_existe` y
   `error_permanente` no.
 """
+import logging
 import os
 
 from app import db
@@ -46,6 +47,8 @@ from app.modules.provisioning.tipos import (RESULTADO_ERROR_PERMANENTE,
                                             RESULTADO_ERROR_TRANSITORIO,
                                             RESULTADO_EXITOSO,
                                             RESULTADO_SIN_CAMBIOS)
+
+logger = logging.getLogger(__name__)
 
 # Creación del grupo faltante al otorgar (FNC-196: toda plataforma da acceso por
 # su grupo, así que por omisión se crea). Cualquiera de las dos variables, si
@@ -157,16 +160,21 @@ class ProveedorLdap(Provisioner):
     @staticmethod
     def _auditar(operacion, accion, escritura, grupo, persona):
         """`miembro_agregado`/`miembro_quitado` (FNC-209); se guarda con el
-        cierre del trabajo (sin commit propio)."""
-        plataforma = (db.session.get(Platform, operacion.plataforma_id)
-                      if operacion.plataforma_id else None)
-        evento = (Evento.MIEMBRO_AGREGADO if accion == 'add_member'
-                  else Evento.MIEMBRO_QUITADO)
-        auditar_miembro(evento, escritura, grupo, persona,
-                        user_id=operacion.usuario_id,
-                        platform_id=operacion.plataforma_id,
-                        area_id=plataforma.area_id if plataforma else None,
-                        as_system=True)
+        cierre del trabajo (sin commit propio). Nunca lanza: auditar no puede
+        cambiar el resultado de una escritura que ya se hizo."""
+        try:
+            plataforma = (db.session.get(Platform, operacion.plataforma_id)
+                          if operacion.plataforma_id else None)
+            evento = (Evento.MIEMBRO_AGREGADO if accion == 'add_member'
+                      else Evento.MIEMBRO_QUITADO)
+            auditar_miembro(evento, escritura, grupo, persona,
+                            user_id=operacion.usuario_id,
+                            platform_id=operacion.plataforma_id,
+                            area_id=plataforma.area_id if plataforma else None,
+                            as_system=True)
+        except Exception as exc:
+            logger.warning('No se auditó la membresía (%s).',
+                           type(exc).__name__)
 
     def _membresia(self, operacion, accion):
         try:

@@ -245,3 +245,100 @@ def test_grupo_de_rol_deja_la_alta_en_el_log_y_no_toca_la_bd(
     assert len(filas) == 1 and ' miembro_agregado ' in filas[0]
     assert 'objetivo=ana' in filas[0] and 'resultado=success' in filas[0]
     assert AuditLog.query.count() == 0
+
+
+# ------------------------- correcciones de seguridad ------------------------ #
+
+PELIGROSOS = ['\x1b]0;titulo\x07', 'a\x1b[31mrojo', 'b\x07', 'c\x08d',
+              'e\x9bf', 'g\x85h', 'i j', 'k l', 'm\x00n']
+
+
+@pytest.mark.parametrize('texto', PELIGROSOS)
+def test_valor_escapa_caracteres_de_control(texto):
+    salida = log_eventos._valor(texto)
+
+    assert salida.isprintable()
+    assert salida.startswith('"') and salida.endswith('"')
+
+
+@pytest.mark.parametrize('texto', PELIGROSOS)
+def test_linea_y_detalle_no_llevan_caracteres_de_control(texto):
+    linea = log_eventos.armar_linea('x', (('objetivo', texto),
+                                          ('detalle',
+                                           log_eventos.limpiar_detalle(texto))))
+
+    assert linea.isprintable()
+    assert not any(c in linea for c in '\x1b\x07\x08\x9b\x85  \x00')
+
+
+def test_evento_con_escape_en_el_objetivo_no_llega_crudo_al_archivo(
+        app, encendido):
+    add_audit_log(Evento.ACCESO_FALLIDO, 'error', 'intento',
+                  target='a\x1b]0;t\x07@x.com')
+
+    crudo = encendido.read_bytes() if encendido.exists() else b''
+    log_eventos.reiniciar()
+    crudo = encendido.read_bytes()
+    assert b'\x1b' not in crudo and b'\x07' not in crudo
+
+
+def test_el_archivo_se_crea_0600_tambien_tras_rotar(app, encendido,
+                                                    monkeypatch):
+    monkeypatch.setattr(log_eventos, 'TAMANO_MAXIMO_BYTES', 200)
+    for _ in range(8):
+        add_audit_log(Evento.AREA_CREADA, 'success', 'x' * 100)
+
+    log_eventos.reiniciar()
+    archivos = [p for p in encendido.parent.iterdir()
+                if p.name.startswith(log_eventos.ARCHIVO_LOG)]
+    assert len(archivos) > 1  # hubo rotación
+    for archivo in archivos:
+        assert oct(archivo.stat().st_mode & 0o777) == '0o600', archivo.name
+
+
+def test_solo_log_no_hace_commit_ni_rollback(app, encendido, monkeypatch):
+    area = fabricas.crear_area('Pendiente')
+    area.name = 'Cambio sin guardar'  # cambio del llamador
+    llamadas = []
+    monkeypatch.setattr(db.session, 'commit', lambda: llamadas.append('c'))
+    monkeypatch.setattr(db.session, 'rollback', lambda: llamadas.append('r'))
+    # Fuerza un fallo al armar el registro.
+    monkeypatch.setattr('app.modules.audit.services._recortar',
+                        lambda *a: (_ for _ in ()).throw(ValueError('x')))
+
+    add_audit_log(Evento.CORREO_ENVIADO, 'success', solo_log=True)
+
+    assert llamadas == []
+
+
+def test_correo_enviado_no_descarta_cambios_del_llamador(smtp, encendido,
+                                                         monkeypatch):
+    area = fabricas.crear_area('Pendiente2')
+    area.name = 'Cambio sin guardar'
+    monkeypatch.setattr('app.modules.audit.services._recortar',
+                        lambda *a: (_ for _ in ()).throw(ValueError('x')))
+
+    r = services.send_notification_by_slug('prueba_log', 'ana@pruebas.local')
+
+    assert r['status'] == 'success'
+    assert area.name == 'Cambio sin guardar'  # sin rollback: no se expiró
+
+
+def test_fallo_de_lectura_de_plataforma_no_cambia_el_resultado(
+        app, monkeypatch):
+    proveedor = ProveedorLdap(cliente=object(), escritor=EscritorFalso())
+    monkeypatch.setattr(proveedor, '_preparar',
+                        lambda op: (None, proveedor._escritor, GRUPO,
+                                    PersonaFalsa()))
+
+    def _roto(*a, **k):
+        raise RuntimeError('BD caída')
+    monkeypatch.setattr('app.modules.provisioning.ldap_provider.db.session.get',
+                        _roto)
+    op = Operacion(id_operacion='1', clave_idempotencia='k',
+                   operacion='otorgar', nivel='usuario', plataforma_id=1,
+                   usuario_id=None)
+
+    resultado = proveedor.otorgar(op)
+
+    assert resultado.resultado == 'exitoso'

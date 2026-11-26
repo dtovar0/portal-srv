@@ -22,8 +22,12 @@
 - `grupos_de_rol` solo log: quien llama puede tener cambios sin guardar; un commit ahí los guardaría antes de tiempo.
 - Actor = correo de la sesión (`sistema` para el worker); usuario = correo de la cuenta afectada.
 
+## Correcciones de la auditoría de seguridad (2026-11-25)
+- Escape de caracteres no imprimibles en valores y detalle (`\uXXXX`); archivo 0600 también tras rotar (`_ArchivoPrivado`); `solo_log` nunca hace commit ni rollback y `correo_enviado` pasa `commit=False`; `ProveedorLdap._auditar` no puede cambiar el resultado de la escritura.
+- Observación: `deploy/backend.service.tmpl` no fija `UMask`; no se cambia (afecta a otros archivos), por eso el 0600 se pide al crear el archivo.
+
 ## Pruebas
-- `tests/audit/test_log_eventos.py`: 11 (apagado sin archivo, una línea con actor y nombres, sin secretos, fallo del log, correo, miembros).
+- `tests/audit/test_log_eventos.py`: 34 (apagado sin archivo, una línea con actor y nombres, sin secretos, fallo del log, correo, miembros).
 - Bloque `audit`, `provisioning`, `users`, `notifications`, `directory`, `alta`: 926 passed (antes de agregar las 11).
 
 ## Impacto en elementos compartidos

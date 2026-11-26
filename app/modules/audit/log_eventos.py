@@ -35,7 +35,23 @@ PATRON_SECRETO = re.compile(
     r'código|codigo|code|otp)\s*[:=]\s*\S+', re.IGNORECASE)
 PATRON_SIMPLE = re.compile(r'[^\s="\\]+')
 
+PERMISOS_ARCHIVO = 0o600  # solo el servicio lee el log (hay correos de cuentas)
+
 _manejadores = {}
+
+
+class _ArchivoPrivado(RotatingFileHandler):
+    """`RotatingFileHandler` que crea (y reabre tras rotar) con 0600."""
+
+    def _open(self):
+        descriptor = os.open(self.baseFilename,
+                             os.O_WRONLY | os.O_APPEND | os.O_CREAT,
+                             PERMISOS_ARCHIVO)
+        try:
+            os.chmod(self.baseFilename, PERMISOS_ARCHIVO)
+        except OSError:
+            pass
+        return os.fdopen(descriptor, self.mode, encoding=self.encoding)
 
 
 def activo(entorno=None):
@@ -67,7 +83,7 @@ def _registro():
         registro.addHandler(consola)
         if ruta:
             try:
-                archivo = RotatingFileHandler(
+                archivo = _ArchivoPrivado(
                     ruta, maxBytes=TAMANO_MAXIMO_BYTES,
                     backupCount=COPIAS_ROTACION, encoding='utf-8')
                 archivo.setFormatter(formato)
@@ -84,15 +100,23 @@ def limpiar_detalle(texto):
         return ''
     texto = PATRON_ENLACE.sub(MARCA_ENLACE, str(texto))
     texto = PATRON_SECRETO.sub(lambda m: f'{m.group(1)}={MARCA_OMITIDO}', texto)
+    texto = ''.join(c if c.isprintable() else ' ' for c in texto)
     texto = ' '.join(texto.split())
     return texto[:LARGO_MAXIMO_DETALLE]
 
 
+def _escapar_no_imprimibles(texto):
+    """`\\uXXXX` en lugar de ESC, BEL, C1, NEL, U+2028/2029, DEL, etc.: el
+    log no puede llevar secuencias de terminal ni saltos de línea ocultos."""
+    return ''.join(c if c.isprintable() else f'\\u{ord(c):04x}'
+                   for c in texto)
+
+
 def _valor(valor):
     texto = str(valor)
-    if PATRON_SIMPLE.fullmatch(texto):
+    if texto.isprintable() and PATRON_SIMPLE.fullmatch(texto):
         return texto
-    return json.dumps(texto, ensure_ascii=False)
+    return _escapar_no_imprimibles(json.dumps(texto, ensure_ascii=False))
 
 
 def armar_linea(action, campos, momento=None):

@@ -47,6 +47,7 @@ def auditar_miembro(evento, escritura, grupo_dn, persona, *, user_id=None,
             platform_id=platform_id, area_id=area_id,
             after={'grupo': grupo_dn, 'resultado': resultado,
                    'motivo': motivo},
-            as_system=as_system, commit=commit, solo_log=solo_log)
+            as_system=as_system, commit=commit and not solo_log,
+            solo_log=solo_log)
     except Exception as exc:
         logger.warning('No se auditó la membresía (%s).', type(exc).__name__)

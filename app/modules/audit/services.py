@@ -79,6 +79,8 @@ def add_audit_log(action, status='info', detail=None, user_override=None,
         registrar_evento(action, status, user_name, detail, module, target,
                          target_user_id, area_id, platform_id)
     except Exception as e:
+        if solo_log:  # nunca toca la sesión de quien llama
+            return
         if not commit:
             raise
         print(f"❌ Error al escribir en AuditLog: {e}")
