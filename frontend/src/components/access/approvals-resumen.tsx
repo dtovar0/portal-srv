@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Resumen de Solicitudes (DIS-131, rehecho en DIS-141): fila de KPI (dona por estado,
- * conectores y usuarios por rol, sin «Abrir»), gráficas por área y por plataforma (3/5) y el
+ * Resumen de Solicitudes (DIS-131, rehecho en DIS-141 y DIS-144): fila de KPI (donas por estado
+ * y por área, conectores y usuarios por rol, sin «Abrir»), gráficas por área y por plataforma (3/5) y el
  * panel de pendientes por aprobar (2/5, `SolicitudesPanel`). Datos de
  * `GET /access-requests/inbox/stats` y `GET /stats` con `usePolling` y el intervalo de
  * preferencia. La tabla de cada estado es `ApprovalsInbox` (otra sección de la URL).
@@ -19,6 +19,7 @@ import type { Stats } from '@/lib/types';
 import { Button } from '../form';
 import { useSession } from '../session-provider';
 import { ErrorNote, Skeleton } from '../ui';
+import { DonaAreas } from './dona-areas';
 import { DonaEstados } from './dona-estados';
 import { SolicitudesPanel } from './solicitudes-panel';
 import { listLoadError } from './request-errors';
@@ -41,10 +42,11 @@ function Contenido({ stats, panel }: { stats: InboxStats; panel: Stats | null })
     { id: fila.platform_id, etiqueta: fila.platform, cantidad: fila.count }));
 
   return (
-    <section aria-label="Resumen de solicitudes" className="flex flex-col gap-4">
+    <section aria-label="Resumen de solicitudes" className="flex flex-1 min-h-0 flex-col gap-4">
       <h2 className="sr-only">Resumen de solicitudes</h2>
-      <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         <DonaEstados stats={stats} />
+        <DonaAreas stats={stats} />
         {panel?.connectors !== undefined ? (
           <TarjetaIndicador
             indicador="connectors"
@@ -63,7 +65,7 @@ function Contenido({ stats, panel }: { stats: InboxStats; panel: Stats | null })
         ) : null}
       </div>
 
-      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className="grid w-full flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="flex flex-col gap-4 lg:col-span-3">
           <GraficaBarras
             titulo="Solicitudes por área"
