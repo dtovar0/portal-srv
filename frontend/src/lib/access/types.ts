@@ -319,4 +319,6 @@ export interface InboxStats {
   by_status: Record<RequestStatus, number>;
   by_area: { area_id: number; area: string; count: number }[];
   by_platform: { platform_id: number; platform: string; area: string; count: number }[];
+  /** v1.4 (FNC-212): solo `pendiente` por área; lo usa la tarjeta de área (DIS-137). */
+  pending_by_area?: { area_id: number; area: string; count: number }[];
 }
