@@ -56,7 +56,7 @@ from app.modules.connectors.models import PlatformConnector
 from app.modules.connectors.prueba import probar_conexion
 from app.modules.connectors.validacion import validar_configuracion
 from app.modules.core.models import Platform
-from app.modules.platforms.estado import accesos_vigentes
+from app.modules.platforms import estado as estado_plataforma
 
 connectors_api_bp = Blueprint('api_connectors', __name__, url_prefix='/api/v1')
 
@@ -74,6 +74,12 @@ MENSAJE_PRUEBA_ERROR = 'No se pudo conectar con la plataforma.'
 # Lista blanca del cuerpo del `PUT`.
 CAMPOS_PERMITIDOS = frozenset(('type', 'host', 'port', 'params',
                                'credential_ref', 'active'))
+
+
+def _vigentes(plataforma):
+    """Accesos vigentes con la fila de la plataforma bloqueada (FNC-215)."""
+    estado_plataforma.bloquear_plataforma(plataforma.id)
+    return estado_plataforma.accesos_vigentes(plataforma)
 
 
 def _plataforma(platform_id):
@@ -137,7 +143,7 @@ def put_connector(platform_id):
         return validation_error(errores)
 
     if (configuracion is not None and configuracion.type != limpio['type']
-            and accesos_vigentes(plataforma) > 0):
+            and _vigentes(plataforma) > 0):
         return error_response(*PLATAFORMA_CON_ACCESOS)
 
     try:
@@ -166,7 +172,7 @@ def delete_connector(platform_id):
     _, error = leer_cuerpo()
     if error is not None:
         return error
-    if accesos_vigentes(plataforma) > 0:
+    if _vigentes(plataforma) > 0:
         return error_response(*PLATAFORMA_CON_ACCESOS)
     add_audit_log(Evento.CONECTOR_ELIMINADO, status='warning',
                   module=MODULO_AUDITORIA, target=plataforma.name,
