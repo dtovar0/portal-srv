@@ -415,7 +415,7 @@ def stats():
     }
     from app.modules.access_requests.approvals import bandeja
     from app.modules.access_requests.models import PlatformAccessRequest
-    from app.modules.api.desglose_stats import desglose
+    from app.modules.api.desglose_stats import conectores, desglose
     if is_admin():
         requests_q = (PlatformAccessRequest.query
                       .join(Platform, Platform.id == PlatformAccessRequest.platform_id))
@@ -431,4 +431,7 @@ def stats():
     if users_q is not None:
         payload['users'] = users_q.count()
     payload['desglose'] = desglose(areas_q, platforms_q, requests_q, users_q)
+    # FNC-214: los conectores son solo del superadmin (SEC-CON-11).
+    if is_admin():
+        payload['connectors'], payload['desglose']['connectors'] = conectores()
     return jsonify(payload)

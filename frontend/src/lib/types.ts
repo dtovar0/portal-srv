@@ -129,7 +129,9 @@ export type CredentialsStatus = 'enviadas' | 'pendientes';
 export type ClaveIndicador =
   | 'areas' | 'platforms' | 'requests' | 'visits' | 'users'
   /** Pantalla Solicitudes (DIS-131): un estado frente al total. */
-  | 'pendientes' | 'aprobadas' | 'rechazadas';
+  | 'pendientes' | 'aprobadas' | 'rechazadas'
+  /** DIS-141 (FNC-214): conectores (asociados / sin asociar) y usuarios por rol. */
+  | 'connectors' | 'users_by_role';
 
 /** Reparto de un contador en dos partes: `parte + resto` = el contador (DIS-112). */
 export interface DesgloseIndicador {
@@ -143,6 +145,8 @@ export interface Stats {
   visits: number;
   users?: number;
   requests?: number;
+  /** FNC-214: solo superadmin. */
+  connectors?: number;
   /** Ausente en un backend anterior a FNC-164; `users` solo llega a admins. */
   desglose?: Partial<Record<ClaveIndicador, DesgloseIndicador>>;
   most_visited: { id: number; name: string; visits: number }[];
