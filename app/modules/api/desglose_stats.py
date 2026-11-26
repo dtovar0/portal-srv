@@ -5,6 +5,7 @@ Recibe las mismas consultas que ya filtran cada contador por alcance, así
 nunca listas completas.
 """
 from app import db
+from app.authz import ROLE_USER
 from app.modules.access_requests.catalogo import ESTADO_ACTIVO
 from app.modules.access_requests.models import PlatformAccessRequest
 from app.modules.access_requests.tipos import ESTADO_PENDIENTE
@@ -37,6 +38,20 @@ def desglose(areas_q, platforms_q, requests_q, users_q=None):
         'visits': _par(int(visitas_activas), int(visitas)),
     }
     if users_q is not None:
+        total_usuarios = users_q.count()
         resultado['users'] = _par(
-            users_q.filter(User.is_active.is_(True)).count(), users_q.count())
+            users_q.filter(User.is_active.is_(True)).count(), total_usuarios)
+        # FNC-214: rol usuario frente a administradores (admin de área y superadmin).
+        resultado['users_by_role'] = _par(
+            users_q.filter(User.role == ROLE_USER).count(), total_usuarios)
     return resultado
+
+
+def conectores():
+    """FNC-214: total de conectores y su desglose asociados / sin asociar
+    (solo para el superadmin; quien llama decide)."""
+    from app.modules.connectors.models import PlatformConnector
+    total = PlatformConnector.query.count()
+    asociados = PlatformConnector.query.filter(
+        PlatformConnector.platform_id.isnot(None)).count()
+    return total, _par(asociados, total)
