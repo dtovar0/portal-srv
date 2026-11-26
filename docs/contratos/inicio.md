@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.1 (2026-11-19) |
+| Versión | 1.2 (2026-11-26) |
 | Proveedor | backend (FNC-066) |
 | Consumidores | web (FNC-069; pantalla DIS-024; DIS-112 para `desglose`) |
 | Solicitudes | — |
@@ -40,6 +40,8 @@ Se agrega a la respuesta existente (`areas`, `platforms`, `visits`, `requests`, 
 | `requests` | solicitudes ya resueltas (`aprobada`, `rechazada`) | pendientes | Siempre |
 | `visits` | visitas de plataformas activas | visitas de las demás | Siempre |
 | `users` | usuarios activos (`is_active`) | inactivos | Solo con `users` (admin y admin de área) |
+| `users_by_role` | v1.2 (FNC-214): rol `usuario` | administradores (`admin_area` y `administrador`) | Igual que `users`; `parte + resto` = `users` |
+| `connectors` | v1.2 (FNC-214): conectores asociados a una plataforma | sin asociar | Solo superadmin, junto con el contador `connectors` (total) |
 
 Todos los valores son enteros >= 0. Usuario normal: sin `users` en el desglose.
 
@@ -65,3 +67,4 @@ Todos los valores son enteros >= 0. Usuario normal: sin `users` en el desglose.
 |---|---|---|
 | 1 | 2026-10-14 | Versión inicial (FNC-038) |
 | 1.1 | 2026-11-19 | `GET /stats` agrega `desglose` (`parte`/`resto` por indicador); sin cambios incompatibles (FNC-164) |
+| 1.2 | 2026-11-26 | FNC-214: `desglose.users_by_role` (usuarios / administradores) y, solo superadmin, `connectors` con su desglose (asociados / sin asociar). Aditivo |
