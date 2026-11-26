@@ -25,6 +25,9 @@ vi.mock('@/lib/api', async (importOriginal) => {
   };
 });
 
+// DIS-137: resumen de la bandeja para «N por aprobar» de la tarjeta de área.
+vi.mock('@/lib/access/requests', () => ({ requestsApi: { inboxStats: vi.fn() } }));
+
 const permisos = { is_admin: false, is_area_admin: true };
 vi.mock('@/components/session-provider', () => ({
   useSession: () => ({ session: { permissions: permisos }, loading: false, error: null }),
@@ -36,7 +39,10 @@ vi.mock('next/link', () => ({
 }));
 
 import { api } from '@/lib/api';
+import { requestsApi } from '@/lib/access/requests';
 import { PlatformAdmin } from '@/components/platform-admin';
+import { DESCRIPCION_OMITIR_ENLACE } from '@/components/platforms/platform-form';
+import { clearAsyncCache } from '@/lib/use-async';
 
 const AREAS = [{ id: 3, name: 'Finanzas' }] as Area[];
 const PLATAFORMA = {
@@ -67,6 +73,30 @@ beforeEach(() => {
   vi.mocked(api.platformAccess).mockResolvedValue({ items: [], total: 0 });
   vi.mocked(api.createPlatform).mockResolvedValue(respuesta());
   vi.mocked(api.updatePlatform).mockResolvedValue(respuesta());
+  vi.mocked(requestsApi.inboxStats).mockResolvedValue({
+    total: 0, by_status: { pendiente: 0, aprobada: 0, rechazada: 0 }, by_area: [], by_platform: [],
+    pending_by_area: [],
+  });
+});
+
+describe('PlatformAdmin: por aprobar en la tarjeta de área (DIS-137)', () => {
+  it('muestra los pendientes del área (pending_by_area) con enlace a su bandeja', async () => {
+    vi.mocked(requestsApi.inboxStats).mockResolvedValue({
+      total: 2, by_status: { pendiente: 2, aprobada: 0, rechazada: 0 },
+      by_area: [{ area_id: 3, area: 'Finanzas', count: 2 }], by_platform: [],
+      pending_by_area: [{ area_id: 3, area: 'Finanzas', count: 2 }],
+    });
+    render(<PlatformAdmin />);
+    const enlace = await screen.findByRole('link', { name: /2 solicitudes por aprobar en Finanzas/ });
+    expect(enlace.getAttribute('href')).toBe('/approvals?status=pendiente&area_id=3');
+  });
+
+  it('sin pendientes o si el resumen falla, no hay enlace', async () => {
+    vi.mocked(requestsApi.inboxStats).mockRejectedValue(new Error('sin red'));
+    render(<PlatformAdmin />);
+    await screen.findByText('Finanzas');
+    expect(screen.queryByRole('link', { name: /por aprobar/ })).toBeNull();
+  });
 });
 
 afterEach(() => cleanup());
@@ -315,6 +345,30 @@ describe('PlatformAdmin: avisos y estados', () => {
     render(<PlatformAdmin initialAreaId={3} />);
     expect(await screen.findByText('Sin enlace')).toBeTruthy();
     expect(screen.queryByText('javascript:alert(1)')).toBeNull();
+  });
+
+  it('DIS-138: sin enlace («Omitir enlace») se muestra como «No requiere enlace web» y sin aviso de pendiente', async () => {
+    // Sin la caché de `useAsync`, que guarda las plataformas de la prueba anterior.
+    clearAsyncCache();
+    vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, direct_link: '' }]);
+    render(<PlatformAdmin initialAreaId={3} />);
+    expect(await screen.findByText('No requiere enlace web')).toBeTruthy();
+    expect(screen.queryByText('Sin enlace')).toBeNull();
+    expect(screen.queryByText('Enlace pendiente')).toBeNull();
+    expect(screen.queryByText('Enlace no válido')).toBeNull();
+  });
+
+  it('DIS-138: un enlace no https sí avisa como «Enlace no válido»', async () => {
+    vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, direct_link: 'http://inseguro.ejemplo.local' }]);
+    render(<PlatformAdmin initialAreaId={3} />);
+    expect(await screen.findByText('Enlace no válido')).toBeTruthy();
+    expect(screen.getByText('1 plataforma tiene un enlace no válido (debe ser https).')).toBeTruthy();
+  });
+
+  it('DIS-138: «Omitir enlace» explica que no necesita un enlace web', async () => {
+    const modal = await abrirAlta();
+    expect(modal.getByText(DESCRIPCION_OMITIR_ENLACE)).toBeTruthy();
+    expect(modal.queryByText(/no se puede abrir/)).toBeNull();
   });
 
   it('vacío y error de carga', async () => {

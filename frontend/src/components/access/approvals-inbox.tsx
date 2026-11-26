@@ -28,7 +28,7 @@ import { EmptyNote, ErrorNote, Skeleton } from '../ui';
 import { AccessStatusBadge, NIVELES } from './access-status-badge';
 import { ApproveDialog } from './approve-dialog';
 import { formatearFecha } from './fecha';
-import { valorPermitido } from './filtro-url';
+import { valorPermitido, idDeUrl } from './filtro-url';
 import { ListPager } from './list-pager';
 import { RejectDialog } from './reject-dialog';
 import { listLoadError } from './request-errors';
@@ -172,7 +172,8 @@ export function ApprovalsInbox({ estadoFijo }: { estadoFijo?: RequestStatus } = 
   const [status, setStatus] = useState<RequestStatus>(
     () => estadoFijo ?? valorPermitido(params?.get('status'), ESTADOS) ?? 'pendiente',
   );
-  const [areaId, setAreaId] = useState<number | null>(null);
+  // Área que llega por la URL (DIS-137: «por aprobar» de la tarjeta de área).
+  const [areaId, setAreaId] = useState<number | null>(() => idDeUrl(params?.get('area_id')));
   const [page, setPage] = useState(1);
   /** Solicitudes decididas aquí, con la respuesta del servidor (por `id`). */
   const [decididas, setDecididas] = useState<Record<number, AccessRequest>>({});
