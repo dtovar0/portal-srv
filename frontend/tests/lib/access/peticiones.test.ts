@@ -88,6 +88,8 @@ describe.each([
   ['eliminar conector independiente', () => connectorsApi.destroy(4), '/api/v1/connectors/4', 'DELETE', {}],
   ['asociar conector', () => connectorsApi.associate(4, 12),
     '/api/v1/connectors/4/platform', 'PUT', { platform_id: 12 }],
+  ['asociar conector confirmando (DIS-143)', () => connectorsApi.associate(4, 12, true),
+    '/api/v1/connectors/4/platform', 'PUT', { platform_id: 12, confirmar: true }],
   ['desasociar conector', () => connectorsApi.dissociate(4), '/api/v1/connectors/4/platform', 'DELETE', {}],
   ['probar conector independiente', () => connectorsApi.testById(4),
     '/api/v1/connectors/4/test', 'POST', {}],

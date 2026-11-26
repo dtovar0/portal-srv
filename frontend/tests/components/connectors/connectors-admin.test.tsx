@@ -45,7 +45,9 @@ import { ApiError, api } from '@/lib/api';
 import { connectorsApi } from '@/lib/access/connectors';
 import { provisioningApi } from '@/lib/access/provisioning';
 import { ConnectorsAdmin, VACIO_CONECTORES } from '@/components/connectors/connectors-admin';
-import { SIN_CANDIDATAS, SIN_PLATAFORMAS } from '@/components/connectors/connector-associate-dialog';
+import {
+  SIN_CANDIDATAS, SIN_PLATAFORMAS, TITULO_CONFIRMAR, mensajeConfirmar,
+} from '@/components/connectors/connector-associate-dialog';
 import {
   FORMULARIO_VACIO, MENSAJES_CAMPO, NOMBRE_INVALIDO, OBLIGATORIO, cuerpoConector, formularioDesde,
   parametrosConservados, validarConector,
@@ -454,9 +456,42 @@ describe('Asociar y desasociar', () => {
     expect(within(picker).getByRole('button', { name: /Nómina/ }).className).toContain('focus-visible:ring-inset');
 
     fireEvent.click(within(picker).getByRole('button', { name: /Nómina/ }));
-    await waitFor(() => expect(mocks.associate).toHaveBeenCalledWith(5, 14));
+    await waitFor(() => expect(mocks.associate).toHaveBeenCalledWith(5, 14, false));
     expect(await screen.findByText('Conector Directorio SSH asociado a Nómina.')).toBeTruthy();
     expect(screen.queryByRole('dialog', { name: 'Asociar a una plataforma' })).toBeNull();
+  });
+
+  it('DIS-143: plataforma con accesos vigentes pide confirmar y reintenta con confirmar', async () => {
+    mocks.associate
+      .mockRejectedValueOnce(new ApiError(409, 'x', { code: 'plataforma_destino_con_accesos' }))
+      .mockResolvedValueOnce({
+        status: 'success',
+        connector: { ...SUELTO, platform_id: 14, platform: { id: 14, name: 'Nómina', area_id: 3, area: 'Finanzas' } },
+      });
+    renderConToast(<ConnectorsAdmin />);
+    await seleccionar('Directorio SSH');
+    fireEvent.click(screen.getByRole('button', { name: 'Asociar el conector Directorio SSH' }));
+    const picker = await screen.findByRole('dialog', { name: 'Asociar a una plataforma' });
+    fireEvent.click(await within(picker).findByRole('button', { name: /Nómina/ }));
+    const confirmar = await screen.findByRole('alertdialog', { name: TITULO_CONFIRMAR });
+    expect(confirmar.textContent).toContain(mensajeConfirmar('Directorio SSH', 'Nómina'));
+    fireEvent.click(within(confirmar).getByRole('button', { name: 'Asociar' }));
+    await waitFor(() => expect(mocks.associate).toHaveBeenLastCalledWith(5, 14, true));
+    expect(await screen.findByText('Conector Directorio SSH asociado a Nómina.')).toBeTruthy();
+  });
+
+  it('DIS-143: cancelar la confirmación no reintenta', async () => {
+    mocks.associate.mockRejectedValueOnce(new ApiError(409, 'x', { code: 'plataforma_destino_con_accesos' }));
+    renderConToast(<ConnectorsAdmin />);
+    await seleccionar('Directorio SSH');
+    fireEvent.click(screen.getByRole('button', { name: 'Asociar el conector Directorio SSH' }));
+    const picker = await screen.findByRole('dialog', { name: 'Asociar a una plataforma' });
+    fireEvent.click(await within(picker).findByRole('button', { name: /Nómina/ }));
+    const confirmar = await screen.findByRole('alertdialog', { name: TITULO_CONFIRMAR });
+    fireEvent.click(within(confirmar).getByRole('button', { name: 'Cancelar' }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog', { name: TITULO_CONFIRMAR })).toBeNull());
+    expect(mocks.associate).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/Error al asociar/)).toBeNull();
   });
 
   it('sin candidatas avisa según el caso', async () => {
