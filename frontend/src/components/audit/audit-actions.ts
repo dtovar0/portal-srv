@@ -38,6 +38,11 @@ export const ACCIONES: Record<string, string> = {
   credenciales_enviadas: 'Credenciales enviadas',
   credenciales_pendientes: 'Credenciales pendientes',
   credenciales_reenviadas: 'Credenciales reenviadas',
+  // DIS-136: eventos de FNC-163 y FNC-209.
+  grupos_movidos: 'Grupos movidos',
+  grupos_traslado_fallido: 'Fallo traslado de grupos',
+  miembro_agregado: 'Miembro agregado',
+  miembro_quitado: 'Miembro quitado',
 };
 
 const ACCIONES_LEGACY: Record<string, string> = {
