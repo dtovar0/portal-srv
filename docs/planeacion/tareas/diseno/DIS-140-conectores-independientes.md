@@ -45,3 +45,4 @@
 ## Impacto en elementos compartidos
 - Sin tokens ni CSS nuevos. `ConnectorDeleteDialog` cambia de props (`connector` en lugar de `platform`); solo lo usan `connector-panel` y `connectors-admin`. `connectorsApi` solo suma funciones.
 - Auditoría de accesibilidad: el anillo de foco de las opciones de «Asociar» quedaba recortado por la lista con overflow; ahora `focus-visible:ring-inset`.
+- Integración: etiquetas de Auditoría «Conector creado», «Conector asociado» y «Conector desasociado» (FNC-213) e ícono en Actividad reciente; `tests/components/audit/audit-actions-dis140.test.ts` (fallaba antes).
