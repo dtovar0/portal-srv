@@ -1,24 +1,26 @@
 'use client';
 
 /**
- * Resumen de Solicitudes (DIS-131), con el esquema del dashboard: fila de tarjetas por estado
- * (con «Abrir» a la tabla de cada estado), gráficas por área y por plataforma (3/5) y dona del
- * porcentaje por estado (2/5). Datos de `GET /access-requests/inbox/stats` con `usePolling` y el
- * intervalo de preferencia. La tabla de cada estado es `ApprovalsInbox` (otra sección de la URL).
+ * Resumen de Solicitudes (DIS-131, rehecho en DIS-141): fila de KPI (dona por estado,
+ * conectores y usuarios por rol, sin «Abrir»), gráficas por área y por plataforma (3/5) y el
+ * panel de pendientes por aprobar (2/5, `SolicitudesPanel`). Datos de
+ * `GET /access-requests/inbox/stats` y `GET /stats` con `usePolling` y el intervalo de
+ * preferencia. La tabla de cada estado es `ApprovalsInbox` (otra sección de la URL).
  */
 
-import type { InboxStats, RequestStatus } from '@/lib/access/types';
+import type { InboxStats } from '@/lib/access/types';
 import { requestsApi } from '@/lib/access/requests';
 import { usePolling } from '@/lib/use-polling';
 import { useDisenoTarjetas } from '../dashboard/use-diseno-tarjetas';
 import { GraficaBarras } from '../dashboard/grafica-barras';
 import { TarjetaIndicador } from '../dashboard/tarjeta-indicador';
-import type { ClaveIndicador } from '@/lib/types';
-import { Button, ButtonLink } from '../form';
+import { api } from '@/lib/api';
+import type { Stats } from '@/lib/types';
+import { Button } from '../form';
 import { useSession } from '../session-provider';
 import { ErrorNote, Skeleton } from '../ui';
 import { DonaEstados } from './dona-estados';
-import { rutaConFiltro } from './filtro-url';
+import { SolicitudesPanel } from './solicitudes-panel';
 import { listLoadError } from './request-errors';
 
 const NOMBRE_RESUMEN = 'el resumen de solicitudes';
@@ -26,13 +28,12 @@ const NOMBRE_RESUMEN = 'el resumen de solicitudes';
 export const MAX_BARRAS = 10;
 export const RUTA_SOLICITUDES = '/approvals';
 
-const TARJETAS: { estado: RequestStatus; indicador: ClaveIndicador; abrir: string }[] = [
-  { estado: 'pendiente', indicador: 'pendientes', abrir: 'Abrir solicitudes pendientes' },
-  { estado: 'aprobada', indicador: 'aprobadas', abrir: 'Abrir solicitudes aprobadas' },
-  { estado: 'rechazada', indicador: 'rechazadas', abrir: 'Abrir solicitudes rechazadas' },
-];
-
-function Contenido({ stats }: { stats: InboxStats }) {
+/**
+ * DIS-141: fila de KPI = dona por estado, conectores (solo superadmin: `connectors` de
+ * `GET /stats`) y usuarios por rol (`desglose.users_by_role`). Sin `panel` (o si su consulta
+ * falla) solo queda la dona.
+ */
+function Contenido({ stats, panel }: { stats: InboxStats; panel: Stats | null }) {
   const diseno = useDisenoTarjetas();
   const porArea = stats.by_area.slice(0, MAX_BARRAS).map((fila) => (
     { id: fila.area_id, etiqueta: fila.area, cantidad: fila.count }));
@@ -42,30 +43,24 @@ function Contenido({ stats }: { stats: InboxStats }) {
   return (
     <section aria-label="Resumen de solicitudes" className="flex flex-col gap-4">
       <h2 className="sr-only">Resumen de solicitudes</h2>
-      <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
-        {TARJETAS.map(({ estado, indicador, abrir }) => {
-          const cantidad = stats.by_status[estado] ?? 0;
-          return (
-            <TarjetaIndicador
-              key={estado}
-              indicador={indicador}
-              valor={cantidad}
-              base={stats.total}
-              desglose={{ parte: cantidad, resto: stats.total - cantidad }}
-              diseno={diseno}
-              accion={(
-                <ButtonLink
-                  href={rutaConFiltro(RUTA_SOLICITUDES, { status: estado })}
-                  variant="secondary"
-                  aria-label={abrir}
-                  className="text-xs font-semibold"
-                >
-                  Abrir
-                </ButtonLink>
-              )}
-            />
-          );
-        })}
+      <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
+        <DonaEstados stats={stats} />
+        {panel?.connectors !== undefined ? (
+          <TarjetaIndicador
+            indicador="connectors"
+            valor={panel.connectors}
+            desglose={panel.desglose?.connectors}
+            diseno={diseno}
+          />
+        ) : null}
+        {panel?.users !== undefined ? (
+          <TarjetaIndicador
+            indicador="users_by_role"
+            valor={panel.users}
+            desglose={panel.desglose?.users_by_role}
+            diseno={diseno}
+          />
+        ) : null}
       </div>
 
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-5">
@@ -92,8 +87,9 @@ function Contenido({ stats }: { stats: InboxStats }) {
             alterna
           />
         </div>
-        <div className="lg:col-span-2">
-          <DonaEstados stats={stats} />
+        {/* DIS-141: en lugar de la dona por estado, las pendientes con aprobar/rechazar. */}
+        <div className="flex min-h-0 lg:col-span-2">
+          <SolicitudesPanel />
         </div>
       </div>
     </section>
@@ -108,8 +104,10 @@ export function ApprovalsResumen() {
     }),
     { intervalSeconds: session?.preferences.refresh_interval },
   );
+  // DIS-141: conectores y usuarios salen de `GET /stats` (FNC-214); si falla, solo no se muestran.
+  const panel = usePolling(() => api.stats(), { intervalSeconds: session?.preferences.refresh_interval });
 
-  if (resumen.data) return <Contenido stats={resumen.data} />;
+  if (resumen.data) return <Contenido stats={resumen.data} panel={panel.data ?? null} />;
   if (resumen.error) {
     return (
       <div className="space-y-3">

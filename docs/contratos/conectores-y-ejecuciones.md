@@ -2,9 +2,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.5 (2026-11-24) |
+| Versión | 1.6 (2026-11-26) |
 | Proveedor | backend (FNC-051, FNC-052, FNC-061, FNC-062; base FNC-049, FNC-050) |
-| Consumidores | web (FNC-069; pantallas DIS-022, DIS-018) |
+| Consumidores | web (FNC-069; pantallas DIS-022, DIS-018, DIS-140) |
 | Solicitudes | — |
 
 Convenciones comunes: [README.md](README.md). Cola: Redis + RQ (ADR-003). P9: los tipos `api` (FNC-051), `ssh` (FNC-052) y `bd` (FNC-053) ya tienen esquema de `params` (§ siguientes).
@@ -22,6 +22,45 @@ Convenciones comunes: [README.md](README.md). Cola: Redis + RQ (ADR-003). P9: lo
 | `POST /provisioning/jobs/<id>/retry` | 403 | 403 (P10) | 403 | 200 |
 
 Conectores: solo superadmin (SEC-CON-11).
+
+## Conectores independientes (v1.6, FNC-213 / DIS-140)
+Un conector se crea **sin plataforma** y después se **asocia** a una. Sigue siendo **uno por plataforma** (y una plataforma por conector). Solo superadmin (resto `403`, como arriba). Escrituras con la convención de siempre (JSON; campo fuera de lista → `400 campo_no_permitido`; `DELETE`, `test` y desasociar con cuerpo `{}`).
+
+| Método y ruta | Respuesta |
+|---|---|
+| `GET /connectors` | `200 {"items": [ConnectorV2]}` ordenados por `name` (sin paginación) |
+| `POST /connectors` | `201 {"status": "success", "connector": ConnectorV2}`; crea sin plataforma. Auditoría `conector_creado` |
+| `GET /connectors/<id>` | `200 {"connector": ConnectorV2}`; inexistente → `404` |
+| `PUT /connectors/<id>` | `200 {"status": "success", "connector": ConnectorV2}`; reemplaza los campos. Auditoría `conector_configurado` (solo si cambió algo) |
+| `DELETE /connectors/<id>` | `200 {"status": "success"}`. Asociado con accesos vigentes en su plataforma → `409 plataforma_con_accesos`. Auditoría `conector_eliminado` |
+| `PUT /connectors/<id>/platform` | Cuerpo `{"platform_id": int}`. `200 {"status": "success", "connector": ConnectorV2}`. Plataforma inexistente → `404`; la plataforma ya tiene **otro** conector → `409 plataforma_con_conector`; el conector está asociado a **otra** plataforma con accesos vigentes → `409 plataforma_con_accesos`; misma plataforma → `200` sin cambios. Auditoría `conector_asociado` |
+| `DELETE /connectors/<id>/platform` | `200 {"status": "success", "connector": ConnectorV2}`. Sin plataforma → `409 conector_sin_plataforma`; con accesos vigentes → `409 plataforma_con_accesos`. Auditoría `conector_desasociado` |
+| `POST /connectors/<id>/test` | Como `POST /platforms/<id>/connector/test`. Sin plataforma → `409 conector_sin_plataforma` |
+
+Cuerpo de `POST` y `PUT /connectors[/<id>]`: los campos de `PUT /platforms/<id>/connector` (`type`, `host`, `port`, `params`, `credential_ref`, `active`) más:
+
+| Campo | Tipo | Obligatorio | Regla |
+|---|---|---|---|
+| `name` | string | Sí | 1–100 caracteres sin caracteres de control, recortado; único sin distinguir mayúsculas → `422` `fields.name`: "Ya existe un conector con ese nombre." |
+
+- `credential_ref` no se repite entre conectores (misma regla de antes, ahora por conector).
+- Cambiar `type` con accesos vigentes en la plataforma asociada → `409 plataforma_con_accesos`.
+
+### `ConnectorV2`
+```json
+{ "id": 4, "name": "ERP usuarios", "platform_id": 12,
+  "platform": { "id": 12, "name": "Contabilidad", "area_id": 3, "area": "Finanzas" },
+  "type": "api", "host": "erp.ejemplo.local", "port": 443, "params": { "base_path": "/usuarios" },
+  "credential_ref": "pokemon/contabilidad-api", "credential_status": "ok", "active": true,
+  "updated_at": "2026-11-26T14:00:00Z" }
+```
+Sin asociar: `"platform_id": null, "platform": null`. `Connector` (rutas por plataforma) agrega `id` y `name`.
+
+### Compatibilidad y efectos
+- Las rutas `/platforms/<id>/connector` siguen: `PUT` crea el conector ya asociado con `name` = nombre de la plataforma (si choca, `"<plataforma> (<id de la plataforma>)"`); `DELETE` lo **elimina**.
+- Borrar una plataforma **desasocia** su conector (queda sin plataforma), ya no lo borra.
+- El ejecutor solo usa conectores asociados; uno sin plataforma no hace nada.
+- `GET /platforms` sin cambios (`has_connector`).
 
 ## `PUT /platforms/<id>/connector` (crea o reemplaza)
 | Campo | Tipo | Obligatorio | Regla |
@@ -144,6 +183,8 @@ Orden: `created_at` descendente. Respuesta paginada de `Job` (sin `attempts`).
 | 409 | `plataforma_con_accesos` | Hay accesos vigentes con este conector. |
 | 409 | `conector_concurrente` | Otra petición configuró este conector a la vez; vuelve a intentarlo. (`PUT` que crea; la restricción única de la plataforma) |
 | 409 | `estado_invalido` | Solo se reintenta una ejecución fallida. |
+| 409 | `plataforma_con_conector` | La plataforma ya tiene otro conector. (v1.6) |
+| 409 | `conector_sin_plataforma` | El conector no está asociado a una plataforma. (v1.6) |
 | 422 | `validacion` | `fields.host`: "Usa un nombre de host autorizado." · `fields.params.<campo>` según el tipo |
 
 ## Refresco
@@ -173,3 +214,4 @@ Orden: `created_at` descendente. Respuesta paginada de `Job` (sin `attempts`).
 | 1.3 | 2026-10-21 | Aditivo (FNC-052): esquema de `params` del tipo `ssh` (`422 fields.params.<campo>`) y 5 motivos nuevos en la bitácora de ejecuciones |
 | 1.4 | 2026-10-26 | Aditivo (FNC-053): esquema de `params` del tipo `bd` (`422 fields.params.<campo>`) y 4 motivos nuevos en la bitácora de ejecuciones |
 | 1.5 | 2026-11-24 | FNC-196 (dueño): el conector es un paso **adicional** a los grupos. Todo trabajo usa el proveedor `ldap` (grupo del nivel) y, si la plataforma tiene conector activo, después su `otorgar`/`revocar` (un solo trabajo; reintentos y estados iguales). Un fallo del conector deja el trabajo `fallido` con su error sin revertir el grupo. `PUT /platforms/<id>/connector` funciona en cualquier plataforma (retirado `409 plataforma_sin_conector`). El cambio de nivel solo cambia el grupo (rol por conector: FNC-198) |
+| 1.6 | 2026-11-26 | FNC-213 (dueño): conectores independientes. `GET/POST /connectors`, `GET/PUT/DELETE /connectors/<id>`, `PUT/DELETE /connectors/<id>/platform` (asociar/desasociar), `POST /connectors/<id>/test`; campo `name`; errores `plataforma_con_conector` y `conector_sin_plataforma`; borrar una plataforma desasocia su conector. Rutas por plataforma conservadas |

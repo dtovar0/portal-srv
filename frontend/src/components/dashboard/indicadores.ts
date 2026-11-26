@@ -23,6 +23,9 @@ export const INDICADORES: Record<ClaveIndicador, DefinicionIndicador> = {
   aprobadas: { etiqueta: 'Aprobadas', icono: 'aprobar', partes: ['aprobadas', 'otras'], clase: 'nx-ind--aprobadas' },
   rechazadas: { etiqueta: 'Rechazadas', icono: 'rechazar', partes: ['rechazadas', 'otras'], clase: 'nx-ind--rechazadas' },
   users: { etiqueta: 'Usuarios', icono: 'usuarios', partes: ['activos', 'inactivos'], clase: 'nx-ind--usuarios' },
+  // DIS-141: KPI de Solicitudes (FNC-214); reutilizan los colores de plataformas y usuarios.
+  connectors: { etiqueta: 'Conectores', icono: 'marca', partes: ['asociados', 'sin asociar'], clase: 'nx-ind--plataformas' },
+  users_by_role: { etiqueta: 'Usuarios', icono: 'usuarios', partes: ['usuarios', 'administradores'], clase: 'nx-ind--usuarios' },
 };
 
 /** Porcentaje entero de la parte sobre el total; total 0 = 0 %. */
