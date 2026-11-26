@@ -41,6 +41,8 @@ vi.mock('next/link', () => ({
 import { api } from '@/lib/api';
 import { requestsApi } from '@/lib/access/requests';
 import { PlatformAdmin } from '@/components/platform-admin';
+import { DESCRIPCION_OMITIR_ENLACE } from '@/components/platforms/platform-form';
+import { clearAsyncCache } from '@/lib/use-async';
 
 const AREAS = [{ id: 3, name: 'Finanzas' }] as Area[];
 const PLATAFORMA = {
@@ -343,6 +345,30 @@ describe('PlatformAdmin: avisos y estados', () => {
     render(<PlatformAdmin initialAreaId={3} />);
     expect(await screen.findByText('Sin enlace')).toBeTruthy();
     expect(screen.queryByText('javascript:alert(1)')).toBeNull();
+  });
+
+  it('DIS-138: sin enlace («Omitir enlace») se muestra como «No requiere enlace web» y sin aviso de pendiente', async () => {
+    // Sin la caché de `useAsync`, que guarda las plataformas de la prueba anterior.
+    clearAsyncCache();
+    vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, direct_link: '' }]);
+    render(<PlatformAdmin initialAreaId={3} />);
+    expect(await screen.findByText('No requiere enlace web')).toBeTruthy();
+    expect(screen.queryByText('Sin enlace')).toBeNull();
+    expect(screen.queryByText('Enlace pendiente')).toBeNull();
+    expect(screen.queryByText('Enlace no válido')).toBeNull();
+  });
+
+  it('DIS-138: un enlace no https sí avisa como «Enlace no válido»', async () => {
+    vi.mocked(api.platforms).mockResolvedValue([{ ...PLATAFORMA, direct_link: 'http://inseguro.ejemplo.local' }]);
+    render(<PlatformAdmin initialAreaId={3} />);
+    expect(await screen.findByText('Enlace no válido')).toBeTruthy();
+    expect(screen.getByText('1 plataforma tiene un enlace no válido (debe ser https).')).toBeTruthy();
+  });
+
+  it('DIS-138: «Omitir enlace» explica que no necesita un enlace web', async () => {
+    const modal = await abrirAlta();
+    expect(modal.getByText(DESCRIPCION_OMITIR_ENLACE)).toBeTruthy();
+    expect(modal.queryByText(/no se puede abrir/)).toBeNull();
   });
 
   it('vacío y error de carga', async () => {
