@@ -186,6 +186,19 @@ export interface ConnectorInput {
   active?: boolean;
 }
 
+/** Conector independiente (contrato 1.6, `ConnectorV2`): sin plataforma hasta que se asocia. */
+export interface ConnectorItem extends Omit<Connector, 'platform_id'> {
+  id: number;
+  name: string;
+  platform_id: number | null;
+  platform: { id: number; name: string; area_id: number | null; area: string | null } | null;
+}
+
+/** Cuerpo de `POST` y `PUT /connectors[/<id>]`: los campos de siempre más `name`. */
+export interface ConnectorItemInput extends ConnectorInput {
+  name: string;
+}
+
 export interface ConnectorTestResult {
   status: 'success';
   result: 'ok' | 'error';

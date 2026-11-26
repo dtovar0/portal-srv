@@ -265,7 +265,7 @@ function desdeTexto(campo: CampoParametro, texto: string): unknown {
 }
 
 /** Valores de texto de los parámetros guardados de un conector del tipo dado. */
-export function valoresDesde(connector: Connector | null): Record<string, string> {
+export function valoresDesde(connector: Pick<Connector, 'type' | 'params'> | null): Record<string, string> {
   const valores: Record<string, string> = {};
   if (!connector) return valores;
   for (const campo of parametrosDe(connector.type)) {
@@ -277,7 +277,7 @@ export function valoresDesde(connector: Connector | null): Record<string, string
 const raiz = (clave: string) => clave.split('.')[0];
 
 /** Claves de primer nivel sin editor: se conservan al guardar (mismo tipo). */
-export function parametrosSinEditor(connector: Connector | null, tipo: string): Record<string, unknown> {
+export function parametrosSinEditor(connector: Pick<Connector, 'type' | 'params'> | null, tipo: string): Record<string, unknown> {
   if (!connector || connector.type !== tipo) return {};
   const conEditor = new Set(parametrosDe(tipo).map((c) => raiz(c.clave)));
   return Object.fromEntries(Object.entries(connector.params).filter(([clave]) => !conEditor.has(clave)));

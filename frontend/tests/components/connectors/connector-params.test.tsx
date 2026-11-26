@@ -5,10 +5,10 @@
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Connector } from '@/lib/access/types';
+import type { ConnectorItem } from '@/lib/access/types';
 
 vi.mock('@/lib/access/connectors', () => ({
-  connectorsApi: { get: vi.fn(), save: vi.fn(), remove: vi.fn(), test: vi.fn() },
+  connectorsApi: { create: vi.fn(), update: vi.fn() },
 }));
 
 import { ApiError } from '@/lib/api';
@@ -18,15 +18,16 @@ import { cuerpoConector, formularioDesde } from '@/components/connectors/connect
 import { MENSAJE_REVISA, describeConnectorSaveError } from '@/components/connectors/connector-errors';
 import { OBLIGATORIO_PARAM, claveDeError, validarParametros } from '@/components/connectors/connector-params';
 
-const save = vi.mocked(connectorsApi.save);
+const save = vi.mocked(connectorsApi.update);
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
 
-function conector(tipo: Connector['type'], params: Record<string, unknown>, extra: Partial<Connector> = {}): Connector {
+function conector(tipo: ConnectorItem['type'], params: Record<string, unknown>, extra: Partial<ConnectorItem> = {}): ConnectorItem {
   return {
+    id: 4, name: 'ERP usuarios', platform: { id: 12, name: 'Contabilidad', area_id: 3, area: 'Finanzas' },
     platform_id: 12, type: tipo, host: 'erp.ejemplo.local', port: 443, params, credential_ref: 'pokemon/erp',
     credential_status: 'ok', active: true, updated_at: '2026-10-27T10:00:00Z', ...extra,
   };
@@ -54,8 +55,8 @@ const API = conector('api', {
   revocar: { metodo: 'DELETE', ruta: '/usuarios/{correo}' },
 });
 
-function abrir(guardado: Connector) {
-  render(<ConnectorForm platformId={12} guardado={guardado} onSaved={vi.fn()} onStale={vi.fn()} />);
+function abrir(guardado: ConnectorItem) {
+  render(<ConnectorForm conectorId={4} guardado={guardado} onSaved={vi.fn()} onStale={vi.fn()} />);
 }
 
 function guardar() {
@@ -96,8 +97,8 @@ describe('tipo api', () => {
     save.mockResolvedValue({ status: 'success', connector: API });
     abrir(API);
     guardar();
-    await waitFor(() => expect(save).toHaveBeenCalledWith(12, {
-      type: 'api', host: 'erp.ejemplo.local', port: 443, credential_ref: 'pokemon/erp', active: true,
+    await waitFor(() => expect(save).toHaveBeenCalledWith(4, {
+      name: 'ERP usuarios', type: 'api', host: 'erp.ejemplo.local', port: 443, credential_ref: 'pokemon/erp', active: true,
       params: {
         auth: { esquema: 'cabecera', nombre: 'X-Api-Key' },
         otorgar: { metodo: 'POST', ruta: '/usuarios', consulta: { email: '{correo}' }, cuerpo: { rol: '{nivel}' } },
@@ -152,8 +153,8 @@ describe('tipo ssh', () => {
       target: { value: `${HUELLA}\n${HUELLA_2}` },
     });
     guardar();
-    await waitFor(() => expect(save).toHaveBeenCalledWith(12, {
-      type: 'ssh', host: 'erp.ejemplo.local', port: 22, credential_ref: 'pokemon/erp', active: true,
+    await waitFor(() => expect(save).toHaveBeenCalledWith(4, {
+      name: 'ERP usuarios', type: 'ssh', host: 'erp.ejemplo.local', port: 22, credential_ref: 'pokemon/erp', active: true,
       params: {
         huellas: [HUELLA, HUELLA_2],
         otorgar: { comando: ['/usr/local/bin/acceso', 'otorgar'], sin_cambios: [3] },
@@ -195,8 +196,8 @@ describe('tipo bd', () => {
     save.mockResolvedValue({ status: 'success', connector: BD });
     abrir(BD);
     guardar();
-    await waitFor(() => expect(save).toHaveBeenCalledWith(12, {
-      type: 'bd', host: 'erp.ejemplo.local', port: 3306, credential_ref: 'pokemon/erp', active: true,
+    await waitFor(() => expect(save).toHaveBeenCalledWith(4, {
+      name: 'ERP usuarios', type: 'bd', host: 'erp.ejemplo.local', port: 3306, credential_ref: 'pokemon/erp', active: true,
       params: {
         motor: 'mysql', base_datos: 'erp',
         otorgar: { sentencia: 'INSERT INTO usuarios (email, rol) VALUES (%s, %s)', parametros: ['correo', 'nivel'], max_filas: 2 },
@@ -232,7 +233,7 @@ describe('DIS-042 accesibilidad: grupo opcional, anuncios y resumen', () => {
     fireEvent.change(screen.getByLabelText('Tipo de conector *'), { target: { value: 'bd' } });
     expect(region()).toMatch(/^Parámetros de Base de datos: \d+ campos en \d+ grupos\. Se descartaron los del tipo anterior\.$/);
     cleanup();
-    render(<ConnectorForm platformId={12} guardado={null} onSaved={vi.fn()} onStale={vi.fn()} />);
+    render(<ConnectorForm conectorId={null} guardado={null} onSaved={vi.fn()} onStale={vi.fn()} />);
     fireEvent.change(screen.getByLabelText('Tipo de conector *'), { target: { value: 'ssh' } });
     expect(region()).toMatch(/^Parámetros de SSH: \d+ campos en \d+ grupos\./);
   });

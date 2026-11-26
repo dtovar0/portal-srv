@@ -1,93 +1,96 @@
 'use client';
 
 /**
- * Pantalla Conectores (DIS-022, F-CON-01; ruta `/admin/connectors`, guarda
- * `admin`): plataformas que usan conector con su configuración y, debajo, la
- * bitácora de ejecuciones.
+ * Pantalla Conectores (DIS-022, F-CON-01; DIS-140: conectores independientes;
+ * ruta `/admin/connectors`, guarda `admin`): conectores de `GET /connectors` con su
+ * plataforma (o «Sin asociar») y, debajo, la bitácora de ejecuciones.
  *
- * - Plataformas de `GET /platforms` con conector (o de tipo `conector`);
- *   `has_connector` dice si ya tienen configuración (sin una petición por fila).
- * - «Nuevo» (DIS-139): elige cualquier plataforma sin conector y abre su configuración;
- *   al guardar, el conector queda enlazado a esa plataforma.
- * - "Configurar" abre `ConnectorPanel` bajo la lista; al cerrarlo el foco
- *   vuelve al botón de la fila.
+ * - «Nuevo» abre el formulario sin plataforma (`POST /connectors`); «Editar» y
+ *   «Configurar» abren `ConnectorPanel` bajo la lista; al cerrarlo el foco vuelve al botón.
+ * - «Asociar» elige una plataforma sin conector; «Desasociar» y «Eliminar» piden confirmación.
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { api } from '@/lib/api';
-import type { Platform } from '@/lib/types';
+import { connectorsApi } from '@/lib/access/connectors';
+import type { ConnectorItem } from '@/lib/access/types';
 import { useAsync } from '@/lib/use-async';
 import { listLoadError } from '../access/request-errors';
-import { Button, Modal } from '../form';
+import { Button } from '../form';
 import { Icono } from '../icono';
 import { useToast } from '../toast';
 import { EmptyNote, ErrorNote, Spinner } from '../ui';
+import { ConnectorAssociateDialog } from './connector-associate-dialog';
 import { ConnectorDeleteDialog } from './connector-delete-dialog';
-import { ConnectorList, botonConfigurarId, plataformasConConector, plataformasSinConector } from './connector-list';
-import { ConnectorPanel } from './connector-panel';
+import { ConnectorDissociateDialog } from './connector-dissociate-dialog';
+import { ConnectorList, botonConfigurarId } from './connector-list';
+import { ConnectorPanel, tituloPanelId } from './connector-panel';
 
-export const VACIO_CONECTORES =
-  'Aún no hay conectores. Usa «Nuevo» para crear uno y enlazarlo a una plataforma.';
-/** «Nuevo» sin candidatas: todas las plataformas ya tienen conector, o no hay plataformas. */
-export const SIN_CANDIDATAS = 'Todas las plataformas ya tienen conector.';
-export const SIN_PLATAFORMAS = 'Primero crea una plataforma en Plataformas; después enlázale un conector.';
+export const VACIO_CONECTORES = 'Aún no hay conectores. Usa «Nuevo» para crear uno.';
+
+const MOTIVO_SELECCIONA = (accion: string) => `Selecciona 1 conector para ${accion}`;
 
 export function ConnectorsAdmin() {
   const { avisar } = useToast();
   const lista = useAsync(
-    () => api.platforms().catch((err: unknown) => { throw listLoadError(err, 'las plataformas'); }),
+    () => connectorsApi.list()
+      .then((r) => r.items)
+      .catch((err: unknown) => { throw listLoadError(err, 'los conectores'); }),
     [],
   );
   const [busqueda, setBusqueda] = useState('');
-  const [seleccionadaId, setSeleccionadaId] = useState<number | null>(null);
-  const [eliminandoPlataforma, setEliminandoPlataforma] = useState<Platform | null>(null);
-  const [pickerNuevoAbierto, setPickerNuevoAbierto] = useState(false);
+  const [seleccionadoId, setSeleccionadoId] = useState<number | null>(null);
+  const [creando, setCreando] = useState(false);
+  const [eliminando, setEliminando] = useState<ConnectorItem | null>(null);
+  const [asociando, setAsociando] = useState<ConnectorItem | null>(null);
+  const [desasociando, setDesasociando] = useState<ConnectorItem | null>(null);
 
-  const todasPlataformas = plataformasConConector(lista.data ?? []);
-  const candidatas = plataformasSinConector(lista.data ?? []);
-  const plataformas = useMemo(() => {
+  const todos = useMemo(() => lista.data ?? [], [lista.data]);
+  const conectores = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    if (!q) return todasPlataformas;
-    return todasPlataformas.filter((p) =>
-      p.name.toLowerCase().includes(q) || (p.area_name && p.area_name.toLowerCase().includes(q))
+    if (!q) return todos;
+    return todos.filter((c) =>
+      c.name.toLowerCase().includes(q) || c.host.toLowerCase().includes(q)
+      || (c.platform?.name.toLowerCase().includes(q) ?? false)
     );
-  }, [todasPlataformas, busqueda]);
+  }, [todos, busqueda]);
 
-  // La elegida en «Nuevo» puede no estar aún en la lista (sin conector ni tipo `conector`).
-  const seleccionada = (lista.data ?? []).find((p) => p.id === seleccionadaId) ?? null;
+  // Si el conector ya no está en la lista (eliminado por otra persona), no hay selección.
+  const seleccionado = todos.find((c) => c.id === seleccionadoId) ?? null;
+
+  const enfocarTitulo = (id: number | null) =>
+    requestAnimationFrame(() => document.getElementById(tituloPanelId(id))?.focus());
 
   const cerrar = useCallback(() => {
-    const id = seleccionadaId;
-    setSeleccionadaId(null);
+    const id = seleccionadoId;
+    setSeleccionadoId(null);
+    setCreando(false);
     if (id !== null) requestAnimationFrame(() => document.getElementById(botonConfigurarId(id))?.focus());
-  }, [seleccionadaId]);
+  }, [seleccionadoId]);
 
-  const handleEditar = () => {
-    if (!seleccionada) return;
-    setSeleccionadaId(seleccionada.id);
-    requestAnimationFrame(() => {
-      document.getElementById(`conector-${seleccionada.id}-titulo`)?.focus();
-    });
+  const abrir = (c: ConnectorItem) => {
+    setCreando(false);
+    setSeleccionadoId(c.id);
   };
 
-  const handleEliminar = () => {
-    if (!seleccionada || !seleccionada.has_connector) return;
-    setEliminandoPlataforma(seleccionada);
+  const handleEditar = () => {
+    if (!seleccionado) return;
+    setCreando(false);
+    enfocarTitulo(seleccionado.id);
   };
 
   const handleNuevo = () => {
-    if (seleccionada && !seleccionada.has_connector) {
-      setSeleccionadaId(seleccionada.id);
-      requestAnimationFrame(() => {
-        document.getElementById(`conector-${seleccionada.id}-titulo`)?.focus();
-      });
-      return;
-    }
-    if (candidatas.length === 0) {
-      avisar('info', (lista.data ?? []).length === 0 ? SIN_PLATAFORMAS : SIN_CANDIDATAS, 'Nuevo conector');
-      return;
-    }
-    setPickerNuevoAbierto(true);
+    setSeleccionadoId(null);
+    setCreando(true);
+    enfocarTitulo(null);
+  };
+
+  /** Asociado o desasociado: se selecciona el conector con su dato nuevo. */
+  const cambioDePlataforma = (c: ConnectorItem, texto: string) => {
+    setAsociando(null);
+    setDesasociando(null);
+    setSeleccionadoId(c.id);
+    avisar('success', texto, 'Conector');
+    lista.reload();
   };
 
   return (
@@ -98,7 +101,7 @@ export function ConnectorsAdmin() {
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-panel-border/80 bg-gradient-to-r from-superficie via-superficie to-superficie-hundida shadow-1">
           {/* Buscador izquierda */}
           <div className="relative w-full max-w-md">
-            <label htmlFor="buscar-conectores" className="sr-only">Buscar plataformas con conector</label>
+            <label htmlFor="buscar-conectores" className="sr-only">Buscar conectores</label>
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-label">
               <Icono nombre="buscar" tamano="md" ariaHidden={true} />
             </div>
@@ -107,7 +110,7 @@ export function ConnectorsAdmin() {
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar plataformas con conector…"
+              placeholder="Buscar conectores…"
               className="nx-buscador-toolbar h-12 w-full rounded-xl border border-panel-border bg-fondo pl-11 pr-10 py-3 text-sm text-body-text placeholder:text-placeholder transition-all focus:border-primary focus:bg-superficie focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             {busqueda ? (
@@ -122,44 +125,51 @@ export function ConnectorsAdmin() {
             ) : null}
           </div>
 
-          {/* Botones estandarizados a la derecha: Editar, Eliminar, | y Nuevo */}
+          {/* Botones estandarizados a la derecha: Editar, Asociar, Desasociar, Eliminar, | y Nuevo */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Botón Editar */}
             <Button
               variant="fila"
-              disabled={!seleccionada}
-              motivoDeshabilitado="Selecciona 1 plataforma para editar su conector"
+              disabled={!seleccionado}
+              motivoDeshabilitado={MOTIVO_SELECCIONA('editar')}
               onClick={handleEditar}
-              aria-label={seleccionada ? `Editar conector de ${seleccionada.name}` : 'Editar'}
-              title={
-                seleccionada
-                  ? `Editar conector de ${seleccionada.name}`
-                  : 'Selecciona 1 plataforma para editar su conector'
-              }
+              aria-label={seleccionado ? `Editar el conector ${seleccionado.name}` : 'Editar'}
+              title={seleccionado ? `Editar el conector ${seleccionado.name}` : MOTIVO_SELECCIONA('editar')}
               className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
             >
               <Icono nombre="editar" tamano="sm" ariaHidden={true} />
               <span>Editar</span>
             </Button>
-
-            {/* Botón Eliminar */}
+            <Button
+              variant="fila"
+              disabled={!seleccionado || seleccionado.platform !== null}
+              motivoDeshabilitado={!seleccionado ? MOTIVO_SELECCIONA('asociar') : 'Este conector ya está asociado a una plataforma'}
+              onClick={() => { if (seleccionado) setAsociando(seleccionado); }}
+              aria-label={seleccionado ? `Asociar el conector ${seleccionado.name}` : 'Asociar'}
+              title={seleccionado ? `Asociar el conector ${seleccionado.name}` : MOTIVO_SELECCIONA('asociar')}
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="plataformas" tamano="sm" ariaHidden={true} />
+              <span>Asociar</span>
+            </Button>
+            <Button
+              variant="fila"
+              disabled={!seleccionado || seleccionado.platform === null}
+              motivoDeshabilitado={!seleccionado ? MOTIVO_SELECCIONA('desasociar') : 'Este conector no está asociado a ninguna plataforma'}
+              onClick={() => { if (seleccionado) setDesasociando(seleccionado); }}
+              aria-label={seleccionado ? `Desasociar el conector ${seleccionado.name}` : 'Desasociar'}
+              title={seleccionado ? `Desasociar el conector ${seleccionado.name}` : MOTIVO_SELECCIONA('desasociar')}
+              className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
+            >
+              <Icono nombre="cerrar" tamano="sm" ariaHidden={true} />
+              <span>Desasociar</span>
+            </Button>
             <Button
               variant="fila-peligro"
-              disabled={!seleccionada || !seleccionada.has_connector}
-              motivoDeshabilitado={
-                !seleccionada
-                  ? 'Selecciona 1 plataforma para eliminar su conector'
-                  : 'Esta plataforma no tiene conector configurado'
-              }
-              onClick={handleEliminar}
-              aria-label={seleccionada ? `Eliminar conector de ${seleccionada.name}` : 'Eliminar'}
-              title={
-                !seleccionada
-                  ? 'Selecciona 1 plataforma para eliminar su conector'
-                  : !seleccionada.has_connector
-                  ? 'Esta plataforma no tiene conector configurado'
-                  : `Eliminar conector de ${seleccionada.name}`
-              }
+              disabled={!seleccionado}
+              motivoDeshabilitado={MOTIVO_SELECCIONA('eliminar')}
+              onClick={() => { if (seleccionado) setEliminando(seleccionado); }}
+              aria-label={seleccionado ? `Eliminar el conector ${seleccionado.name}` : 'Eliminar'}
+              title={seleccionado ? `Eliminar el conector ${seleccionado.name}` : MOTIVO_SELECCIONA('eliminar')}
               className="nx-btn-toolbar !px-2.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs"
             >
               <Icono nombre="eliminar" tamano="sm" ariaHidden={true} />
@@ -188,7 +198,7 @@ export function ConnectorsAdmin() {
         <div className="flex flex-1 min-h-0 flex-col h-full w-full overflow-hidden">
           {lista.loading && !lista.data ? (
             <div className="flex-1 overflow-y-auto min-h-0 rounded-2xl border border-panel-border/80 bg-superficie p-4 shadow-1 flex flex-col justify-center items-center">
-              <Spinner label="Cargando las plataformas…" />
+              <Spinner label="Cargando los conectores…" />
             </div>
           ) : lista.error ? (
             <div className="flex-1 overflow-y-auto min-h-0 rounded-2xl border border-panel-border/80 bg-superficie p-4 shadow-1 flex flex-col justify-center items-center gap-3">
@@ -198,7 +208,7 @@ export function ConnectorsAdmin() {
                 <span>Reintentar</span>
               </Button>
             </div>
-          ) : plataformas.length === 0 && !seleccionada ? (
+          ) : conectores.length === 0 && !creando ? (
             <EmptyNote
               message={VACIO_CONECTORES}
               icono="plataformas"
@@ -206,81 +216,56 @@ export function ConnectorsAdmin() {
             />
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 rounded-2xl border border-panel-border/80 bg-superficie p-4 shadow-1 flex flex-col">
-              <ConnectorList
-                plataformas={plataformas}
-                seleccionada={seleccionadaId}
-                onSelect={(p: Platform) => setSeleccionadaId(p.id)}
-              />
-              {seleccionada ? (
-                <ConnectorPanel platform={seleccionada} onClose={cerrar} onChanged={lista.reload} />
+              <ConnectorList conectores={conectores} seleccionado={seleccionadoId} onSelect={abrir} />
+              {creando || seleccionado ? (
+                <ConnectorPanel
+                  connector={creando ? null : seleccionado}
+                  onClose={cerrar}
+                  onSaved={(c, creado) => {
+                    if (creado) { setCreando(false); setSeleccionadoId(c.id); }
+                    lista.reload();
+                  }}
+                  onChanged={lista.reload}
+                  onDeleted={() => { setSeleccionadoId(null); lista.reload(); }}
+                />
               ) : null}
             </div>
           )}
         </div>
       </div>
 
-      {/* Modal para seleccionar plataforma sin conector al presionar Nuevo */}
-      {pickerNuevoAbierto ? (
-        <Modal
-          title="Nuevo conector"
-          icon="plataformas"
-          onClose={() => setPickerNuevoAbierto(false)}
-          size="md"
-          footer={
-            <div className="flex justify-end">
-              <Button variant="secondary" onClick={() => setPickerNuevoAbierto(false)}>
-                Cancelar
-              </Button>
-            </div>
-          }
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-label">
-              Elige la plataforma a la que se enlazará el nuevo conector:
-            </p>
-            <div className="divide-y divide-panel-border/70 rounded-xl border border-panel-border/80 bg-fondo overflow-hidden max-h-72 overflow-y-auto">
-              {candidatas
-                .map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setPickerNuevoAbierto(false);
-                      setSeleccionadaId(p.id);
-                      requestAnimationFrame(() => {
-                        document.getElementById(`conector-${p.id}-titulo`)?.focus();
-                      });
-                    }}
-                    className="flex w-full min-h-12 items-center justify-between p-3.5 text-left transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-                  >
-                    <div className="min-w-0">
-                      <span className="block text-sm font-bold text-body-text">{p.name}</span>
-                      <span className="block text-xs text-label">{p.area_name ?? 'Sin área asignada'}</span>
-                    </div>
-                    <Icono nombre="chevron-der" tamano="sm" ariaHidden={true} className="text-label" />
-                  </button>
-                ))}
-            </div>
-          </div>
-        </Modal>
+      {asociando ? (
+        <ConnectorAssociateDialog
+          connector={asociando}
+          onClose={() => setAsociando(null)}
+          onDone={(c) => cambioDePlataforma(c, `Conector ${c.name} asociado a ${c.platform?.name ?? 'la plataforma'}.`)}
+          onStale={() => { setAsociando(null); lista.reload(); }}
+        />
+      ) : null}
+
+      {desasociando ? (
+        <ConnectorDissociateDialog
+          connector={desasociando}
+          onClose={() => setDesasociando(null)}
+          onDone={(c) => cambioDePlataforma(c, `Conector ${c.name} desasociado.`)}
+          onStale={() => { setDesasociando(null); lista.reload(); }}
+        />
       ) : null}
 
       {/* Diálogo de confirmación al presionar Eliminar en la barra de herramientas */}
-      {eliminandoPlataforma ? (
+      {eliminando ? (
         <ConnectorDeleteDialog
-          platform={eliminandoPlataforma}
-          onClose={() => setEliminandoPlataforma(null)}
+          connector={eliminando}
+          onClose={() => setEliminando(null)}
           onDeleted={() => {
-            const nombre = eliminandoPlataforma.name;
-            setEliminandoPlataforma(null);
-            avisar('success', `Conector de ${nombre} eliminado.`, 'Conector eliminado');
+            const eliminado = eliminando;
+            setEliminando(null);
+            avisar('success', `Conector ${eliminado.name} eliminado.`, 'Conector eliminado');
+            if (seleccionadoId === eliminado.id) setSeleccionadoId(null);
             lista.reload();
-            if (seleccionadaId === eliminandoPlataforma.id) {
-              setSeleccionadaId(null);
-            }
           }}
           onStale={() => {
-            setEliminandoPlataforma(null);
+            setEliminando(null);
             lista.reload();
           }}
         />

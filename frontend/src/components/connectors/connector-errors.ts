@@ -55,6 +55,32 @@ function mensajeParametro(tipo: string, clave: string): string {
   return campo ? `Revisa «${campo.etiqueta}». ${campo.pista}` : MENSAJES_CAMPO.params;
 }
 
+/** `409` de asociar y desasociar (contrato 1.6) y del `test` de un conector sin plataforma. */
+export const MENSAJES_ASOCIAR: Record<string, string> = {
+  plataforma_con_conector: 'Esa plataforma ya tiene otro conector. La lista se actualizó.',
+  plataforma_con_accesos: 'No se puede cambiar: el conector está asociado a otra plataforma con accesos vigentes.',
+  conector_sin_plataforma: 'El conector ya no tiene plataforma. La lista se actualizó.',
+};
+export const MENSAJE_DESASOCIAR_ACCESOS = 'No se puede desasociar: hay accesos vigentes en la plataforma. Revócalos primero.';
+
+export function describeConnectorAssociateError(err: unknown): ConnectorErrorView {
+  const generico = 'No se pudo asociar el conector. Inténtalo de nuevo.';
+  if (!(err instanceof ApiError)) return vista(generico);
+  if (err.code === 'plataforma_con_conector') return vista(MENSAJES_ASOCIAR.plataforma_con_conector, true);
+  if (err.code === 'plataforma_con_accesos') return vista(MENSAJES_ASOCIAR.plataforma_con_accesos);
+  if (err.status === 404) return vista('La plataforma o el conector ya no existe. La lista se actualizó.', true);
+  return vista(porEstado(err, generico));
+}
+
+export function describeConnectorDissociateError(err: unknown): ConnectorErrorView {
+  const generico = 'No se pudo desasociar el conector. Inténtalo de nuevo.';
+  if (!(err instanceof ApiError)) return vista(generico);
+  if (err.code === 'conector_sin_plataforma') return vista(MENSAJES_ASOCIAR.conector_sin_plataforma, true);
+  if (err.code === 'plataforma_con_accesos') return vista(MENSAJE_DESASOCIAR_ACCESOS);
+  if (err.status === 404) return vista('El conector ya no existe. La lista se actualizó.', true);
+  return vista(porEstado(err, generico));
+}
+
 export function describeConnectorSaveError(err: unknown, tipo = ''): ConnectorErrorView {
   const generico = 'No se pudo guardar el conector. Inténtalo de nuevo.';
   if (!(err instanceof ApiError)) return vista(generico);
@@ -76,7 +102,7 @@ export function describeConnectorSaveError(err: unknown, tipo = ''): ConnectorEr
     }
     return vista(MENSAJE_REVISA, false, fields, paramFields);
   }
-  if (err.status === 404) return vista('La plataforma ya no existe. La lista se actualizó.', true);
+  if (err.status === 404) return vista('El conector ya no existe. La lista se actualizó.', true);
   return vista(porEstado(err, generico));
 }
 
@@ -86,14 +112,15 @@ export function describeConnectorDeleteError(err: unknown): ConnectorErrorView {
   if (err.code === 'plataforma_con_accesos') {
     return vista('No se puede eliminar: hay accesos vigentes con este conector. Revócalos primero.');
   }
-  if (err.status === 404) return vista('La configuración ya no existe. Se actualizó.', true);
+  if (err.status === 404) return vista('El conector ya no existe. La lista se actualizó.', true);
   return vista(porEstado(err, generico));
 }
 
 export function describeConnectorTestError(err: unknown): ConnectorErrorView {
   const generico = 'No se pudo probar la conexión. Inténtalo de nuevo.';
   if (!(err instanceof ApiError)) return vista(generico);
-  if (err.status === 404) return vista('La configuración ya no existe. Se actualizó.', true);
+  if (err.code === 'conector_sin_plataforma') return vista(MENSAJES_ASOCIAR.conector_sin_plataforma, true);
+  if (err.status === 404) return vista('El conector ya no existe. La lista se actualizó.', true);
   return vista(porEstado(err, generico));
 }
 
