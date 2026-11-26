@@ -32,6 +32,10 @@ export const ACCIONES: Record<string, string> = {
   conector_configurado: 'Conector guardado',
   conector_eliminado: 'Conector eliminado',
   conector_probado: 'Conector probado',
+  // DIS-140: conectores independientes (FNC-213).
+  conector_creado: 'Conector creado',
+  conector_asociado: 'Conector asociado',
+  conector_desasociado: 'Conector desasociado',
   ejecucion_reintentada: 'Reintento',
   ejecucion_cancelada: 'Cancelación',
   notificacion_fallida: 'Fallo aviso',

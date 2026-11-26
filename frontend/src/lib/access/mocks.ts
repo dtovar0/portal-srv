@@ -7,7 +7,7 @@
 
 import type { ManagedUser } from '../types';
 import type {
-  Access, AccessRequest, AuditEntryV1, CatalogItem, Connector, DirectoryConfig,
+  Access, AccessRequest, AuditEntryV1, CatalogItem, Connector, ConnectorItem, DirectoryConfig,
   HomeSummary, InboxStats, Job, JobDetail, Paginated, PasswordPolicy,
 } from './types';
 
@@ -55,6 +55,17 @@ export const MOCK_CONNECTOR: Connector = {
   platform_id: 12, type: 'api', host: 'erp.ejemplo.local', port: 443,
   params: { base_path: '/usuarios' }, credential_ref: 'pokemon/contabilidad-api',
   credential_status: 'ok', active: true, updated_at: '2026-10-14T14:00:00Z',
+};
+
+export const MOCK_CONNECTOR_ITEM: ConnectorItem = {
+  ...MOCK_CONNECTOR, id: 4, name: 'ERP usuarios',
+  platform: { id: 12, name: 'Contabilidad', area_id: 3, area: 'Finanzas' },
+};
+
+export const MOCK_CONNECTOR_SIN_PLATAFORMA: ConnectorItem = {
+  ...MOCK_CONNECTOR_ITEM, id: 5, name: 'Directorio SSH', type: 'ssh', host: 'ssh.ejemplo.local', port: 22,
+  params: {}, credential_ref: 'pokemon/directorio-ssh', credential_status: 'sin_verificar',
+  platform_id: null, platform: null,
 };
 
 export const MOCK_JOB: Job = {

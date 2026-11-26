@@ -5,19 +5,18 @@
  */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { Platform } from '@/lib/types';
 import { MOCK_ACCESS, MOCK_JOB, MOCK_REQUEST, MOCK_USER } from '@/lib/access/mocks';
 import { ApproveDialog } from '@/components/access/approve-dialog';
 import { RejectDialog } from '@/components/access/reject-dialog';
 import { RevokeAccessDialog } from '@/components/users/revoke-access-dialog';
 import { AdminAreasDialog, RemoveAdminDialog } from '@/components/users/admin-role-dialog';
 import { ConnectorDeleteDialog } from '@/components/connectors/connector-delete-dialog';
+import { ConnectorDissociateDialog } from '@/components/connectors/connector-dissociate-dialog';
 import { JobRetryDialog } from '@/components/connectors/job-retry-dialog';
 
 afterEach(cleanup);
 
 const nada = () => undefined;
-const PLATAFORMA = { id: 4, name: 'Jira' } as Platform;
 const ADMIN = { ...MOCK_USER, role: 'admin_area' as const, managed_areas: [{ id: 3, name: 'Finanzas' }] };
 
 /** Texto que lee el lector de pantalla como descripción del diálogo. */
@@ -85,10 +84,19 @@ describe('describedBy y botón de confirmar', () => {
   });
 
   it('Eliminar conector: describe el efecto; botón de peligro', () => {
-    render(<ConnectorDeleteDialog platform={PLATAFORMA} onClose={nada} onDeleted={nada} onStale={nada} />);
-    expect(descripcion()).toContain('conector de Jira');
+    render(<ConnectorDeleteDialog connector={{ id: 4, name: 'Jira', platform: null }} onClose={nada} onDeleted={nada} onStale={nada} />);
+    expect(descripcion()).toContain('el conector «Jira»');
     expect(descripcion()).toContain('accesos vigentes');
     expect(confirmar(/^Eliminar$/).className).toContain(PELIGRO);
+  });
+
+  it('Desasociar conector: describe el efecto; botón de peligro', () => {
+    render(<ConnectorDissociateDialog
+      connector={{ id: 4, name: 'Jira', platform: { id: 1, name: 'Wiki', area_id: null, area: null } }}
+      onClose={nada} onDone={nada} onStale={nada} />);
+    expect(descripcion()).toContain('«Jira» dejará de estar asociado a Wiki');
+    expect(descripcion()).toContain('no se borra');
+    expect(confirmar(/^Desasociar$/).className).toContain(PELIGRO);
   });
 
   it('Reintentar ejecución: describe el efecto; botón primario', () => {

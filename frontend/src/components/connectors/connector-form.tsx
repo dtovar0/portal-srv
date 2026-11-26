@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * Formulario del conector de una plataforma (DIS-022, F-CON-01,
- * `PUT /platforms/<id>/connector`, contrato `conectores-y-ejecuciones.md` 1.1).
+ * Formulario del conector (DIS-022, F-CON-01; DIS-140: conector independiente,
+ * `POST /connectors` y `PUT /connectors/<id>`, contrato `conectores-y-ejecuciones.md` 1.6).
  *
- * - Tipo, host, puerto, parámetros del tipo, referencia de la credencial y
+ * - Nombre (único), tipo, host, puerto, parámetros del tipo, referencia de la credencial y
  *   activo. Los parámetros cambian con el tipo (`PARAMETROS_POR_TIPO`: `api`,
  *   `ssh` y `bd`, DIS-042) y el error del servidor por `params.<ruta>` se
  *   marca en su campo.
@@ -17,13 +17,13 @@
 
 import { useState } from 'react';
 import { connectorsApi } from '@/lib/access/connectors';
-import type { Connector } from '@/lib/access/types';
+import type { ConnectorItem } from '@/lib/access/types';
 import { Button, Checkbox, Field, Option, Select, TextInput } from '../form';
 import { Icono } from '../icono';
 import { FieldErrorNote, FieldHint, describedBy, focusFirstError } from '../platforms/field-notes';
 import { useToast } from '../toast';
 import {
-  type CampoConector, type FormularioConector, HOST_MAX, PUERTO_MAX, PUERTO_MIN, REFERENCIA_MAX,
+  type CampoConector, type FormularioConector, HOST_MAX, NOMBRE_MAX, PUERTO_MAX, PUERTO_MIN, REFERENCIA_MAX,
   TIPOS_CONECTOR, cuerpoConector, esTipoConocido, formularioDesde, parametrosConservados,
   parametrosDelTipo, validarConector, validarParametros,
 } from './connector-catalog';
@@ -34,6 +34,7 @@ import { MENSAJE_REVISA, describeConnectorSaveError } from './connector-errors';
 
 const PREFIJO = 'conector';
 const IDS: Record<Exclude<CampoConector, 'params' | 'active'>, string> = {
+  name: `${PREFIJO}-nombre`,
   type: `${PREFIJO}-tipo`,
   host: `${PREFIJO}-host`,
   port: `${PREFIJO}-puerto`,
@@ -42,22 +43,23 @@ const IDS: Record<Exclude<CampoConector, 'params' | 'active'>, string> = {
 /** `fieldset` de los parámetros: recibe el foco si el servidor marca `params` (DIS-022). */
 export const PARAMS_FIELDSET_ID = `${PREFIJO}-params`;
 const ORDEN: [CampoConector, string][] = [
-  ['type', IDS.type], ['host', IDS.host], ['port', IDS.port], ['credential_ref', IDS.credential_ref],
+  ['name', IDS.name], ['type', IDS.type], ['host', IDS.host], ['port', IDS.port], ['credential_ref', IDS.credential_ref],
   ['params', PARAMS_FIELDSET_ID],
 ];
 const PARAMS_ERROR_ID = `${PREFIJO}-params-error`;
 
 export function ConnectorForm({
-  platformId,
+  conectorId,
   guardado,
   onSaved,
   onStale,
 }: {
-  platformId: number;
-  /** Configuración guardada; `null` si la plataforma aún no tiene. */
-  guardado: Connector | null;
-  onSaved: (connector: Connector) => void;
-  /** La plataforma o la configuración cambió en el servidor: recargar. */
+  /** `null` = conector nuevo (`POST`); con id, `PUT`. */
+  conectorId: number | null;
+  /** Configuración guardada; `null` si es nuevo. */
+  guardado: ConnectorItem | null;
+  onSaved: (connector: ConnectorItem) => void;
+  /** El conector cambió o ya no existe en el servidor: recargar. */
   onStale: () => void;
 }) {
   const [form, setForm] = useState<FormularioConector>(() => formularioDesde(guardado));
@@ -91,7 +93,7 @@ export function ConnectorForm({
   function ordenCon(errParams: Record<string, string>): [string, string][] {
     const delTipo: [string, string][] = campos
       .filter((c) => errParams[c.clave]).map((c) => [c.clave, idParametro(PREFIJO, c.clave)]);
-    return [...ORDEN.slice(0, 4), ...delTipo, ORDEN[4]];
+    return [...ORDEN.slice(0, 5), ...delTipo, ORDEN[5]];
   }
 
   function cambiar<K extends keyof FormularioConector>(campo: K, valor: FormularioConector[K]) {
@@ -118,7 +120,10 @@ export function ConnectorForm({
     setFields({});
     setParamErrors({});
     try {
-      const result = await connectorsApi.save(platformId, cuerpoConector(form, guardado));
+      const cuerpo = cuerpoConector(form, guardado);
+      const result = conectorId === null
+        ? await connectorsApi.create(cuerpo)
+        : await connectorsApi.update(conectorId, cuerpo);
       setSending(false);
       onSaved(result.connector);
     } catch (err) {
@@ -134,7 +139,7 @@ export function ConnectorForm({
   }
 
   function campoTexto(
-    campo: 'host' | 'port' | 'credential_ref',
+    campo: 'name' | 'host' | 'port' | 'credential_ref',
     label: string,
     pista: string,
     extra: React.InputHTMLAttributes<HTMLInputElement> = {},
@@ -169,6 +174,10 @@ export function ConnectorForm({
     <form onSubmit={submit} noValidate aria-busy={sending} className="space-y-5" aria-label="Configuración del conector">
       <p className="text-sm text-label">Los campos con * son obligatorios.</p>
       <RegionDeAnuncios mensaje={anuncio} />
+
+      {campoTexto('name', 'Nombre', `Único entre conectores. Hasta ${NOMBRE_MAX} caracteres.`, {
+        maxLength: NOMBRE_MAX,
+      })}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
