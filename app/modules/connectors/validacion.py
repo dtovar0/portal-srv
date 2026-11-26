@@ -18,6 +18,7 @@ Reglas del contrato `conectores-y-ejecuciones.md` (`PUT
 `{campo: mensaje}` (`params.<clave>` para los parámetros).
 """
 import re
+import unicodedata
 
 from app.modules.audit.sanitizar import FRAGMENTOS_SENSIBLES
 from app.modules.connectors.configuracion import (cargar_configuracion,
@@ -27,8 +28,8 @@ from app.modules.connectors.credenciales import (referencia_reservada,
                                                  referencia_valida,
                                                  referencias_en_conflicto)
 from app.modules.connectors.registry import obtener_tipo
-from app.modules.connectors.tipos import (LARGO_REFERENCIA, PUERTO_MAXIMO,
-                                          PUERTO_MINIMO)
+from app.modules.connectors.tipos import (LARGO_NOMBRE, LARGO_REFERENCIA,
+                                          PUERTO_MAXIMO, PUERTO_MINIMO)
 
 MENSAJE_TIPO = 'Tipo de conector no disponible.'
 MENSAJE_HOST = 'Usa un nombre de host autorizado.'
@@ -37,6 +38,9 @@ MENSAJE_PARAMS = 'Debe ser un objeto.'
 MENSAJE_PARAM_SECRETO = 'No incluyas secretos en los parámetros.'
 MENSAJE_REFERENCIA = ('Usa la referencia del ítem en el gestor de secretos '
                       f'(máximo {LARGO_REFERENCIA} caracteres).')
+MENSAJE_NOMBRE = (f'Escribe un nombre de 1 a {LARGO_NOMBRE} caracteres, '
+                  'sin caracteres de control.')
+MENSAJE_NOMBRE_EN_USO = 'Ya existe un conector con ese nombre.'
 MENSAJE_ACTIVO = 'Debe ser verdadero o falso.'
 MENSAJE_PARAMS_PROFUNDOS = 'Los parámetros tienen demasiados niveles.'
 MENSAJE_REFERENCIA_RESERVADA = ('Esa referencia está reservada para el '
@@ -53,6 +57,20 @@ PROFUNDIDAD_MAXIMA_PARAMS = 8
 PATRON_REFERENCIA = re.compile(
     r'[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*')
 PREFIJO_PARAMS = 'params.'
+
+
+def validar_nombre(valor):
+    """`(nombre recortado, None)` o `(None, mensaje)` (FNC-213): 1 a
+    `LARGO_NOMBRE` caracteres sin caracteres de control (categoría Unicode
+    «C»: de control, de formato como el espacio de ancho cero, etc.). La
+    unicidad la comprueba quien guarda (`consultas.nombre_en_uso`)."""
+    if not isinstance(valor, str):
+        return None, MENSAJE_NOMBRE
+    nombre = valor.strip()
+    if (not nombre or len(nombre) > LARGO_NOMBRE
+            or any(unicodedata.category(c).startswith('C') for c in nombre)):
+        return None, MENSAJE_NOMBRE
+    return nombre, None
 
 
 def _es_entero(valor):

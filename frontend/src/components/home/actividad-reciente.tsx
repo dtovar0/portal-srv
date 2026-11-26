@@ -67,6 +67,9 @@ const ACCION_ICONO: Record<string, NombreIcono> = {
   conector_configurado: 'ejecuciones',
   conector_eliminado: 'ejecuciones',
   conector_probado: 'ejecuciones',
+  conector_creado: 'ejecuciones',
+  conector_asociado: 'ejecuciones',
+  conector_desasociado: 'ejecuciones',
   ejecucion_reintentada: 'ejecuciones',
   ejecucion_cancelada: 'ejecuciones',
 

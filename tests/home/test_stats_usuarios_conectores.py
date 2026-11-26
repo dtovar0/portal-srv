@@ -15,13 +15,10 @@ RUTA = '/api/v1/stats'
 
 
 def _conector(plataforma, numero):
-    valores = dict(platform_id=plataforma.id, type='noop',
-                   host='conector.pruebas.local', port=443, params={},
-                   credential_ref=f'ref-{numero}')
-    # Con FNC-213 el conector lleva nombre.
-    if hasattr(PlatformConnector, 'name'):
-        valores['name'] = f'Conector {numero}'
-    db.session.add(PlatformConnector(**valores))
+    db.session.add(PlatformConnector(
+        platform_id=plataforma.id, name=f'Conector {numero}', type='noop',
+        host='conector.pruebas.local', port=443, params={},
+        credential_ref=f'ref-{numero}'))
     db.session.commit()
 
 
@@ -76,3 +73,15 @@ def test_usuario_normal_sin_usuarios_ni_conectores(app, cliente_como):
     datos = _pedir(cliente_como, usuario)
     assert 'users_by_role' not in datos['desglose']
     assert 'connectors' not in datos
+
+
+def test_conector_sin_asociar_cuenta_en_el_resto(app, cliente_como):
+    super_, _, _ = _escena()
+    db.session.add(PlatformConnector(
+        platform_id=None, name='Suelto', type='noop',
+        host='conector.pruebas.local', port=443, params={},
+        credential_ref='ref-suelto'))
+    db.session.commit()
+    datos = _pedir(cliente_como, super_)
+    assert datos['connectors'] == 3
+    assert datos['desglose']['connectors'] == {'parte': 2, 'resto': 1}
