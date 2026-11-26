@@ -39,7 +39,7 @@ import { grantsApi } from '@/lib/access/grants';
 import { inventoryApi } from '@/lib/access/inventory';
 import { requestsApi } from '@/lib/access/requests';
 import { ApprovalsInbox } from '@/components/access/approvals-inbox';
-import { rutaConFiltro, valorPermitido } from '@/components/access/filtro-url';
+import { idDeUrl, rutaConFiltro, valorPermitido } from '@/components/access/filtro-url';
 import { Inventory } from '@/components/access/inventory';
 import { MyRequestsView } from '@/components/access/my-requests-view';
 
@@ -119,9 +119,31 @@ describe('/approvals', () => {
     await waitFor(() => expect(requestsApi.inbox).toHaveBeenCalledWith(expect.objectContaining({ status: 'aprobada' })));
   });
 
+  it('DIS-137: area_id de la URL filtra la bandeja por área', async () => {
+    url.consulta = 'status=pendiente&area_id=3';
+    render(<ApprovalsInbox estadoFijo="pendiente" />);
+    await waitFor(() => expect(requestsApi.inbox).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'pendiente', area_id: 3 })));
+    expect((screen.getByLabelText('Filtrar la bandeja por área') as HTMLSelectElement).value).toBe('3');
+  });
+
+  it('DIS-137: area_id inválido se ignora', async () => {
+    url.consulta = 'area_id=3abc';
+    render(<ApprovalsInbox />);
+    await waitFor(() => expect(requestsApi.inbox).toHaveBeenCalledWith(
+      expect.objectContaining({ area_id: undefined })));
+  });
+
   it('sin parámetro o inválido: pendiente', async () => {
     url.consulta = 'status=zzz';
     render(<ApprovalsInbox />);
     await waitFor(() => expect(requestsApi.inbox).toHaveBeenCalledWith(expect.objectContaining({ status: 'pendiente' })));
+  });
+});
+
+describe('idDeUrl (DIS-137)', () => {
+  it('solo enteros positivos', () => {
+    expect(idDeUrl('3')).toBe(3);
+    for (const malo of [null, undefined, '', '0', '-1', '3.5', '3abc', '1e3']) expect(idDeUrl(malo)).toBeNull();
   });
 });

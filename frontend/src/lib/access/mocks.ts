@@ -100,10 +100,11 @@ export const MOCK_HOME: HomeSummary = {
 };
 
 
-/** Resumen de la bandeja (contrato solicitudes 1.3). */
+/** Resumen de la bandeja (contrato solicitudes 1.4). */
 export const MOCK_INBOX_STATS: InboxStats = {
   total: 12,
   by_status: { pendiente: 3, aprobada: 7, rechazada: 2 },
   by_area: [{ area_id: 3, area: 'Finanzas', count: 8 }],
   by_platform: [{ platform_id: 12, platform: 'Contabilidad', area: 'Finanzas', count: 5 }],
+  pending_by_area: [{ area_id: 3, area: 'Finanzas', count: 3 }],
 };
