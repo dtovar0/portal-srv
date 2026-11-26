@@ -155,7 +155,8 @@ export function SolicitudesPanel() {
           subtitle="Pendientes por aprobar"
           icon="solicitudes"
           titleId={TITULO_ID}
-          titleTag="h2"
+          // h3: dentro del resumen (h2 oculto), al nivel de la dona y las gráficas.
+          titleTag="h3"
           actions={
             <Link
               href={RUTA_PENDIENTES}
