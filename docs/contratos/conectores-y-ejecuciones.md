@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.6 (2026-11-26) |
+| Versión | 1.7 (2026-11-26) |
 | Proveedor | backend (FNC-051, FNC-052, FNC-061, FNC-062; base FNC-049, FNC-050) |
 | Consumidores | web (FNC-069; pantallas DIS-022, DIS-018, DIS-140) |
 | Solicitudes | — |
@@ -33,7 +33,7 @@ Un conector se crea **sin plataforma** y después se **asocia** a una. Sigue sie
 | `GET /connectors/<id>` | `200 {"connector": ConnectorV2}`; inexistente → `404` |
 | `PUT /connectors/<id>` | `200 {"status": "success", "connector": ConnectorV2}`; reemplaza los campos. Auditoría `conector_configurado` (solo si cambió algo) |
 | `DELETE /connectors/<id>` | `200 {"status": "success"}`. Asociado con accesos vigentes en su plataforma → `409 plataforma_con_accesos`. Auditoría `conector_eliminado` |
-| `PUT /connectors/<id>/platform` | Cuerpo `{"platform_id": int}`. `200 {"status": "success", "connector": ConnectorV2}`. Plataforma inexistente → `404`; la plataforma ya tiene **otro** conector → `409 plataforma_con_conector`; el conector está asociado a **otra** plataforma con accesos vigentes → `409 plataforma_con_accesos`; misma plataforma → `200` sin cambios. Auditoría `conector_asociado` |
+| `PUT /connectors/<id>/platform` | Cuerpo `{"platform_id": int, "confirmar"?: bool}` (v1.7). Destino con accesos vigentes y sin `"confirmar": true` → `409 plataforma_destino_con_accesos` con `"accesos_vigentes": N` (se reintenta con `confirmar`); `confirmar` no booleano → `422 fields.confirmar`. `200 {"status": "success", "connector": ConnectorV2}`. Plataforma inexistente → `404`; la plataforma ya tiene **otro** conector → `409 plataforma_con_conector`; el conector está asociado a **otra** plataforma con accesos vigentes → `409 plataforma_con_accesos`; misma plataforma → `200` sin cambios. Auditoría `conector_asociado` |
 | `DELETE /connectors/<id>/platform` | `200 {"status": "success", "connector": ConnectorV2}`. Sin plataforma → `409 conector_sin_plataforma`; con accesos vigentes → `409 plataforma_con_accesos`. Auditoría `conector_desasociado` |
 | `POST /connectors/<id>/test` | Como `POST /platforms/<id>/connector/test`. Sin plataforma → `409 conector_sin_plataforma` |
 
@@ -185,6 +185,7 @@ Orden: `created_at` descendente. Respuesta paginada de `Job` (sin `attempts`).
 | 409 | `estado_invalido` | Solo se reintenta una ejecución fallida. |
 | 409 | `plataforma_con_conector` | La plataforma ya tiene otro conector. (v1.6) |
 | 409 | `conector_sin_plataforma` | El conector no está asociado a una plataforma. (v1.6) |
+| 409 | `plataforma_destino_con_accesos` | La plataforma tiene accesos vigentes que no se dieron de alta con este conector; confirma para asociarlo. Trae `accesos_vigentes`. (v1.7) |
 | 422 | `validacion` | `fields.host`: "Usa un nombre de host autorizado." · `fields.params.<campo>` según el tipo |
 
 ## Refresco
@@ -215,3 +216,4 @@ Orden: `created_at` descendente. Respuesta paginada de `Job` (sin `attempts`).
 | 1.4 | 2026-10-26 | Aditivo (FNC-053): esquema de `params` del tipo `bd` (`422 fields.params.<campo>`) y 4 motivos nuevos en la bitácora de ejecuciones |
 | 1.5 | 2026-11-24 | FNC-196 (dueño): el conector es un paso **adicional** a los grupos. Todo trabajo usa el proveedor `ldap` (grupo del nivel) y, si la plataforma tiene conector activo, después su `otorgar`/`revocar` (un solo trabajo; reintentos y estados iguales). Un fallo del conector deja el trabajo `fallido` con su error sin revertir el grupo. `PUT /platforms/<id>/connector` funciona en cualquier plataforma (retirado `409 plataforma_sin_conector`). El cambio de nivel solo cambia el grupo (rol por conector: FNC-198) |
 | 1.6 | 2026-11-26 | FNC-213 (dueño): conectores independientes. `GET/POST /connectors`, `GET/PUT/DELETE /connectors/<id>`, `PUT/DELETE /connectors/<id>/platform` (asociar/desasociar), `POST /connectors/<id>/test`; campo `name`; errores `plataforma_con_conector` y `conector_sin_plataforma`; borrar una plataforma desasocia su conector. Rutas por plataforma conservadas |
+| 1.7 | 2026-11-26 | FNC-215: asociar a un destino con accesos vigentes exige `confirmar: true` (`409 plataforma_destino_con_accesos` con `accesos_vigentes`); la auditoría `conector_asociado` guarda `accesos_vigentes_destino`; la baja de una plataforma emite `conector_desasociado`. Aditivo |

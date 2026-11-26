@@ -44,7 +44,7 @@ from app.modules.connectors.servicio import (MODULO_AUDITORIA, auditar_cambio,
                                              estado, validar_conector)
 from app.modules.connectors.validacion import MENSAJE_NOMBRE_EN_USO
 from app.modules.core.models import Platform
-from app.modules.platforms.estado import accesos_vigentes
+from app.modules.platforms import estado as estado_plataforma
 
 CAMPOS_CREAR = CAMPOS_PERMITIDOS | {'name'}
 CAMPO_PLATAFORMA = 'platform_id'
@@ -54,6 +54,14 @@ PLATAFORMA_CON_CONECTOR = ('La plataforma ya tiene otro conector.', 409,
 CONECTOR_SIN_PLATAFORMA = ('El conector no está asociado a una plataforma.',
                            409, 'conector_sin_plataforma')
 MENSAJE_PLATAFORMA = 'Indica el identificador de la plataforma.'
+# FNC-215 (contrato 1.7): asociar a un destino con accesos vigentes pide confirmación.
+CAMPO_CONFIRMAR = 'confirmar'
+MENSAJE_CONFIRMAR = 'Debe ser verdadero o falso.'
+CODIGO_DESTINO_CON_ACCESOS = 'plataforma_destino_con_accesos'
+MENSAJE_DESTINO_CON_ACCESOS = ('La plataforma tiene accesos vigentes que no se '
+                               'dieron de alta con este conector; confirma '
+                               'para asociarlo.')
+ESTADO_CONFLICTO = 409
 
 
 def _conector(conector_id):
@@ -69,10 +77,16 @@ def _plataforma_de(conector):
         if conector.platform_id else None
 
 
+def _vigentes(plataforma):
+    """Accesos vigentes con la fila de la plataforma bloqueada (FNC-215)."""
+    estado_plataforma.bloquear_plataforma(plataforma.id)
+    return estado_plataforma.accesos_vigentes(plataforma)
+
+
 def _con_accesos(conector):
     """`True` si su plataforma asociada tiene accesos vigentes."""
     plataforma = _plataforma_de(conector)
-    return plataforma is not None and accesos_vigentes(plataforma) > 0
+    return plataforma is not None and _vigentes(plataforma) > 0
 
 
 def _respuesta(conector, codigo=200):
@@ -80,14 +94,14 @@ def _respuesta(conector, codigo=200):
                     'connector': conector.to_dict_v2()}), codigo
 
 
-def _auditar_vinculo(evento, conector, plataforma, antes_id):
+def _auditar_vinculo(evento, conector, plataforma, antes_id, **extra):
+    despues = {CAMPO_PLATAFORMA: plataforma.id if plataforma else None, **extra}
     add_audit_log(evento, status='success', module=MODULO_AUDITORIA,
                   target=conector.name,
                   platform_id=plataforma.id if plataforma else antes_id,
                   area_id=plataforma.area_id if plataforma else None,
                   before={CAMPO_PLATAFORMA: antes_id},
-                  after={CAMPO_PLATAFORMA:
-                         plataforma.id if plataforma else None},
+                  after=despues,
                   commit=False)
 
 
@@ -201,12 +215,15 @@ def associate_connector(connector_id):
     conector, error = _conector(connector_id)
     if error is not None:
         return error
-    datos, error = leer_cuerpo({CAMPO_PLATAFORMA})
+    datos, error = leer_cuerpo({CAMPO_PLATAFORMA, CAMPO_CONFIRMAR})
     if error is not None:
         return error
     destino_id = datos.get(CAMPO_PLATAFORMA)
     if not isinstance(destino_id, int) or isinstance(destino_id, bool):
         return validation_error({CAMPO_PLATAFORMA: MENSAJE_PLATAFORMA})
+    confirmar = datos.get(CAMPO_CONFIRMAR, False)
+    if not isinstance(confirmar, bool):
+        return validation_error({CAMPO_CONFIRMAR: MENSAJE_CONFIRMAR})
     destino = db.session.get(Platform, destino_id)
     if destino is None:
         return error_response(*NO_ENCONTRADO)
@@ -217,9 +234,17 @@ def associate_connector(connector_id):
         return error_response(*PLATAFORMA_CON_CONECTOR)
     if _con_accesos(conector):
         return error_response(*PLATAFORMA_CON_ACCESOS)
+    # FNC-215: los accesos vigentes del destino no pasaron por este conector;
+    # se asocia solo con confirmación explícita y queda el número auditado.
+    vigentes_destino = _vigentes(destino)
+    if vigentes_destino > 0 and not confirmar:
+        return jsonify({'status': 'error', 'message': MENSAJE_DESTINO_CON_ACCESOS,
+                        'code': CODIGO_DESTINO_CON_ACCESOS,
+                        'accesos_vigentes': vigentes_destino}), ESTADO_CONFLICTO
     antes_id = conector.platform_id
     conector.platform_id = destino.id
-    _auditar_vinculo(Evento.CONECTOR_ASOCIADO, conector, destino, antes_id)
+    _auditar_vinculo(Evento.CONECTOR_ASOCIADO, conector, destino, antes_id,
+                     accesos_vigentes_destino=vigentes_destino)
     try:
         db.session.commit()
     except IntegrityError:
@@ -245,7 +270,7 @@ def disassociate_connector(connector_id):
     plataforma = _plataforma_de(conector)
     if plataforma is None:
         return error_response(*CONECTOR_SIN_PLATAFORMA)
-    if accesos_vigentes(plataforma) > 0:
+    if _vigentes(plataforma) > 0:
         return error_response(*PLATAFORMA_CON_ACCESOS)
     conector.platform_id = None
     _auditar_vinculo(Evento.CONECTOR_DESASOCIADO, conector, None, plataforma.id)

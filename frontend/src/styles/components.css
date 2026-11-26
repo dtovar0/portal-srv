@@ -1122,6 +1122,12 @@ select::-ms-expand {
 .nx-dona__punto--pendiente { background-color: rgb(var(--color-indicador-pendientes)); }
 .nx-dona__punto--aprobada { background-color: rgb(var(--color-indicador-aprobadas)); }
 .nx-dona__punto--rechazada { background-color: rgb(var(--color-indicador-rechazadas)); }
+/* DIS-144: series de la dona por área (tokens de los indicadores existentes). */
+.nx-dona__punto--serie-1 { background-color: rgb(var(--color-indicador-areas)); }
+.nx-dona__punto--serie-2 { background-color: rgb(var(--color-indicador-plataformas)); }
+.nx-dona__punto--serie-3 { background-color: rgb(var(--color-indicador-visitas)); }
+.nx-dona__punto--serie-4 { background-color: rgb(var(--color-indicador-usuarios)); }
+.nx-dona__punto--serie-5 { background-color: rgb(var(--color-indicador-solicitudes)); }
 /* DIS-131: estados de Solicitudes con los tokens semánticos de aviso, éxito y peligro. */
 .nx-ind--pendientes {
     --ind-c: var(--color-indicador-pendientes);
