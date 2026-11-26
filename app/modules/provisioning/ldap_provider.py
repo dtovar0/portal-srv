@@ -16,6 +16,8 @@
 import os
 
 from app import db
+from app.modules.audit.events import Evento
+from app.modules.audit.miembros import auditar_miembro
 from app.modules.auth.models import User
 from app.modules.core.models import Platform
 from app.modules.directory.configuracion import (ErrorConfiguracionDirectorio,
@@ -152,6 +154,20 @@ class ProveedorLdap(Provisioner):
     # Operaciones
     # ------------------------------------------------------------------ #
 
+    @staticmethod
+    def _auditar(operacion, accion, escritura, grupo, persona):
+        """`miembro_agregado`/`miembro_quitado` (FNC-209); se guarda con el
+        cierre del trabajo (sin commit propio)."""
+        plataforma = (db.session.get(Platform, operacion.plataforma_id)
+                      if operacion.plataforma_id else None)
+        evento = (Evento.MIEMBRO_AGREGADO if accion == 'add_member'
+                  else Evento.MIEMBRO_QUITADO)
+        auditar_miembro(evento, escritura, grupo, persona,
+                        user_id=operacion.usuario_id,
+                        platform_id=operacion.plataforma_id,
+                        area_id=plataforma.area_id if plataforma else None,
+                        as_system=True)
+
     def _membresia(self, operacion, accion):
         try:
             _, escritor, grupo, persona = self._preparar(operacion)
@@ -165,6 +181,7 @@ class ProveedorLdap(Provisioner):
             creacion = escritor.create_group(grupo)
             if creacion.exito:
                 escritura = getattr(escritor, accion)(grupo, persona)
+        self._auditar(operacion, accion, escritura, grupo, persona)
         resultado = _RESULTADOS[escritura.resultado]
         motivo = None if escritura.exito else escritura.motivo
         return ResultadoProveedor(resultado, motivo)

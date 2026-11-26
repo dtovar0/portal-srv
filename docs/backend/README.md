@@ -457,6 +457,8 @@ Los siete blueprints heredados de NEXUS (`auth`, `core`, `audit`, `settings`, `n
 - `before`/`after` sin contraseñas, hashes, tokens, cookies, cabeceras ni secretos (`audit/sanitizar.py`, SEC-AUD-05).
 - Inmutable (`audit/inmutabilidad.py`): el ORM rechaza `UPDATE`/`DELETE` (por objeto y masivos) con `RegistroInmutable`; sin rutas de edición ni borrado; borrar usuario, área o plataforma deja la referencia en NULL.
 - Migración `0002_auditoria_ampliada`.
+- **Log de eventos (FNC-209, `audit/log_eventos.py`):** con `DEBUG_EVENTOS=true`, cada evento de `add_audit_log` se escribe también como una línea `clave=valor` (`fecha accion actor= usuario= plataforma= area= modulo= objetivo= resultado= detalle=`) en `logs/eventos.log` (carpeta de `resolver_carpeta_logs`, rotación 5 MB × 5) y en consola/journald; apagado no crea el archivo ni consulta nombres. Sin `before`/`after`; el detalle se limpia de secretos y enlaces. `solo_log=True` deja un evento solo en el log (sin BD).
+- `correo_enviado` (solo log, destinatarios enmascarados, desde `send_notification_by_slug`), `miembro_agregado` / `miembro_quitado` (`audit/miembros.py`: BD + log desde el aprovisionamiento LDAP; solo log desde `grupos_de_rol`, porque quien llama puede tener cambios sin guardar).
 - Se audita: accesos (local, directorio, SSO, fallidos, SSO rechazado), cierre de sesión, CRUD de áreas/plataformas/usuarios, configuración, SMTP, LDAP, respaldos, purgas, altas/bajas automáticas por LDAP y correos del gestor no enviados (`notificacion_fallida`, FNC-048).
 
 ## 6. Cómo arrancar en dev

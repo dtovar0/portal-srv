@@ -9,6 +9,9 @@ from app.modules.notifications.models import SMTPConfig, NotificationTemplate, I
 
 logger = logging.getLogger(__name__)
 
+# Texto del log cuando un destinatario no parece un correo (FNC-209).
+MARCA_CORREO_INVALIDO = '[correo]'
+
 
 class SmtpSettings:
     """Parámetros de conexión SMTP, vengan del .env o de la base de datos."""
@@ -231,6 +234,28 @@ def notifications_enabled():
     return os.getenv('ENABLE_NOTIFICATIONS', 'true').lower() == 'true'
 
 
+def _enmascarar(correo):
+    """`j***@dominio`: el log no guarda el correo completo."""
+    local, _, dominio = correo.strip().partition('@')
+    return f"{local[:1]}***@{dominio}" if dominio else MARCA_CORREO_INVALIDO
+
+
+def _auditar_envio(slug, destinatarios):
+    """`correo_enviado` (FNC-209) solo en el log de eventos: sin cuerpo, sin
+    enlaces y con los correos enmascarados. No toca la BD (puede haber cambios
+    sin guardar y sería ruido en la auditoría). Nunca lanza."""
+    try:
+        from app.modules.audit.events import Evento
+        from app.modules.audit.services import add_audit_log
+        lista = [c for c in str(destinatarios).split(',') if c.strip()]
+        add_audit_log(Evento.CORREO_ENVIADO, status='success',
+                      detail=f"Correo '{slug}' a {len(lista)} destinatario(s): "
+                             + ', '.join(_enmascarar(c) for c in lista),
+                      module='Notificaciones', target=slug, solo_log=True)
+    except Exception:
+        pass
+
+
 def send_notification_by_slug(slug, target_email, context=None):
     """
     Sends a pre-defined notification template using the global SMTP configuration.
@@ -269,6 +294,7 @@ def send_notification_by_slug(slug, target_email, context=None):
         smtp = open_smtp(config)
         smtp.send_message(msg)
         smtp.quit()
+        _auditar_envio(slug, target_email)
         return {"status": "success",
                 "message": f"Notificación '{slug}' enviada",
                 "source": config.source}
