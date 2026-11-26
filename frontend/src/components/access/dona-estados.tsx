@@ -2,6 +2,7 @@
 
 /**
  * Dona del porcentaje de solicitudes por estado (DIS-131): recharts `Pie` con `innerRadius`,
+ * en formato de KPI desde DIS-141 (dona a la izquierda y leyenda a la derecha, sin «Abrir»);
  * colores semánticos de aviso, éxito y peligro (tokens) y leyenda con cifras y porcentajes en
  * texto (la gráfica es decorativa para el lector de pantalla).
  */
@@ -40,10 +41,10 @@ export function DonaEstados({ stats }: { stats: InboxStats }) {
   });
 
   return (
-    <Card className="!p-0 flex h-full min-h-64 flex-col overflow-hidden shadow-1 border border-panel-border/80">
+    <Card className="!p-0 flex h-full flex-col overflow-hidden shadow-1 border border-panel-border/80">
       <PanelHeader
         title="Solicitudes por estado"
-        subtitle="Porcentaje sobre el total"
+        subtitle={`${stats.total} en total`}
         icon="solicitudes"
         titleTag="h3"
       />
@@ -55,8 +56,8 @@ export function DonaEstados({ stats }: { stats: InboxStats }) {
           message="Cuando lleguen solicitudes a tus áreas, verás aquí el reparto por estado."
         />
       ) : (
-        <div className="flex flex-1 flex-col gap-3 p-4">
-          <div className="h-48 w-full" aria-hidden="true">
+        <div className="flex flex-1 items-center gap-4 p-4">
+          <div className="size-28 shrink-0" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -86,7 +87,7 @@ export function DonaEstados({ stats }: { stats: InboxStats }) {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <ul className="grid gap-2" aria-label="Solicitudes por estado">
+          <ul className="grid min-w-0 flex-1 gap-2" aria-label="Solicitudes por estado">
             {filas.map((fila) => (
               <li key={fila.estado} className="flex items-center gap-2 text-sm text-label">
                 <span className={`${fila.punto} size-3 rounded-sm`} aria-hidden="true" />

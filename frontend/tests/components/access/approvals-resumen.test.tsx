@@ -1,7 +1,8 @@
 /**
  * DIS-131: pantalla Solicitudes (`/approvals`): resumen con tarjetas por estado, gráficas por
- * área y plataforma y dona por estado (`inbox/stats`, contrato solicitudes 1.3); «Abrir» de cada
- * tarjeta lleva a la tabla de su estado; Volver regresa al resumen.
+ * área y plataforma. DIS-141: fila de KPI con la dona por estado, conectores y usuarios por rol
+ * (sin «Abrir») y panel «Solicitudes» con las pendientes (8 por página, aprobar/rechazar). Las
+ * tablas por estado (`?status=`) siguen con Volver al resumen.
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ vi.mock('@/lib/access/requests', () => ({
 }));
 vi.mock('@/lib/api', async (original) => ({
   ...(await original<typeof import('@/lib/api')>()),
-  api: { areas: vi.fn().mockResolvedValue([]) },
+  api: { areas: vi.fn().mockResolvedValue([]), stats: vi.fn() },
 }));
 vi.mock('@/components/session-provider', () => ({
   useSession: () => ({
@@ -37,7 +38,15 @@ import { requestsApi } from '@/lib/access/requests';
 import { MOCK_REQUEST } from '@/lib/access/mocks';
 import { ApprovalsView } from '@/components/access/approvals-view';
 import { MAX_BARRAS } from '@/components/access/approvals-resumen';
-import { ApiError } from '@/lib/api';
+import { SOLICITUDES_POR_PAGINA } from '@/components/access/solicitudes-panel';
+import { ApiError, api } from '@/lib/api';
+import type { Stats } from '@/lib/types';
+
+/** `GET /stats` (FNC-214): 9 usuarios (6 + 3 administradores) y 4 conectores (3 asociados). */
+const PANEL: Stats = {
+  areas: 2, platforms: 5, visits: 0, users: 9, requests: 12, connectors: 4, most_visited: [], platforms_by_area: [],
+  desglose: { users_by_role: { parte: 6, resto: 3 }, connectors: { parte: 3, resto: 1 } },
+};
 
 const STATS: InboxStats = {
   total: 12,
@@ -62,6 +71,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   url.consulta = '';
   vi.mocked(requestsApi.inboxStats).mockResolvedValue(STATS);
+  vi.mocked(api.stats).mockResolvedValue(PANEL);
   vi.mocked(requestsApi.inbox).mockResolvedValue({ items: [BASE], page: 1, per_page: 25, total: 1 });
 });
 afterEach(() => {
@@ -70,20 +80,7 @@ afterEach(() => {
 });
 
 describe('DIS-131: resumen', () => {
-  it('muestra una tarjeta por estado con su cifra y porcentaje', async () => {
-    render_();
-    const pend = await screen.findByRole('group', { name: 'Pendientes' });
-    expect(within(pend).getAllByText('3').length).toBeGreaterThan(0);
-    expect(within(pend).getByText('25 %')).toBeTruthy();
-    const apro = screen.getByRole('group', { name: 'Aprobadas' });
-    expect(within(apro).getAllByText('7').length).toBeGreaterThan(0);
-    expect(within(apro).getByText('58 %')).toBeTruthy();
-    const rech = screen.getByRole('group', { name: 'Rechazadas' });
-    expect(within(rech).getAllByText('2').length).toBeGreaterThan(0);
-    expect(within(rech).getByText('17 %')).toBeTruthy();
-  });
-
-  it('la dona lista los porcentajes por estado en texto', async () => {
+  it('DIS-141: KPI = dona por estado, conectores y usuarios por rol; sin tarjetas de aprobadas/rechazadas ni «Abrir»', async () => {
     render_();
     const leyenda = await screen.findByRole('list', { name: 'Solicitudes por estado' });
     const items = within(leyenda).getAllByRole('listitem').map((li) => li.textContent);
@@ -91,6 +88,67 @@ describe('DIS-131: resumen', () => {
     expect(items[0]).toContain('25 %');
     expect(items[1]).toContain('58 %');
     expect(items[2]).toContain('17 %');
+    const conectores = await screen.findByRole('group', { name: 'Conectores' });
+    expect(within(conectores).getAllByText('4').length).toBeGreaterThan(0);
+    const usuarios = screen.getByRole('group', { name: 'Usuarios' });
+    expect(within(usuarios).getAllByText('9').length).toBeGreaterThan(0);
+    expect(usuarios.textContent).toMatch(/administradores/);
+    expect(screen.queryByRole('group', { name: 'Aprobadas' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Rechazadas' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^Abrir solicitudes/ })).toBeNull();
+  });
+
+  it('DIS-141: sin conectores en /stats (admin de área) no hay KPI de conectores; si /stats falla solo queda la dona', async () => {
+    vi.mocked(api.stats).mockResolvedValue({ ...PANEL, connectors: undefined });
+    render_();
+    await screen.findByRole('group', { name: 'Usuarios' });
+    expect(screen.queryByRole('group', { name: 'Conectores' })).toBeNull();
+    cleanup();
+    vi.mocked(api.stats).mockRejectedValue(new ApiError(500, 'x'));
+    render_();
+    await screen.findByRole('list', { name: 'Solicitudes por estado' });
+    expect(screen.queryByRole('group', { name: 'Usuarios' })).toBeNull();
+  });
+
+  it('DIS-141: panel «Solicitudes»: pendientes, 8 por página, usuario, área/plataforma, fecha y acciones', async () => {
+    render_();
+    const panel = await screen.findByRole('list', { name: 'Solicitudes pendientes' });
+    expect(requestsApi.inbox).toHaveBeenCalledWith({ status: 'pendiente', page: 1, per_page: SOLICITUDES_POR_PAGINA });
+    expect(SOLICITUDES_POR_PAGINA).toBe(8);
+    const fila = within(panel).getByRole('listitem', { name: 'Solicitud de Ana Ruiz para Contabilidad' });
+    expect(within(fila).getByText('Ana Ruiz')).toBeTruthy();
+    expect(within(fila).getAllByText('Finanzas').length).toBeGreaterThan(0);
+    expect(within(fila).getByRole('button', { name: 'Aprobar la solicitud de Ana Ruiz para Contabilidad' })).toBeTruthy();
+    expect(within(fila).getByRole('button', { name: 'Rechazar la solicitud de Ana Ruiz para Contabilidad' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ver todo' }).getAttribute('href')).toBe('/approvals?status=pendiente');
+  });
+
+  it('DIS-141: la solicitud propia no tiene botones', async () => {
+    vi.mocked(requestsApi.inbox).mockResolvedValue({
+      items: [{ ...BASE, requester: { id: 2, name: 'Luis Paz', email: 'luis@ejemplo.local' } }],
+      page: 1, per_page: 8, total: 1,
+    });
+    render_();
+    const fila = await screen.findByRole('listitem', { name: /Solicitud de Luis Paz/ });
+    expect(within(fila).queryByRole('button')).toBeNull();
+    expect(within(fila).getByText('Tu solicitud')).toBeTruthy();
+  });
+
+  it('DIS-141: paginación de 8 en 8', async () => {
+    vi.mocked(requestsApi.inbox).mockResolvedValue({ items: [BASE], page: 1, per_page: 8, total: 20 });
+    render_();
+    await screen.findByRole('list', { name: 'Solicitudes pendientes' });
+    expect(screen.getByText('1/3')).toBeTruthy();
+    expect(screen.getByText('1 de 20 registros')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente de solicitudes' }));
+    await waitFor(() => expect(requestsApi.inbox).toHaveBeenLastCalledWith(
+      { status: 'pendiente', page: 2, per_page: SOLICITUDES_POR_PAGINA }));
+  });
+
+  it('DIS-141: aprobar desde el panel abre el diálogo de la bandeja', async () => {
+    render_();
+    fireEvent.click(await screen.findByRole('button', { name: 'Aprobar la solicitud de Ana Ruiz para Contabilidad' }));
+    expect(await screen.findByRole('alertdialog')).toBeTruthy();
   });
 
   it('gráficas por área y plataforma con su tabla alternativa', async () => {
@@ -110,15 +168,15 @@ describe('DIS-131: resumen', () => {
     expect(within(tabla).getAllByRole('row')).toHaveLength(MAX_BARRAS + 1);
   });
 
-  it('sin solicitudes: estados vacíos y dona vacía', async () => {
+  it('sin solicitudes: estados vacíos y panel sin pendientes', async () => {
     vi.mocked(requestsApi.inboxStats).mockResolvedValue({
       total: 0, by_status: { pendiente: 0, aprobada: 0, rechazada: 0 }, by_area: [], by_platform: [],
     });
     render_();
     expect(await screen.findByText('Sin solicitudes por área')).toBeTruthy();
     expect(screen.getByText('Sin solicitudes por plataforma')).toBeTruthy();
+    vi.mocked(requestsApi.inbox).mockResolvedValue({ items: [], page: 1, per_page: 8, total: 0 });
     expect(screen.getByText('Sin solicitudes')).toBeTruthy();
-    expect(within(screen.getByRole('group', { name: 'Pendientes' })).getByText('0 %')).toBeTruthy();
   });
 
   it('error: mensaje y reintento', async () => {
@@ -126,34 +184,24 @@ describe('DIS-131: resumen', () => {
     render_();
     expect(await screen.findByRole('alert')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
-    expect(await screen.findByRole('group', { name: 'Pendientes' })).toBeTruthy();
+    expect(await screen.findByRole('list', { name: 'Solicitudes por estado' })).toBeTruthy();
   });
 
-  it('la vista principal no incluye la tabla de la bandeja', async () => {
+  it('la vista principal no incluye la tabla de la bandeja (sin filtros)', async () => {
     render_();
-    await screen.findByRole('group', { name: 'Pendientes' });
-    expect(requestsApi.inbox).not.toHaveBeenCalled();
-    expect(screen.queryByRole('listitem', { name: /Solicitud de Ana Ruiz/ })).toBeNull();
+    await screen.findByRole('list', { name: 'Solicitudes por estado' });
+    expect(screen.queryByLabelText('Filtrar la bandeja por área')).toBeNull();
+    expect(screen.queryByLabelText('Filtrar la bandeja por estado')).toBeNull();
   });
 
   it('DIS-132: la vista principal no lleva texto descriptivo bajo el título', async () => {
     render_();
-    await screen.findByRole('group', { name: 'Pendientes' });
+    await screen.findByRole('list', { name: 'Solicitudes por estado' });
     expect(screen.queryByText(/Resumen de las solicitudes de acceso/)).toBeNull();
   });
 });
 
-describe('DIS-131: «Abrir» y las tablas por estado', () => {
-  it.each([
-    ['Abrir solicitudes pendientes', 'pendiente'],
-    ['Abrir solicitudes aprobadas', 'aprobada'],
-    ['Abrir solicitudes rechazadas', 'rechazada'],
-  ])('%s enlaza a la sección de su estado', async (nombre, estado) => {
-    render_();
-    const enlace = await screen.findByRole('link', { name: nombre });
-    expect(enlace.getAttribute('href')).toBe(`/approvals?status=${estado}`);
-  });
-
+describe('DIS-131: tablas por estado (`?status=`)', () => {
   it('pendientes: tabla con Aprobar/Rechazar, sin selector de estado y con Volver', async () => {
     url.consulta = 'status=pendiente';
     render_();
@@ -187,6 +235,6 @@ describe('DIS-131: «Abrir» y las tablas por estado', () => {
   it('un estado inválido en la URL muestra el resumen', async () => {
     url.consulta = 'status=otro';
     render_();
-    expect(await screen.findByRole('group', { name: 'Pendientes' })).toBeTruthy();
+    expect(await screen.findByRole('list', { name: 'Solicitudes por estado' })).toBeTruthy();
   });
 });
