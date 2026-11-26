@@ -24,7 +24,8 @@ const RECHARTS_CON_TOKENS: Record<string, string[]> = {
   'components/dashboard.tsx': ['contentStyle', 'itemStyle', 'labelStyle'],
   // DIS-131: gráficas de Solicitudes (mismo patrón de Tooltip con tokens).
   'components/dashboard/grafica-barras.tsx': ['contentStyle', 'itemStyle', 'labelStyle'],
-  'components/access/dona-estados.tsx': ['contentStyle', 'itemStyle'],
+  // DIS-144: la dona de los KPI de Solicitudes (estados y áreas).
+  'components/dashboard/dona-kpi.tsx': ['contentStyle', 'itemStyle'],
 };
 
 function archivos(carpeta: string): string[] {
