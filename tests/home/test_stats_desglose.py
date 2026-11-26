@@ -65,7 +65,9 @@ def _pedir(cliente_como, user_id):
 def _sumas_cuadran(datos):
     for clave, par in datos['desglose'].items():
         assert set(par) == {'parte', 'resto'}, clave
-        assert par['parte'] + par['resto'] == datos[clave], clave
+        # FNC-214: `users_by_role` reparte el mismo contador `users`.
+        contador = 'users' if clave == 'users_by_role' else clave
+        assert par['parte'] + par['resto'] == datos[contador], clave
 
 
 def test_superadmin_desglose_de_cada_indicador(escena, cliente_como):
@@ -76,6 +78,9 @@ def test_superadmin_desglose_de_cada_indicador(escena, cliente_como):
         'requests': {'parte': 2, 'resto': 2},
         'visits': {'parte': 10, 'resto': 16},
         'users': {'parte': 4, 'resto': 1},
+        # FNC-214: 3 con rol usuario y 2 administradores; sin conectores.
+        'users_by_role': {'parte': 3, 'resto': 2},
+        'connectors': {'parte': 0, 'resto': 0},
     }
     _sumas_cuadran(datos)
 
@@ -88,6 +93,7 @@ def test_admin_de_area_solo_ve_lo_suyo(escena, cliente_como):
         'requests': {'parte': 2, 'resto': 1},
         'visits': {'parte': 3, 'resto': 5},
         'users': {'parte': 1, 'resto': 1},
+        'users_by_role': {'parte': 2, 'resto': 0},
     }
     _sumas_cuadran(datos)
 
